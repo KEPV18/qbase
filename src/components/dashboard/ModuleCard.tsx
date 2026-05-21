@@ -15,7 +15,7 @@ interface ModuleCardProps {
   onClick: () => void;
 }
 
-/* ─── Color helper — generates styles from module class ──────────── */
+/* ─── Color helper ─────────────────────────────────────────────────── */
 function moduleStyles(moduleClass?: string) {
   const base = moduleClass?.replace("module-", "") || "primary";
   return {
@@ -34,22 +34,22 @@ export function ModuleCard({
   stats, isLoading = false, onClick,
 }: ModuleCardProps) {
   const s = moduleStyles(moduleClass);
-  const totalRecords = stats.recordsCount;
-  const approvedRecords = totalRecords - stats.pendingCount - stats.issuesCount;
-  const complianceRate = totalRecords > 0 ? Math.max(0, Math.round((approvedRecords / totalRecords) * 100)) : 100;
+  const total = stats.formsCount + stats.recordsCount;
+  const issues = stats.pendingCount + stats.issuesCount;
+  const complianceRate = total > 0 ? Math.round(((total - issues) / total) * 100) : 100;
 
   if (isLoading) {
     return (
-      <div className="bg-card/80 backdrop-blur-sm rounded-xl border border-border/50 p-5 space-y-3">
-        <div className="flex items-center gap-3">
-          <Skeleton className="h-12 w-12 rounded-xl" />
-          <div className="space-y-1.5 flex-1">
-            <Skeleton className="h-4 w-24" />
-            <Skeleton className="h-3 w-16" />
+      <div className="bg-card/80 backdrop-blur-sm rounded-xl border border-border/50 p-[1.875rem] space-y-4">
+        <div className="flex items-center gap-4">
+          <Skeleton className="h-[3.75rem] w-[3.75rem] rounded-xl" />
+          <div className="space-y-2 flex-1">
+            <Skeleton className="h-5 w-28" />
+            <Skeleton className="h-4 w-20" />
           </div>
         </div>
-        <Skeleton className="h-3 w-full" />
-        <Skeleton className="h-10 w-full rounded-xl" />
+        <Skeleton className="h-4 w-full" />
+        <Skeleton className="h-[3.125rem] w-full rounded-xl" />
       </div>
     );
   }
@@ -63,70 +63,70 @@ export function ModuleCard({
         s.border
       )}
     >
-      {/* Top accent bar */}
-      <div className={cn("h-1.5 w-full", s.accentBar)} />
+      {/* Top accent bar — 5x taller */}
+      <div className={cn("h-[0.46875rem] w-full", s.accentBar)} />
 
-      <div className="p-5 flex flex-col h-full">
-        {/* Header */}
-        <div className="flex items-start justify-between mb-4">
-          <div className="flex items-center gap-3">
+      <div className="p-[1.875rem] flex flex-col h-full">
+        {/* Header — 1.25x scaled */}
+        <div className="flex items-start justify-between mb-5">
+          <div className="flex items-center gap-4">
             <div className={cn(
-              "w-12 h-12 rounded-xl flex items-center justify-center transition-all duration-300 group-hover:scale-110 group-hover:shadow-lg",
+              "w-[3.75rem] h-[3.75rem] rounded-[0.9375rem] flex items-center justify-center transition-all duration-300 group-hover:scale-110 group-hover:shadow-lg",
               s.iconBg
             )}>
-              <Icon className={cn("w-6 h-6", s.iconText)} />
+              <Icon className={cn("w-[1.875rem] h-[1.875rem]", s.iconText)} />
             </div>
             <div>
-              <h3 className="text-sm font-bold text-foreground leading-tight">{title}</h3>
+              <h3 className="text-[1.125rem] font-bold text-foreground leading-tight">{title}</h3>
               {isoClause && (
-                <span className="text-[9px] font-bold uppercase tracking-[0.15em] text-muted-foreground">{isoClause}</span>
+                <span className="text-[0.7rem] font-bold uppercase tracking-[0.15em] text-muted-foreground">{isoClause}</span>
               )}
             </div>
           </div>
           <div className={cn(
-            "w-7 h-7 rounded-lg flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all duration-300 translate-x-2 group-hover:translate-x-0",
+            "w-[2.1875rem] h-[2.1875rem] rounded-lg flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all duration-300 translate-x-2 group-hover:translate-x-0",
             s.statBg
           )}>
-            <ArrowRight className={cn("w-3.5 h-3.5", s.statIcon)} />
+            <ArrowRight className={cn("w-[1.1rem] h-[1.1rem]", s.statIcon)} />
           </div>
         </div>
 
-        <p className="text-[11px] text-muted-foreground leading-relaxed mb-4 flex-1 line-clamp-2">{description}</p>
+        <p className="text-[0.875rem] text-muted-foreground leading-relaxed mb-5 flex-1 line-clamp-2">{description}</p>
 
-        {/* Stats */}
-        <div className="grid grid-cols-2 gap-2 mb-4">
-          <div className={cn("flex items-center gap-2 p-2.5 rounded-lg", s.statBg)}>
-            <FileText className={cn("w-3.5 h-3.5", s.statIcon)} />
+        {/* Stats — 1.25x scaled */}
+        <div className="grid grid-cols-2 gap-[0.625rem] mb-5">
+          <div className={cn("flex items-center gap-[0.625rem] p-[0.9375rem] rounded-lg", s.statBg)}>
+            <FileText className={cn("w-[1.1rem] h-[1.1rem]", s.statIcon)} />
             <div>
-              <span className="text-sm font-bold font-mono text-foreground">{stats.formsCount}</span>
-              <span className="text-[9px] text-muted-foreground ml-1">Forms</span>
+              <span className="text-[1.125rem] font-bold font-mono text-foreground">{stats.formsCount}</span>
+              <span className="text-[0.7rem] text-muted-foreground ml-1">Forms</span>
             </div>
           </div>
-          <div className={cn("flex items-center gap-2 p-2.5 rounded-lg", s.statBg)}>
-            <FolderOpen className={cn("w-3.5 h-3.5", s.statIcon)} />
+          <div className={cn("flex items-center gap-[0.625rem] p-[0.9375rem] rounded-lg", s.statBg)}>
+            <FolderOpen className={cn("w-[1.1rem] h-[1.1rem]", s.statIcon)} />
             <div>
-              <span className="text-sm font-bold font-mono text-foreground">{stats.recordsCount}</span>
-              <span className="text-[9px] text-muted-foreground ml-1">Records</span>
+              <span className="text-[1.125rem] font-bold font-mono text-foreground">{stats.recordsCount}</span>
+              <span className="text-[0.7rem] text-muted-foreground ml-1">Records</span>
             </div>
           </div>
         </div>
 
-        {/* Compliance */}
-        <div className="space-y-2">
+        {/* Compliance bar — 5x taller */}
+        <div className="space-y-[0.625rem]">
           <div className="flex items-center justify-between">
-            <span className="text-[9px] font-bold text-muted-foreground uppercase tracking-wider flex items-center gap-1">
-              <TrendingUp className="w-3 h-3" /> Compliance
+            <span className="text-[0.7rem] font-bold text-muted-foreground uppercase tracking-wider flex items-center gap-1">
+              <TrendingUp className="w-[1.1rem] h-[1.1rem]" /> Compliance
             </span>
             <span className={cn(
-              "text-sm font-extrabold font-mono",
+              "text-[1.125rem] font-extrabold font-mono",
               complianceRate >= 80 ? "text-success" : complianceRate >= 50 ? "text-warning" : "text-destructive"
             )}>
               {complianceRate}%
             </span>
           </div>
-          <div className="h-2.5 w-full rounded-full bg-muted/30 overflow-hidden">
+          <div className="h-[3.125rem] w-full rounded-full bg-muted/30 overflow-hidden">
             <div className={cn(
-              "h-full rounded-full transition-all duration-1000 ease-out",
+              "h-full rounded-full transition-all duration-1000 ease-out flex items-end",
               complianceRate >= 80 ? "bg-gradient-to-r from-success/60 to-success"
                 : complianceRate >= 50 ? "bg-gradient-to-r from-warning/60 to-warning"
                   : "bg-gradient-to-r from-destructive/60 to-destructive"
@@ -134,15 +134,15 @@ export function ModuleCard({
           </div>
         </div>
 
-        {/* Alerts */}
+        {/* Alerts — 1.25x scaled */}
         {(stats.pendingCount > 0 || stats.issuesCount > 0) && (
-          <div className="mt-3 flex items-center gap-2 text-[10px]">
-            <Activity className="w-3 h-3 text-muted-foreground" />
+          <div className="mt-[0.9375rem] flex items-center gap-[0.625rem] text-[0.8rem]">
+            <Activity className="w-[1.1rem] h-[1.1rem] text-muted-foreground" />
             {stats.pendingCount > 0 && (
-              <span className="bg-warning/10 text-warning font-semibold px-1.5 py-0.5 rounded-md font-mono">{stats.pendingCount} pending</span>
+              <span className="bg-warning/10 text-warning font-semibold px-[0.46875rem] py-[0.1875rem] rounded-md font-mono">{stats.pendingCount} pending</span>
             )}
             {stats.issuesCount > 0 && (
-              <span className="bg-destructive/10 text-destructive font-semibold px-1.5 py-0.5 rounded-md font-mono">{stats.issuesCount} issues</span>
+              <span className="bg-destructive/10 text-destructive font-semibold px-[0.46875rem] py-[0.1875rem] rounded-md font-mono">{stats.issuesCount} issues</span>
             )}
           </div>
         )}

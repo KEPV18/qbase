@@ -2,15 +2,14 @@ import { useNavigate, useLocation } from "react-router-dom";
 import {
   LayoutDashboard, ChevronRight,
   PanelLeftClose, PanelLeftOpen, Menu, X,
-  Layers, Wrench, Briefcase,
+  Layers, Wrench, Briefcase, Shield, UsersCog, Activity,
 } from "lucide-react";
-import { useQMSRecords } from "@/hooks/useQMSData";
-import type { FileReview } from "@/lib/googleSheets";
+import { useRecords } from "@/hooks/useRecordStorage";
 import { useState, useEffect, useMemo } from "react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/hooks/useAuth";
-import qmsLogo from "@/assets/qms-logo.png";
-import logoImg from "@/assets/logo.png";
+import { useTenantIdentity } from "@/hooks/useTenantIdentity";
+import defaultLogo from "@/assets/qms-logo.png";
 import {
   Tooltip, TooltipContent, TooltipProvider, TooltipTrigger,
 } from "@/components/ui/tooltip";
@@ -32,21 +31,18 @@ export function Sidebar({ activeModule, onModuleChange }: SidebarProps) {
   const [expandedItems, setExpandedItems] = useState<string[]>([]);
   const [isCollapsed, setIsCollapsed] = useState(localStorage.getItem('sidebarCollapsed') === 'true');
   const [isMobileOpen, setIsMobileOpen] = useState(false);
+  const { displayName, logoUrl } = useTenantIdentity();
+  const brandLogo = logoUrl || defaultLogo;
   const { user, loading } = useAuth();
-  const { data: records } = useQMSRecords();
+  const { data: records } = useRecords();
 
+  // Extract unique project names from Supabase records
   const projects = useMemo(() => {
     if (!records) return [];
     const projs = new Set<string>();
     records.forEach(r => {
-      if (r.fileReviews && r.files) {
-        const existingFileIds = new Set(r.files.map(f => f.id));
-        Object.entries(r.fileReviews).forEach(([fileId, review]: [string, FileReview]) => {
-          if (!existingFileIds.has(fileId)) return;
-          const name = (review.project === "General / All Company" || !review.project) ? "General" : review.project;
-          projs.add(name);
-        });
-      }
+      const name = r.formData?.project_name || r.formData?.client_name;
+      if (name && typeof name === 'string') projs.add(name);
     });
     return Array.from(projs).sort();
   }, [records]);
@@ -83,81 +79,99 @@ export function Sidebar({ activeModule, onModuleChange }: SidebarProps) {
     );
   };
 
-  const handleNavClick = (item: NavItem) => {
-    if (item.children) toggleExpand(item.id);
-    if (item.path) {
-      navigate(item.path);
-      if (item.path.startsWith("/module/")) onModuleChange(item.id);
-      if (item.path.startsWith("/audit?project=")) onModuleChange("quality");
-    }
+  const handleNavClick = (path: string, id: string) => {
+    navigate(path);
+    if (!isCollapsed) toggleExpand(id);
+    onModuleChange(id);
   };
 
-  const handleChildClick = (parentId: string, child: { id: string, label: string; code?: string }) => {
-    if (parentId === "projects-all" && child.code) {
-      navigate(`/project/${encodeURIComponent(child.code)}`);
+  const handleChildClick = (parentId: string, childCode: string) => {
+    if (parentId === "projects-all" && childCode) {
+      navigate(`/project/${encodeURIComponent(childCode)}`);
       onModuleChange("projects-all");
-    } else if (parentId === "docs" && child.code) {
-      navigate(child.code);
-    } else if (child.code) {
-      navigate(`/record/${encodeURIComponent(child.code)}`);
     } else {
-      navigate(`/module/${parentId}`);
+      navigate(childCode);
     }
   };
 
-  const getActiveState = (item: NavItem): boolean => {
-    if (item.path && location.pathname === item.path) return true;
-    if (item.id === "dashboard" && location.pathname === "/") return true;
-    if (location.pathname.includes(`/module/${item.id}`)) return true;
-    return false;
-  };
+  const collapsed = isCollapsed;
 
-  const collapsed = isCollapsed && !isMobileOpen;
+  interface NavChild {
+    id: string;
+    label: string;
+    code?: string;
+  }
 
-  const NavItemButton = ({ item }: { item: NavItem }) => {
-    const isActive = getActiveState(item);
+  interface NavItemWithChildren extends NavItem {
+    children?: NavChild[];
+  }
+
+  function NavItemButton({ item }: { item: NavItemWithChildren }) {
+    const hasChildren = item.children && item.children.length > 0;
     const isExpanded = expandedItems.includes(item.id);
-    const Icon = item.icon;
+    const isActive = location.pathname === item.path ||
+      (item.path !== "/" && location.pathname.startsWith(item.path));
+    const childActive = hasChildren && item.children!.some(c =>
+      location.pathname === `/project/${encodeURIComponent(c.code || c.label)}`);
 
-    const button = (
-      <div className="relative">
+    if (collapsed) {
+      return (
+        <TooltipProvider delayDuration={0}>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <button
+                onClick={() => item.path ? handleNavClick(item.path, item.id) : toggleExpand(item.id)}
+                className={cn(
+                  "w-full flex items-center justify-center h-9 rounded-md transition-all duration-200",
+                  "hover:bg-accent/10",
+                  (isActive || childActive) ? "bg-accent/15 text-accent" : "text-muted-foreground"
+                )}
+              >
+                <item.icon className="w-4.5 h-4.5" />
+              </button>
+            </TooltipTrigger>
+            <TooltipContent side="right" sideOffset={8} className="text-xs">
+              {item.label}
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
+      );
+    }
+
+    return (
+      <div>
         <button
-          aria-label={item.label}
-          onClick={() => handleNavClick(item)}
+          onClick={() => hasChildren ? toggleExpand(item.id) : handleNavClick(item.path, item.id)}
           className={cn(
-            "w-full flex items-center gap-3 rounded-sm text-[13px] transition-all duration-200 relative group",
-            collapsed ? "justify-center p-2.5 mx-auto" : "px-3 py-2.5",
-            isActive
-              ? "bg-gradient-to-r from-primary/20 to-primary/5 text-primary font-semibold shadow-sm shadow-primary/10"
-              : "text-foreground/50 hover:text-foreground hover:bg-muted/80"
+            "w-full flex items-center gap-2.5 px-3 py-2 rounded-md text-sm transition-all duration-200",
+            "hover:bg-accent/10",
+            (isActive || childActive) ? "bg-accent/15 text-accent font-medium" : "text-muted-foreground"
           )}
         >
-          {isActive && !collapsed && (
-            <div className="absolute left-0 top-1 bottom-1 w-[3px] bg-gradient-to-b from-primary to-primary/50 rounded-full" />
-          )}
-          <Icon className={cn(
-            "w-[18px] h-[18px] flex-shrink-0 transition-all duration-200",
-            isActive ? "text-primary drop-shadow-[0_0_6px_hsl(var(--primary)/0.4)]" : "text-foreground/40 group-hover:text-foreground/70"
-          )} />
-          {!collapsed && (
-            <>
-              <span className="flex-1 text-left truncate">{item.label}</span>
-              {item.children && (
-                <ChevronRight className={cn("w-3 h-3 text-foreground/30 transition-transform duration-200", isExpanded && "rotate-90")} />
-              )}
-            </>
+          <item.icon className="w-4 h-4 shrink-0" />
+          <span className="flex-1 text-left truncate">{item.label}</span>
+          {hasChildren && (
+            <ChevronRight className={cn(
+              "w-3.5 h-3.5 shrink-0 transition-transform",
+              isExpanded && "rotate-90"
+            )} />
           )}
         </button>
 
-        {!collapsed && item.children && isExpanded && (
-          <div className="ml-7 mt-0.5 space-y-0.5 border-l-2 border-primary/15 pl-3">
-            {item.children.map((child) => (
+        {hasChildren && isExpanded && (
+          <div className="ml-7 mt-0.5 space-y-0.5 border-l border-border/50 pl-2.5">
+            {item.children!.map(child => (
               <button
                 key={child.id}
-                onClick={() => handleChildClick(item.id, child)}
-                className="w-full flex items-center gap-2 px-2 py-1.5 rounded-sm text-xs text-foreground/40 hover:text-foreground hover:bg-muted/60 transition-all duration-150"
+                onClick={() => handleChildClick(item.id, child.code || child.label)}
+                className={cn(
+                  "w-full flex items-center gap-2 px-2.5 py-1.5 rounded text-xs transition-all",
+                  "hover:bg-accent/10",
+                  location.pathname === `/project/${encodeURIComponent(child.code || child.label)}`
+                    ? "text-accent font-medium"
+                    : "text-muted-foreground"
+                )}
               >
-                {child.code && <span className="font-mono text-[10px] text-primary/70">{child.code}</span>}
                 <span className="truncate">{child.label}</span>
               </button>
             ))}
@@ -165,165 +179,146 @@ export function Sidebar({ activeModule, onModuleChange }: SidebarProps) {
         )}
       </div>
     );
+  }
 
+  function SectionLabel({ icon: Icon, label }: { icon: React.ElementType; label: string }) {
     if (collapsed) {
       return (
-        <Tooltip delayDuration={0}>
-          <TooltipTrigger asChild>{button}</TooltipTrigger>
-          <TooltipContent side="right" sideOffset={8} className="text-xs font-medium">
-            {item.label}
-          </TooltipContent>
-        </Tooltip>
+        <div className="flex items-center justify-center my-2">
+          <Icon className="w-3.5 h-3.5 text-muted-foreground/40" />
+        </div>
       );
     }
-
-    return button;
-  };
-
-  const SectionLabel = ({ icon: SIcon, label }: { icon: React.ElementType; label: string }) => {
-    if (collapsed) return <div className="my-3 mx-3 border-t border-border/20" />;
     return (
-      <div className="flex items-center gap-2 px-3 pt-6 pb-2">
-        <SIcon className="w-3.5 h-3.5 text-primary/30" />
-        <span className="text-[10px] font-bold text-foreground/25 uppercase tracking-[0.15em]">{label}</span>
+      <div className="flex items-center gap-1.5 px-3 py-1.5 mt-3 mb-1 text-[10px] font-semibold uppercase tracking-widest text-muted-foreground/60">
+        <Icon className="w-3 h-3" />
+        <span>{label}</span>
       </div>
     );
-  };
-
-  const sidebarContent = (isMobile: boolean) => (
-    <>
-      {/* Header */}
-      <div className={cn("flex items-center border-b border-border/20", collapsed ? "justify-center px-2 py-5" : "px-5 py-5 gap-3")}>
-        <div
-          className="w-10 h-10 rounded-sm flex items-center justify-center cursor-pointer hover:scale-110 transition-all duration-300 flex-shrink-0 overflow-hidden shadow-lg shadow-primary/10"
-          onClick={() => { navigate("/"); onModuleChange("dashboard"); }}
-        >
-          <img src={qmsLogo} alt="QMS Logo" className="w-10 h-10 object-contain" />
-        </div>
-        {!collapsed && (
-          <div className="min-w-0 flex-1" onClick={() => { navigate("/"); onModuleChange("dashboard"); }}>
-            <h1 className="font-bold text-sm text-foreground cursor-pointer tracking-tight">QMS Suite</h1>
-            <p className="text-[9px] text-primary/40 font-bold uppercase tracking-[0.2em]">ISO 9001:2015</p>
-          </div>
-        )}
-        {!collapsed && !isMobile && (
-          <button aria-label="Collapse sidebar" onClick={toggleSidebar} className="p-1.5 rounded-sm text-foreground/20 hover:text-foreground hover:bg-muted transition-all duration-200">
-            <PanelLeftClose className="w-4 h-4" />
-          </button>
-        )}
-        {isMobile && (
-          <button aria-label="Close menu" onClick={() => setIsMobileOpen(false)} className="ml-auto p-1.5 rounded-sm text-foreground/30 hover:text-foreground">
-            <X className="w-5 h-5" />
-          </button>
-        )}
-      </div>
-
-      {collapsed && (
-        <div className="flex justify-center py-3">
-          <button aria-label="Expand sidebar" onClick={toggleSidebar} className="p-1.5 rounded-sm text-foreground/20 hover:text-foreground hover:bg-muted transition-all duration-200">
-            <PanelLeftOpen className="w-4 h-4" />
-          </button>
-        </div>
-      )}
-
-      {/* Navigation */}
-      <nav className={cn("flex-1 overflow-y-auto", collapsed ? "px-1.5 py-2" : "px-3 py-1")}>
-        <NavItemButton item={{ id: "dashboard", label: "Dashboard", icon: LayoutDashboard, path: "/" }} />
-
-        <SectionLabel icon={Layers} label="Modules" />
-        <div className="space-y-0.5">
-          {moduleItems.map(item => <NavItemButton key={item.id} item={item} />)}
-        </div>
-
-        {projects.length > 0 && (
-          <>
-            <SectionLabel icon={Briefcase} label="Projects" />
-            <div className="space-y-0.5 px-0.5">
-              <NavItemButton 
-                item={{ 
-                  id: "projects-all", 
-                  label: "All Projects", 
-                  icon: Briefcase,
-                  path: "/projects",
-                  children: projects.map(p => ({ 
-                    id: `proj-${p}`, 
-                    label: p,
-                    code: p // using code field to store project name for handling
-                  })) 
-                }} 
-              />
-            </div>
-          </>
-        )}
-
-        {/* Manual & Procedures — expandable */}
-        <NavItemButton
-          item={{
-            id: "docs",
-            label: "Manual & Procedures",
-            icon: BookOpen,
-            path: "",
-            children: docsItems
-              .filter(item => item.id === "iso-manual" || item.id === "procedures")
-              .map(item => ({
-                id: item.id,
-                label: item.label,
-                code: item.path,
-              }))
-          }}
-        />
-
-        <SectionLabel icon={Wrench} label="Tools" />
-        <div className="space-y-0.5">
-          {toolItems.map(item => <NavItemButton key={item.id} item={item} />)}
-        </div>
-      </nav>
-
-      {/* Footer — branding only; user controls are in TopNav UserDropdown */}
-      <div className={cn("border-t border-border/20", collapsed ? "p-2" : "p-4 space-y-3")}>
-        {/* Vezloo Branding Badge */}
-        {!collapsed && (
-          <div className="p-3 rounded-sm bg-primary/5 border border-primary/10 flex items-center gap-3 animate-fade-in group/brand uppercase">
-            <div className="w-8 h-8 rounded-sm bg-white p-1.5 shadow-sm border border-border/50 group-hover/brand:scale-110 transition-transform duration-300">
-               <img src={logoImg} alt="Vezloo" className="w-full h-full object-contain" />
-            </div>
-            <div>
-              <p className="text-[10px] text-foreground/30 font-bold uppercase tracking-wider leading-tight">Founded by</p>
-              <p className="text-[12px] font-black text-primary tracking-tight leading-tight">Vezloo Group</p>
-            </div>
-          </div>
-        )}
-      </div>
-    </>
-  );
+  }
 
   return (
-    <TooltipProvider>
-      <button
-        onClick={() => setIsMobileOpen(true)}
-        className="md:hidden fixed top-4 left-4 z-50 p-2 rounded-sm bg-card/90 backdrop-blur-xl border border-border/50 shadow-lg hover:bg-muted transition-all duration-200"
-        aria-label="Open menu"
-      >
-        <Menu className="w-5 h-5 text-foreground" />
-      </button>
-
+    <>
+      {/* Mobile overlay */}
       {isMobileOpen && (
-        <div className="md:hidden fixed inset-0 z-50 bg-black/60 backdrop-blur-sm" onClick={() => setIsMobileOpen(false)} />
+        <div
+          className="fixed inset-0 bg-black/40 backdrop-blur-sm z-40 lg:hidden"
+          onClick={() => setIsMobileOpen(false)}
+        />
       )}
 
       <aside className={cn(
-        "md:hidden fixed left-0 top-0 h-screen z-50 w-80 sidebar flex flex-col transition-transform duration-300 ease-in-out bg-muted border-r border-border text-foreground",
-        isMobileOpen ? "translate-x-0" : "-translate-x-full"
+        "fixed top-0 left-0 h-full bg-surface/80 backdrop-blur-md border-r border-border/30 z-50 transition-all duration-300 flex flex-col",
+        collapsed ? "w-[58px]" : "w-[240px]",
+        "lg:relative lg:z-auto",
+        isMobileOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"
       )}>
-        {sidebarContent(true)}
+        {/* Header */}
+        <div className={cn(
+          "flex items-center h-14 border-b border-border/30",
+          collapsed ? "px-3 justify-center" : "px-4 justify-between"
+        )}>
+          {!collapsed && (
+            <div className="flex items-center gap-2">
+              <img src={brandLogo} alt={displayName} className="w-6 h-6" />
+              <span className="text-sm font-semibold text-foreground">{displayName}</span>
+            </div>
+          )}
+          {collapsed && <img src={brandLogo} alt={displayName} className="w-6 h-6" />}
+
+          <button
+            onClick={toggleSidebar}
+            className="p-1 rounded hover:bg-accent/10 text-muted-foreground hidden lg:flex"
+          >
+            {collapsed ? <PanelLeftOpen className="w-4 h-4" /> : <PanelLeftClose className="w-4 h-4" />}
+          </button>
+        </div>
+
+        {/* Navigation */}
+        <nav className={cn("flex-1 overflow-y-auto", collapsed ? "px-1.5 py-2" : "px-3 py-1")}>
+          <NavItemButton item={{ id: "dashboard", label: "Dashboard", icon: LayoutDashboard, path: "/" }} />
+
+          <SectionLabel icon={Layers} label="Modules" />
+          <div className="space-y-0.5">
+            {moduleItems.map(item => <NavItemButton key={item.id} item={item} />)}
+          </div>
+
+          {projects.length > 0 && (
+            <>
+              <SectionLabel icon={Briefcase} label="Projects" />
+              <div className="space-y-0.5 px-0.5">
+                <NavItemButton 
+                  item={{ 
+                    id: "projects-all", 
+                    label: "All Projects", 
+                    icon: Briefcase,
+                    path: "/projects",
+                    children: projects.map(p => ({ 
+                      id: `proj-${p}`, 
+                      label: p,
+                      code: p
+                    })) 
+                  }} 
+                />
+              </div>
+            </>
+          )}
+
+          {/* Manual & Procedures — expandable */}
+          <NavItemButton
+            item={{
+              id: "docs",
+              label: "Manual & Procedures",
+              icon: BookOpen,
+              path: "",
+              children: docsItems
+                .filter(item => item.id === "iso-manual" || item.id === "procedures")
+                .map(item => ({
+                  id: item.id,
+                  label: item.label,
+                  code: item.path,
+                }))
+            }}
+          />
+
+          <SectionLabel icon={Wrench} label="Tools" />
+          <div className="space-y-0.5">
+            {toolItems.map(item => <NavItemButton key={item.id} item={item} />)}
+          </div>
+
+          {/* Admin — only visible to admins */}
+          {user?.role === "admin" && (
+            <>
+              <SectionLabel icon={Shield} label="Admin" />
+              <div className="space-y-0.5">
+                <NavItemButton item={{ id: "admin-panel", label: "Admin Panel", icon: Shield, path: "/admin/accounts" }} />
+                <NavItemButton item={{ id: "admin-activity", label: "Activity Log", icon: Activity, path: "/activity" }} />
+              </div>
+            </>
+          )}
+        </nav>
+
+        {/* Footer */}
+        <div className={cn(
+          "border-t border-border/30 py-3",
+          collapsed ? "px-2" : "px-4"
+        )}>
+          <button
+            onClick={() => setIsMobileOpen(true)}
+            className="lg:hidden w-full p-2 rounded hover:bg-accent/10 text-muted-foreground"
+          >
+            <Menu className="w-4 h-4 mx-auto" />
+          </button>
+        </div>
       </aside>
 
-      <aside className={cn(
-        "hidden md:flex flex-col h-screen fixed left-0 top-0 z-50 transition-all duration-300 sidebar bg-muted border-r border-border text-foreground",
-        isCollapsed ? "w-[60px]" : "w-60"
-      )}>
-        {sidebarContent(false)}
-      </aside>
-    </TooltipProvider>
+      {/* Mobile trigger button */}
+      <button
+        onClick={() => setIsMobileOpen(!isMobileOpen)}
+        className="fixed top-3 left-3 z-30 p-2 rounded-md bg-surface/80 backdrop-blur-sm border border-border/30 lg:hidden"
+      >
+        {isMobileOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+      </button>
+    </>
   );
 }

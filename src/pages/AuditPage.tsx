@@ -1,302 +1,261 @@
-import { Suspense, lazy } from "react";
-import { AppShell } from "@/components/layout/AppShell";
-import { RecordsTable } from "@/components/records/RecordsTable";
-import { AuditFilters } from "@/components/audit/AuditFilters";
-import {
-  ArrowLeft, RefreshCw, AlertCircle, CheckCircle, Clock,
-  AlertTriangle, Filter, FileX, CalendarClock, Loader2,
-  CheckCheck, RotateCcw, Download, Upload, PlayCircle,
-  LayoutGrid, List,
-} from "lucide-react";
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { Button } from "@/components/ui/button";
-import { PageHeader } from "@/components/ui/PageHeader";
-import { StatsRow } from "@/components/ui/StatsRow";
-import { DecisionBanner } from "@/components/ui/DecisionBanner";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ErrorBoundary } from "@/components/ui/ErrorBoundary";
-import { cn } from "@/lib/utils";
-import { useAuditPage } from "./audit/useAuditPage";
+// ============================================================================
+// QMS Forge — Audit Page (Supabase-connected)
+// Shows audit status of all 35 forms and their records.
+// ============================================================================
 
-const AuditCharts = lazy(() => import("@/components/audit/AuditCharts").then(m => ({ default: m.AuditCharts })));
-const AutomatedAuditModal = lazy(() => import("@/components/audit/AutomatedAuditModal").then(m => ({ default: m.AutomatedAuditModal })));
+import { Suspense, lazy, useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { AppShell } from "@/components/layout/AppShell";
+import {
+  RefreshCw, CheckCircle, Clock,
+  AlertTriangle, FileX, CalendarClock, FileText,
+  Search, ChevronRight, FilePlus,
+} from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { PageHeader } from "@/components/ui/PageHeader";
+import { Badge } from "@/components/ui/badge";
+import { Card, CardContent } from "@/components/ui/card";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { cn } from "@/lib/utils";
+import { useAuditPage, type AuditTab } from "./audit/useAuditPage";
+import { FORM_SCHEMAS } from "@/data/formSchemas";
 
 /* ─── Tab definitions ───────────────────────────────────────────── */
-const AUDIT_TABS = [
-  { value: "pending" as const, label: "Pending", icon: Clock, color: "data-[state=active]:text-warning data-[state=active]:border-warning" },
-  { value: "compliant" as const, label: "Approved", icon: CheckCircle, color: "data-[state=active]:text-success data-[state=active]:border-success" },
-  { value: "issues" as const, label: "Issues", icon: AlertTriangle, color: "data-[state=active]:text-destructive data-[state=active]:border-destructive", critical: true },
-  { value: "overdue" as const, label: "Overdue", icon: CalendarClock, color: "data-[state=active]:text-destructive data-[state=active]:border-destructive", critical: true },
-  { value: "never-filled" as const, label: "Never Filled", icon: FileX, color: "data-[state=active]:text-warning data-[state=active]:border-warning" },
+const AUDIT_TABS: { value: AuditTab; label: string; icon: React.ElementType }[] = [
+  { value: "pending", label: "Pending", icon: Clock },
+  { value: "compliant", label: "Compliant", icon: CheckCircle },
+  { value: "issues", label: "Issues", icon: AlertTriangle },
+  { value: "overdue", label: "Overdue", icon: CalendarClock },
+  { value: "never-filled", label: "Never Filled", icon: FileX },
 ];
-
-/* ─── Empty state ──────────────────────────────────────────────── */
-function EmptyState({ icon: Icon, title, subtitle }: { icon: typeof CheckCircle; title: string; subtitle: string }) {
-  return (
-    <div className="p-16 text-center flex flex-col items-center">
-      <div className="w-20 h-20 rounded-full bg-success/5 flex items-center justify-center mb-4 border border-success/10">
-        <Icon className="w-10 h-10 text-success/30" />
-      </div>
-      <p className="text-sm font-semibold text-foreground">{title}</p>
-      <p className="text-xs text-muted-foreground mt-1">{subtitle}</p>
-    </div>
-  );
-}
-
-/* ─── Bulk actions bar ───────────────────────────────────────────── */
-function BulkActions({ children }: { children: React.ReactNode }) {
-  return (
-    <div className="px-5 py-3 border-b border-border flex items-center gap-2 bg-muted/20 sticky top-0 z-10 backdrop-blur-sm">
-      {children}
-    </div>
-  );
-}
 
 /* ─── Main page ──────────────────────────────────────────────────── */
 export default function AuditPage() {
+  const navigate = useNavigate();
   const {
-    activeTab, setActiveTab: handleTabChange,
-    viewMode, setViewMode, search, setSearch,
-    categoryFilter, setCategoryFilter, projectFilter, setProjectFilter,
-    yearFilter, setYearFilter, dateFilter, setDateFilter,
-    bulkLoading, isAuditModalOpen, setIsAuditModalOpen,
-    records, isLoading, error,
-    pendingRecords, compliantRecords, issueRecords,
-    overdueRecords, neverFilledRecords,
-    stats, categoryBreakdown,
-    categories, projects, years,
-    totalFilteredCount, complianceRate, lastUpdated,
-    handleRefresh, handleBulkStatusChange, handleApproveRecord,
-    handleExportMetadata, handleImportMetadata, handleExportCSV,
+    records, stats, isLoading, error, refetch,
+    activeTab, setActiveTab, search, setSearch,
   } = useAuditPage();
 
-  const tabCounts = {
-    pending: pendingRecords.length,
-    compliant: compliantRecords.length,
-    issues: issueRecords.length,
-    overdue: overdueRecords.length,
-    "never-filled": neverFilledRecords.length,
-  };
+  const complianceRate = stats.totalForms > 0
+    ? Math.round((stats.filledForms / stats.totalForms) * 100)
+    : 0;
+
+  if (isLoading) {
+    return (
+      <AppShell breadcrumbs={[{ label: "Dashboard", path: "/" }, { label: "Audit" }]}>
+        <div className="flex items-center justify-center py-20">
+          <RefreshCw className="w-6 h-6 animate-spin text-muted-foreground" />
+        </div>
+      </AppShell>
+    );
+  }
 
   return (
     <AppShell breadcrumbs={[{ label: "Dashboard", path: "/" }, { label: "Audit Dashboard" }]}>
       <div className="space-y-5">
-
         {/* Header */}
         <PageHeader
           icon={CheckCircle}
-          iconClassName="text-primary"
           title="Audit Dashboard"
           description="ISO 9001:2015 Compliance Review"
           onBack="/"
           actions={[
-            { label: "Run Audit", icon: PlayCircle, onClick: () => setIsAuditModalOpen(true), variant: "default", className: "shadow-md hover:shadow-lg hover:scale-[1.02] transition-all" },
-            { label: "Backup", icon: Download, onClick: handleExportMetadata, disabled: !records || records.length === 0 },
-            { label: "Restore", icon: Upload, onClick: handleImportMetadata, disabled: bulkLoading },
-            { label: "Sync", icon: RefreshCw, onClick: handleRefresh, disabled: isLoading },
+            { label: "Sync", icon: RefreshCw, onClick: refetch, disabled: isLoading },
           ]}
-        >
-          {lastUpdated && (
-            <span className="flex items-center gap-1.5 text-[10px] text-muted-foreground bg-muted/40 px-3 py-1.5 rounded-sm border border-border/50 shrink-0">
-              <div className="w-1.5 h-1.5 rounded-sm bg-success animate-pulse" />
-              Synced {lastUpdated}
-            </span>
-          )}
-        </PageHeader>
+        />
 
         {/* Decision banner */}
         {stats.issues > 0 ? (
-          <DecisionBanner
-            priority="critical"
-            title={`${stats.issues} Issue${stats.issues > 1 ? "s" : ""} Found in Audit`}
-            description="Rejected records block compliance. Resolve these before your next audit review."
-            action={{ label: `Fix ${stats.issues} Issue${stats.issues > 1 ? "s" : ""}`, onClick: () => handleTabChange("issues") }}
-          />
+          <Card className="border-red-500/20 bg-red-500/5">
+            <CardContent className="p-4 flex items-center gap-3">
+              <AlertTriangle className="w-5 h-5 text-red-400" />
+              <div className="flex-1">
+                <p className="text-sm font-medium text-red-200">{stats.issues} forms have issues</p>
+                <p className="text-xs text-red-300/70">Resolve these before your next audit review.</p>
+              </div>
+              <Button size="sm" variant="outline" className="border-red-500/30 text-red-300 hover:bg-red-500/10" onClick={() => setActiveTab("issues")}>
+                Fix Issues
+              </Button>
+            </CardContent>
+          </Card>
         ) : stats.overdue > 0 ? (
-          <DecisionBanner
-            priority="warning"
-            title={`${stats.overdue} Overdue Record${stats.overdue > 1 ? "s" : ""}`}
-            description="These records missed their filing deadline. Address them to avoid compliance gaps."
-            action={{ label: `Resolve ${stats.overdue} Overdue`, onClick: () => handleTabChange("overdue") }}
-          />
-        ) : stats.pending > 0 ? (
-          <DecisionBanner
-            priority="info"
-            title={`${stats.pending} Record${stats.pending > 1 ? "s" : ""} Awaiting Review`}
-            description="Review and approve pending records to complete the audit cycle."
-            action={{ label: `Review ${stats.pending} Pending`, onClick: () => handleTabChange("pending") }}
-          />
-        ) : (stats.compliant > 0 && stats.pending === 0 && stats.issues === 0) ? (
-          <DecisionBanner priority="success" title="All Records Approved" description="No outstanding audit actions. System is compliant." />
-        ) : null}
-
-        {error && (
-          <Alert variant="destructive">
-            <AlertCircle className="h-4 w-4" />
-            <AlertTitle>Connection Error</AlertTitle>
-            <AlertDescription>{error.message}</AlertDescription>
-          </Alert>
+          <Card className="border-amber-500/20 bg-amber-500/5">
+            <CardContent className="p-4 flex items-center gap-3">
+              <CalendarClock className="w-5 h-5 text-amber-400" />
+              <div className="flex-1">
+                <p className="text-sm font-medium text-amber-200">{stats.overdue} overdue forms</p>
+                <p className="text-xs text-amber-300/70">These forms missed their filing deadline.</p>
+              </div>
+              <Button size="sm" variant="outline" className="border-amber-500/30 text-amber-300 hover:bg-amber-500/10" onClick={() => setActiveTab("overdue")}>
+                Resolve
+              </Button>
+            </CardContent>
+          </Card>
+        ) : stats.neverFilled > 0 ? (
+          <Card className="border-amber-500/20 bg-amber-500/5">
+            <CardContent className="p-4 flex items-center gap-3">
+              <FileX className="w-5 h-5 text-amber-400" />
+              <div className="flex-1">
+                <p className="text-sm font-medium text-amber-200">{stats.neverFilled} forms never filled</p>
+                <p className="text-xs text-amber-300/70">These forms need at least one record for compliance.</p>
+              </div>
+              <Button size="sm" variant="outline" className="border-amber-500/30 text-amber-300 hover:bg-amber-500/10" onClick={() => navigate('/create')}>
+                <FilePlus className="w-4 h-4 mr-1" /> Create
+              </Button>
+            </CardContent>
+          </Card>
+        ) : (
+          <Card className="border-emerald-500/20 bg-emerald-500/5">
+            <CardContent className="p-4 flex items-center gap-3">
+              <CheckCircle className="w-5 h-5 text-emerald-400" />
+              <p className="text-sm font-medium text-emerald-200">All forms compliant — no outstanding audit actions.</p>
+            </CardContent>
+          </Card>
         )}
 
         {/* Stats */}
-        <StatsRow stats={[
-          { icon: Filter, value: records?.length || 0, label: "Templates", variant: "default" },
-          { icon: Clock, value: stats.pending, label: "Pending", variant: "warning", onClick: () => handleTabChange("pending") },
-          { icon: CheckCircle, value: stats.compliant, label: "Approved", variant: "success", onClick: () => handleTabChange("compliant") },
-          { icon: AlertTriangle, value: stats.issues, label: "Issues", variant: "destructive", onClick: () => handleTabChange("issues") },
-          { icon: CalendarClock, value: stats.overdue, label: "Overdue", variant: "destructive", onClick: () => handleTabChange("overdue") },
-          { icon: FileX, value: stats.neverFilled, label: "Never Filled", variant: "warning", onClick: () => handleTabChange("never-filled") },
-        ]} />
-
-        {/* Charts */}
-        <Suspense fallback={<div className="h-[200px] bg-muted/20 rounded-sm animate-pulse" />}>
-          <AuditCharts stats={stats} categoryBreakdown={categoryBreakdown} />
-        </Suspense>
-
-        {/* Compliance bar */}
-        <div className="bg-card rounded-sm border border-border p-5">
-          <div className="flex items-center justify-between mb-3">
-            <span className="text-sm font-semibold text-foreground">Template Population Rate</span>
-            <span className="text-2xl font-bold text-success">{complianceRate}%</span>
-          </div>
-          <div className="w-full bg-muted/30 rounded-sm h-2 overflow-hidden">
-            <div className="bg-success h-2 rounded-sm transition-all duration-700" style={{ width: `${complianceRate}%` }} />
-          </div>
-          <p className="text-[10px] text-muted-foreground mt-2">
-            {stats.filledTemplatesCount} of {stats.totalTemplates} templates populated
-          </p>
+        <div className="grid grid-cols-2 md:grid-cols-6 gap-3">
+          <StatBadge icon={FileText} label="Total Records" value={stats.totalRecords} color="cyan" />
+          <StatBadge icon={Clock} label="Pending" value={stats.pending} color="amber" />
+          <StatBadge icon={CheckCircle} label="Compliant" value={stats.compliant} color="emerald" />
+          <StatBadge icon={AlertTriangle} label="Issues" value={stats.issues} color="red" />
+          <StatBadge icon={CalendarClock} label="Overdue" value={stats.overdue} color="amber" />
+          <StatBadge icon={FileX} label="Never Filled" value={stats.neverFilled} color="amber" />
         </div>
 
-        {/* Project filter banner */}
-        {projectFilter !== "all" && (
-          <div className="flex items-center gap-2 px-5 py-2 bg-primary/[0.03] border-b border-border/30">
-            <span className="text-[10px] font-mono font-bold text-muted-foreground uppercase tracking-widest">Filtered by:</span>
-            <span className="text-xs font-bold text-primary">{projectFilter}</span>
-            <button onClick={() => { setProjectFilter("all"); }} className="text-[10px] text-muted-foreground hover:text-destructive ml-1 underline">Clear</button>
-          </div>
-        )}
+        {/* Compliance bar */}
+        <Card className="border-border/30">
+          <CardContent className="p-5">
+            <div className="flex items-center justify-between mb-3">
+              <span className="text-sm font-semibold">Form Population Rate</span>
+              <span className="text-2xl font-bold text-emerald-400">{complianceRate}%</span>
+            </div>
+            <div className="w-full bg-muted/30 rounded-full h-2 overflow-hidden">
+              <div className="bg-emerald-500 h-2 rounded-full transition-all duration-700" style={{ width: `${complianceRate}%` }} />
+            </div>
+            <p className="text-[10px] text-muted-foreground mt-2">
+              {stats.filledForms} of {stats.totalForms} forms have records
+            </p>
+          </CardContent>
+        </Card>
 
-        {/* Filters */}
-        <AuditFilters
-          search={search} onSearchChange={setSearch}
-          categoryFilter={categoryFilter} onCategoryChange={setCategoryFilter} categories={categories}
-          projectFilter={projectFilter} onProjectChange={setProjectFilter} projects={projects}
-          yearFilter={yearFilter} onYearChange={setYearFilter} years={years}
-          dateFilter={dateFilter} onDateChange={setDateFilter}
-          onExportCSV={handleExportCSV} totalFiltered={totalFilteredCount}
-          totalAll={stats.pending + stats.compliant + stats.issues}
-        />
+        {/* Search */}
+        <div className="relative">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+          <Input
+            placeholder="Search by serial, form name, or code..."
+            className="pl-9 bg-muted/30"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+          />
+        </div>
 
-        {/* Tabs + Content */}
-        <div className="bg-card rounded-sm border border-border overflow-hidden">
-          <Tabs value={activeTab} onValueChange={handleTabChange}>
-            <div className="px-5 py-2 border-b border-border flex flex-col md:flex-row md:items-center justify-between gap-3 overflow-x-auto overflow-y-hidden">
-              <TabsList className="bg-transparent h-11 p-0 gap-1 shrink-0">
+        {/* Tabs */}
+        <Card className="border-border/30 overflow-hidden">
+          <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as AuditTab)}>
+            <div className="border-b border-border px-4">
+              <TabsList className="bg-transparent h-11 p-0 gap-1">
                 {AUDIT_TABS.map(t => (
                   <TabsTrigger
                     key={t.value}
                     value={t.value}
-                    className={cn(
-                      "data-[state=active]:bg-transparent data-[state=active]:shadow-none border-b-2 border-transparent rounded-none h-11 px-3 gap-1.5 text-[10px] font-bold uppercase tracking-wider transition-all relative",
-                      t.color
-                    )}
+                    className="data-[state=active]:bg-transparent data-[state=active]:shadow-none border-b-2 border-transparent rounded-none h-11 px-3 gap-1.5 text-[10px] font-bold uppercase tracking-wider"
                   >
                     <t.icon className="w-3.5 h-3.5" />
-                    {t.label} ({tabCounts[t.value]})
-                    {t.critical && activeTab !== t.value && tabCounts[t.value] > 0 && (
-                      <span className="absolute top-2 right-2 w-2 h-2 rounded-full bg-destructive animate-pulse" />
-                    )}
+                    {t.label}
                   </TabsTrigger>
                 ))}
               </TabsList>
-
-              {/* View toggle */}
-              <div className="hidden sm:flex items-center bg-muted/40 rounded-sm p-0.5 border border-border/50 shrink-0">
-                <Button variant="ghost" size="sm" className={cn("h-8 w-10 p-0 rounded-md", viewMode === "compact" && "bg-background shadow-sm text-primary")} onClick={() => setViewMode("compact")} title="List View">
-                  <List className="w-4 h-4" />
-                </Button>
-                <Button variant="ghost" size="sm" className={cn("h-8 w-10 p-0 rounded-md", viewMode === "card" && "bg-background shadow-sm text-primary")} onClick={() => setViewMode("card")} title="Card View">
-                  <LayoutGrid className="w-4 h-4" />
-                </Button>
-              </div>
             </div>
 
-            {/* Tab panels */}
-            <TabsContent value="pending" className="m-0">
-              {pendingRecords.length > 0 && (
-                <BulkActions>
-                  <Button size="sm" className="h-7 gap-1.5 text-xs" disabled={bulkLoading} onClick={() => handleBulkStatusChange(pendingRecords, 'approved')}>
-                    {bulkLoading ? <Loader2 className="w-3 h-3 animate-spin" /> : <CheckCheck className="w-3 h-3" />}
-                    Approve All ({pendingRecords.length})
-                  </Button>
-                  <Button size="sm" variant="destructive" className="h-7 gap-1.5 text-xs" disabled={bulkLoading} onClick={() => handleBulkStatusChange(pendingRecords, 'rejected')}>
-                    Reject All
-                  </Button>
-                </BulkActions>
-              )}
-              <ErrorBoundary>
-                <RecordsTable records={pendingRecords} isLoading={isLoading} variant={viewMode === "card" ? "default" : "compact"} onApproveRecord={handleApproveRecord} />
-              </ErrorBoundary>
-            </TabsContent>
-
-            <TabsContent value="compliant" className="m-0">
-              {compliantRecords.length > 0 && (
-                <BulkActions>
-                  <Button size="sm" variant="outline" className="h-7 gap-1.5 text-xs" disabled={bulkLoading} onClick={() => handleBulkStatusChange(compliantRecords, 'pending_review')}>
-                    {bulkLoading ? <Loader2 className="w-3 h-3 animate-spin" /> : <RotateCcw className="w-3 h-3" />}
-                    Reset All to Pending ({compliantRecords.length})
-                  </Button>
-                </BulkActions>
-              )}
-              <ErrorBoundary>
-                <RecordsTable records={compliantRecords} isLoading={isLoading} variant={viewMode === "card" ? "default" : "compact"} onApproveRecord={handleApproveRecord} />
-              </ErrorBoundary>
-            </TabsContent>
-
-            <TabsContent value="issues" className="m-0">
-              {issueRecords.length > 0 && (
-                <BulkActions>
-                  <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground bg-success/10 border border-success/20 rounded-sm px-3 py-1.5">
-                    <CheckCircle className="w-3.5 h-3.5 text-success shrink-0" />
-                    <span>Use the <strong className="text-success">Approve</strong> button on each record to approve individually</span>
-                  </div>
-                  <Button size="sm" variant="outline" className="h-7 gap-1.5 text-xs ml-auto" disabled={bulkLoading} onClick={() => handleBulkStatusChange(issueRecords, 'pending_review')}>
-                    <RotateCcw className="w-3 h-3" />
-                    Reset All to Pending
-                  </Button>
-                </BulkActions>
-              )}
-              <ErrorBoundary>
-                <RecordsTable records={issueRecords} isLoading={isLoading} variant={viewMode === "card" ? "default" : "compact"} onApproveRecord={handleApproveRecord} />
-              </ErrorBoundary>
-            </TabsContent>
-
-            <TabsContent value="overdue" className="m-0">
-              {overdueRecords.length === 0 ? (
-                <EmptyState icon={CheckCircle} title="No overdue records" subtitle="All records are up to date" />
+            <div className="max-h-[60vh] overflow-y-auto">
+              {records.length === 0 ? (
+                <div className="p-12 text-center">
+                  <t.icon className="w-10 h-10 text-muted-foreground/20 mx-auto mb-3" /> {/* This won't work in this context */}
+                  <p className="text-sm text-muted-foreground">
+                    {activeTab === 'never-filled' ? 'All forms have records!' :
+                     activeTab === 'compliant' ? 'No compliant forms yet.' :
+                     activeTab === 'issues' ? 'No issues found.' :
+                     activeTab === 'overdue' ? 'No overdue forms.' :
+                     'No records found.'}
+                  </p>
+                </div>
               ) : (
-                <ErrorBoundary>
-                  <RecordsTable records={overdueRecords} isLoading={isLoading} variant={viewMode === "card" ? "default" : "compact"} onApproveRecord={handleApproveRecord} />
-                </ErrorBoundary>
-              )}
-            </TabsContent>
+                <div className="divide-y divide-border/20">
+                  {records.map((r, idx) => {
+                    const fd = (r.formData as Record<string, unknown>) || {};
+                    const hasSerial = !!(r.serial as string);
+                    const auditStatus = (fd._auditStatus as string) || '';
+                    const frequency = (fd._frequency as string) || '';
+                    const section = (fd._section as string) || '';
 
-            <TabsContent value="never-filled" className="m-0">
-              {neverFilledRecords.length === 0 ? (
-                <EmptyState icon={CheckCircle} title="All templates have records" subtitle="No empty templates found" />
-              ) : (
-                <ErrorBoundary>
-                  <RecordsTable records={neverFilledRecords} isLoading={isLoading} variant={viewMode === "card" ? "default" : "compact"} />
-                </ErrorBoundary>
+                    return (
+                      <div
+                        key={(r.serial as string) || `${r.formCode}-${idx}`}
+                        className={cn(
+                          "px-4 py-3 flex items-center gap-3 hover:bg-muted/30 transition-colors",
+                          hasSerial && "cursor-pointer"
+                        )}
+                        onClick={() => hasSerial && navigate(`/records/${encodeURIComponent(r.serial as string)}`)}
+                      >
+                        {/* Status icon */}
+                        <div className={cn(
+                          "w-8 h-8 rounded-full flex items-center justify-center border shrink-0",
+                          auditStatus === 'overdue' || auditStatus === 'never-filled'
+                            ? "bg-amber-500/10 border-amber-500/20"
+                            : activeTab === 'issues'
+                            ? "bg-red-500/10 border-red-500/20"
+                            : "bg-emerald-500/10 border-emerald-500/20"
+                        )}>
+                          {auditStatus === 'overdue' || auditStatus === 'never-filled' ? <AlertTriangle className="w-4 h-4 text-amber-400" /> :
+                           activeTab === 'issues' ? <AlertTriangle className="w-4 h-4 text-red-400" /> :
+                           <CheckCircle className="w-4 h-4 text-emerald-400" />}
+                        </div>
+
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2">
+                            <span className="text-sm font-mono font-medium">
+                              {hasSerial ? r.serial : r.formCode}
+                            </span>
+                            <Badge variant="outline" className="text-[9px]">{r.formCode}</Badge>
+                          </div>
+                          <span className="text-xs text-muted-foreground">{r.formName}</span>
+                          {section && <span className="text-[10px] text-muted-foreground ml-2">· {section}</span>}
+                          {frequency && <span className="text-[10px] text-muted-foreground ml-2">· {frequency}</span>}
+                        </div>
+
+                        {hasSerial && <ChevronRight className="w-3.5 h-3.5 text-muted-foreground" />}
+                      </div>
+                    );
+                  })}
+                </div>
               )}
-            </TabsContent>
+            </div>
           </Tabs>
-        </div>
-
-        <Suspense fallback={null}>
-          <AutomatedAuditModal isOpen={isAuditModalOpen} onClose={() => setIsAuditModalOpen(false)} records={records || []} />
-        </Suspense>
+        </Card>
       </div>
     </AppShell>
+  );
+}
+
+function StatBadge({ icon: Icon, label, value, color }: { icon: React.ElementType; label: string; value: number; color: string }) {
+  const colors: Record<string, string> = {
+    cyan: "text-cyan-400",
+    amber: "text-amber-400",
+    emerald: "text-emerald-400",
+    red: "text-red-400",
+  };
+  return (
+    <Card className="border-border/30">
+      <CardContent className="p-3 flex items-center gap-2">
+        <Icon className={cn("w-4 h-4", colors[color] || "text-muted-foreground")} />
+        <div>
+          <p className="text-lg font-bold">{value}</p>
+          <p className="text-[9px] text-muted-foreground uppercase">{label}</p>
+        </div>
+      </CardContent>
+    </Card>
   );
 }

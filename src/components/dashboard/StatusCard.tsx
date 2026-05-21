@@ -50,13 +50,13 @@ export function StatusCard({ title, value, subtitle, icon: Icon, trend, variant 
 
   if (isLoading) {
     return (
-      <div className="bg-card/80 backdrop-blur-sm rounded-xl border border-border/50 p-6">
+      <div className="bg-card/80 backdrop-blur-sm rounded-xl border border-border/50 p-[1.875rem]">
         <div className="flex items-center justify-between">
           <div className="space-y-2 flex-1">
-            <Skeleton className="h-3 w-20" />
-            <Skeleton className="h-8 w-16" />
+            <Skeleton className="h-[0.9375rem] w-24" />
+            <Skeleton className="h-[2.5rem] w-20" />
           </div>
-          <Skeleton className="w-12 h-12 rounded-xl" />
+          <Skeleton className="w-[3.75rem] h-[3.75rem] rounded-xl" />
         </div>
       </div>
     );
@@ -64,8 +64,7 @@ export function StatusCard({ title, value, subtitle, icon: Icon, trend, variant 
 
   return (
     <div className={cn(
-      "relative bg-card/80 backdrop-blur-sm rounded-xl p-6 transition-all duration-300 group cursor-pointer overflow-hidden border",
-      
+      "relative bg-card/80 backdrop-blur-sm rounded-xl p-[1.875rem] transition-all duration-300 group cursor-pointer overflow-hidden border",
       styles[variant].card,
       styles[variant].hoverGlow
     )}>
@@ -73,15 +72,15 @@ export function StatusCard({ title, value, subtitle, icon: Icon, trend, variant 
       <div className={cn("absolute inset-0 bg-gradient-to-br opacity-80", styles[variant].gradient)} />
 
       <div className="relative flex items-start justify-between">
-        <div className="space-y-1.5">
-          <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-[0.12em]">{title}</p>
-          <p className="text-3xl font-extrabold font-mono text-foreground tracking-tight leading-none animate-counter">
+        <div className="space-y-[0.5rem]">
+          <p className="text-[0.8rem] font-bold text-muted-foreground uppercase tracking-[0.12em]">{title}</p>
+          <p className="text-[3.75rem] font-extrabold font-mono text-foreground tracking-tight leading-none animate-counter">
             {typeof value === "number" ? value.toLocaleString() : value}
           </p>
-          {subtitle && <p className="text-[10px] text-muted-foreground/70">{subtitle}</p>}
+          {subtitle && <p className="text-[0.8rem] text-muted-foreground/70">{subtitle}</p>}
           {trend && (
             <div className={cn(
-              "inline-flex items-center gap-1 text-[10px] font-bold font-mono px-2 py-0.5 rounded-md mt-1",
+              "inline-flex items-center gap-1 text-[0.8rem] font-bold font-mono px-[0.625rem] py-[0.1875rem] rounded-md mt-[0.3125rem]",
               trend.isPositive ? "bg-success/10 text-success" : "bg-destructive/10 text-destructive"
             )}>
               {trend.isPositive ? "↗" : "↘"} {Math.abs(trend.value)}%
@@ -89,10 +88,10 @@ export function StatusCard({ title, value, subtitle, icon: Icon, trend, variant 
           )}
         </div>
         <div className={cn(
-          "w-12 h-12 rounded-xl flex items-center justify-center transition-all duration-300 ",
+          "w-[3.75rem] h-[3.75rem] rounded-xl flex items-center justify-center transition-all duration-300 ",
           styles[variant].iconBg
         )}>
-          <Icon className={cn("w-5 h-5", styles[variant].iconText)} />
+          <Icon className={cn("w-[1.5625rem] h-[1.5625rem]", styles[variant].iconText)} />
         </div>
       </div>
     </div>

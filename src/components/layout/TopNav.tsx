@@ -1,76 +1,65 @@
 import { useNavigate, useLocation } from "react-router-dom";
 import {
   LayoutDashboard, ChevronDown,
-  Search, FileText, Folder, FileCode, Table, Loader2,
-  Menu, X, Layers, Wrench, Briefcase, BookOpen,
-  ExternalLink, AlertTriangle,
+  Search, FileText, Loader2,
+  Menu, X, Layers, Wrench, Briefcase, Shield, Activity,
 } from "lucide-react";
 import { UserDropdown } from "./UserDropdown";
 import { Input } from "@/components/ui/input";
 import { useState, useEffect, useRef, useMemo } from "react";
-import { searchProjectDrive, DriveSearchResult } from "@/lib/driveService";
+import { useRecords } from "@/hooks/useRecordStorage";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/hooks/useAuth";
-import { getAccessToken } from "@/lib/auth";
 import { Button } from "@/components/ui/button";
-import { toast } from "sonner";
 import { SettingsModal } from "@/components/settings/SettingsModal";
-import { useQMSRecords } from "@/hooks/useQMSData";
-import type { FileReview } from "@/lib/googleSheets";
 import { MODULE_NAV_ITEMS, DOCS_NAV_ITEMS, TOOL_NAV_ITEMS, type NavItem } from "@/config/modules";
-import qmsLogo from "@/assets/qms-logo.png";
+import type { RecordData } from "@/components/forms/DynamicFormRenderer";
+import { useTenantIdentity } from "@/hooks/useTenantIdentity";
+import defaultLogo from "@/assets/qms-logo.png";
 
 const moduleItems = MODULE_NAV_ITEMS;
 const docsItems = DOCS_NAV_ITEMS;
 const toolItems = TOOL_NAV_ITEMS;
 
+// Search result from Supabase records
+interface SearchResult {
+  serial: string;
+  formName: string;
+  formCode: string;
+  match: string;  // what matched
+}
+
 export function TopNav() {
   const navigate = useNavigate();
   const location = useLocation();
   const { user } = useAuth();
-  const { data: records } = useQMSRecords();
+  const { data: records } = useRecords();
   const [isMobileOpen, setIsMobileOpen] = useState(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [activeDropdown, setActiveDropdown] = useState<string | null>(null);
   const dropdownTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  // Search state
+  // Search state — searches Supabase records
   const [searchTerm, setSearchTerm] = useState("");
-  const [results, setResults] = useState<DriveSearchResult[]>([]);
+  const [results, setResults] = useState<SearchResult[]>([]);
   const [showSearchDropdown, setShowSearchDropdown] = useState(false);
-  const [isSearching, setIsSearching] = useState(false);
   const searchRef = useRef<HTMLDivElement>(null);
-  const [driveConnected, setDriveConnected] = useState<boolean | null>(null);
 
+  // Extract unique project names from record formData
   const projects = useMemo(() => {
     if (!records) return [];
     const projs = new Set<string>();
     records.forEach(r => {
-      const fileReviews = r.fileReviews as Record<string, FileReview> | undefined;
-      const files = r.files;
-      if (fileReviews) {
-        const existingFileIds = files ? new Set(files.map(f => f.id)) : null;
-        Object.entries(fileReviews).forEach(([fileId, review]) => {
-          if (existingFileIds && !existingFileIds.has(fileId)) return;
-          const name = (review.project === "General / All Company" || !review.project) ? "General" : review.project;
-          projs.add(name);
-        });
-      }
+      const name = (r.formData as Record<string, unknown>)?.project_name || (r.formData as Record<string, unknown>)?.client_name;
+      if (name && typeof name === 'string') projs.add(name);
     });
     return Array.from(projs).sort();
   }, [records]);
 
-  const userInitials = (user?.name || "U").slice(0, 2).toUpperCase();
+  const { displayName, logoUrl } = useTenantIdentity();
+  const brandLogo = logoUrl || defaultLogo;
 
-  useEffect(() => {
-    async function checkStatus() {
-      const token = await getAccessToken();
-      setDriveConnected(!!token);
-    }
-    checkStatus();
-    const interval = setInterval(checkStatus, 30000);
-    return () => clearInterval(interval);
-  }, []);
+  const userInitials = (user?.name || "U").slice(0, 2).toUpperCase();
 
   useEffect(() => { setIsMobileOpen(false); }, [location.pathname]);
 
@@ -79,7 +68,7 @@ export function TopNav() {
     return () => { document.body.style.overflow = ''; };
   }, [isMobileOpen]);
 
-  // Search logic
+  // Search logic — filters records by serial, formName, formCode, and key formData fields
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (searchRef.current && !searchRef.current.contains(event.target as Node)) {
@@ -96,40 +85,35 @@ export function TopNav() {
       setShowSearchDropdown(false);
       return;
     }
-    const timer = setTimeout(async () => {
-      setIsSearching(true);
+    const timer = setTimeout(() => {
+      if (!records) { setResults([]); return; }
+      const lower = searchTerm.toLowerCase();
+      const matches: SearchResult[] = [];
+      records.forEach(r => {
+        const fd = (r.formData as Record<string, unknown>) || {};
+        // Check serial
+        if ((r.serial as string)?.toLowerCase().includes(lower)) {
+          matches.push({ serial: r.serial as string, formName: r.formName as string, formCode: r.formCode as string, match: r.serial as string });
+        }
+        // Check form name
+        else if ((r.formName as string)?.toLowerCase().includes(lower)) {
+          matches.push({ serial: r.serial as string, formName: r.formName as string, formCode: r.formCode as string, match: r.formName as string });
+        }
+        // Check key formData fields
+        else {
+          for (const [key, val] of Object.entries(fd)) {
+            if (typeof val === 'string' && val.toLowerCase().includes(lower)) {
+              matches.push({ serial: r.serial as string, formName: r.formName as string, formCode: r.formCode as string, match: `${key}: ${val.substring(0, 50)}` });
+              break;
+            }
+          }
+        }
+      });
+      setResults(matches.slice(0, 20));
       setShowSearchDropdown(true);
-      try {
-        const driveResults = await searchProjectDrive(searchTerm);
-        setResults(driveResults);
-      } catch {
-        toast.error("Search failed", { description: "Could not search Drive files." });
-      } finally {
-        setIsSearching(false);
-      }
-    }, 500);
+    }, 200);
     return () => clearTimeout(timer);
-  }, [searchTerm]);
-
-  const getFileIcon = (mimeType: string) => {
-    if (mimeType.includes("folder")) return <Folder className="w-4 h-4 text-accent" />;
-    if (mimeType.includes("spreadsheet")) return <Table className="w-4 h-4 text-success" />;
-    if (mimeType.includes("document")) return <FileText className="w-4 h-4 text-primary" />;
-    if (mimeType.includes("pdf")) return <FileCode className="w-4 h-4 text-destructive" />;
-    return <FileText className="w-4 h-4 text-muted-foreground" />;
-  };
-
-  const getFileTypeInfo = (file: DriveSearchResult) => {
-    const name = file.name;
-    const mime = file.mimeType;
-    if (name.match(/[A-Z]+\/\d+-\d+/i)) return { label: "Record", color: "bg-success/20 text-success border-success/20" };
-    if (name.match(/[A-Z]+\/\d+/i) || name.toLowerCase().includes("template")) return { label: "Form", color: "bg-accent/20 text-accent border-accent/20" };
-    if (mime.includes("folder")) return { label: "Folder", color: "bg-muted text-muted-foreground border-border" };
-    if (mime.includes("spreadsheet")) return { label: "Sheet", color: "bg-success/20 text-success border-success/20" };
-    if (mime.includes("document")) return { label: "Doc", color: "bg-primary/20 text-primary border-primary/20" };
-    if (mime.includes("pdf")) return { label: "PDF", color: "bg-destructive/20 text-destructive border-destructive/20" };
-    return { label: "File", color: "bg-muted text-muted-foreground border-border" };
-  };
+  }, [searchTerm, records]);
 
   const handleNavClick = (item: NavItem) => {
     if (item.path) {
@@ -147,8 +131,8 @@ export function TopNav() {
 
   const isActive = (item: NavItem): boolean => {
     if (item.path && location.pathname === item.path) return true;
+    if (item.path && item.path.startsWith("/module/") && location.pathname.startsWith(item.path)) return true;
     if (item.id === "dashboard" && location.pathname === "/") return true;
-    if (location.pathname.includes(`/module/${item.id}`)) return true;
     return false;
   };
 
@@ -202,48 +186,42 @@ export function TopNav() {
 
   return (
     <>
-      <header className="sticky top-0 z-50 bg-background/80 backdrop-blur-xl border-b border-neon-cyan/8">
-        <div className="flex items-center h-14 px-4 gap-2">
+      <header className="sticky top-0 z-50 bg-background/80 backdrop-blur-xl border-b border-border/40 shadow-sm shadow-black/5">
+        <div className="flex items-center h-14 px-4 md:px-6 lg:px-8 max-w-[1400px] mx-auto gap-2">
           {/* Left: Logo + Nav */}
-          <div className="flex items-center gap-4">
-            <button
-              onClick={() => navigate("/")}
-              className="flex items-center gap-2.5 hover:opacity-80 transition-opacity"
-            >
-              <div className="w-8 h-8 rounded-sm overflow-hidden flex-shrink-0 border border-neon-cyan/20 shadow-sm">
-                <img src={qmsLogo} alt="QMS" className="w-full h-full object-contain" />
-              </div>
-              <div className="hidden sm:block">
-                <span className="text-sm font-bold text-foreground tracking-tight">QMS Suite</span>
-                <span className="ml-2 text-[9px] font-mono font-bold text-primary/50 uppercase tracking-widest">ISO 9001</span>
-              </div>
-            </button>
+          <div className="flex items-center gap-3">
+             <button
+               onClick={() => navigate("/")}
+               className="flex items-center gap-2 hover:opacity-80 transition-opacity"
+             >
+               <div className="w-7 h-7 rounded-sm overflow-hidden border border-primary/20 ring-1 ring-primary/5">
+                 <img src={brandLogo} alt={displayName} className="w-full h-full object-contain" />
+               </div>
+               <span className="hidden sm:inline text-sm font-bold tracking-tight">{displayName}</span>
+             </button>
 
-            {/* Desktop Navigation */}
-            <nav className="hidden md:flex items-center gap-0.5 ml-2">
-              <button
-                aria-label="Dashboard"
-                onClick={() => navigate("/")}
-                className={cn(
-                  "flex items-center gap-1.5 px-3 py-2 text-[13px] font-medium transition-colors rounded-sm",
-                  location.pathname === "/"
-                    ? "text-primary bg-primary/5"
-                    : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
-                )}
-              >
-                <LayoutDashboard className="w-4 h-4" />
-                <span className="hidden lg:inline">Dashboard</span>
-              </button>
-
+            <nav className="hidden lg:flex items-center gap-0.5 ml-2">
               <DropdownMenu id="modules" label="Modules" icon={Layers} items={moduleItems} />
-
-              <DropdownMenu id="docs" label="Manual & Procedures" icon={BookOpen} items={docsItems.filter(item => item.id === "iso-manual" || item.id === "procedures")} />
-
+              <DropdownMenu id="docs" label="Manual" icon={FileText} items={docsItems} />
               <DropdownMenu id="tools" label="Tools" icon={Wrench} items={toolItems} />
 
-              {(projects.length > 0) && (
+              {user?.role === "admin" && (
                 <button
-                  aria-label="Projects"
+                  onClick={() => navigate("/admin/accounts")}
+                  className={cn(
+                    "flex items-center gap-2 px-3 py-1.5 text-sm rounded-md transition-colors",
+                    location.pathname.startsWith("/admin") 
+                      ? "bg-accent/20 text-accent-foreground font-medium"
+                      : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
+                  )}
+                >
+                  <Shield className="w-4 h-4" />
+                  <span className="hidden lg:inline">Admin</span>
+                </button>
+              )}
+
+              {projects.length > 0 && (
+                <button
                   onClick={() => navigate("/projects")}
                   className={cn(
                     "flex items-center gap-1.5 px-3 py-2 text-[13px] font-medium transition-colors rounded-sm",
@@ -256,66 +234,54 @@ export function TopNav() {
                   <span className="hidden lg:inline">Projects</span>
                 </button>
               )}
-
             </nav>
           </div>
 
-          {/* Center: Search */}
+          {/* Center: Search — searches Supabase records */}
           <div className="flex-1 max-w-xl mx-4 hidden md:block" ref={searchRef}>
             <div className="relative group">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground transition-colors group-focus-within:text-primary z-10" />
               <Input
-                placeholder="Search files..."
+                placeholder="Search records by serial, form, or field..."
                 className="pl-9 pr-4 bg-muted/30 border-border/50 rounded-sm h-10 text-sm focus-visible:ring-1 focus-visible:ring-primary/50 focus-visible:border-primary/30 transition-all placeholder:text-muted-foreground/50"
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 onFocus={() => searchTerm.length >= 2 && setShowSearchDropdown(true)}
               />
-              {isSearching && (
-                <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 animate-spin text-muted-foreground" />
-              )}
               {showSearchDropdown && (
                 <div className="absolute top-full left-0 w-full mt-1 bg-card border border-border rounded-sm shadow-lg overflow-hidden animate-fade-in z-50">
                   <div className="max-h-[320px] overflow-y-auto">
                     {results.length > 0 ? (
                       <>
                         <div className="px-3 py-1.5 text-[10px] font-mono font-bold text-muted-foreground bg-muted/30 border-b border-border/50 uppercase tracking-wider">
-                          {results.length} results
+                          {results.length} records
                         </div>
-                        {results.map((file) => (
+                        {results.map((result) => (
                           <div
-                            key={file.id}
-                            onClick={() => window.open(file.webViewLink, '_blank', 'noopener,noreferrer')}
+                            key={result.serial}
+                            onClick={() => { navigate(`/records/${encodeURIComponent(result.serial)}`); setShowSearchDropdown(false); setSearchTerm(''); }}
                             className="px-3 py-2.5 hover:bg-muted/40 transition-colors cursor-pointer border-b border-border/30 last:border-0"
                           >
                             <div className="flex items-center gap-2.5">
                               <div className="w-7 h-7 rounded-sm bg-background/60 flex items-center justify-center border border-border/50 flex-shrink-0">
-                                {getFileIcon(file.mimeType)}
+                                <FileText className="w-3.5 h-3.5 text-muted-foreground" />
                               </div>
                               <div className="flex-1 min-w-0">
                                 <div className="flex items-center gap-1.5">
-                                  <p className="text-[13px] font-medium text-foreground truncate">{file.name}</p>
-                                  {(() => {
-                                    const typeInfo = getFileTypeInfo(file);
-                                    return (
-                                      <span className={cn("text-[8px] px-1 py-0.5 rounded-sm font-bold border uppercase shrink-0", typeInfo.color)}>
-                                        {typeInfo.label}
-                                      </span>
-                                    );
-                                  })()}
+                                  <p className="text-[13px] font-medium text-foreground truncate">{result.serial}</p>
+                                  <span className="text-[8px] px-1 py-0.5 rounded-sm font-bold border uppercase shrink-0 bg-primary/20 text-primary border-primary/20">
+                                    {result.formCode}
+                                  </span>
                                 </div>
-                                {file.path && (
-                                  <span className="text-[10px] text-muted-foreground font-mono">{file.path}</span>
-                                )}
+                                <span className="text-[10px] text-muted-foreground font-mono">{result.formName} — {result.match}</span>
                               </div>
-                              <ExternalLink className="w-3 h-3 text-muted-foreground/30 shrink-0" />
                             </div>
                           </div>
                         ))}
                       </>
-                    ) : searchTerm.length >= 2 && !isSearching ? (
+                    ) : searchTerm.length >= 2 ? (
                       <div className="p-6 text-center">
-                        <p className="text-sm text-muted-foreground">No results found</p>
+                        <p className="text-sm text-muted-foreground">No records found</p>
                       </div>
                     ) : null}
                   </div>
@@ -326,25 +292,6 @@ export function TopNav() {
 
           {/* Right: Actions */}
           <div className="ml-auto flex items-center gap-2">
-            {driveConnected === false && (
-              <Button
-                variant="destructive"
-                size="sm"
-                className="h-7 text-[9px] gap-1 px-2 rounded-sm font-bold uppercase tracking-wider"
-                onClick={() => window.open('/api/auth', '_blank', 'noopener,noreferrer')}
-              >
-                <AlertTriangle className="w-3 h-3" />
-                <span className="hidden sm:inline">Connect Drive</span>
-              </Button>
-            )}
-
-            {driveConnected === true && (
-              <div className="hidden lg:flex items-center gap-1 px-2 py-1 rounded-sm bg-success/10 border border-success/20 text-success">
-                <div className="w-1.5 h-1.5 rounded-none bg-success animate-glow-pulse" />
-                <span className="text-[9px] font-mono font-bold uppercase tracking-wider">Drive</span>
-              </div>
-            )}
-
             <UserDropdown
               onOpenSettings={() => setIsSettingsOpen(true)}
               onNavigate={(path: string) => navigate(path)}
@@ -372,13 +319,12 @@ export function TopNav() {
         "md:hidden fixed inset-y-0 right-0 z-50 w-80 max-w-[85vw] bg-card border-l border-border transition-transform duration-300 ease-in-out flex flex-col",
         isMobileOpen ? "translate-x-0" : "translate-x-full"
       )}>
-        {/* Mobile header */}
         <div className="flex items-center justify-between px-4 py-4 border-b border-border">
           <div className="flex items-center gap-2">
             <div className="w-8 h-8 rounded-sm overflow-hidden border border-neon-cyan/20">
-              <img src={qmsLogo} alt="QMS" className="w-full h-full object-contain" />
+              <img src={brandLogo} alt={displayName} className="w-full h-full object-contain" />
             </div>
-            <span className="text-sm font-bold">QMS Suite</span>
+            <span className="text-sm font-bold">{displayName}</span>
           </div>
           <button aria-label="Close menu" onClick={() => setIsMobileOpen(false)} className="p-2 rounded-sm text-muted-foreground hover:text-foreground hover:bg-muted/50">
             <X className="w-5 h-5" />
@@ -390,7 +336,7 @@ export function TopNav() {
           <div className="relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground z-10" />
             <Input
-              placeholder="Search files..."
+              placeholder="Search records..."
               className="pl-9 pr-4 bg-muted/30 border-border rounded-sm h-9 text-[13px]"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
@@ -400,52 +346,32 @@ export function TopNav() {
 
         {/* Mobile nav */}
         <nav className="flex-1 overflow-y-auto px-2 py-2">
-          <MobileNavItem
-            icon={LayoutDashboard}
-            label="Dashboard"
-            active={location.pathname === "/"}
-            onClick={() => { navigate("/"); setIsMobileOpen(false); }}
-          />
+          <MobileNavItem icon={LayoutDashboard} label="Dashboard" active={location.pathname === "/"} onClick={() => { navigate("/"); setIsMobileOpen(false); }} />
 
           <div className="px-3 pt-4 pb-2 text-[9px] font-mono font-bold text-muted-foreground uppercase tracking-widest">Modules</div>
           {moduleItems.map(item => (
-            <MobileNavItem
-              key={item.id}
-              icon={item.icon}
-              label={item.label}
-              active={isActive(item)}
-              onClick={() => { handleNavClick(item); setIsMobileOpen(false); }}
-            />
+            <MobileNavItem key={item.id} icon={item.icon} label={item.label} active={isActive(item)} onClick={() => { handleNavClick(item); setIsMobileOpen(false); }} />
           ))}
 
           <div className="px-3 pt-4 pb-2 text-[9px] font-mono font-bold text-muted-foreground uppercase tracking-widest">Manual & Procedures</div>
           {docsItems.filter(item => item.id === "iso-manual" || item.id === "procedures").map(item => (
-            <MobileNavItem
-              key={item.id}
-              icon={item.icon}
-              label={item.label}
-              active={isActive(item)}
-              onClick={() => { handleNavClick(item); setIsMobileOpen(false); }}
-            />
+            <MobileNavItem key={item.id} icon={item.icon} label={item.label} active={isActive(item)} onClick={() => { handleNavClick(item); setIsMobileOpen(false); }} />
           ))}
-                  <div className="px-3 pt-4 pb-2 text-[9px] font-mono font-bold text-muted-foreground uppercase tracking-widest">Tools</div>
+
+          <div className="px-3 pt-4 pb-2 text-[9px] font-mono font-bold text-muted-foreground uppercase tracking-widest">Tools</div>
           {toolItems.map(item => (
-            <MobileNavItem
-              key={item.id}
-              icon={item.icon}
-              label={item.label}
-              active={isActive(item)}
-              onClick={() => { handleNavClick(item); setIsMobileOpen(false); }}
-            />
+            <MobileNavItem key={item.id} icon={item.icon} label={item.label} active={isActive(item)} onClick={() => { handleNavClick(item); setIsMobileOpen(false); }} />
           ))}
 
-          <MobileNavItem
-            icon={Briefcase}
-            label="Projects"
-            active={location.pathname.startsWith("/project")}
-            onClick={() => { navigate("/projects"); setIsMobileOpen(false); }}
-          />
+          <MobileNavItem icon={Briefcase} label="Projects" active={location.pathname.startsWith("/project")} onClick={() => { navigate("/projects"); setIsMobileOpen(false); }} />
 
+          {user?.role === "admin" && (
+            <>
+              <div className="px-3 pt-4 pb-2 text-[9px] font-mono font-bold text-muted-foreground uppercase tracking-widest">Admin</div>
+              <MobileNavItem icon={Shield} label="Admin Panel" active={location.pathname.startsWith("/admin")} onClick={() => { navigate("/admin/accounts"); setIsMobileOpen(false); }} />
+              <MobileNavItem icon={Activity} label="Activity Log" active={location.pathname === "/activity"} onClick={() => { navigate("/activity"); setIsMobileOpen(false); }} />
+            </>
+          )}
         </nav>
 
         {/* Mobile footer */}

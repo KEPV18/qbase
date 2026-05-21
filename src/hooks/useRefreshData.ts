@@ -2,25 +2,20 @@ import { useQueryClient } from "@tanstack/react-query";
 import { useCallback } from "react";
 
 /**
- * Shared hook for invalidating and refetching QMS data.
- * Replaces the duplicate `queryClient.invalidateQueries + refetch` pattern.
+ * Shared hook for invalidating and refetching QMS Forge data.
+ * Key: 'forge-records' (Supabase-backed).
  */
 export function useRefreshData() {
   const queryClient = useQueryClient();
 
   const refreshAll = useCallback(async () => {
-    await queryClient.invalidateQueries({ queryKey: ["qms-data"] });
-    await queryClient.invalidateQueries({ queryKey: ["qms-records"] });
-    await queryClient.invalidateQueries({ queryKey: ["qms-drive-files"] });
+    await queryClient.invalidateQueries({ queryKey: ["forge-records"] });
+    await queryClient.invalidateQueries({ queryKey: ["auditLog"] });
   }, [queryClient]);
 
   const refreshRecords = useCallback(async () => {
-    await queryClient.invalidateQueries({ queryKey: ["qms-records"] });
+    await queryClient.invalidateQueries({ queryKey: ["forge-records"] });
   }, [queryClient]);
 
-  const refreshDriveFiles = useCallback(async () => {
-    await queryClient.invalidateQueries({ queryKey: ["qms-drive-files"] });
-  }, [queryClient]);
-
-  return { refreshAll, refreshRecords, refreshDriveFiles };
+  return { refreshAll, refreshRecords };
 }

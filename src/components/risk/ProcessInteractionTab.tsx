@@ -3,7 +3,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Button } from "@/components/ui/button";
 import { Pencil, Loader2, RefreshCw } from "lucide-react";
 import {
-    Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter,
+    Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -117,6 +117,7 @@ export function ProcessInteractionTab() {
                 <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
                     <DialogHeader>
                         <DialogTitle className="font-heading font-bold text-2xl">Edit Process: {editingProcess?.processName}</DialogTitle>
+                        <DialogDescription>Modify the process interaction details.</DialogDescription>
                     </DialogHeader>
                     {editingProcess && (
                         <div className="grid gap-4 py-4">

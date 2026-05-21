@@ -1,5 +1,6 @@
 import { useEffect } from "react";
 import { TopNav } from "./TopNav";
+import { Footer } from "./Footer";
 import { Breadcrumbs } from "./Breadcrumbs";
 import { cn } from "@/lib/utils";
 
@@ -16,9 +17,9 @@ export function AppShell({ children, breadcrumbs, className, maxWidth = "max-w-[
   }, []);
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background flex flex-col">
       <TopNav />
-      <main className={cn("px-4 md:px-6 lg:px-8 py-6 mx-auto", maxWidth, className)}>
+      <main className={cn("flex-1 px-4 md:px-6 lg:px-8 py-6 mx-auto w-full", maxWidth, className)}>
         {breadcrumbs && breadcrumbs.length > 0 && (
           <div className="mb-4">
             <Breadcrumbs items={breadcrumbs} />
@@ -28,6 +29,7 @@ export function AppShell({ children, breadcrumbs, className, maxWidth = "max-w-[
           {children}
         </div>
       </main>
+      <Footer />
     </div>
   );
 }

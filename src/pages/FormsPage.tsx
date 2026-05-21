@@ -1,80 +1,115 @@
+// ============================================================================
+// QMS Forge — Forms Page (Supabase-connected)
+// Shows all 35 ISO forms grouped by section, with record counts from Supabase.
+// ============================================================================
+
 import { useMemo, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { AppShell } from "@/components/layout/AppShell";
-import { useQMSData } from "@/hooks/useQMSData";
-import { getProcedureForRecord } from "@/lib/procedureRecordMapping";
-import { PROCEDURES_CONTENT } from "@/lib/ProceduresContent";
+import { useRecords } from "@/hooks/useRecordStorage";
+import { FORM_SCHEMAS } from "@/data/formSchemas";
+import { MODULE_CONFIG } from "@/config/modules";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { DecisionBanner } from "@/components/ui/DecisionBanner";
-import { StateScreen } from "@/components/ui/StateScreen";
 import { cn } from "@/lib/utils";
-import { useNavigate } from "react-router-dom";
 import {
   FileText, Search, Clock, FolderOpen, Calendar, PlusCircle,
-  ChevronDown, ChevronRight, ExternalLink, AlertTriangle, CheckCircle, BookOpen,
+  ChevronDown, ChevronRight, AlertTriangle, CheckCircle,
 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { formatTimeAgo } from "@/lib/googleSheets";
-import { MODULE_CONFIG } from "@/config/modules";
+
+interface FormEntry {
+  code: string;
+  name: string;
+  sectionName: string;
+  section: number;
+  frequency: string;
+  description: string;
+  recordCount: number;
+  lastRecordDate: string | null;
+}
 
 export default function FormsPage() {
   const navigate = useNavigate();
-  const { data: records, isLoading } = useQMSData();
+  const { data: records, isLoading } = useRecords();
   const [searchQuery, setSearchQuery] = useState("");
   const [expandedGroup, setExpandedGroup] = useState<string | null>(null);
 
-  const groupedForms = useMemo(() => {
-    if (!records) return {};
-    const groups: Record<string, typeof records> = {};
-    records.forEach(r => {
-      const cat = r.category || "Uncategorized";
-      if (!groups[cat]) groups[cat] = [];
-      groups[cat].push(r);
+  // Build form entries from FORM_SCHEMAS + record counts
+  const formEntries = useMemo((): FormEntry[] => {
+    const recordByForm = new Map<string, { count: number; lastDate: string | null }>();
+    records?.forEach(r => {
+      const code = r.formCode as string;
+      const existing = recordByForm.get(code) || { count: 0, lastDate: null as string | null };
+      existing.count++;
+      const created = r._createdAt as string;
+      if (created && (!existing.lastDate || created > existing.lastDate)) {
+        existing.lastDate = created;
+      }
+      recordByForm.set(code, existing);
     });
-    return Object.fromEntries(
-      Object.entries(groups).sort(([a], [b]) => a.localeCompare(b))
-    );
+
+    return FORM_SCHEMAS.map(s => {
+      const info = recordByForm.get(s.code);
+      return {
+        code: s.code,
+        name: s.name,
+        sectionName: s.sectionName,
+        section: s.section,
+        frequency: s.frequency,
+        description: s.description || '',
+        recordCount: info?.count || 0,
+        lastRecordDate: info?.lastDate || null,
+      };
+    });
   }, [records]);
 
+  // Group by section name
+  const groupedForms = useMemo(() => {
+    const groups: Record<string, FormEntry[]> = {};
+    formEntries.forEach(f => {
+      const sec = f.sectionName || `Section ${f.section}`;
+      if (!groups[sec]) groups[sec] = [];
+      groups[sec].push(f);
+    });
+    // Sort groups by section number
+    return Object.fromEntries(
+      Object.entries(groups).sort(([a], [b]) => {
+        const sa = formEntries.find(f => f.sectionName === a)?.section ?? 99;
+        const sb = formEntries.find(f => f.sectionName === b)?.section ?? 99;
+        return sa - sb;
+      })
+    );
+  }, [formEntries]);
+
+  // Filtered
   const filteredGroups = useMemo(() => {
     if (!searchQuery) return groupedForms;
     const q = searchQuery.toLowerCase();
-    const result: Record<string, typeof records> = {};
-    Object.entries(groupedForms).forEach(([cat, recs]) => {
-      const filtered = recs.filter(r =>
-        r.code.toLowerCase().includes(q) ||
-        r.recordName.toLowerCase().includes(q) ||
-        r.description.toLowerCase().includes(q)
+    const result: Record<string, FormEntry[]> = {};
+    Object.entries(groupedForms).forEach(([sec, forms]) => {
+      const filtered = forms.filter(f =>
+        f.code.toLowerCase().includes(q) ||
+        f.name.toLowerCase().includes(q) ||
+        f.frequency.toLowerCase().includes(q)
       );
-      if (filtered.length > 0) result[cat] = filtered;
+      if (filtered.length > 0) result[sec] = filtered;
     });
     return result;
   }, [groupedForms, searchQuery]);
 
-  const totalForms = records?.length || 0;
-  const filledCount = records?.filter(r => (r.actualRecordCount || 0) > 0).length || 0;
+  const totalForms = formEntries.length;
+  const filledCount = formEntries.filter(f => f.recordCount > 0).length;
   const emptyCount = totalForms - filledCount;
-  const overdueCount = records?.filter(r => r.isOverdue).length || 0;
 
-  // Find most critical overdue forms for decision banner
+  // Check overdue forms
   const overdueForms = useMemo(() => {
-    if (!records) return [];
-    return records
-      .filter(r => r.isOverdue)
-      .sort((a, b) => {
-        const aDays = a.daysUntilNextFill ?? 999;
-        const bDays = b.daysUntilNextFill ?? 999;
-        return aDays - bDays;
-      })
-      .slice(0, 5);
-  }, [records]);
+    return formEntries.filter(f => f.recordCount > 0 && isOverdue(f));
+  }, [formEntries]);
 
-  // Find empty forms that need first record (high-priority gaps)
-  const emptyForms = useMemo(() => {
-    if (!records) return [];
-    return records.filter(r => (r.actualRecordCount || 0) === 0);
-  }, [records]);
+  const overdueCount = overdueForms.length;
 
   return (
     <AppShell breadcrumbs={[{ label: "Dashboard", path: "/" }, { label: "Forms Registry" }]}>
@@ -83,21 +118,20 @@ export default function FormsPage() {
           icon={FileText}
           iconClassName="text-primary"
           title="Forms Registry"
-          description={`${totalForms} QMS forms organized by category`}
+          description={`${totalForms} QMS forms organized by section`}
         />
 
-        {/* Decision Banner — most critical action */}
+        {/* Decision Banner */}
         {overdueCount > 0 ? (
           <DecisionBanner
             priority="critical"
             title={`${overdueCount} Overdue Form${overdueCount > 1 ? "s" : ""}`}
-            description="These forms missed their filing deadline. Address them immediately to close compliance gaps."
+            description="These forms missed their filing deadline. Address them immediately."
             action={{
               label: `View ${overdueCount} Overdue`,
               onClick: () => {
-                // Expand the first overdue category
                 if (overdueForms.length > 0) {
-                  setExpandedGroup(overdueForms[0].category);
+                  setExpandedGroup(overdueForms[0].sectionName);
                 }
               }
             }}
@@ -144,7 +178,7 @@ export default function FormsPage() {
           </div>
         </div>
 
-        {/* Overdue section — always visible if any */}
+        {/* Overdue section */}
         {overdueCount > 0 && (
           <div className="border border-destructive/30 rounded-sm overflow-hidden bg-destructive/[0.02]">
             <div className="px-5 py-3 bg-destructive/[0.05] border-b border-destructive/20 flex items-center gap-3">
@@ -157,25 +191,23 @@ export default function FormsPage() {
                 <div
                   key={form.code}
                   className="flex items-center gap-4 px-5 py-3 hover:bg-destructive/[0.03] transition-colors cursor-pointer group"
-                  onClick={() => navigate(`/record/${encodeURIComponent(form.code)}`)}
+                  onClick={() => navigate(`/records?formCode=${encodeURIComponent(form.code)}`)}
                 >
                   <span className="text-[10px] font-mono font-black px-2 py-0.5 rounded-sm bg-destructive/10 text-destructive border border-destructive/20 shrink-0">
                     {form.code}
                   </span>
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm font-semibold text-foreground truncate">{form.recordName}</p>
-                    <p className="text-[10px] text-muted-foreground truncate">{form.whenToFill || "As needed"}</p>
+                    <p className="text-sm font-semibold text-foreground truncate">{form.name}</p>
+                    <p className="text-[10px] text-muted-foreground truncate">{form.frequency}</p>
                   </div>
-                  <span className="text-[10px] font-bold text-destructive shrink-0">
-                    {form.daysUntilNextFill !== undefined ? `${Math.abs(form.daysUntilNextFill)}d overdue` : "Overdue"}
-                  </span>
+                  <span className="text-[10px] font-bold text-destructive shrink-0">Overdue</span>
                   <Button
                     variant="outline"
                     size="sm"
                     className="h-7 text-[10px] gap-1.5 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity"
                     onClick={(e) => {
                       e.stopPropagation();
-                      navigate(`/module/${form.category.toLowerCase().replace(/\s+/g, '-')}`);
+                      navigate(`/create?formCode=${encodeURIComponent(form.code)}`);
                     }}
                   >
                     <PlusCircle className="w-3 h-3" />
@@ -187,128 +219,100 @@ export default function FormsPage() {
           </div>
         )}
 
-        {/* Forms by Category */}
+        {/* Forms by Section */}
         {isLoading ? (
-          <StateScreen state="loading" title="Loading forms" />
+          <div className="flex items-center justify-center py-12">
+            <Clock className="w-5 h-5 animate-spin text-muted-foreground" />
+          </div>
         ) : Object.keys(filteredGroups).length === 0 ? (
-          <StateScreen state="empty" title="No forms found" message={searchQuery ? "No forms match your search." : "No forms defined yet."} />
+          <div className="p-12 text-center">
+            <FileText className="w-10 h-10 text-muted-foreground/20 mx-auto mb-3" />
+            <p className="text-sm text-muted-foreground">{searchQuery ? "No forms match your search." : "No forms defined."}</p>
+          </div>
         ) : (
           <div className="space-y-3">
-            {Object.entries(filteredGroups).map(([category, forms]) => {
-              const isExpanded = expandedGroup === category || Object.keys(filteredGroups).length <= 5;
-              const categoryOverdue = forms.filter(f => f.isOverdue).length;
-              const categoryEmpty = forms.filter(f => (f.actualRecordCount || 0) === 0).length;
+            {Object.entries(filteredGroups).map(([sectionName, forms]) => {
+              const isExpanded = expandedGroup === sectionName || Object.keys(filteredGroups).length <= 5;
+              const sectionOverdue = forms.filter(f => f.recordCount > 0 && isOverdue(f)).length;
+              const sectionEmpty = forms.filter(f => f.recordCount === 0).length;
               return (
-                <div key={category} className="border border-border/50 rounded-sm overflow-hidden bg-card">
+                <div key={sectionName} className="border border-border/50 rounded-sm overflow-hidden bg-card">
                   <button
-                    onClick={() => setExpandedGroup(isExpanded ? null : category)}
+                    onClick={() => setExpandedGroup(isExpanded ? null : sectionName)}
                     className="w-full flex items-center justify-between px-5 py-3 hover:bg-muted/20 transition-colors"
                   >
                     <div className="flex items-center gap-3">
                       {isExpanded ? <ChevronDown className="w-4 h-4 text-muted-foreground" /> : <ChevronRight className="w-4 h-4 text-muted-foreground" />}
-                      <span className="text-sm font-bold text-foreground">{category}</span>
+                      <span className="text-sm font-bold text-foreground">{sectionName}</span>
                       <Badge variant="outline" className="text-[9px] h-5 font-mono">{forms.length} form{forms.length !== 1 ? "s" : ""}</Badge>
-                      {categoryOverdue > 0 && (
-                        <Badge variant="outline" className="text-[9px] h-5 font-mono bg-destructive/10 text-destructive border-destructive/20">{categoryOverdue} overdue</Badge>
+                      {sectionOverdue > 0 && (
+                        <Badge variant="outline" className="text-[9px] h-5 font-mono bg-destructive/10 text-destructive border-destructive/20">{sectionOverdue} overdue</Badge>
                       )}
                     </div>
                     <div className="flex items-center gap-3 text-[10px] text-muted-foreground">
-                      <span>{forms.filter(f => (f.actualRecordCount || 0) > 0).length}/{forms.length} completed</span>
-                      {categoryEmpty > 0 && <span className="text-primary font-semibold">{categoryEmpty} empty</span>}
+                      <span>{forms.filter(f => f.recordCount > 0).length}/{forms.length} completed</span>
+                      {sectionEmpty > 0 && <span className="text-primary font-semibold">{sectionEmpty} empty</span>}
                     </div>
                   </button>
 
                   {isExpanded && (
                     <div className="border-t border-border/30 divide-y divide-border/30">
                       {forms.map(form => {
-                        const hasRecords = (form.actualRecordCount || 0) > 0;
-                        const isOverdue = form.isOverdue;
+                        const hasRecords = form.recordCount > 0;
+                        const overdue = hasRecords && isOverdue(form);
                         return (
                           <div
                             key={form.code}
                             className={cn(
                               "flex items-center gap-4 px-5 py-3 hover:bg-muted/10 transition-colors cursor-pointer group",
-                              isOverdue && "bg-destructive/[0.02] hover:bg-destructive/[0.04]"
+                              overdue && "bg-destructive/[0.02] hover:bg-destructive/[0.04]"
                             )}
-                            onClick={() => navigate(`/record/${encodeURIComponent(form.code)}`)}
+                            onClick={() => navigate(`/records?formCode=${encodeURIComponent(form.code)}`)}
                           >
                             <span className={cn(
                               "text-[10px] font-mono font-black px-2 py-0.5 rounded-sm shrink-0 border",
                               hasRecords
                                 ? "bg-success/10 text-success border-success/20"
-                                : isOverdue
-                                ? "bg-destructive/10 text-destructive border-destructive/20"
                                 : "bg-muted/50 text-muted-foreground border-border/50"
                             )}>
                               {form.code}
                             </span>
 
                             <div className="flex-1 min-w-0">
-                              <p className="text-sm font-semibold text-foreground truncate">{form.recordName}</p>
-                              <p className="text-xs text-muted-foreground truncate mt-0.5">{form.description}</p>
-                              {/* Procedure Reference */}
-                              {(() => {
-                                const linkedProc = getProcedureForRecord(form);
-                                if (!linkedProc) return null;
-                                return (
-                                  <button
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-                                      navigate("/procedures");
-                                    }}
-                                    className="inline-flex items-center gap-1 mt-1 text-[9px] text-primary/60 hover:text-primary transition-colors"
-                                  >
-                                    <BookOpen className="w-2.5 h-2.5" />
-                                    Referenced by: {linkedProc.title.replace(/^\d+\.\s*/, "")}
-                                  </button>
-                                );
-                              })()}
+                              <p className="text-sm font-semibold text-foreground truncate">{form.name}</p>
+                              {form.description && (
+                                <p className="text-xs text-muted-foreground truncate mt-0.5">{form.description}</p>
+                              )}
                             </div>
 
                             <div className="flex items-center gap-3 shrink-0 text-[10px] text-muted-foreground">
-                              {(() => {
-                                // Show frequency from the linked procedure's recordFrequency
-                                const linkedProc = getProcedureForRecord(form);
-                                const linkedProcData = linkedProc
-                                  ? PROCEDURES_CONTENT.find(p => p.id === linkedProc.id)
-                                  : null;
-                                const frequency = linkedProcData?.recordFrequency || form.whenToFill || "";
-                                if (!frequency || frequency === "As needed") return null;
-                                return (
-                                  <span className="flex items-center gap-1">
-                                    <Calendar className="w-3 h-3" />
-                                    {frequency}
-                                  </span>
-                                );
-                              })()}
-                              {hasRecords && (
-                                <span className="text-success font-bold">
-                                  {form.actualRecordCount} record{form.actualRecordCount !== 1 ? "s" : ""}
+                              {form.frequency && form.frequency !== "On event" && (
+                                <span className="flex items-center gap-1">
+                                  <Calendar className="w-3 h-3" />
+                                  {form.frequency}
                                 </span>
                               )}
-                              {!hasRecords && !isOverdue && (
+                              {hasRecords ? (
+                                <span className="text-success font-bold">
+                                  {form.recordCount} record{form.recordCount !== 1 ? "s" : ""}
+                                </span>
+                              ) : (
                                 <span className="text-primary font-bold">Empty</span>
-                              )}
-                              {form.lastFileDate && (
-                                <span className="font-mono">{formatTimeAgo(form.lastFileDate)}</span>
                               )}
                             </div>
 
-                            {/* Create Record CTA */}
                             <Button
                               variant="outline"
                               size="sm"
                               className="h-7 text-[10px] gap-1.5 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity"
                               onClick={(e) => {
                                 e.stopPropagation();
-                                navigate(`/module/${form.category.toLowerCase().replace(/\s+/g, '-')}`);
+                                navigate(`/create?formCode=${encodeURIComponent(form.code)}`);
                               }}
                             >
                               <PlusCircle className="w-3 h-3" />
                               Create Record
                             </Button>
-
-                            <ExternalLink className="w-3.5 h-3.5 text-muted-foreground/30 group-hover:text-primary transition-colors shrink-0" />
                           </div>
                         );
                       })}
@@ -322,4 +326,17 @@ export default function FormsPage() {
       </div>
     </AppShell>
   );
+}
+
+function isOverdue(form: FormEntry): boolean {
+  if (!form.lastRecordDate) return false;
+  const now = new Date();
+  const last = new Date(form.lastRecordDate);
+  const daysSince = (now.getTime() - last.getTime()) / (1000 * 60 * 60 * 24);
+  const freq = form.frequency.toLowerCase();
+  if (freq.includes('monthly')) return daysSince > 35;
+  if (freq.includes('quarterly')) return daysSince > 95;
+  if (freq.includes('semi')) return daysSince > 190;
+  if (freq.includes('annual')) return daysSince > 380;
+  return false; // on-event, per-project etc. — never overdue
 }

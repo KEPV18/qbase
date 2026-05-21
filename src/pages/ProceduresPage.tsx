@@ -5,8 +5,7 @@ import {
   FileText, Folder, ChevronLeft, ChevronRight, Maximize2, Minimize2,
   ExternalLink, Loader2, RefreshCw, List, Grid, Eye, Pencil,
   ArrowLeft, FileCode, Table as TableIcon, Search,
-  Library, Archive, Save, X, RotateCcw, ArrowRight, Layers, Info, Printer, User, History, ArrowUp, Calendar, Clock,
-  CheckCircle,
+  Library, Archive, Save, X, RotateCcw, ArrowRight, Layers, Info, Printer, User, History, ArrowUp,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -16,9 +15,7 @@ import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { useProceduresData } from "@/hooks/useProceduresData";
-import { useQMSData } from "@/hooks/useQMSData";
-import { getRecordsForProcedure } from "@/lib/procedureRecordMapping";
-import { useNavigate } from "react-router-dom";
+import { PROCEDURES_METADATA } from "@/lib/ProceduresContent";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 
@@ -106,10 +103,6 @@ export default function ProceduresPage() {
     { id: PROCEDURES_FOLDER_ID, name: "02. Procedures" }
   ]);
 
-  // QMS Records for Procedure → Record linking
-  const { data: qmsRecords } = useQMSData();
-  const navigate = useNavigate();
-
   // Scroll-to-top visibility
   useEffect(() => {
     const container = scrollContainerRef.current;
@@ -191,20 +184,18 @@ export default function ProceduresPage() {
           </div>
           <div className="min-w-0">
             <h1 className="text-lg font-bold tracking-tight truncate">Quality Procedures</h1>
-            <p className="text-[10px] text-muted-foreground uppercase tracking-[0.12em] font-medium">Standard Operating Procedures (SOP)</p>
+            <div className="flex items-center gap-2 text-[10px] text-muted-foreground">
+              <Badge variant="outline" className="text-[8px] h-4 px-1.5 bg-primary/5 text-primary border-primary/15 font-mono">
+                {PROCEDURES_METADATA.documentPrefix}
+              </Badge>
+              <span>Rev {PROCEDURES_METADATA.revisionNo}</span>
+              <span>·</span>
+              <span>Approved {PROCEDURES_METADATA.approvalDate}</span>
+            </div>
           </div>
         </div>
 
         <div className="flex items-center gap-2 shrink-0">
-          <div className="relative hidden sm:block">
-            <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground" />
-            <Input
-              placeholder="Search..."
-              className="pl-8 h-8 w-40 text-xs bg-muted/30 border-border/40 rounded-lg"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-            />
-          </div>
           <Tabs value={activeTab} onValueChange={setActiveTab} className="w-auto">
             <TabsList className="grid grid-cols-2 h-9 p-0.5 bg-muted/30 backdrop-blur-sm rounded-lg">
               <TabsTrigger value="digital" className="gap-1.5 text-xs rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-sm">
@@ -215,22 +206,6 @@ export default function ProceduresPage() {
               </TabsTrigger>
             </TabsList>
           </Tabs>
-          <Button
-            variant={isEditMode ? "default" : "outline"}
-            size="sm"
-            className={cn("gap-1.5 h-8 text-xs rounded-lg", isEditMode && "animate-pulse shadow-md")}
-            onClick={() => setIsEditMode(!isEditMode)}
-          >
-            {isEditMode ? <X className="w-3.5 h-3.5" /> : <Pencil className="w-3.5 h-3.5" />}
-            {isEditMode ? "Done" : "Edit"}
-          </Button>
-          {isEditMode && (
-            <Button variant="outline" size="sm" className="gap-1.5 h-8 text-xs text-destructive hover:bg-destructive/10 rounded-lg"
-              onClick={() => { if (confirm("Reset all procedures to default?")) { resetToDefault(); toast.info("Procedures reset"); } }}
-            >
-              <RotateCcw className="w-3.5 h-3.5" /> Reset
-            </Button>
-          )}
         </div>
       </div>
 
@@ -265,10 +240,45 @@ export default function ProceduresPage() {
                   </button>
                 ))}
               </nav>
+              <div className="p-3 border-t border-border/20 bg-muted/10 space-y-2">
+                <div className="relative">
+                  <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3 h-3 text-muted-foreground" />
+                  <Input
+                    placeholder="Search..."
+                    className="pl-7 h-7 text-[11px] bg-background/50 border-border/40 rounded-lg"
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                  />
+                </div>
+                <Button
+                  variant={isEditMode ? "default" : "outline"}
+                  size="sm"
+                  className="w-full gap-1.5 h-7 text-[10px] rounded-lg"
+                  onClick={() => setIsEditMode(!isEditMode)}
+                >
+                  {isEditMode ? <X className="w-3 h-3" /> : <Pencil className="w-3 h-3" />}
+                  {isEditMode ? "Exit Edit" : "Edit All"}
+                </Button>
+                {isEditMode && (
+                  <Button variant="ghost" size="sm" className="w-full gap-1.5 h-6 text-[10px] text-destructive"
+                    onClick={() => confirm("Reset all procedures?") && resetToDefault()}
+                  >
+                    <RotateCcw className="w-3 h-3" /> Reset all
+                  </Button>
+                )}
+              </div>
               <div className="p-3 border-t border-border/20 bg-muted/10 space-y-1.5 text-[10px]">
                 <div className="flex justify-between text-muted-foreground">
-                  <span className="flex items-center gap-1"><FileText className="w-3 h-3" /> Total</span>
-                  <span className="font-semibold text-foreground text-[9px]">{digitalProcedures.length} SOPs</span>
+                  <span className="flex items-center gap-1"><User className="w-3 h-3" /> Prepared</span>
+                  <span className="font-semibold text-foreground text-[9px]">{PROCEDURES_METADATA.preparedBy}</span>
+                </div>
+                <div className="flex justify-between text-muted-foreground">
+                  <span className="flex items-center gap-1"><History className="w-3 h-3" /> Approved</span>
+                  <span className="font-semibold text-foreground text-[9px]">{PROCEDURES_METADATA.approvedBy}</span>
+                </div>
+                <div className="flex justify-between text-muted-foreground">
+                  <span className="flex items-center gap-1"><History className="w-3 h-3" /> Approval Date</span>
+                  <span className="font-semibold text-foreground text-[9px]">{PROCEDURES_METADATA.approvalDate}</span>
                 </div>
               </div>
             </div>
@@ -276,31 +286,6 @@ export default function ProceduresPage() {
             {/* Scrollable Document */}
             <div ref={scrollContainerRef} className="flex-1 overflow-y-auto scroll-smooth">
               <div className="max-w-3xl mx-auto px-5 md:px-8 py-8 md:py-12 space-y-0">
-                {/* Approval Banner */}
-                <div className="mb-8 p-5 rounded-xl border-2 border-primary/20 bg-gradient-to-br from-primary/[0.03] to-primary/[0.01]">
-                  <div className="flex items-center gap-2 mb-3">
-                    <CheckCircle className="w-4 h-4 text-primary" />
-                    <span className="text-[10px] font-bold uppercase tracking-[0.15em] text-primary/60">Document Approval</span>
-                  </div>
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-xs">
-                    <div className="p-3 rounded-lg bg-background/80 border border-border/20">
-                      <span className="block text-[9px] font-bold uppercase tracking-[0.1em] text-muted-foreground/50 mb-1">Prepared By</span>
-                      <span className="text-foreground font-semibold">Ahmed Khaled (QMS Team Leader)</span>
-                    </div>
-                    <div className="p-3 rounded-lg bg-background/80 border border-border/20">
-                      <span className="block text-[9px] font-bold uppercase tracking-[0.1em] text-muted-foreground/50 mb-1">Approved By (CEO)</span>
-                      <span className="text-foreground font-semibold">Kareem Yehia (CEO)</span>
-                    </div>
-                    <div className="p-3 rounded-lg bg-background/80 border border-border/20">
-                      <span className="block text-[9px] font-bold uppercase tracking-[0.1em] text-muted-foreground/50 mb-1">Approval Date</span>
-                      <span className="text-foreground font-semibold">January 2026</span>
-                    </div>
-                  </div>
-                  <div className="mt-2 text-[10px] text-muted-foreground/50 text-center">
-                    Top Management — Ahmed Khaled &amp; Kareem Yehia — approved this document as the official QMS Procedures
-                  </div>
-                </div>
-
                 {filteredProcedures.map((proc, procIdx) => (
                   <div
                     key={proc.id}
@@ -394,77 +379,7 @@ export default function ProceduresPage() {
                         <span className="flex items-center gap-1"><History className="w-3 h-3" /> Rev: 01</span>
                         <span className="flex items-center gap-1"><FileText className="w-3 h-3" /> P-SOP-{proc.id.toUpperCase()}</span>
                       </div>
-                      <div className="flex items-center gap-2 flex-wrap justify-end">
-                        {isEditMode && (
-                          <div className="flex items-center gap-1.5">
-                            <Clock className="w-3 h-3 text-primary/40" />
-                            <select
-                              value={proc.recordFrequency || "As needed"}
-                              onChange={(e) => updateProcedure(proc.id, { recordFrequency: e.target.value })}
-                              className="h-6 text-[10px] bg-background border border-primary/20 rounded px-1.5 text-foreground"
-                            >
-                              <option value="As needed">As needed</option>
-                              <option value="Monthly">Monthly</option>
-                              <option value="Quarterly">Quarterly</option>
-                              <option value="Twice a year">Twice a year</option>
-                              <option value="Annually">Annually</option>
-                            </select>
-                          </div>
-                        )}
-                        {isEditMode ? (
-                          <div className="flex items-center gap-1.5">
-                            <Calendar className="w-3 h-3 text-primary/40" />
-                            <input
-                              type="date"
-                              value={proc.approvalDate}
-                              onChange={(e) => updateProcedure(proc.id, { approvalDate: e.target.value })}
-                              className="h-6 w-[130px] text-[10px] bg-background border border-primary/20 rounded px-1.5 text-foreground"
-                            />
-                          </div>
-                        ) : (
-                          <span className="flex items-center gap-1">
-                            <Calendar className="w-3 h-3" />
-                            Approved: {new Date(proc.approvalDate).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}
-                          </span>
-                        )}
-                      </div>
                     </div>
-
-                    {/* Related QMS Records */}
-                    {(() => {
-                      const related = qmsRecords ? getRecordsForProcedure(proc.id, qmsRecords) : [];
-                      if (related.length === 0) return null;
-                      return (
-                        <div className="mt-5 pt-4 border-t border-border/30">
-                          <div className="flex items-center gap-2 mb-3">
-                            <Layers className="w-3.5 h-3.5 text-primary/40" />
-                            <span className="text-[11px] font-bold uppercase tracking-wider text-foreground/70">Related QMS Records</span>
-                            <Badge variant="outline" className="text-[9px] h-4 font-mono">{related.length}</Badge>
-                          </div>
-                          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
-                            {related.map((rec) => (
-                              <div
-                                key={rec.code}
-                                className="flex items-center gap-2 px-3 py-2 rounded-lg border border-border/30 bg-card/40 hover:bg-muted/20 hover:border-primary/30 transition-all cursor-pointer group"
-                                onClick={() => navigate(`/record/${encodeURIComponent(rec.code)}`)}
-                              >
-                                <span className="text-[9px] font-mono font-bold px-1.5 py-0.5 rounded bg-muted text-muted-foreground shrink-0">
-                                  {rec.code}
-                                </span>
-                                <div className="flex-1 min-w-0">
-                                  <p className="text-xs font-medium text-foreground truncate">{rec.recordName}</p>
-                                  <p className="text-[9px] text-muted-foreground truncate">
-                                    {proc.recordFrequency || "As needed"}
-                                    {rec.actualRecordCount ? ` · ${rec.actualRecordCount} records` : ""}
-                                  </p>
-                                </div>
-                                <FileText className="w-3 h-3 text-muted-foreground/30 group-hover:text-primary transition-colors shrink-0" />
-                              </div>
-                            ))}
-                          </div>
-                        </div>
-                      );
-                    })()}
                   </div>
                 ))}
               </div>

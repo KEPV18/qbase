@@ -3,13 +3,13 @@ import { AppShell } from "@/components/layout/AppShell";
 import { cn } from "@/lib/utils";
 import {
   Search, BookOpen, History, User,
-  ChevronUp, Pencil, X, RotateCcw, Printer, ArrowUp, CheckCircle,
+  ChevronUp, Pencil, X, RotateCcw, Printer, ArrowUp,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { MANUAL_METADATA, type ManualSection } from "@/lib/ManualContent";
+import { MANNUAL_METADATA, type ManualSection } from "@/lib/ManualContent";
 import { useManualData } from "@/hooks/useManualData";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -78,11 +78,13 @@ export default function ISOManualPage() {
             <h1 className="text-lg font-bold tracking-tight truncate">ISO 9001:2015 Quality Manual</h1>
             <div className="flex items-center gap-2 text-[10px] text-muted-foreground">
               <Badge variant="outline" className="text-[8px] h-4 px-1.5 bg-primary/5 text-primary border-primary/15 font-mono">
-                {MANUAL_METADATA.documentNo}
+                {MANNUAL_METADATA.documentNo}
               </Badge>
-              <span>Rev {MANUAL_METADATA.revisionNo}</span>
+              <span>Rev {MANNUAL_METADATA.revisionNo}</span>
               <span>·</span>
-              <span>{MANUAL_METADATA.updateDate}</span>
+              <span>{MANNUAL_METADATA.updateDate}</span>
+              <span>·</span>
+              <span>Approved {MANNUAL_METADATA.approvalDate}</span>
             </div>
           </div>
         </div>
@@ -152,15 +154,15 @@ export default function ISOManualPage() {
           <div className="p-3 border-t border-border/20 bg-muted/10 space-y-1.5 text-[10px]">
             <div className="flex justify-between text-muted-foreground">
               <span className="flex items-center gap-1"><User className="w-3 h-3" /> Prepared</span>
-              <span className="font-semibold text-foreground text-[9px]">{MANUAL_METADATA.preparedBy}</span>
+              <span className="font-semibold text-foreground text-[9px]">{MANNUAL_METADATA.preparedBy}</span>
             </div>
             <div className="flex justify-between text-muted-foreground">
-              <span className="flex items-center gap-1"><CheckCircle className="w-3 h-3" /> Approved</span>
-              <span className="font-semibold text-foreground text-[9px]">{MANUAL_METADATA.approvedBy}</span>
+              <span className="flex items-center gap-1"><History className="w-3 h-3" /> Approved</span>
+              <span className="font-semibold text-foreground text-[9px]">{MANNUAL_METADATA.approvedBy}</span>
             </div>
             <div className="flex justify-between text-muted-foreground">
-              <span className="flex items-center gap-1"><History className="w-3 h-3" /> Date</span>
-              <span className="font-semibold text-foreground text-[9px]">{MANUAL_METADATA.approvalDate}</span>
+              <span className="flex items-center gap-1"><History className="w-3 h-3" /> Approval Date</span>
+              <span className="font-semibold text-foreground text-[9px]">{MANNUAL_METADATA.approvalDate}</span>
             </div>
           </div>
         </div>
@@ -168,31 +170,6 @@ export default function ISOManualPage() {
         {/* Scrollable Document */}
         <div ref={scrollContainerRef} className="flex-1 overflow-y-auto scroll-smooth">
           <div className="max-w-3xl mx-auto px-5 md:px-8 py-8 md:py-12 space-y-0">
-            {/* Approval Banner */}
-            <div className="mb-8 p-5 rounded-xl border-2 border-primary/20 bg-gradient-to-br from-primary/[0.03] to-primary/[0.01]">
-              <div className="flex items-center gap-2 mb-3">
-                <CheckCircle className="w-4 h-4 text-primary" />
-                <span className="text-[10px] font-bold uppercase tracking-[0.15em] text-primary/60">Document Approval</span>
-              </div>
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-xs">
-                <div className="p-3 rounded-lg bg-background/80 border border-border/20">
-                  <span className="block text-[9px] font-bold uppercase tracking-[0.1em] text-muted-foreground/50 mb-1">Prepared By</span>
-                  <span className="text-foreground font-semibold">{MANUAL_METADATA.preparedBy}</span>
-                </div>
-                <div className="p-3 rounded-lg bg-background/80 border border-border/20">
-                  <span className="block text-[9px] font-bold uppercase tracking-[0.1em] text-muted-foreground/50 mb-1">Approved By (CEO)</span>
-                  <span className="text-foreground font-semibold">{MANUAL_METADATA.approvedBy}</span>
-                </div>
-                <div className="p-3 rounded-lg bg-background/80 border border-border/20">
-                  <span className="block text-[9px] font-bold uppercase tracking-[0.1em] text-muted-foreground/50 mb-1">Approval Date</span>
-                  <span className="text-foreground font-semibold">{MANUAL_METADATA.approvalDate}</span>
-                </div>
-              </div>
-              <div className="mt-2 text-[10px] text-muted-foreground/50 text-center">
-                Top Management — Ahmed Khaled &amp; Kareem Yehia — approved this document as the official QMS Manual
-              </div>
-            </div>
-
             {filteredContent.map((section, sectionIdx) => (
               <SectionBlock
                 key={section.id}
@@ -210,9 +187,9 @@ export default function ISOManualPage() {
           <div className="max-w-3xl mx-auto px-5 md:px-8 pb-8 pt-6 border-t border-border/30 mt-8">
             <div className="flex items-center justify-between text-[10px] text-muted-foreground">
               <div className="flex items-center gap-4">
-                <span className="font-mono">{MANUAL_METADATA.documentNo}</span>
-                <span>Rev {MANUAL_METADATA.revisionNo}</span>
-                <span>{MANUAL_METADATA.updateDate}</span>
+                <span className="font-mono">{MANNUAL_METADATA.documentNo}</span>
+                <span>Rev {MANNUAL_METADATA.revisionNo}</span>
+                <span>{MANNUAL_METADATA.updateDate}</span>
               </div>
               <Badge variant="outline" className="h-4 px-1.5 text-[8px] bg-success/10 text-success border-success/20">ACTIVE</Badge>
             </div>

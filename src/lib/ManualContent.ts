@@ -5,14 +5,14 @@ export interface ManualSection {
   subsections?: { id: string; title: string; content: string }[];
 }
 
-export const MANUAL_METADATA = {
+export const MANNUAL_METADATA = {
   company: "Vezloo",
   documentNo: "M/01",
   revisionNo: "02",
   updateDate: "03/2026",
+  approvalDate: "01/2026",
   preparedBy: "Ahmed Khaled (QMS Team Leader)",
-  approvedBy: "Kareem Yehia (CEO)",
-  approvalDate: "January 2026",
+  approvedBy: "Top Management",
 };
 
 export const MANUAL_CONTENT: ManualSection[] = [

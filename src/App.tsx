@@ -1,22 +1,20 @@
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { lazy, Suspense } from "react";
 import { Loader2 } from "lucide-react";
 import { AuthProvider } from "./hooks/useAuth";
+import { TenantIdentityProvider } from "./hooks/useTenantIdentity";
 import { RequireAuth, RequireRole } from "./components/auth/Guards";
 import { ErrorBoundary, ErrorFallback } from "./components/ui/ErrorBoundary";
 import { ThemeProvider } from "./hooks/useTheme";
 
-// Lazy loaded routes
+// Lazy loaded routes — only Supabase-connected pages
 const Index = lazy(() => import("./pages/Index"));
-const ModulePage = lazy(() => import("./pages/ModulePage"));
-const RecordDetail = lazy(() => import("./pages/RecordDetail"));
 const AuditPage = lazy(() => import("./pages/AuditPage"));
-const ArchivePage = lazy(() => import("./pages/ArchivePage"));
 const RiskManagementPage = lazy(() => import("./pages/RiskManagementPage"));
-const AdminAccounts = lazy(() => import("./pages/AdminAccounts"));
+const AdminPanel = lazy(() => import("./pages/AdminPanel"));
 const Login = lazy(() => import("./pages/Login"));
 const Register = lazy(() => import("./pages/Register"));
 const AuthCallback = lazy(() => import("./pages/AuthCallback"));
@@ -26,26 +24,13 @@ const ISOManualPage = lazy(() => import("./pages/ISOManualPage"));
 const FormsRegistryPage = lazy(() => import("./pages/FormsRegistryPage"));
 const ProjectsPage = lazy(() => import("./pages/ProjectsPage"));
 const ProjectDetailPage = lazy(() => import("./pages/ProjectDetailPage"));
-const ProjectFormPage = lazy(() => import("./pages/ProjectFormPage"));
-const KPIDashboardPage = lazy(() => import("./pages/KPIDashboardPage"));
-const KPIReportsPage = lazy(() => import("./pages/KPIReportsPage"));
-
-const NotFound = lazy(() => import("./pages/NotFound"));
-const TraceabilityPage = lazy(() => import("./pages/TraceabilityPage"));
-const InterestedPartiesPage = lazy(() => import("./pages/InterestedPartiesPage"));
-const ContextAnalysisPage = lazy(() => import("./pages/ContextAnalysisPage"));
-const InternalAuditPage = lazy(() => import("./pages/InternalAuditPage"));
-const ProcessInteractionPage = lazy(() => import("./pages/ProcessInteractionPage"));
-const SupplierEvaluationPage = lazy(() => import("./pages/SupplierEvaluationPage"));
-const WorkInstructionsPage = lazy(() => import("./pages/WorkInstructionsPage"));
-const SkillsMatrixPage = lazy(() => import("./pages/SkillsMatrixPage"));
-const SWOTAnalysisPage = lazy(() => import("./pages/SWOTAnalysisPage"));
-
-// QMS Forge record management routes
 const RecordCreationPage = lazy(() => import("./pages/RecordCreationPage"));
 const RecordListPage = lazy(() => import("./pages/RecordListPage"));
 const RecordViewPage = lazy(() => import("./pages/RecordViewPage"));
 const DataIntegrityPage = lazy(() => import("./pages/DataIntegrityPage"));
+const NotificationsPage = lazy(() => import("./pages/NotificationsPage"));
+const ModulePage = lazy(() => import("./pages/ModulePage"));
+const NotFound = lazy(() => import("./pages/NotFound"));
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -69,13 +54,11 @@ function PageLoader() {
 // Page-level error boundary with retry button
 function PageBoundary({ children }: { children: React.ReactNode }) {
   return (
-    <ErrorBoundary fallback={
-      <ErrorFallback
-        title="Page Error"
-        message="Something went wrong on this page. Try refreshing or go back to the dashboard."
-        onRetry={() => window.location.reload()}
-      />
-    }>
+    <ErrorBoundary
+      onError={(error, errorInfo) => {
+        console.error('[PageBoundary]', error.message, errorInfo.componentStack);
+      }}
+    >
       {children}
     </ErrorBoundary>
   );
@@ -88,54 +71,57 @@ const App = () => {
 
   return (
     <QueryClientProvider client={queryClient}>
-      <ErrorBoundary>
+      <ErrorBoundary fallback={<ErrorFallback />}>
         <ThemeProvider>
           <AuthProvider>
+            <TenantIdentityProvider>
             <TooltipProvider>
               <Sonner />
               <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
                 <Suspense fallback={<PageLoader />}>
                   <Routes>
+                    {/* Auth routes */}
                     <Route path="/login" element={<PageBoundary><Login /></PageBoundary>} />
                     <Route path="/register" element={<PageBoundary><Register /></PageBoundary>} />
                     <Route path="/auth/callback" element={<PageBoundary><AuthCallback /></PageBoundary>} />
+
+                    {/* Core app routes — all Supabase-connected */}
                     <Route path="/" element={<RequireAuth><PageBoundary><Index /></PageBoundary></RequireAuth>} />
-                    <Route path="/module/:moduleId" element={<RequireAuth><PageBoundary><ModulePage /></PageBoundary></RequireAuth>} />
-                    <Route path="/record/*" element={<RequireAuth><PageBoundary><RecordDetail /></PageBoundary></RequireAuth>} />
                     <Route path="/audit" element={<RequireAuth><PageBoundary><AuditPage /></PageBoundary></RequireAuth>} />
                     <Route path="/projects" element={<RequireAuth><PageBoundary><ProjectsPage /></PageBoundary></RequireAuth>} />
-                    <Route path="/projects/new" element={<RequireAuth><PageBoundary><ProjectFormPage /></PageBoundary></RequireAuth>} />
-                    <Route path="/projects/:id" element={<RequireAuth><PageBoundary><ProjectDetailPage /></PageBoundary></RequireAuth>} />
-                    <Route path="/projects/:id/edit" element={<RequireAuth><PageBoundary><ProjectFormPage /></PageBoundary></RequireAuth>} />
-                    <Route path="/kpi" element={<RequireAuth><PageBoundary><KPIDashboardPage /></PageBoundary></RequireAuth>} />
-                    <Route path="/kpi/reports" element={<RequireAuth><PageBoundary><KPIReportsPage /></PageBoundary></RequireAuth>} />
-
-                    <Route path="/traceability/:recordId?" element={<RequireAuth><PageBoundary><TraceabilityPage /></PageBoundary></RequireAuth>} />
-                    <Route path="/interested-parties" element={<RequireAuth><PageBoundary><InterestedPartiesPage /></PageBoundary></RequireAuth>} />
-                    <Route path="/context-analysis" element={<RequireAuth><PageBoundary><ContextAnalysisPage /></PageBoundary></RequireAuth>} />
-                    <Route path="/internal-audit" element={<RequireAuth><PageBoundary><InternalAuditPage /></PageBoundary></RequireAuth>} />
-                    <Route path="/process-interaction" element={<RequireAuth><PageBoundary><ProcessInteractionPage /></PageBoundary></RequireAuth>} />
-                    <Route path="/supplier-evaluation" element={<RequireAuth><PageBoundary><SupplierEvaluationPage /></PageBoundary></RequireAuth>} />
-                    <Route path="/work-instructions" element={<RequireAuth><PageBoundary><WorkInstructionsPage /></PageBoundary></RequireAuth>} />
-                    <Route path="/skills-matrix" element={<RequireAuth><PageBoundary><SkillsMatrixPage /></PageBoundary></RequireAuth>} />
-                    <Route path="/swot-analysis" element={<RequireAuth><PageBoundary><SWOTAnalysisPage /></PageBoundary></RequireAuth>} />
-                    <Route path="/archive" element={<RequireAuth><PageBoundary><ArchivePage /></PageBoundary></RequireAuth>} />
+                    <Route path="/project/:projectName" element={<RequireAuth><PageBoundary><ProjectDetailPage /></PageBoundary></RequireAuth>} />
                     <Route path="/risk-management" element={<RequireAuth><PageBoundary><RiskManagementPage /></PageBoundary></RequireAuth>} />
                     <Route path="/activity" element={<RequireAuth><PageBoundary><ActivityPage /></PageBoundary></RequireAuth>} />
                     <Route path="/procedures" element={<RequireAuth><PageBoundary><ProceduresPage /></PageBoundary></RequireAuth>} />
                     <Route path="/iso-manual" element={<RequireAuth><PageBoundary><ISOManualPage /></PageBoundary></RequireAuth>} />
                     <Route path="/forms" element={<RequireAuth><PageBoundary><FormsRegistryPage /></PageBoundary></RequireAuth>} />
-                    {/* QMS Forge record management routes */}
-                    <Route path="/records/new/:formCode" element={<RequireAuth><PageBoundary><RecordCreationPage /></PageBoundary></RequireAuth>} />
-                    <Route path="/records/:formCode" element={<RequireAuth><PageBoundary><RecordListPage /></PageBoundary></RequireAuth>} />
-                    <Route path="/records/:formCode/:recordId" element={<RequireAuth><PageBoundary><RecordViewPage /></PageBoundary></RequireAuth>} />
-                    <Route path="/data-integrity" element={<RequireAuth><PageBoundary><DataIntegrityPage /></PageBoundary></RequireAuth>} />
-                    <Route path="/admin/accounts" element={<RequireRole roles={["admin"]}><PageBoundary><AdminAccounts /></PageBoundary></RequireRole>} />
+                    <Route path="/notifications" element={<RequireAuth><PageBoundary><NotificationsPage /></PageBoundary></RequireAuth>} />
+
+                    {/* Module pages — dedicated page per ISO section */}
+                    <Route path="/module/:moduleId" element={<RequireAuth><PageBoundary><ModulePage /></PageBoundary></RequireAuth>} />
+
+                    {/* Record system — Supabase-backed via useRecordStorage */}
+                    <Route path="/create" element={<RequireAuth><PageBoundary><RecordCreationPage /></PageBoundary></RequireAuth>} />
+                    <Route path="/records" element={<RequireAuth><PageBoundary><RecordListPage /></PageBoundary></RequireAuth>} />
+                    <Route path="/records/:serial" element={<RequireAuth><PageBoundary><RecordViewPage /></PageBoundary></RequireAuth>} />
+
+                    {/* Data integrity */}
+                    <Route path="/integrity" element={<RequireAuth><PageBoundary><DataIntegrityPage /></PageBoundary></RequireAuth>} />
+
+                    {/* Admin */}
+                    <Route path="/admin/accounts" element={<RequireRole roles={["admin"]}><PageBoundary><AdminPanel /></PageBoundary></RequireRole>} />
+
+                    {/* Legacy redirects */}
+                    <Route path="/record/*" element={<Navigate to="/records" replace />} />
+                    <Route path="/archive" element={<Navigate to="/records" replace />} />
+
+                    {/* 404 */}
                     <Route path="*" element={<NotFound />} />
                   </Routes>
                 </Suspense>
               </BrowserRouter>
             </TooltipProvider>
+            </TenantIdentityProvider>
           </AuthProvider>
         </ThemeProvider>
       </ErrorBoundary>
