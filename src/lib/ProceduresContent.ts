@@ -10,13 +10,6 @@ export interface ProcedureSection {
   recordFrequency: string;
 }
 
-export const PROCEDURES_METADATA = {
-  preparedBy: "Ahmed Khaled (QMS Team Leader)",
-  approvedBy: "Kareem Yehia (CEO)",
-  approvalDate: "January 2026",
-  revisionNo: "01",
-};
-
 export const PROCEDURES_CONTENT: ProcedureSection[] = [
   {
     id: "p01",
