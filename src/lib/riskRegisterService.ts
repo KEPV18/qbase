@@ -133,6 +133,20 @@ export async function updateRisk(riskId: string, updates: RiskUpdate): Promise<R
   return data as Risk;
 }
 
+export function getRiskLevel(score: number): "Low" | "Medium" | "High" | "Critical" {
+  if (score >= 20) return "Critical";
+  if (score >= 15) return "High";
+  if (score >= 8) return "Medium";
+  return "Low";
+}
+
+export function getRiskLevelColor(score: number): string {
+  if (score >= 20) return "text-red-600 bg-red-100";
+  if (score >= 15) return "text-orange-600 bg-orange-100";
+  if (score >= 8) return "text-yellow-600 bg-yellow-100";
+  return "text-green-600 bg-green-100";
+}
+
 export function calculateRiskStats(risks: Risk[]) {
   const total = risks.length;
   const open = risks.filter(r => r.status === "Open").length;

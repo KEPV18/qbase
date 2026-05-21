@@ -129,6 +129,16 @@ export async function updateCAPA(capaId: string, updates: CAPAUpdate): Promise<C
   return data as CAPA;
 }
 
+export function getCAPAStatusColor(status: CAPAStatus): string {
+  switch (status) {
+    case "Open": return "text-red-600 bg-red-100";
+    case "In Progress": return "text-blue-600 bg-blue-100";
+    case "Under Verification": return "text-yellow-600 bg-yellow-100";
+    case "Closed": return "text-green-600 bg-green-100";
+    default: return "text-gray-600 bg-gray-100";
+  }
+}
+
 export function calculateCAPAStats(capas: CAPA[]) {
   const total = capas.length;
   const open = capas.filter(c => c.status === "Open").length;
