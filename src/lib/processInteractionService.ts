@@ -1,6 +1,7 @@
 /**
  * processInteractionService.ts — Supabase-backed
- * Process interactions stored in Supabase. Falls back to empty if table doesn't exist yet.
+ * Processes stored in Supabase "processes" table.
+ * Process interactions stored in "process_interactions" table.
  */
 
 import { supabase } from '@/integrations/supabase/client';
@@ -40,48 +41,107 @@ export interface ProcessUpdate {
   status?: string;
 }
 
+/** Map a Supabase row (snake_case) to the ProcessInteraction interface (camelCase) */
+function mapRowToProcess(row: Record<string, unknown>): ProcessInteraction {
+  return {
+    id: row.id as string,
+    name: (row.process_name as string) || '',
+    description: `${row.category || ''} — ${row.controls || ''}`.trim(),
+    inputs: (row.inputs as string) || '',
+    outputs: (row.outputs as string) || '',
+    responsible: (row.owner as string) || '',
+    supporting: (row.resources as string) || '',
+    kpi: (row.effectiveness as string) || '',
+    status: (row.status as string) || 'Active',
+    createdAt: (row.created_at as string) || '',
+    updatedAt: (row.updated_at as string) || '',
+  };
+}
+
+/** Map ProcessInteraction to a Supabase insert row (snake_case) */
+function mapProcessToRow(process: Partial<ProcessInteraction>): Record<string, unknown> {
+  return {
+    process_name: process.name,
+    category: process.description || '',
+    owner: process.responsible,
+    inputs: process.inputs,
+    outputs: process.outputs,
+    resources: process.supporting,
+    effectiveness: process.kpi,
+    controls: '',
+    competence_needed: '',
+    status: process.status || 'Active',
+  };
+}
+
 export async function getAllProcesses(): Promise<ProcessInteraction[]> {
-  const { data, error } = await supabase.from('process_interactions').select('*').order('created_at', { ascending: true });
+  const { data, error } = await supabase
+    .from('processes')
+    .select('*')
+    .order('process_id', { ascending: true });
+
   if (error || !data) {
-    console.warn('[processInteraction] Table not available, returning empty:', error?.message);
+    console.warn('[processInteraction] Failed to fetch processes:', error?.message);
     return [];
   }
-  return data as ProcessInteraction[];
+
+  return (data as Record<string, unknown>[]).map(mapRowToProcess);
 }
 
 export async function addProcess(input: ProcessInput): Promise<ProcessInteraction> {
-  const process: Partial<ProcessInteraction> = {
-    id: crypto.randomUUID(),
+  const processRow = mapProcessToRow({
     name: input.name,
-    description: input.description || '',
-    inputs: input.inputs || '',
-    outputs: input.outputs || '',
-    responsible: input.responsible || '',
-    supporting: input.supporting || '',
-    kpi: input.kpi || '',
+    description: input.description,
+    inputs: input.inputs,
+    outputs: input.outputs,
+    responsible: input.responsible,
+    supporting: input.supporting,
+    kpi: input.kpi,
     status: 'Active',
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
-  };
+  });
 
-  const { data, error } = await supabase.from('process_interactions').insert(process).select().single();
+  const { data, error } = await supabase
+    .from('processes')
+    .insert(processRow)
+    .select()
+    .single();
+
   if (error) {
     console.error('[processInteraction] Failed to add process:', error.message);
-    return process as ProcessInteraction;
+    throw new Error(`Failed to add process: ${error.message}`);
   }
-  return data as ProcessInteraction;
+
+  return mapRowToProcess(data as Record<string, unknown>);
 }
 
 export async function updateProcess(processId: string, updates: ProcessUpdate): Promise<ProcessInteraction> {
-  // Accept processId as name or UUID — try UUID first
-  const updateData = { ...updates, updatedAt: new Date().toISOString() };
+  const updateRow: Record<string, unknown> = {};
+  const mapped = mapProcessToRow(updates as Partial<ProcessInteraction>);
+
+  // Only include fields that are being updated
+  for (const [key, value] of Object.entries(mapped)) {
+    if (value !== undefined && value !== '') {
+      updateRow[key] = value;
+    }
+  }
+  updateRow['updated_at'] = new Date().toISOString();
 
   // Try by id first
-  let { data, error } = await supabase.from('process_interactions').update(updateData).eq('id', processId).select().single();
+  let { data, error } = await supabase
+    .from('processes')
+    .update(updateRow)
+    .eq('id', processId)
+    .select()
+    .single();
 
-  // If not found by id, try by name
+  // If not found by id, try by process_name
   if (error) {
-    const result = await supabase.from('process_interactions').update(updateData).eq('name', processId).select().single();
+    const result = await supabase
+      .from('processes')
+      .update(updateRow)
+      .eq('process_name', processId)
+      .select()
+      .single();
     data = result.data;
     error = result.error;
   }
@@ -90,7 +150,8 @@ export async function updateProcess(processId: string, updates: ProcessUpdate): 
     console.error('[processInteraction] Failed to update process:', error.message);
     throw new Error(`Failed to update process: ${error.message}`);
   }
-  return data as ProcessInteraction;
+
+  return mapRowToProcess(data as Record<string, unknown>);
 }
 
 export function calculateProcessStats(processes: ProcessInteraction[]) {

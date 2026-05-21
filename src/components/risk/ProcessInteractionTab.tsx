@@ -40,7 +40,7 @@ export function ProcessInteractionTab() {
         return (
             <div className="flex items-center justify-center py-20 gap-3 text-muted-foreground">
                 <Loader2 className="w-5 h-5 animate-spin" />
-                <span className="text-sm font-medium">Loading Process Map from Google Sheets...</span>
+                <span className="text-sm font-medium">Loading Process Map...</span>
             </div>
         );
     }
@@ -64,7 +64,7 @@ export function ProcessInteractionTab() {
                 <div className="relative z-10">
                     <h3 className="font-bold text-xl font-heading text-foreground">Process Interaction Sheet</h3>
                     <p className="text-[10px] text-muted-foreground font-black uppercase tracking-[0.2em] opacity-60">
-                        Live data from Google Sheets • {processes.length} processes
+                        Live data from Supabase • {processes.length} processes
                     </p>
                 </div>
                 <Button variant="outline" size="sm" className="gap-2 relative z-10" onClick={() => refetch()}>
