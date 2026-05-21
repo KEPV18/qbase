@@ -42,7 +42,7 @@ export default function DashboardPage() {
     records?.forEach(r => {
       const fd = (r.formData as Record<string, unknown>) || {};
       const name = fd.project_name || fd.client_name;
-      if (name && typeof name === 'string') projects.add(name);
+      if (name && typeof name === "string") projects.add(name);
     });
 
     const recentRecords = (records || [])
@@ -62,7 +62,7 @@ export default function DashboardPage() {
       moduleStats[mod.id] = {
         formsCount: formsInSection.length,
         recordsCount: recordsInSection.length,
-        pendingCount: gapCount, // forms with no records = pending
+        pendingCount: gapCount,
         issuesCount: 0,
       };
     });
@@ -75,16 +75,28 @@ export default function DashboardPage() {
 
   return (
     <AppShell breadcrumbs={[{ label: "Dashboard" }]}>
-      <div className="space-y-6">
-        {/* Stats overview — polished StatusCard widgets */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+      <div className="space-y-8">
+        {/* Welcome banner */}
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-2xl font-bold tracking-tight">Dashboard</h1>
+            <p className="text-muted-foreground text-sm mt-1">
+              ISO 9001 Quality Management System — {stats.totalForms} forms across 7 sections
+            </p>
+          </div>
+          <Button onClick={() => navigate('/create')} className="gap-2">
+            <FilePlus className="w-4 h-4" /> New Record
+          </Button>
+        </div>
+
+        {/* Stats overview */}
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
           <StatusCard
             title="Total Records"
             value={stats.totalRecords}
             subtitle={`${stats.totalForms} form types`}
             icon={Database}
             variant="default"
-            trend={stats.totalRecords > 0 ? { value: 12, isPositive: true } : undefined}
           />
           <StatusCard
             title="Active Forms"
@@ -111,27 +123,24 @@ export default function DashboardPage() {
 
         {/* Gaps alert */}
         {stats.gaps > 0 && (
-          <Card className="border-amber-500/20 bg-amber-500/5">
-            <CardContent className="p-4 flex items-center gap-3">
-              <AlertTriangle className="w-5 h-5 text-amber-400" />
-              <div className="flex-1">
-                <p className="text-sm font-medium text-amber-200">{stats.gaps} forms have zero records</p>
-                <p className="text-xs text-amber-300/70">These forms need at least one record for audit compliance.</p>
-              </div>
-              <Button size="sm" variant="outline" className="border-amber-500/30 text-amber-300 hover:bg-amber-500/10" onClick={() => navigate('/create')}>
-                <FilePlus className="w-4 h-4 mr-1" /> Create
-              </Button>
-            </CardContent>
-          </Card>
+          <div className="flex items-start gap-3 p-4 rounded-lg border border-warning/20 bg-warning/5">
+            <AlertTriangle className="w-5 h-5 text-warning mt-0.5 shrink-0" />
+            <div className="flex-1">
+              <p className="text-sm font-medium text-foreground">{stats.gaps} forms have zero records</p>
+              <p className="text-xs text-muted-foreground mt-0.5">These forms need at least one record for audit compliance.</p>
+            </div>
+            <Button size="sm" variant="outline" className="shrink-0" onClick={() => navigate('/create')}>
+              <FilePlus className="w-4 h-4 mr-1" /> Create
+            </Button>
+          </div>
         )}
 
-        {/* Module sections — polished ModuleCard widgets */}
+        {/* Module cards */}
         <SectionHeader icon={Layers} label="QMS Modules" description={`${FORM_SCHEMAS.length} forms across 7 ISO 9001 sections`} />
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
           {Object.values(MODULE_CONFIG).map(mod => {
             const mStats = stats.moduleStats[mod.id] || { formsCount: 0, recordsCount: 0, pendingCount: 0, issuesCount: 0 };
-
             return (
               <ModuleCard
                 key={mod.id}
@@ -172,13 +181,13 @@ export default function DashboardPage() {
               {stats.recentRecords.map(r => (
                 <Card
                   key={r.serial as string}
-                  className="cursor-pointer hover:border-primary/30 transition-colors"
+                  className="cursor-pointer hover:border-primary/20 transition-colors"
                   onClick={() => navigate(`/records/${encodeURIComponent(r.serial as string)}`)}
                 >
                   <CardContent className="p-3 flex items-center gap-3">
                     <FileText className="w-4 h-4 text-muted-foreground" />
                     <div className="flex-1 min-w-0">
-                      <span className="text-sm font-mono font-medium">{r.serial as string}</span>
+                      <span className="text-sm font-medium">{r.serial as string}</span>
                       <span className="text-xs text-muted-foreground ml-2">{r.formName as string}</span>
                     </div>
                     <Badge variant="outline" className="text-[10px]">{r.formCode as string}</Badge>
