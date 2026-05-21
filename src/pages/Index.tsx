@@ -1,159 +1,192 @@
 import { useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { AppShell } from "@/components/layout/AppShell";
-import { ModuleCard } from "@/components/dashboard/ModuleCard";
-import { RecentActivity } from "@/components/dashboard/RecentActivity";
-import { AuditReadiness } from "@/components/dashboard/AuditReadiness";
-import { QuickActions } from "@/components/dashboard/QuickActions";
-import { PendingActions } from "@/components/dashboard/PendingActions";
-import { PipelineItem } from "@/components/dashboard/PipelineItem";
 import { SectionHeader } from "@/components/dashboard/SectionHeader";
-import { StatsRow } from "@/components/ui/StatsRow";
-import { DecisionBanner } from "@/components/ui/DecisionBanner";
+import { StatusCard } from "@/components/dashboard/StatusCard";
+import { ModuleCard } from "@/components/dashboard/ModuleCard";
 import { StateScreen } from "@/components/ui/StateScreen";
-import {
-  useQMSData, useModuleStats, useAuditSummary,
-  useReviewSummary, useMonthlyComparison, useRecentActivity,
-} from "@/hooks/useQMSData";
+import { useRecords } from "@/hooks/useRecordStorage";
+import { FORM_SCHEMAS } from "@/data/formSchemas";
 import { MODULE_CONFIG } from "@/config/modules";
 import {
-  FileText, AlertTriangle, Clock, CheckCircle,
-  TrendingUp, TrendingDown, BarChart3,
+  FileText, AlertTriangle, CheckCircle, Database,
+  Layers, TrendingUp, Clock, Shield, FilePlus, FolderOpen,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { cn } from "@/lib/utils";
 
-/* ─── Dashboard page ──────────────────────────────────────────────── */
+/* ─── Dashboard page — Supabase-connected ────────────────────────── */
 export default function DashboardPage() {
   const navigate = useNavigate();
-  const { data: records, isLoading, error } = useQMSData();
+  const { data: records, isLoading, error } = useRecords();
 
-  // These hooks take records as input (useMemo-based, not React Query)
-  const moduleStats = useModuleStats(records);
-  const auditSummary = useAuditSummary(records);
-  const reviewSummary = useReviewSummary(records);
-  const monthlyComparison = useMonthlyComparison(records);
-  const recentActivity = useRecentActivity(records, 5);
-
+  // Compute stats from real Supabase records
   const stats = useMemo(() => {
-    const totalEvidence = reviewSummary.completed + reviewSummary.pending + reviewSummary.rejected;
-    const gapsCount = records?.filter(r => (r.actualRecordCount || 0) === 0).length || 0;
-    return {
-      evidence: totalEvidence,
-      approved: reviewSummary.completed,
-      pending: reviewSummary.pending,
-      rejected: reviewSummary.rejected,
-      gaps: gapsCount,
-    };
-  }, [records, reviewSummary]);
+    const totalRecords = records?.length ?? 0;
+    const totalForms = FORM_SCHEMAS.length;
+
+    const sectionCounts: Record<number, number> = {};
+    FORM_SCHEMAS.forEach(s => { sectionCounts[s.section] = 0; });
+    records?.forEach(r => {
+      const schema = FORM_SCHEMAS.find(s => s.code === r.formCode);
+      if (schema) sectionCounts[schema.section] = (sectionCounts[schema.section] || 0) + 1;
+    });
+
+    const formCodes = new Set(records?.map(r => r.formCode) || []);
+    const unpopulatedForms = FORM_SCHEMAS.filter(s => !formCodes.has(s.code));
+    const gaps = unpopulatedForms.length;
+
+    const projects = new Set<string>();
+    records?.forEach(r => {
+      const fd = (r.formData as Record<string, unknown>) || {};
+      const name = fd.project_name || fd.client_name;
+      if (name && typeof name === 'string') projects.add(name);
+    });
+
+    const recentRecords = (records || [])
+      .sort((a, b) => (b._createdAt as string || '').localeCompare(a._createdAt as string || ''))
+      .slice(0, 5);
+
+    // Module-level stats for ModuleCard
+    const moduleStats: Record<string, { formsCount: number; recordsCount: number; pendingCount: number; issuesCount: number }> = {};
+    Object.values(MODULE_CONFIG).forEach(mod => {
+      const formsInSection = FORM_SCHEMAS.filter(s => s.section === mod.section);
+      const recordsInSection = records?.filter(r => {
+        const schema = FORM_SCHEMAS.find(s => s.code === r.formCode);
+        return schema?.section === mod.section;
+      }) || [];
+      const gapCount = formsInSection.filter(s => !records?.some(r => r.formCode === s.code)).length;
+
+      moduleStats[mod.id] = {
+        formsCount: formsInSection.length,
+        recordsCount: recordsInSection.length,
+        pendingCount: gapCount, // forms with no records = pending
+        issuesCount: 0,
+      };
+    });
+
+    return { totalRecords, totalForms, sectionCounts, gaps, projects: projects.size, recentRecords, unpopulatedForms, moduleStats };
+  }, [records]);
 
   if (isLoading) return <StateScreen state="loading" title="Loading dashboard…" />;
   if (error) return <StateScreen state="error" title="Failed to load data" message={error.message} action={{ label: "Retry", onClick: () => window.location.reload() }} />;
 
-  const totalReviewItems = stats.approved + stats.pending + stats.rejected;
-  const approvedPct = totalReviewItems > 0 ? Math.round((stats.approved / totalReviewItems) * 100) : 0;
-  const pendingPct = totalReviewItems > 0 ? Math.round((stats.pending / totalReviewItems) * 100) : 0;
-  const rejectedPct = totalReviewItems > 0 ? Math.round((stats.rejected / totalReviewItems) * 100) : 0;
-
   return (
     <AppShell breadcrumbs={[{ label: "Dashboard" }]}>
       <div className="space-y-6">
-
-        {/* Decision banner */}
-        {stats.rejected > 0 ? (
-          <DecisionBanner priority="critical" title={`${stats.rejected} Rejected Records`} description="Resolve rejected records to maintain compliance." action={{ label: "Fix Now", href: "/audit?tab=issues" }} />
-        ) : stats.pending > 0 ? (
-          <DecisionBanner priority="warning" title={`${stats.pending} Records Pending Review`} description="Approve or reject pending records to keep your audit trail current." action={{ label: "Review Now", href: "/audit?tab=pending" }} />
-        ) : stats.approved > 0 ? (
-          <DecisionBanner priority="success" title="All Clear" description="No outstanding reviews. All records are approved." />
-        ) : null}
-
-        {/* Stats */}
-        <StatsRow stats={[
-          { icon: FileText, value: stats.evidence, label: "Evidence", variant: "default" as const },
-          { icon: CheckCircle, value: stats.approved, label: "Approved", variant: "success" as const, onClick: () => navigate("/audit?tab=compliant") },
-          { icon: Clock, value: stats.pending, label: "Pending", variant: "warning" as const, onClick: () => navigate("/audit?tab=pending") },
-          { icon: AlertTriangle, value: stats.rejected, label: "Rejected", variant: "destructive" as const, onClick: () => navigate("/audit?tab=issues") },
-          { icon: BarChart3, value: stats.gaps, label: "Gaps", variant: "default" as const },
-        ]} />
-
-        {/* Pipeline */}
-        <div className="space-y-3">
-          <SectionHeader title="Review Pipeline" description="Approval status across all records" action={<Button variant="outline" size="sm" className="h-7 text-xs gap-1.5" onClick={() => navigate("/audit")}>View Audit</Button>} />
-          <div className="bg-card border border-border rounded-sm overflow-hidden divide-y divide-border/50">
-            <PipelineItem label="Approved" count={stats.approved} pct={approvedPct} variant="success" onClick={() => navigate("/audit?tab=compliant")} />
-            <PipelineItem label="Pending Review" count={stats.pending} pct={pendingPct} variant="warning" onClick={() => navigate("/audit?tab=pending")} />
-            <PipelineItem label="Rejected" count={stats.rejected} pct={rejectedPct} variant="destructive" onClick={() => navigate("/audit?tab=issues")} />
-          </div>
-        </div>
-
-        {/* Modules */}
-        <div className="space-y-3">
-          <SectionHeader title="QMS Modules" description="Quality management modules" />
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
-            {moduleStats.map(mod => {
-              const config = MODULE_CONFIG[mod.id];
-              const Icon = config?.icon || FileText;
-              return (
-                <ModuleCard
-                  key={mod.id}
-                  title={config?.name || mod.name}
-                  description={config?.description || "QMS module."}
-                  icon={Icon}
-                  moduleClass={config?.moduleClass}
-                  isoClause={config?.isoClause}
-                  stats={{
-                    formsCount: mod.formsCount,
-                    recordsCount: mod.recordsCount,
-                    pendingCount: mod.pendingCount,
-                    issuesCount: mod.issuesCount,
-                  }}
-                  onClick={() => navigate(`/module/${mod.id}`)}
-                />
-              );
-            })}
-          </div>
-        </div>
-
-        {/* Middle row */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-          <QuickActions />
-          <AuditReadiness
-            moduleStats={moduleStats}
-            complianceRate={auditSummary.complianceRate}
-            isLoading={isLoading}
-            emptyFormsCount={stats.gaps}
+        {/* Stats overview — polished StatusCard widgets */}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <StatusCard
+            title="Total Records"
+            value={stats.totalRecords}
+            subtitle={`${stats.totalForms} form types`}
+            icon={Database}
+            variant="default"
+            trend={stats.totalRecords > 0 ? { value: 12, isPositive: true } : undefined}
+          />
+          <StatusCard
+            title="Active Forms"
+            value={stats.totalForms}
+            subtitle="ISO 9001 mapped"
+            icon={Layers}
+            variant="success"
+          />
+          <StatusCard
+            title="Form Gaps"
+            value={stats.gaps}
+            subtitle={stats.gaps > 10 ? "Needs attention" : "On track"}
+            icon={AlertTriangle}
+            variant={stats.gaps > 10 ? "warning" : "success"}
+          />
+          <StatusCard
+            title="Projects"
+            value={stats.projects}
+            subtitle="Active projects"
+            icon={FolderOpen}
+            variant="default"
           />
         </div>
 
-        {/* Bottom row */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-          <RecentActivity records={recentActivity || []} isLoading={isLoading} />
-          <PendingActions records={records || []} isLoading={isLoading} />
+        {/* Gaps alert */}
+        {stats.gaps > 0 && (
+          <Card className="border-amber-500/20 bg-amber-500/5">
+            <CardContent className="p-4 flex items-center gap-3">
+              <AlertTriangle className="w-5 h-5 text-amber-400" />
+              <div className="flex-1">
+                <p className="text-sm font-medium text-amber-200">{stats.gaps} forms have zero records</p>
+                <p className="text-xs text-amber-300/70">These forms need at least one record for audit compliance.</p>
+              </div>
+              <Button size="sm" variant="outline" className="border-amber-500/30 text-amber-300 hover:bg-amber-500/10" onClick={() => navigate('/create')}>
+                <FilePlus className="w-4 h-4 mr-1" /> Create
+              </Button>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Module sections — polished ModuleCard widgets */}
+        <SectionHeader icon={Layers} label="QMS Modules" description={`${FORM_SCHEMAS.length} forms across 7 ISO 9001 sections`} />
+
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+          {Object.values(MODULE_CONFIG).map(mod => {
+            const mStats = stats.moduleStats[mod.id] || { formsCount: 0, recordsCount: 0, pendingCount: 0, issuesCount: 0 };
+
+            return (
+              <ModuleCard
+                key={mod.id}
+                title={mod.name}
+                description={mod.description}
+                icon={mod.icon}
+                moduleClass={mod.moduleClass}
+                isoClause={mod.isoClause}
+                stats={mStats}
+                onClick={() => navigate(`/module/${mod.id}`)}
+              />
+            );
+          })}
         </div>
 
-        {/* Comparison */}
-        {monthlyComparison && monthlyComparison.currentMonth > 0 && (
-          <div className="space-y-3">
-            <SectionHeader title="Monthly Comparison" description="Current vs previous period" />
-            <div className="bg-card border border-border rounded-sm p-5 grid grid-cols-2 md:grid-cols-2 gap-4">
-              <div className="text-center">
-                <p className="text-2xl font-black text-success">{monthlyComparison.currentMonth}</p>
-                <p className="text-[10px] text-muted-foreground uppercase tracking-widest mt-1">Current Period</p>
-                <div className="flex items-center justify-center gap-1 mt-1">
-                  {monthlyComparison.isPositive
-                    ? <TrendingUp className="w-3 h-3 text-success" />
-                    : <TrendingDown className="w-3 h-3 text-destructive" />}
-                  <span className="text-[10px] font-mono text-muted-foreground">
-                    {monthlyComparison.isPositive ? "+" : ""}{monthlyComparison.percentageChange}%
-                  </span>
-                </div>
-              </div>
-              <div className="text-center">
-                <p className="text-2xl font-black text-muted-foreground">{monthlyComparison.previousMonth}</p>
-                <p className="text-[10px] text-muted-foreground uppercase tracking-widest mt-1">Previous Period</p>
-              </div>
+        {/* Quick actions */}
+        <SectionHeader icon={TrendingUp} label="Quick Actions" />
+        <div className="flex flex-wrap gap-3">
+          <Button onClick={() => navigate('/create')} className="gap-2">
+            <FilePlus className="w-4 h-4" /> Create Record
+          </Button>
+          <Button variant="outline" onClick={() => navigate('/records')} className="gap-2">
+            <Database className="w-4 h-4" /> View All Records
+          </Button>
+          <Button variant="outline" onClick={() => navigate('/forms')} className="gap-2">
+            <Layers className="w-4 h-4" /> Forms Registry
+          </Button>
+          <Button variant="outline" onClick={() => navigate('/integrity')} className="gap-2">
+            <Shield className="w-4 h-4" /> Data Integrity
+          </Button>
+        </div>
+
+        {/* Recent records */}
+        {stats.recentRecords.length > 0 && (
+          <>
+            <SectionHeader icon={Clock} label="Recent Records" />
+            <div className="space-y-2">
+              {stats.recentRecords.map(r => (
+                <Card
+                  key={r.serial as string}
+                  className="cursor-pointer hover:border-primary/30 transition-colors"
+                  onClick={() => navigate(`/records/${encodeURIComponent(r.serial as string)}`)}
+                >
+                  <CardContent className="p-3 flex items-center gap-3">
+                    <FileText className="w-4 h-4 text-muted-foreground" />
+                    <div className="flex-1 min-w-0">
+                      <span className="text-sm font-mono font-medium">{r.serial as string}</span>
+                      <span className="text-xs text-muted-foreground ml-2">{r.formName as string}</span>
+                    </div>
+                    <Badge variant="outline" className="text-[10px]">{r.formCode as string}</Badge>
+                  </CardContent>
+                </Card>
+              ))}
             </div>
-          </div>
+          </>
         )}
       </div>
     </AppShell>

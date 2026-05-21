@@ -11,16 +11,17 @@ import {
   BookOpen,
   AlertTriangle,
   Activity,
-  Archive,
   Layers,
-  Target,
-  GitBranch,
-  BarChart3,
+  FilePlus,
+  Database,
+  Shield,
+  FolderOpen,
 } from "lucide-react";
-import type { RecordStatus } from "@/lib/googleSheets";
 
 // ============================================================================
-// Module Configuration (single source of truth)
+// Module Configuration
+// Maps ISO 9001 sections to QMS Forge form schema sections.
+// section numbers (1-7) correspond to formSchema.section field.
 // ============================================================================
 
 export interface ModuleConfig {
@@ -29,12 +30,12 @@ export interface ModuleConfig {
   icon: LucideIcon;
   description: string;
   isoClause: string;
-  categoryPatterns: string[];
+  section: number;  // matches formSchema.section — the canonical linkage
   moduleClass: string;
   path: string;
 }
 
-/** Canonical module definitions — used by Dashboard, ModulePage, TopNav, Sidebar */
+/** Canonical module definitions — linked to form schemas by section number */
 export const MODULE_CONFIG: Record<string, ModuleConfig> = {
   sales: {
     id: "sales",
@@ -42,7 +43,7 @@ export const MODULE_CONFIG: Record<string, ModuleConfig> = {
     icon: Users,
     description: "Manage customer lifecycle from requirements capture to post-delivery feedback.",
     isoClause: "Clause 8.2, 9.1.2",
-    categoryPatterns: ["sales", "01"],
+    section: 1,
     moduleClass: "module-sales",
     path: "/module/sales",
   },
@@ -52,7 +53,7 @@ export const MODULE_CONFIG: Record<string, ModuleConfig> = {
     icon: Settings,
     description: "Plan, control, and execute operational activities with project timelines.",
     isoClause: "Clause 8.1, 8.5",
-    categoryPatterns: ["operations", "02"],
+    section: 2,
     moduleClass: "module-operations",
     path: "/module/operations",
   },
@@ -62,7 +63,7 @@ export const MODULE_CONFIG: Record<string, ModuleConfig> = {
     icon: ClipboardCheck,
     description: "Core module for quality control, nonconformity handling, and corrective actions.",
     isoClause: "Clause 9, 10",
-    categoryPatterns: ["quality", "03"],
+    section: 3,
     moduleClass: "module-quality",
     path: "/module/quality",
   },
@@ -72,7 +73,7 @@ export const MODULE_CONFIG: Record<string, ModuleConfig> = {
     icon: ShoppingCart,
     description: "Ensure all purchased items and vendors meet quality requirements.",
     isoClause: "Clause 8.4",
-    categoryPatterns: ["procurement", "04"],
+    section: 4,
     moduleClass: "module-procurement",
     path: "/module/procurement",
   },
@@ -82,7 +83,7 @@ export const MODULE_CONFIG: Record<string, ModuleConfig> = {
     icon: GraduationCap,
     description: "Track personnel competence, training records, and performance appraisals.",
     isoClause: "Clause 7.2, 7.3",
-    categoryPatterns: ["hr", "05", "training"],
+    section: 5,
     moduleClass: "module-hr",
     path: "/module/hr",
   },
@@ -92,7 +93,7 @@ export const MODULE_CONFIG: Record<string, ModuleConfig> = {
     icon: Lightbulb,
     description: "Manage innovation, development requests, and technical validation.",
     isoClause: "Clause 8.3",
-    categoryPatterns: ["r&d", "rnd", "06", "design"],
+    section: 6,
     moduleClass: "module-rnd",
     path: "/module/rnd",
   },
@@ -102,7 +103,7 @@ export const MODULE_CONFIG: Record<string, ModuleConfig> = {
     icon: Building2,
     description: "Control governance, documentation, KPI tracking, and leadership decisions.",
     isoClause: "Clause 5, 6, 7.5",
-    categoryPatterns: ["management", "07", "documentation"],
+    section: 7,
     moduleClass: "module-management",
     path: "/module/management",
   },
@@ -117,17 +118,17 @@ export interface NavItem {
   label: string;
   icon: LucideIcon;
   path: string;
-  moduleClass?: string;
+  section?: number;  // optional link to form section for filtering
 }
 
 /** Module navigation items — used by TopNav and Sidebar */
 export const MODULE_NAV_ITEMS: NavItem[] = Object.values(MODULE_CONFIG).map(
-  ({ id, name, icon, path, moduleClass }) => ({
+  ({ id, name, icon, path, moduleClass, section }) => ({
     id,
-    label: name.replace(/&.*/, "").trim() || name, // Short label: "Sales & Customer Service" → "Sales & Customer"
+    label: name.replace(/&.*/, "").trim() || name,
     icon,
     path,
-    moduleClass,
+    section,
   })
 );
 
@@ -142,50 +143,51 @@ export const DOCS_NAV_ITEMS: NavItem[] = [
   { id: "forms", label: "Forms Registry", icon: Layers, path: "/forms" },
 ];
 
-/** Tool/navigation items — interactive tools */
+/** Tool/navigation items — interactive tools, all Supabase-connected */
 export const TOOL_NAV_ITEMS: NavItem[] = [
-  { id: "forms", label: "Forms Registry", icon: Layers, path: "/forms" },
+  { id: "create", label: "Create Record", icon: FilePlus, path: "/create" },
+  { id: "records", label: "Records", icon: Database, path: "/records" },
   { id: "risk", label: "Risk & Process", icon: AlertTriangle, path: "/risk-management" },
-  { id: "kpi", label: "KPI Dashboard", icon: Target, path: "/kpi" },
-  // { id: "kpi-review", label: "KPI Review", icon: Activity, path: "/kpi/review" },
-  { id: "swot", label: "SWOT Analysis", icon: BarChart3, path: "/swot-analysis" },
-  { id: "traceability", label: "Traceability", icon: GitBranch, path: "/traceability" },
   { id: "activity", label: "Activity Log", icon: Activity, path: "/activity" },
-  { id: "archive", label: "Record Archive", icon: Archive, path: "/archive" },
+  { id: "integrity", label: "Integrity", icon: Shield, path: "/integrity" },
+  { id: "projects", label: "Projects", icon: FolderOpen, path: "/projects" },
 ];
 
 // ============================================================================
-// Module Mappings (category string → module id)
+// Module Mappings (section number → module)
+// Used by SupabaseStorage to map record categories to modules
 // ============================================================================
 
 export const MODULE_MAPPINGS: Record<string, { id: string; name: string; order: number }> = {
   "sales": { id: "sales", name: "Sales & Customer Service", order: 1 },
+  "1": { id: "sales", name: "Sales & Customer Service", order: 1 },
   "01": { id: "sales", name: "Sales & Customer Service", order: 1 },
-  "01-": { id: "sales", name: "Sales & Customer Service", order: 1 },
   "operations": { id: "operations", name: "Operations & Production", order: 2 },
+  "2": { id: "operations", name: "Operations & Production", order: 2 },
   "02": { id: "operations", name: "Operations & Production", order: 2 },
-  "02-": { id: "operations", name: "Operations & Production", order: 2 },
   "quality": { id: "quality", name: "Quality & Audit", order: 3 },
+  "3": { id: "quality", name: "Quality & Audit", order: 3 },
   "03": { id: "quality", name: "Quality & Audit", order: 3 },
-  "03-": { id: "quality", name: "Quality & Audit", order: 3 },
   "procurement": { id: "procurement", name: "Procurement & Vendors", order: 4 },
+  "4": { id: "procurement", name: "Procurement & Vendors", order: 4 },
   "04": { id: "procurement", name: "Procurement & Vendors", order: 4 },
-  "04-": { id: "procurement", name: "Procurement & Vendors", order: 4 },
   "hr": { id: "hr", name: "HR & Training", order: 5 },
+  "5": { id: "hr", name: "HR & Training", order: 5 },
   "05": { id: "hr", name: "HR & Training", order: 5 },
-  "05-": { id: "hr", name: "HR & Training", order: 5 },
   "r&d": { id: "rnd", name: "R&D & Design", order: 6 },
   "rnd": { id: "rnd", name: "R&D & Design", order: 6 },
+  "6": { id: "rnd", name: "R&D & Design", order: 6 },
   "06": { id: "rnd", name: "R&D & Design", order: 6 },
-  "06-": { id: "rnd", name: "R&D & Design", order: 6 },
   "management": { id: "management", name: "Management & Documentation", order: 7 },
+  "7": { id: "management", name: "Management & Documentation", order: 7 },
   "07": { id: "management", name: "Management & Documentation", order: 7 },
-  "07-": { id: "management", name: "Management & Documentation", order: 7 },
 };
 
 // ============================================================================
 // Status Configuration
 // ============================================================================
+
+export type RecordStatus = 'draft' | 'pending_review' | 'approved' | 'rejected';
 
 export const STATUS_TRANSITIONS: Record<RecordStatus, RecordStatus[]> = {
   draft: ["pending_review"],
@@ -204,27 +206,28 @@ export const STATUS_LABELS: Record<RecordStatus, { en: string; color: string }> 
 /** Normalize a category string to a module id and name */
 export function normalizeCategory(category: string): { id: string; name: string } | null {
   if (!category) return null;
-
   const lower = category.toLowerCase().trim();
-
   for (const [key, value] of Object.entries(MODULE_MAPPINGS)) {
     if (lower.includes(key)) {
       return value;
     }
   }
-
   return null;
 }
 
 /** Normalize an audit status string */
 export function normalizeAuditStatus(status: string): "compliant" | "pending" | "issue" {
   const lower = (status || "").toLowerCase().trim();
-
-  if (lower.includes("approved") || lower.includes("compliant") || lower.includes("\u2705")) {
+  if (lower.includes("approved") || lower.includes("compliant")) {
     return "compliant";
   }
-  if (lower.includes("nc") || lower.includes("issue") || lower.includes("invalid") || lower.includes("\u274c")) {
+  if (lower.includes("nc") || lower.includes("issue") || lower.includes("invalid")) {
     return "issue";
   }
   return "pending";
+}
+
+/** Get module config for a form schema section number */
+export function getModuleForSection(section: number): ModuleConfig | undefined {
+  return Object.values(MODULE_CONFIG).find(m => m.section === section);
 }
