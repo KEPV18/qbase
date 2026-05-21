@@ -16,6 +16,7 @@ import {
   Database,
   Shield,
   FolderOpen,
+  Target,
 } from "lucide-react";
 
 // ============================================================================
@@ -151,6 +152,7 @@ export const TOOL_NAV_ITEMS: NavItem[] = [
   { id: "activity", label: "Activity Log", icon: Activity, path: "/activity" },
   { id: "integrity", label: "Integrity", icon: Shield, path: "/integrity" },
   { id: "projects", label: "Projects", icon: FolderOpen, path: "/projects" },
+  { id: "kpi", label: "KPI Dashboard", icon: Target, path: "/kpi" },
 ];
 
 // ============================================================================

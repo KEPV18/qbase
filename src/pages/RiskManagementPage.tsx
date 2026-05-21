@@ -7,8 +7,9 @@ const RiskRegisterTab = lazy(() => import("@/components/risk/RiskRegisterTab").t
 const CapaRegisterTab = lazy(() => import("@/components/risk/CapaRegisterTab").then(m => ({ default: m.CapaRegisterTab })));
 const ProcessInteractionTab = lazy(() => import("@/components/risk/ProcessInteractionTab").then(m => ({ default: m.ProcessInteractionTab })));
 const RiskHeatMap = lazy(() => import("@/components/risk/RiskHeatMap").then(m => ({ default: m.RiskHeatMap })));
+const CAPAEvidenceDashboard = lazy(() => import("@/components/traceability/CAPAEvidenceDashboard"));
 
-import { Shield, AlertTriangle, Activity, ChevronRight, Clock, CheckCircle } from "lucide-react";
+import { Shield, AlertTriangle, Activity, ChevronRight, Clock, CheckCircle, FileCheck2 } from "lucide-react";
 import { StatsRow } from "@/components/ui/StatsRow";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { useRiskData } from "@/hooks/useRiskData";
@@ -25,7 +26,7 @@ export default function RiskManagementPage() {
     useEffect(() => {
         const params = new URLSearchParams(location.search);
         const tab = params.get("tab");
-        if (tab && ["risk", "capa", "process"].includes(tab)) {
+        if (tab && ["risk", "capa", "process", "capa-evidence"].includes(tab)) {
             setActiveTab(tab);
         }
     }, [location.search]);
@@ -73,7 +74,7 @@ export default function RiskManagementPage() {
 
                 {/* Tabs */}
                 <Tabs value={activeTab} onValueChange={handleTabChange}>
-                    <TabsList className="grid w-full grid-cols-3 lg:w-[500px] h-10 p-1 bg-muted/40 rounded-sm border border-border/50">
+                    <TabsList className="grid w-full grid-cols-4 lg:w-[640px] h-10 p-1 bg-muted/40 rounded-sm border border-border/50">
                         <TabsTrigger value="risk" className="gap-1.5 rounded-sm text-xs font-bold data-[state=active]:bg-background data-[state=active]:shadow-sm">
                             <AlertTriangle className="w-3.5 h-3.5" />
                             Risk Register
@@ -87,6 +88,10 @@ export default function RiskManagementPage() {
                         <TabsTrigger value="process" className="gap-1.5 rounded-sm text-xs font-bold data-[state=active]:bg-background data-[state=active]:shadow-sm">
                             <Activity className="w-3.5 h-3.5" />
                             Process Map
+                        </TabsTrigger>
+                        <TabsTrigger value="capa-evidence" className="gap-1.5 rounded-sm text-xs font-bold data-[state=active]:bg-background data-[state=active]:shadow-sm">
+                            <FileCheck2 className="w-3.5 h-3.5" />
+                            CAPA Evidence
                         </TabsTrigger>
                     </TabsList>
 
@@ -106,6 +111,10 @@ export default function RiskManagementPage() {
                         <div className="bg-card rounded-sm border border-border overflow-hidden">
                             <Suspense fallback={<div className="h-48 bg-muted/20 animate-pulse rounded-sm" />}><ProcessInteractionTab /></Suspense>
                         </div>
+                    </TabsContent>
+
+                    <TabsContent value="capa-evidence" className="mt-4">
+                        <Suspense fallback={<div className="h-48 bg-muted/20 animate-pulse rounded-sm" />}><CAPAEvidenceDashboard /></Suspense>
                     </TabsContent>
                 </Tabs>
             </div>

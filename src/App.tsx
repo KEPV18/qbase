@@ -30,6 +30,8 @@ const RecordViewPage = lazy(() => import("./pages/RecordViewPage"));
 const DataIntegrityPage = lazy(() => import("./pages/DataIntegrityPage"));
 const NotificationsPage = lazy(() => import("./pages/NotificationsPage"));
 const ModulePage = lazy(() => import("./pages/ModulePage"));
+const KPIDashboardPage = lazy(() => import("./pages/KPIDashboardPage"));
+const KPIReportsPage = lazy(() => import("./pages/KPIReportsPage"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 
 const queryClient = new QueryClient({
@@ -99,6 +101,10 @@ const App = () => {
 
                     {/* Module pages — dedicated page per ISO section */}
                     <Route path="/module/:moduleId" element={<RequireAuth><PageBoundary><ModulePage /></PageBoundary></RequireAuth>} />
+
+                    {/* KPI Dashboard & Reports */}
+                    <Route path="/kpi" element={<RequireAuth><PageBoundary><KPIDashboardPage /></PageBoundary></RequireAuth>} />
+                    <Route path="/kpi/reports" element={<RequireAuth><PageBoundary><KPIReportsPage /></PageBoundary></RequireAuth>} />
 
                     {/* Record system — Supabase-backed via useRecordStorage */}
                     <Route path="/create" element={<RequireAuth><PageBoundary><RecordCreationPage /></PageBoundary></RequireAuth>} />

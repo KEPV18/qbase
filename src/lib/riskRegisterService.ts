@@ -1,6 +1,7 @@
 /**
- * riskRegisterService.ts — Supabase-backed
- * Risks stored in Supabase. Falls back to empty if table doesn't exist yet.
+ * Risk Register Service — Supabase-backed
+ * Replaces Google Sheets with Supabase as the single source of truth.
+ * @iso ISO 9001:2015 Clause 6.1 - Actions to address risks and opportunities
  */
 
 import { supabase } from '@/integrations/supabase/client';
@@ -9,116 +10,143 @@ export type RiskStatus = "Open" | "Under Review" | "Controlled" | "Closed";
 
 export interface Risk {
   id: string;
-  title: string;
-  description: string;
-  category: string;
+  risk_id: string;
+  process_department: string;
+  risk_description: string;
+  cause: string;
   likelihood: number;
   impact: number;
-  riskScore: number;
-  status: RiskStatus;
-  mitigationPlan: string;
+  risk_score: number;
+  action_control: string;
   owner: string;
-  targetDate: string;
-  createdAt: string;
-  updatedAt: string;
+  status: RiskStatus;
+  review_date: string | null;
+  linked_capa: string | null;
+  created_at: string;
+  updated_at: string;
 }
 
 export interface RiskInput {
-  title: string;
-  description?: string;
-  category?: string;
+  process_department: string;
+  risk_description: string;
+  cause: string;
   likelihood: number;
   impact: number;
-  mitigationPlan?: string;
-  owner?: string;
-  targetDate?: string;
+  action_control: string;
+  owner: string;
+  review_date?: string;
+  linked_capa?: string;
 }
 
 export interface RiskUpdate {
-  title?: string;
-  description?: string;
-  category?: string;
+  process_department?: string;
+  risk_description?: string;
+  cause?: string;
   likelihood?: number;
   impact?: number;
-  status?: RiskStatus;
-  mitigationPlan?: string;
+  action_control?: string;
   owner?: string;
-  targetDate?: string;
+  status?: RiskStatus;
+  review_date?: string;
+  linked_capa?: string;
+}
+
+const VALID_STATUSES: RiskStatus[] = ["Open", "Under Review", "Controlled", "Closed"];
+
+function isValidRating(value: number): boolean {
+  return Number.isInteger(value) && value >= 1 && value <= 5;
+}
+
+function isValidStatus(status: string): status is RiskStatus {
+  return VALID_STATUSES.includes(status as RiskStatus);
+}
+
+function generateRiskId(existingRisks: Risk[]): string {
+  const year = new Date().getFullYear().toString().slice(-2);
+  const existing = existingRisks
+    .map(r => r.risk_id)
+    .filter(id => id.match(/^RISK-\d{2}-\d{3}$/))
+    .map(id => parseInt(id.split("-")[2], 10))
+    .filter(n => !isNaN(n));
+  const next = existing.length > 0 ? Math.max(...existing) + 1 : 1;
+  return `RISK-${year}-${String(next).padStart(3, "0")}`;
 }
 
 export async function getAllRisks(): Promise<Risk[]> {
-  const { data, error } = await supabase.from('risks').select('*').order('created_at', { ascending: false });
-  if (error || !data) {
-    console.warn('[riskRegister] Table not available, returning empty:', error?.message);
-    return [];
+  const { data, error } = await supabase
+    .from("risks")
+    .select("*")
+    .is("deleted_at", null)
+    .order("risk_id", { ascending: true });
+
+  if (error) {
+    console.error("[riskRegister] Fetch error:", error.message);
+    throw new Error(`Failed to fetch risks: ${error.message}`);
   }
-  return data as Risk[];
+  return (data as Risk[]) || [];
 }
 
 export async function addRisk(input: RiskInput): Promise<Risk> {
-  const score = (input.likelihood || 1) * (input.impact || 1);
-  const risk: Partial<Risk> = {
-    id: crypto.randomUUID(),
-    title: input.title,
-    description: input.description || '',
-    category: input.category || 'General',
-    likelihood: input.likelihood,
-    impact: input.impact,
-    riskScore: score,
-    status: 'Open',
-    mitigationPlan: input.mitigationPlan || '',
-    owner: input.owner || '',
-    targetDate: input.targetDate || '',
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
-  };
+  if (!isValidRating(input.likelihood)) throw new Error("Likelihood must be between 1 and 5");
+  if (!isValidRating(input.impact)) throw new Error("Impact must be between 1 and 5");
 
-  const { data, error } = await supabase.from('risks').insert(risk).select().single();
-  if (error) {
-    console.error('[riskRegister] Failed to add risk:', error.message);
-    return risk as Risk;
-  }
+  const existingRisks = await getAllRisks();
+  const risk_id = generateRiskId(existingRisks);
+
+  const { data, error } = await supabase
+    .from("risks")
+    .insert({
+      risk_id,
+      process_department: input.process_department,
+      risk_description: input.risk_description,
+      cause: input.cause,
+      likelihood: input.likelihood,
+      impact: input.impact,
+      action_control: input.action_control,
+      owner: input.owner,
+      review_date: input.review_date || null,
+      linked_capa: input.linked_capa || null,
+    })
+    .select()
+    .single();
+
+  if (error) throw new Error(`Failed to add risk: ${error.message}`);
   return data as Risk;
 }
 
 export async function updateRisk(riskId: string, updates: RiskUpdate): Promise<Risk> {
-  const updateData = { ...updates, updatedAt: new Date().toISOString() };
-  if (updates.likelihood !== undefined && updates.impact !== undefined) {
-    (updateData as any).riskScore = updates.likelihood * updates.impact;
-  }
+  if (updates.likelihood !== undefined && !isValidRating(updates.likelihood))
+    throw new Error("Likelihood must be between 1 and 5");
+  if (updates.impact !== undefined && !isValidRating(updates.impact))
+    throw new Error("Impact must be between 1 and 5");
+  if (updates.status && !isValidStatus(updates.status))
+    throw new Error("Invalid status value");
 
-  const { data, error } = await supabase.from('risks').update(updateData).eq('id', riskId).select().single();
-  if (error) {
-    console.error('[riskRegister] Failed to update risk:', error.message);
-    throw new Error(`Failed to update risk: ${error.message}`);
-  }
+  const { data, error } = await supabase
+    .from("risks")
+    .update({ ...updates, updated_at: new Date().toISOString() })
+    .eq("risk_id", riskId)
+    .select()
+    .single();
+
+  if (error) throw new Error(`Failed to update risk: ${error.message}`);
   return data as Risk;
 }
 
 export function calculateRiskStats(risks: Risk[]) {
-  return {
-    total: risks.length,
-    open: risks.filter(r => r.status === 'Open').length,
-    underReview: risks.filter(r => r.status === 'Under Review').length,
-    controlled: risks.filter(r => r.status === 'Controlled').length,
-    closed: risks.filter(r => r.status === 'Closed').length,
-    avgScore: risks.length > 0 ? Math.round(risks.reduce((sum, r) => sum + r.riskScore, 0) / risks.length) : 0,
-  };
-}
+  const total = risks.length;
+  const open = risks.filter(r => r.status === "Open").length;
+  const underReview = risks.filter(r => r.status === "Under Review").length;
+  const controlled = risks.filter(r => r.status === "Controlled").length;
+  const closed = risks.filter(r => r.status === "Closed").length;
+  const highCritical = risks.filter(r => r.risk_score >= 12).length;
+  const medium = risks.filter(r => r.risk_score >= 6 && r.risk_score < 12).length;
+  const low = risks.filter(r => r.risk_score < 6).length;
 
-export function getRiskLevel(score: number): "Low" | "Medium" | "High" | "Critical" {
-  if (score >= 20) return "Critical";
-  if (score >= 12) return "High";
-  if (score >= 6) return "Medium";
-  return "Low";
-}
+  const byDepartment: Record<string, number> = {};
+  risks.forEach(r => {
+    byDepartment[r.process_department] = (byDepartment[r.process_department] || 0) + 1;
+  });
 
-export function getRiskLevelColor(score: number): string {
-  const level = getRiskLevel(score);
-  switch (level) {
-    case 'Critical': return 'bg-red-500 text-white';
-    case 'High': return 'bg-orange-500 text-white';
-    case 'Medium': return 'bg-yellow-500 text-black';
-    case 'Low': return 'bg-green-500 text-white';
-  }
+  return { total, open, underReview, controlled, closed, highCritical, medium, low, byDepartment };
 }

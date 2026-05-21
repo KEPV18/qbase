@@ -79,7 +79,7 @@ export default function RiskRegisterPage() {
           <div className="flex items-center justify-between">
             <div>
               <h1 className="text-2xl font-bold text-foreground flex items-center gap-2">
-                <AlertTriangle className="w-7 h-7 text-orange-500" />
+                <AlertTriangle className="w-7 h-7 text-warning" />
                 Risk Register
               </h1>
               <p className="text-muted-foreground mt-1">
