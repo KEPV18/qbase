@@ -17,6 +17,7 @@ import {
   Shield,
   FolderOpen,
   Target,
+  BarChart3,
 } from "lucide-react";
 
 // ============================================================================
