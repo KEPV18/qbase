@@ -33,6 +33,7 @@ const ModulePage = lazy(() => import("./pages/ModulePage"));
 const KPIDashboardPage = lazy(() => import("./pages/KPIDashboardPage"));
 const KPIReportsPage = lazy(() => import("./pages/KPIReportsPage"));
 const SWOTAnalysisPage = lazy(() => import("./pages/SWOTAnalysisPage"));
+const TraceabilityPage = lazy(() => import("./pages/TraceabilityPage"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 
 const queryClient = new QueryClient({
@@ -109,6 +110,8 @@ const App = () => {
 
                     {/* SWOT Analysis */}
                     <Route path="/swot-analysis" element={<RequireAuth><PageBoundary><SWOTAnalysisPage /></PageBoundary></RequireAuth>} />
+                    <Route path="/traceability" element={<RequireAuth><PageBoundary><TraceabilityPage /></PageBoundary></RequireAuth>} />
+                    <Route path="/traceability/:recordId" element={<RequireAuth><PageBoundary><TraceabilityPage /></PageBoundary></RequireAuth>} />
 
                     {/* Record system — Supabase-backed via useRecordStorage */}
                     <Route path="/create" element={<RequireAuth><PageBoundary><RecordCreationPage /></PageBoundary></RequireAuth>} />
