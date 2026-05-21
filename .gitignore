@@ -1,0 +1,58 @@
+# Logs
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+node_modules
+dist
+dist-ssr
+*.local
+
+# Editor directories and files
+.vscode/*
+!.vscode/extensions.json
+.idea
+.DS_Store
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+ 
+# Local environment files
+.env
+.env.*
+!.env.example
+
+# QMS document files (not part of web app)
+*.docx
+*.DOCX
+.~lock.*
+*.doc
+
+# Project report files (not part of web app)
+AUDIT_ROUND2_REPORT.md
+CODE_REVIEW_REPORT.md
+FIX_PROGRESS.md
+FIX_REPORT.md
+REDESIGN_PLAN.md
+MIGRATION_SAFETY_REPORT.md
+PHASE_5_PLAN.md
+TRACEABILITY_INTEGRATION_REPORT.md
+1.txt
+*.bat
+*.ps1
+
+# QMS document folders (not part of web app)
+02. Procedures/
+03. Manual/
+04. Work Instructions/
+scripts/
+
+.codex
+.vite
+*.bak

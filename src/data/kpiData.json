@@ -1,0 +1,587 @@
+[
+  {
+    "roleKey": "Data_Quality_Specialist_",
+    "title": "Data Quality Specialist",
+    "department": "Operations",
+    "manager": "Operations Manager",
+    "jobLevel": "Senior",
+    "employmentStatus": "Full Time",
+    "kpiWeight": 0.7,
+    "competenciesWeight": 0.3,
+    "kpis": [
+      {
+        "id": "Data_Quality_Specialist__1",
+        "category": "Data Quality & Accuracy",
+        "objective": "% audited datasets meeting predefined accuracy, completeness, and consistency standards",
+        "weight": 0.9,
+        "target": 0.9,
+        "evaluation": null,
+        "frequency": "Monthly"
+      },
+      {
+        "id": "Data_Quality_Specialist__2",
+        "category": "Data Quality & Accuracy",
+        "objective": "% data discrepancies identified before client delivery or internal handover",
+        "weight": 0.9,
+        "target": 0.9,
+        "evaluation": null,
+        "frequency": "Monthly"
+      },
+      {
+        "id": "Data_Quality_Specialist__3",
+        "category": "Data Quality & Accuracy",
+        "objective": "% quality reports and dashboards submitted on time and without revision requests",
+        "weight": 0.95,
+        "target": 0.9,
+        "evaluation": null,
+        "frequency": "Monthly"
+      },
+      {
+        "id": "Data_Quality_Specialist__4",
+        "category": "Data Quality & Accuracy",
+        "objective": "% high-risk or recurring quality issues escalated within the defined SLA timeframe",
+        "weight": 1,
+        "target": 0.9,
+        "evaluation": null,
+        "frequency": "Monthly"
+      },
+      {
+        "id": "Data_Quality_Specialist__5",
+        "category": "Quality Management",
+        "objective": "% decrease in repeated data quality issues quarter-over-quarter through corrective and preventive actions",
+        "weight": 0.95,
+        "target": 0.9,
+        "evaluation": null,
+        "frequency": "Monthly"
+      },
+      {
+        "id": "Data_Quality_Specialist__6",
+        "category": "Quality Management",
+        "objective": "% adherence to internal data governance policies and project-specific quality standards during audits",
+        "weight": 1,
+        "target": 0.9,
+        "evaluation": null,
+        "frequency": "Monthly"
+      },
+      {
+        "id": "Data_Quality_Specialist__7",
+        "category": "Quality Management",
+        "objective": "% QC reviews completed within agreed project timelines",
+        "weight": 0.95,
+        "target": 0.9,
+        "evaluation": null,
+        "frequency": "Monthly"
+      }
+    ]
+  },
+  {
+    "roleKey": "Get_Vocal_Team_Leader_",
+    "title": "Get Vocal Team Leader",
+    "department": "Operations",
+    "manager": "Operations Manager",
+    "jobLevel": "Senior",
+    "employmentStatus": "Full Time",
+    "kpiWeight": 0.7,
+    "competenciesWeight": 0.3,
+    "kpis": [
+      {
+        "id": "Get_Vocal_Team_Leader__1",
+        "category": "Team Management",
+        "objective": "% weeks/months where the team meets or exceeds agreed productivity targets",
+        "weight": 0.1,
+        "target": 0.9,
+        "evaluation": null,
+        "frequency": "Monthly"
+      },
+      {
+        "id": "Get_Vocal_Team_Leader__2",
+        "category": "Team Management",
+        "objective": "% reduction in underperformance cases after coaching and corrective action plans",
+        "weight": 0.07,
+        "target": 0.9,
+        "evaluation": null,
+        "frequency": "Monthly"
+      },
+      {
+        "id": "Get_Vocal_Team_Leader__3",
+        "category": "Quality Management",
+        "objective": "% outputs meeting client quality benchmarks and internal guidelines during QC reviews",
+        "weight": 0.15,
+        "target": 0.95,
+        "evaluation": null,
+        "frequency": "Monthly"
+      },
+      {
+        "id": "Get_Vocal_Team_Leader__4",
+        "category": "Quality Management",
+        "objective": "% deliverables completed within agreed turnaround times and SLAs",
+        "weight": 0.1,
+        "target": 1,
+        "evaluation": null,
+        "frequency": "Monthly"
+      },
+      {
+        "id": "Get_Vocal_Team_Leader__5",
+        "category": "Project Delivery",
+        "objective": "% project updates or new requirements successfully cascaded and implemented without recurring errors",
+        "weight": 0.05,
+        "target": 1,
+        "evaluation": null,
+        "frequency": "Monthly"
+      },
+      {
+        "id": "Get_Vocal_Team_Leader__6",
+        "category": "Team Management",
+        "objective": "% team members receiving documented coaching sessions and showing measurable improvement in quality/productivity",
+        "weight": 0.08,
+        "target": 0.95,
+        "evaluation": null,
+        "frequency": "Monthly"
+      }
+    ]
+  },
+  {
+    "roleKey": "Omniaz_Team_Leader_",
+    "title": "Omniaz Team Leader",
+    "department": "Operations",
+    "manager": "Operations Manager",
+    "jobLevel": "Senior",
+    "employmentStatus": "Full Time",
+    "kpiWeight": 0.7,
+    "competenciesWeight": 0.3,
+    "kpis": [
+      {
+        "id": "Omniaz_Team_Leader__1",
+        "category": "Project Delivery",
+        "objective": "% project milestones and deliverables completed within agreed timelines",
+        "weight": 0.1,
+        "target": 0.9,
+        "evaluation": null,
+        "frequency": "Monthly"
+      },
+      {
+        "id": "Omniaz_Team_Leader__2",
+        "category": "Project Delivery",
+        "objective": "% months where project KPIs (productivity, turnaround time, output volume) meet or exceed agreed benchmarks",
+        "weight": 0.15,
+        "target": 0.9,
+        "evaluation": null,
+        "frequency": "Monthly"
+      },
+      {
+        "id": "Omniaz_Team_Leader__3",
+        "category": "Quality Management",
+        "objective": "% outputs meeting internal QC standards and client quality requirements",
+        "weight": 0.1,
+        "target": 0.95,
+        "evaluation": null,
+        "frequency": "Monthly"
+      },
+      {
+        "id": "Omniaz_Team_Leader__4",
+        "category": "Quality Management",
+        "objective": "% adherence to contractual obligations and internal audit requirements without major findings",
+        "weight": 0.05,
+        "target": 1,
+        "evaluation": null,
+        "frequency": "Monthly"
+      },
+      {
+        "id": "Omniaz_Team_Leader__5",
+        "category": "Team Management",
+        "objective": "% team members meeting quality and productivity benchmarks after onboarding/training",
+        "weight": 0.1,
+        "target": 0.95,
+        "evaluation": null,
+        "frequency": "Monthly"
+      }
+    ]
+  },
+  {
+    "roleKey": "Operations_Director_",
+    "title": "Operations Director",
+    "department": "Operations",
+    "manager": "CEO",
+    "jobLevel": "Senior",
+    "employmentStatus": "Full Time",
+    "kpiWeight": 0.7,
+    "competenciesWeight": 0.3,
+    "kpis": [
+      {
+        "id": "Operations_Director__1",
+        "category": "Project Delivery",
+        "objective": "% of projects delivered within agreed timelines across all teams.",
+        "weight": 0.05,
+        "target": 0.9,
+        "evaluation": null,
+        "frequency": "Monthly"
+      },
+      {
+        "id": "Operations_Director__2",
+        "category": "Project Delivery",
+        "objective": "% of Delivery Quality Index and composite metric (rework rate, bug rate post-delivery, QA acceptance rate).",
+        "weight": 0.05,
+        "target": 0.9,
+        "evaluation": null,
+        "frequency": "Monthly"
+      },
+      {
+        "id": "Operations_Director__3",
+        "category": "Project Delivery",
+        "objective": "% of Billable or productive hours vs. total available hours across teams.",
+        "weight": 0.1,
+        "target": 0.9,
+        "evaluation": null,
+        "frequency": "Monthly"
+      },
+      {
+        "id": "Operations_Director__4",
+        "category": "Project Delivery",
+        "objective": "% of projects delivered without requiring mid-cycle resource reallocation/escalation.",
+        "weight": 0.1,
+        "target": 0.6,
+        "evaluation": null,
+        "frequency": "Monthly"
+      },
+      {
+        "id": "Operations_Director__5",
+        "category": "Project Delivery",
+        "objective": "% of core operations with documented and implemented SOPs/frameworks.",
+        "weight": 0.1,
+        "target": 0.95,
+        "evaluation": null,
+        "frequency": "Monthly"
+      },
+      {
+        "id": "Operations_Director__6",
+        "category": "Project Delivery",
+        "objective": "% of Operational Efficiency Improvement & measured reduction in cycle time / cost per project / delivery lead time QoQ.",
+        "weight": 0.1,
+        "target": 1,
+        "evaluation": null,
+        "frequency": "Monthly"
+      },
+      {
+        "id": "Operations_Director__7",
+        "category": "Client Satisfaction",
+        "objective": "% of retained clients + upsell/expansion revenue from existing accounts.",
+        "weight": 0.2,
+        "target": 0.95,
+        "evaluation": null,
+        "frequency": "Monthly"
+      }
+    ]
+  },
+  {
+    "roleKey": "Operations_Manager___Andrew",
+    "title": "Operations Manager",
+    "department": "Operations",
+    "manager": "Operations Director",
+    "jobLevel": "Senior",
+    "employmentStatus": "Full Time",
+    "kpiWeight": 0.7,
+    "competenciesWeight": 0.3,
+    "kpis": [
+      {
+        "id": "Operations_Manager___Andrew_1",
+        "category": "Submission of Reporting Sheets on Time",
+        "objective": "% of required operational reports submitted by the agreed deadlines across all projects",
+        "weight": 0.05,
+        "target": 0.9,
+        "evaluation": null,
+        "frequency": "Monthly"
+      },
+      {
+        "id": "Operations_Manager___Andrew_2",
+        "category": "Submission of Reporting Sheets on Time",
+        "objective": "% of reports submitted without errors, missing data, or follow-up clarifications required",
+        "weight": 0.05,
+        "target": 0.9,
+        "evaluation": null,
+        "frequency": "Monthly"
+      },
+      {
+        "id": "Operations_Manager___Andrew_3",
+        "category": "Project Delivery",
+        "objective": "% of projects, milestones, or phases delivered within the approved timeline",
+        "weight": 0.1,
+        "target": 0.9,
+        "evaluation": null,
+        "frequency": "Monthly"
+      },
+      {
+        "id": "Operations_Manager___Andrew_4",
+        "category": "Project Delivery",
+        "objective": "% reduction in recurring quality issues quarter-over-quarter through corrective actions and process optimization",
+        "weight": 0.1,
+        "target": 1,
+        "evaluation": null,
+        "frequency": "Monthly"
+      },
+      {
+        "id": "Operations_Manager___Andrew_5",
+        "category": "Client Satisfaction",
+        "objective": "% of new clients or pilot projects that move to full operational deployment within the agreed timeframe",
+        "weight": 0.2,
+        "target": 0.95,
+        "evaluation": null,
+        "frequency": "Monthly"
+      }
+    ]
+  },
+  {
+    "roleKey": "Operations_Manager__Youssef",
+    "title": "Operations Manager",
+    "department": "Operations",
+    "manager": "Operations Director",
+    "jobLevel": "Senior",
+    "employmentStatus": "Full Time",
+    "kpiWeight": 0.7,
+    "competenciesWeight": 0.3,
+    "kpis": [
+      {
+        "id": "Operations_Manager__Youssef_1",
+        "category": "Submission of Reporting Sheets on Time",
+        "objective": "% of required operational reports submitted by the agreed deadlines",
+        "weight": 0.05,
+        "target": 0.9,
+        "evaluation": null,
+        "frequency": "Monthly"
+      },
+      {
+        "id": "Operations_Manager__Youssef_2",
+        "category": "Submission of Reporting Sheets on Time",
+        "objective": "% of reports submitted without errors, missing data, or follow-up clarifications required",
+        "weight": 0.05,
+        "target": 0.9,
+        "evaluation": null,
+        "frequency": "Monthly"
+      },
+      {
+        "id": "Operations_Manager__Youssef_3",
+        "category": "Project Delivery",
+        "objective": "% of projects, milestones, or phases delivered within the approved timeline",
+        "weight": 0.1,
+        "target": 0.9,
+        "evaluation": null,
+        "frequency": "Monthly"
+      },
+      {
+        "id": "Operations_Manager__Youssef_4",
+        "category": "Project Delivery",
+        "objective": "%  where the team meets the minimum A/M target without quality compromise based on Total Number Agents in the account",
+        "weight": 0.1,
+        "target": 0.98,
+        "evaluation": null,
+        "frequency": "Monthly"
+      },
+      {
+        "id": "Operations_Manager__Youssef_5",
+        "category": "Quality Management",
+        "objective": "% reduction in recurring quality issues quarter-over-quarter through corrective actions and process optimization",
+        "weight": 0.1,
+        "target": 1,
+        "evaluation": null,
+        "frequency": "Monthly"
+      },
+      {
+        "id": "Operations_Manager__Youssef_6",
+        "category": "Project Delivery",
+        "objective": "% of small projects delivered on time, within scope, and without major escalations",
+        "weight": 0.1,
+        "target": 0.95,
+        "evaluation": null,
+        "frequency": "Monthly"
+      },
+      {
+        "id": "Operations_Manager__Youssef_7",
+        "category": "Project Delivery",
+        "objective": "% of pilots delivered on time, within scope, where the quality standard was meet and without major escalations",
+        "weight": 0.1,
+        "target": 0.95,
+        "evaluation": null,
+        "frequency": "Monthly"
+      }
+    ]
+  },
+  {
+    "roleKey": "Small_Projects_Team_Leader_",
+    "title": "Small Projects Team Leader",
+    "department": "Operations",
+    "manager": "Operations Manager",
+    "jobLevel": "Senior",
+    "employmentStatus": "Full Time",
+    "kpiWeight": 0.7,
+    "competenciesWeight": 0.3,
+    "kpis": [
+      {
+        "id": "Small_Projects_Team_Leader__1",
+        "category": "Submission of Reporting Sheets on Time",
+        "objective": "% of required operational reports submitted by the agreed deadlines across all projects",
+        "weight": 0.05,
+        "target": 0.9,
+        "evaluation": null,
+        "frequency": "Monthly"
+      },
+      {
+        "id": "Small_Projects_Team_Leader__2",
+        "category": "Submission of Reporting Sheets on Time",
+        "objective": "% of reports submitted without errors, missing data, or follow-up clarifications required",
+        "weight": 0.05,
+        "target": 0.9,
+        "evaluation": null,
+        "frequency": "Monthly"
+      },
+      {
+        "id": "Small_Projects_Team_Leader__3",
+        "category": "Quality Management",
+        "objective": "% reduction in repeated QC issues after corrective actions and follow-ups",
+        "weight": 0.1,
+        "target": 1,
+        "evaluation": null,
+        "frequency": "Monthly"
+      },
+      {
+        "id": "Small_Projects_Team_Leader__4",
+        "category": "Team Management",
+        "objective": "% of small project teams that successfully meet productivity and quality targets within the defined onboarding period",
+        "weight": 0.15,
+        "target": 0.95,
+        "evaluation": null,
+        "frequency": "Monthly"
+      },
+      {
+        "id": "Small_Projects_Team_Leader__5",
+        "category": "Project Delivery",
+        "objective": "% of small projects delivered on time, within scope, and without major escalations",
+        "weight": 0.1,
+        "target": 0.95,
+        "evaluation": null,
+        "frequency": "Monthly"
+      }
+    ]
+  },
+  {
+    "roleKey": "Training_Specialist_",
+    "title": "Training Specialist",
+    "department": "Operations",
+    "manager": "Operations Manager",
+    "jobLevel": "Senior",
+    "employmentStatus": "Full Time",
+    "kpiWeight": 0.7,
+    "competenciesWeight": 0.3,
+    "kpis": [
+      {
+        "id": "Training_Specialist__1",
+        "category": "Quality Management",
+        "objective": "% of trainees who complete the full training program and meets our standard acceptance quality.",
+        "weight": 0.1,
+        "target": 0.9,
+        "evaluation": null,
+        "frequency": "Monthly"
+      },
+      {
+        "id": "Training_Specialist__2",
+        "category": "Quality Management",
+        "objective": "% of internal review of training delivery quality by Operations.",
+        "weight": 0.1,
+        "target": 0.9,
+        "evaluation": null,
+        "frequency": "Monthly"
+      },
+      {
+        "id": "Training_Specialist__3",
+        "category": "Training & Development",
+        "objective": "% of trainee accuracy during first week on the job shadowing.",
+        "weight": 0.1,
+        "target": 0.9,
+        "evaluation": null,
+        "frequency": "Monthly"
+      },
+      {
+        "id": "Training_Specialist__4",
+        "category": "Training & Development",
+        "objective": "% of new hires who leave within first month due to training or support issues.",
+        "weight": 0.1,
+        "target": 0.95,
+        "evaluation": null,
+        "frequency": "Monthly"
+      },
+      {
+        "id": "Training_Specialist__5",
+        "category": "Training & Development",
+        "objective": "% of new hires who meet KPI during the first two weeks.",
+        "weight": 0.1,
+        "target": 1,
+        "evaluation": null,
+        "frequency": "Monthly"
+      },
+      {
+        "id": "Training_Specialist__6",
+        "category": "Training & Development",
+        "objective": "% of delivering training sessions on time.",
+        "weight": 0.1,
+        "target": 0.95,
+        "evaluation": null,
+        "frequency": "Monthly"
+      }
+    ]
+  },
+  {
+    "roleKey": "Veesion_Team_Leader_",
+    "title": "Veesion Team Leader",
+    "department": "Operations",
+    "manager": "Operations Manager",
+    "jobLevel": "Senior",
+    "employmentStatus": "Full Time",
+    "kpiWeight": 0.7,
+    "competenciesWeight": 0.3,
+    "kpis": [
+      {
+        "id": "Veesion_Team_Leader__1",
+        "category": "Submission of Reporting Sheets on Time & Daily Tasks",
+        "objective": "% of required daily/weekly reporting sheets submitted by the agreed deadline",
+        "weight": 0.1,
+        "target": 0.9,
+        "evaluation": 0.5,
+        "frequency": "Monthly"
+      },
+      {
+        "id": "Veesion_Team_Leader__2",
+        "category": "Submission of Reporting Sheets on Time & Daily Tasks",
+        "objective": "% of submitted reports that require no rework due to missing data or errors",
+        "weight": 0.1,
+        "target": 0.9,
+        "evaluation": null,
+        "frequency": "Monthly"
+      },
+      {
+        "id": "Veesion_Team_Leader__3",
+        "category": "Submission of Reporting Sheets on Time & Daily Tasks",
+        "objective": "%  where the team meets the minimum A/M target without quality compromise based on Total Number Agents in the Team",
+        "weight": 0.2,
+        "target": 0.98,
+        "evaluation": null,
+        "frequency": "Monthly"
+      },
+      {
+        "id": "Veesion_Team_Leader__4",
+        "category": "Team Management",
+        "objective": "% of quality target Monthly for the team based on Specific Calculation (TPA + Relevance + Missed Theft + Ranking Points)\nAt least 65% of clicks must be on the “classic” button for the Body – Medium interest gesture.\nAt least 72% for the other gestures that include contexts (see image below).",
+        "weight": 0.15,
+        "target": 0.95,
+        "evaluation": null,
+        "frequency": "Monthly"
+      },
+      {
+        "id": "Veesion_Team_Leader__5",
+        "category": "Team Management",
+        "objective": "% of reduction in repeated quality errors after coaching and corrective actions are applied",
+        "weight": 0.15,
+        "target": 1,
+        "evaluation": null,
+        "frequency": "Monthly"
+      }
+    ]
+  }
+]
