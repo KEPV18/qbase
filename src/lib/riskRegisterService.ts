@@ -76,7 +76,6 @@ export async function getAllRisks(): Promise<Risk[]> {
   const { data, error } = await supabase
     .from("risks")
     .select("*")
-    .is("deleted_at", null)
     .order("risk_id", { ascending: true });
 
   if (error) {

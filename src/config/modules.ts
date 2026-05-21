@@ -153,6 +153,7 @@ export const TOOL_NAV_ITEMS: NavItem[] = [
   { id: "integrity", label: "Integrity", icon: Shield, path: "/integrity" },
   { id: "projects", label: "Projects", icon: FolderOpen, path: "/projects" },
   { id: "kpi", label: "KPI Dashboard", icon: Target, path: "/kpi" },
+  { id: "swot", label: "SWOT Analysis", icon: BarChart3, path: "/swot-analysis" },
 ];
 
 // ============================================================================

@@ -32,6 +32,7 @@ const NotificationsPage = lazy(() => import("./pages/NotificationsPage"));
 const ModulePage = lazy(() => import("./pages/ModulePage"));
 const KPIDashboardPage = lazy(() => import("./pages/KPIDashboardPage"));
 const KPIReportsPage = lazy(() => import("./pages/KPIReportsPage"));
+const SWOTAnalysisPage = lazy(() => import("./pages/SWOTAnalysisPage"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 
 const queryClient = new QueryClient({
@@ -105,6 +106,9 @@ const App = () => {
                     {/* KPI Dashboard & Reports */}
                     <Route path="/kpi" element={<RequireAuth><PageBoundary><KPIDashboardPage /></PageBoundary></RequireAuth>} />
                     <Route path="/kpi/reports" element={<RequireAuth><PageBoundary><KPIReportsPage /></PageBoundary></RequireAuth>} />
+
+                    {/* SWOT Analysis */}
+                    <Route path="/swot-analysis" element={<RequireAuth><PageBoundary><SWOTAnalysisPage /></PageBoundary></RequireAuth>} />
 
                     {/* Record system — Supabase-backed via useRecordStorage */}
                     <Route path="/create" element={<RequireAuth><PageBoundary><RecordCreationPage /></PageBoundary></RequireAuth>} />

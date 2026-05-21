@@ -76,7 +76,6 @@ export async function getAllCAPAs(): Promise<CAPA[]> {
   const { data, error } = await supabase
     .from("capas")
     .select("*")
-    .is("deleted_at", null)
     .order("capa_id", { ascending: true });
 
   if (error) {
