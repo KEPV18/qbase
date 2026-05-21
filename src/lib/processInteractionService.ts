@@ -8,13 +8,15 @@ import { supabase } from '@/integrations/supabase/client';
 
 export interface ProcessInteraction {
   id: string;
-  name: string;
+  processName: string;
   description: string;
   inputs: string;
   outputs: string;
-  responsible: string;
+  processOwner: string;
+  mainActivities: string;
   supporting: string;
   kpi: string;
+  receiver: string;
   status: string;
   createdAt: string;
   updatedAt: string;
@@ -31,27 +33,31 @@ export interface ProcessInput {
 }
 
 export interface ProcessUpdate {
-  name?: string;
+  processName?: string;
   description?: string;
   inputs?: string;
   outputs?: string;
-  responsible?: string;
+  processOwner?: string;
+  mainActivities?: string;
   supporting?: string;
   kpi?: string;
+  receiver?: string;
   status?: string;
 }
 
-/** Map a Supabase row (snake_case) to the ProcessInteraction interface (camelCase) */
+/** Map a Supabase row (snake_case) to the ProcessInteraction interface */
 function mapRowToProcess(row: Record<string, unknown>): ProcessInteraction {
   return {
     id: row.id as string,
-    name: (row.process_name as string) || '',
+    processName: (row.process_name as string) || '',
     description: `${row.category || ''} — ${row.controls || ''}`.trim(),
     inputs: (row.inputs as string) || '',
     outputs: (row.outputs as string) || '',
-    responsible: (row.owner as string) || '',
+    processOwner: (row.owner as string) || '',
+    mainActivities: (row.competence_needed as string) || '',
     supporting: (row.resources as string) || '',
     kpi: (row.effectiveness as string) || '',
+    receiver: '',  // Will be derived from process_interactions later
     status: (row.status as string) || 'Active',
     createdAt: (row.created_at as string) || '',
     updatedAt: (row.updated_at as string) || '',
@@ -61,15 +67,15 @@ function mapRowToProcess(row: Record<string, unknown>): ProcessInteraction {
 /** Map ProcessInteraction to a Supabase insert row (snake_case) */
 function mapProcessToRow(process: Partial<ProcessInteraction>): Record<string, unknown> {
   return {
-    process_name: process.name,
+    process_name: process.processName,
     category: process.description || '',
-    owner: process.responsible,
+    owner: process.processOwner,
     inputs: process.inputs,
     outputs: process.outputs,
     resources: process.supporting,
     effectiveness: process.kpi,
+    competence_needed: process.mainActivities,
     controls: '',
-    competence_needed: '',
     status: process.status || 'Active',
   };
 }
@@ -110,11 +116,11 @@ export async function getAllProcesses(): Promise<ProcessInteraction[]> {
 
 export async function addProcess(input: ProcessInput): Promise<ProcessInteraction> {
   const processRow = mapProcessToRow({
-    name: input.name,
+    processName: input.name,
     description: input.description,
     inputs: input.inputs,
     outputs: input.outputs,
-    responsible: input.responsible,
+    processOwner: input.responsible,
     supporting: input.supporting,
     kpi: input.kpi,
     status: 'Active',
