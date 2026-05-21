@@ -1,6 +1,6 @@
 import { useNavigate, useLocation } from "react-router-dom";
 import {
-  LayoutDashboard, Search, FileText, Loader2,
+  LayoutDashboard, ChevronDown, Search, FileText, Loader2,
   Menu, X, Layers, Wrench, Briefcase, Shield, Activity,
 } from "lucide-react";
 import { UserDropdown } from "./UserDropdown";
