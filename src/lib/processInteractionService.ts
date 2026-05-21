@@ -75,17 +75,37 @@ function mapProcessToRow(process: Partial<ProcessInteraction>): Record<string, u
 }
 
 export async function getAllProcesses(): Promise<ProcessInteraction[]> {
-  const { data, error } = await supabase
-    .from('processes')
-    .select('*')
-    .order('process_id', { ascending: true });
-
-  if (error || !data) {
-    console.warn('[processInteraction] Failed to fetch processes:', error?.message);
-    return [];
+  // Use API route with service_role key to bypass RLS on processes table
+  try {
+    const response = await fetch('/api/processes');
+    if (!response.ok) {
+      console.warn('[processInteraction] API route failed, falling back to direct query');
+      // Fallback: try direct Supabase query (works if RLS policies are added later)
+      const { data, error } = await supabase
+        .from('processes')
+        .select('*')
+        .order('process_id', { ascending: true });
+      if (error || !data) {
+        console.warn('[processInteraction] Direct query also failed:', error?.message);
+        return [];
+      }
+      return (data as Record<string, unknown>[]).map(mapRowToProcess);
+    }
+    const data = await response.json();
+    return (data as Record<string, unknown>[]).map(mapRowToProcess);
+  } catch (err) {
+    console.warn('[processInteraction] fetch error:', err);
+    // Fallback to direct query
+    const { data, error } = await supabase
+      .from('processes')
+      .select('*')
+      .order('process_id', { ascending: true });
+    if (error || !data) {
+      console.warn('[processInteraction] Fallback query failed:', error?.message);
+      return [];
+    }
+    return (data as Record<string, unknown>[]).map(mapRowToProcess);
   }
-
-  return (data as Record<string, unknown>[]).map(mapRowToProcess);
 }
 
 export async function addProcess(input: ProcessInput): Promise<ProcessInteraction> {
