@@ -212,7 +212,7 @@ export async function fetchUserDepartment(userId: string): Promise<string | null
   return (data as { department?: string }).department || null;
 }
 
-export const VALID_ROLES: Role[] = ["admin", "manager", "auditor", "user", "moderator"];
+export const VALID_ROLES: Role[] = ["admin", "manager", "auditor", "user", "moderator", "dept_head", "employee"];
 
 export function isValidRole(role: string): role is Role {
   return VALID_ROLES.includes(role as Role);
