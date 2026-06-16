@@ -1,5 +1,5 @@
 // ============================================================================
-// QMS Forge — Record List Page (Phase 9 Refined)
+// QBase — Record List Page (Phase 9 Refined)
 // Consistent design system classes, improved hierarchy, better interactions.
 // ============================================================================
 
@@ -37,7 +37,7 @@ const STATUS_STYLES: Record<string, string> = {
   'On Hold': 'bg-amber-500/15 text-amber-400 border-amber-500/25',
   'Achieved': 'bg-emerald-500/15 text-emerald-400 border-emerald-500/25',
   'On Track': 'bg-blue-500/15 text-blue-400 border-blue-500/25',
-  'Planned': 'bg-slate-500/15 text-slate-400 border-slate-500/25',
+  'Planned': 'bg-zinc-500/15 text-zinc-400 border-zinc-500/25',
 };
 
 // ============================================================================

@@ -1,5 +1,5 @@
 // ============================================================================
-// QMS Forge — Structured Logger
+// QBase — Structured Logger
 // Zero silent failures. Every operation leaves a trace.
 // ============================================================================
 
@@ -36,9 +36,11 @@ function push(entry: StructuredLogEntry): void {
   if (entry.durationMs !== undefined) extras.push(`${entry.durationMs}ms`);
   if (entry.err) extras.push(`err=${entry.err}`);
 
-  console.log(
-    `${icon} [${entry.cat}] ${entry.action}${extras.length ? ' | ' + extras.join(' ') : ''}`
-  );
+  if (typeof import.meta !== 'undefined' && import.meta.env?.DEV) {
+    console.log(
+      `${icon} [${entry.cat}] ${entry.action}${extras.length ? ' | ' + extras.join(' ') : ''}`
+    );
+  }
 }
 
 export function getLogBuffer(): StructuredLogEntry[] {
@@ -157,8 +159,8 @@ export function getMetrics(): SystemMetrics {
     }
   }
 
-  const normalizedByCat: Record<LogCategory, number> = {} as any;
-  const normalizedErrByCat: Record<LogCategory, number> = {} as any;
+  const normalizedByCat: Record<LogCategory, number> = {} as unknown;
+  const normalizedErrByCat: Record<LogCategory, number> = {} as unknown;
   for (const c of categories) {
     normalizedByCat[c] = byCat[c] || 0;
     normalizedErrByCat[c] = errByCat[c] || 0;

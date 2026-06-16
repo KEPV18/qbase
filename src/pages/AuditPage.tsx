@@ -1,5 +1,5 @@
 // ============================================================================
-// QMS Forge — Audit Page (Supabase-connected)
+// QBase — Audit Page (Supabase-connected)
 // Shows audit status of all 35 forms and their records.
 // ============================================================================
 
@@ -173,7 +173,7 @@ export default function AuditPage() {
             <div className="max-h-[60vh] overflow-y-auto">
               {records.length === 0 ? (
                 <div className="p-12 text-center">
-                  <t.icon className="w-10 h-10 text-muted-foreground/20 mx-auto mb-3" /> {/* This won't work in this context */}
+                  <FileX className="w-10 h-10 text-muted-foreground/20 mx-auto mb-3" />
                   <p className="text-sm text-muted-foreground">
                     {activeTab === 'never-filled' ? 'All forms have records!' :
                      activeTab === 'compliant' ? 'No compliant forms yet.' :

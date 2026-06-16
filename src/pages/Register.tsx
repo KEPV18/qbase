@@ -79,10 +79,10 @@ export default function Register() {
       {/* Brand mark */}
       <div className="absolute top-8 left-8 flex items-center gap-3 animate-fade-in">
         <div className="w-10 h-10 bg-neon-cyan/10 rounded-sm flex items-center justify-center border border-neon-cyan/20">
-          <span className="text-primary font-mono font-black text-[10px] tracking-tighter">QMS</span>
+          <span className="text-primary font-mono font-black text-[10px] tracking-tighter">QB</span>
         </div>
         <div>
-          <div className="text-xl font-black text-foreground tracking-tight">QMS Suite</div>
+          <div className="text-xl font-black text-foreground tracking-tight">QBase</div>
           <div className="text-[8px] text-muted-foreground font-mono font-bold uppercase tracking-[0.3em]">ISO 9001:2015</div>
         </div>
       </div>
@@ -96,7 +96,7 @@ export default function Register() {
             </div>
           </div>
           <CardTitle className="text-2xl font-bold tracking-tight">Create account</CardTitle>
-          <CardDescription className="text-muted-foreground text-sm mt-1 font-mono">Request access to the QMS platform</CardDescription>
+          <CardDescription className="text-muted-foreground text-sm mt-1 font-mono">Request access to the QBase platform</CardDescription>
         </CardHeader>
 
         <CardContent className="space-y-3.5 px-7 pb-4" onKeyDown={handleKeyDown}>
@@ -211,7 +211,7 @@ export default function Register() {
       </Card>
 
       <div className="absolute bottom-8 text-[9px] font-mono font-bold uppercase tracking-[0.4em] text-muted-foreground/30">
-        Vezloo QMS Platform v2.5.0
+        Vezloo QBase Platform v2.5.0
       </div>
     </div>
   );

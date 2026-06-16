@@ -1,10 +1,11 @@
 // ============================================================================
-// QMS Forge — Notification Intelligence Hook
+// QBase — Notification Intelligence Hook
 // Structured categories, priority, real-time, filtering, sound.
 // ============================================================================
 
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/hooks/useAuth';
 import { log } from '@/services/logger';
 
 // ============================================================================
@@ -108,15 +109,16 @@ export function useNotifications() {
   const [loading, setLoading] = useState(true);
   const [soundLevel, setSoundLevelState] = useState<SoundLevel>(getStoredSoundLevel());
   const previousCountRef = useRef(0);
+  const { user } = useAuth();
 
   const fetchNotifications = useCallback(async () => {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return;
+    const userId = user?.id;
+    if (!userId) return;
 
     const { data, error } = await supabase
       .from('notifications')
       .select('*')
-      .eq('user_id', user.id)
+      .eq('user_id', userId)
       .order('created_at', { ascending: false })
       .limit(100);
 
@@ -142,7 +144,7 @@ export function useNotifications() {
       setNotifications(newNotifications);
     }
     setLoading(false);
-  }, []);
+  }, [user?.id]); // stable refetch when user changes
 
   // Notification refresh — polling-based (Realtime WebSocket disabled)
   // Supabase Realtime WebSocket fails with "HTTP Authentication failed" when
@@ -152,11 +154,16 @@ export function useNotifications() {
   useEffect(() => {
     fetchNotifications();
 
-    // Poll every 30s for notification updates
-    const pollInterval = setInterval(fetchNotifications, 30_000);
+    // Poll every 60s for notification updates (reduced from 30s to save quota)
+    const pollInterval = setInterval(fetchNotifications, 60_000);
+
+    // Refetch immediately when user returns to the tab
+    const onFocus = () => fetchNotifications();
+    window.addEventListener('focus', onFocus);
 
     return () => {
       clearInterval(pollInterval);
+      window.removeEventListener('focus', onFocus);
     };
   }, [fetchNotifications]);
 
@@ -200,7 +207,6 @@ export function useNotifications() {
   };
 
   const markAllRead = async () => {
-    const { data: { user } } = await supabase.auth.getUser();
     if (!user) return;
     const { data, error } = await supabase
       .from('notifications')
@@ -235,7 +241,6 @@ export function useNotifications() {
   };
 
   const clearAll = async () => {
-    const { data: { user } } = await supabase.auth.getUser();
     if (!user) return;
     const { data, error } = await supabase
       .from('notifications')

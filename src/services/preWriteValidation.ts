@@ -1,5 +1,5 @@
 // ============================================================================
-// QMS Forge — Pre-Write Validation Layer
+// QBase — Pre-Write Validation Layer
 // NO write operation without validation. This is the gatekeeper.
 // Even if the UI passed validation, this layer re-validates before writing.
 // ============================================================================
@@ -208,6 +208,25 @@ export function preWriteValidation(
     }
     if (!validatedData._createdBy) {
       validatedData._createdBy = 'akh.dev185@gmail.com';
+    }
+  }
+
+  // 3e. Field-level completeness assertion — catches stale-zero/empty-on-submit pattern
+  // This prevents the "empty radio / missing comment" bug where external PATCH
+  // scripts wrote data but React state hadn't initialized from it.
+  const schema = FORM_ZOD_SCHEMAS[formCode];
+  if (schema && operation === 'update') {
+    // Check for suspiciously empty rating/checkbox fields that should have data
+    const checkboxFields = Object.keys(validatedData).filter(k =>
+      k.startsWith('rating_') || k.includes('_confirmation') || k === 'complaint_nature'
+    );
+    for (const field of checkboxFields) {
+      const val = String(validatedData[field] ?? '');
+      if (!val) {
+        // Don't block — just warn. The actual data might genuinely be empty.
+        // But log it so we can detect patterns.
+        console.warn(`[preWriteValidation] Field "${field}" is empty on update of ${serial || formCode}. If this was populated by a script, React may not have re-rendered.`);
+      }
     }
   }
 

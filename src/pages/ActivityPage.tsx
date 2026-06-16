@@ -1,5 +1,5 @@
 // ============================================================================
-// QMS Forge — Activity Page (Supabase-connected)
+// QBase — Activity Page (Supabase-connected)
 // Shows recent audit log entries from the database.
 // ============================================================================
 

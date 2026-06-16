@@ -1,324 +1,228 @@
+// ============================================================================
+// QBase - Sidebar (NotionWarm)
+// Warm cream sidebar with serif section headers and soft active states
+// ============================================================================
+
 import { useNavigate, useLocation } from "react-router-dom";
-import {
-  LayoutDashboard, ChevronRight,
-  PanelLeftClose, PanelLeftOpen, Menu, X,
-  Layers, Wrench, Briefcase, Shield, UsersCog, Activity,
-} from "lucide-react";
-import { useRecords } from "@/hooks/useRecordStorage";
-import { useState, useEffect, useMemo } from "react";
-import { cn } from "@/lib/utils";
 import { useAuth } from "@/hooks/useAuth";
 import { useTenantIdentity } from "@/hooks/useTenantIdentity";
-import defaultLogo from "@/assets/qms-logo.png";
 import {
-  Tooltip, TooltipContent, TooltipProvider, TooltipTrigger,
-} from "@/components/ui/tooltip";
-import { MODULE_NAV_ITEMS, DOCS_NAV_ITEMS, TOOL_NAV_ITEMS, type NavItem } from "@/config/modules";
-import { BookOpen } from "lucide-react";
+  LayoutDashboard, Layers, FileText, Settings, Bell,
+  Database, Shield, Users, BarChart3, Briefcase,
+  CheckCircle, LogOut, BookOpen, FileCheck,
+} from "lucide-react";
+import { cn } from "@/lib/utils";
+import { useNotifications } from "@/hooks/useNotifications";
+import { SettingsModal } from "@/components/settings/SettingsModal";
+import { useState } from "react";
+import defaultLogo from "@/assets/qms-logo.png";
 
-const moduleItems = MODULE_NAV_ITEMS;
-const docsItems = DOCS_NAV_ITEMS;
-const toolItems = TOOL_NAV_ITEMS;
-
-interface SidebarProps {
-  activeModule: string;
-  onModuleChange: (moduleId: string) => void;
+interface NavSection {
+  title: string;
+  items: { label: string; icon: React.ElementType; path: string; badge?: number }[];
 }
 
-export function Sidebar({ activeModule, onModuleChange }: SidebarProps) {
+const MAIN_NAV: NavSection = {
+  title: "MAIN",
+  items: [
+    { label: "Dashboard", icon: LayoutDashboard, path: "/" },
+    { label: "Modules", icon: Layers, path: "/module/sales" },
+    { label: "Forms", icon: FileText, path: "/forms" },
+    { label: "Records", icon: Database, path: "/records" },
+    { label: "Projects Workspace", icon: Briefcase, path: "/projects" },
+    { label: "Analytics", icon: BarChart3, path: "/audit" },
+    { label: "Procedures", icon: BookOpen, path: "/procedures" },
+    { label: "ISO Manual", icon: FileCheck, path: "/iso-manual" },
+  ],
+};
+
+const TOOLS_NAV: NavSection = {
+  title: "TOOLS",
+  items: [
+    { label: "Approvals", icon: CheckCircle, path: "/admin/approvals" },
+    { label: "Audit Trail", icon: Shield, path: "/activity" },
+    { label: "Notifications", icon: Bell, path: "/notifications" },
+  ],
+};
+
+const SETTINGS_NAV: NavSection = {
+  title: "SETTINGS",
+  items: [
+    { label: "Admin", icon: Users, path: "/admin/accounts" },
+    { label: "Settings", icon: Settings, path: "#settings" },
+  ],
+};
+
+function SidebarNavItem({
+  item,
+  isActive,
+  onClick,
+}: {
+  item: { label: string; icon: React.ElementType; path: string; badge?: number };
+  isActive: boolean;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      onClick={onClick}
+      className={cn(
+        "w-full flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-medium transition-all duration-200",
+        isActive
+          ? "bg-[#2d2d2d] text-white"
+          : "text-[#7a756a] hover:text-[#2d2d2d] hover:bg-[#ece8df]"
+      )}
+    >
+      <item.icon className={cn("w-[18px] h-[18px]", isActive ? "text-white" : "text-[#9f9a8f]")} />
+      <span className="flex-1 text-left">{item.label}</span>
+      {item.badge ? (
+        <span className="text-[10px] font-semibold bg-white/20 text-white px-1.5 py-0.5 rounded-full">
+          {item.badge > 9 ? "9+" : item.badge}
+        </span>
+      ) : null}
+    </button>
+  );
+}
+
+// Isolated badge component — re-renders alone when count changes
+function NotificationNavItem({
+  isActive,
+  onClick,
+}: {
+  isActive: boolean;
+  onClick: () => void;
+}) {
+  const { unreadCount } = useNotifications();
+  return (
+    <SidebarNavItem
+      item={{ label: "Notifications", icon: Bell, path: "/notifications", badge: unreadCount || 0 }}
+      isActive={isActive}
+      onClick={onClick}
+    />
+  );
+}
+
+export function Sidebar({ mobileOpen, onClose }: { mobileOpen: boolean; onClose: () => void }) {
   const navigate = useNavigate();
   const location = useLocation();
-  const [expandedItems, setExpandedItems] = useState<string[]>([]);
-  const [isCollapsed, setIsCollapsed] = useState(localStorage.getItem('sidebarCollapsed') === 'true');
-  const [isMobileOpen, setIsMobileOpen] = useState(false);
+  const { user, logout } = useAuth();
   const { displayName, logoUrl } = useTenantIdentity();
+  // useNotifications isolated into NotificationNavItem — keeps Sidebar from re-rendering on badge changes
+  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+
   const brandLogo = logoUrl || defaultLogo;
-  const { user, loading } = useAuth();
-  const { data: records } = useRecords();
+  const firstName = (user?.name || "User").split(" ")[0];
+  const userInitials = (user?.name || "U").slice(0, 2).toUpperCase();
 
-  // Extract unique project names from Supabase records
-  const projects = useMemo(() => {
-    if (!records) return [];
-    const projs = new Set<string>();
-    records.forEach(r => {
-      const name = r.formData?.project_name || r.formData?.client_name;
-      if (name && typeof name === 'string') projs.add(name);
-    });
-    return Array.from(projs).sort();
-  }, [records]);
-
-  useEffect(() => {
-    const pathModule = location.pathname.split("/module/")[1];
-    if (pathModule && !expandedItems.includes(pathModule)) {
-      setExpandedItems(prev => [...prev, pathModule]);
-    }
-  }, [location.pathname, expandedItems]);
-
-  useEffect(() => {
-    localStorage.setItem('sidebarCollapsed', isCollapsed.toString());
-  }, [isCollapsed]);
-
-  useEffect(() => { setIsMobileOpen(false); }, [location.pathname]);
-
-  useEffect(() => {
-    document.body.style.overflow = isMobileOpen ? 'hidden' : '';
-    return () => { document.body.style.overflow = ''; };
-  }, [isMobileOpen]);
-
-  if (loading) return null;
-
-  const toggleSidebar = () => {
-    const next = !isCollapsed;
-    setIsCollapsed(next);
-    window.dispatchEvent(new CustomEvent('qms-sidebar-toggle', { detail: next }));
-  };
-
-  const toggleExpand = (id: string) => {
-    setExpandedItems(prev =>
-      prev.includes(id) ? prev.filter(i => i !== id) : [...prev, id]
-    );
-  };
-
-  const handleNavClick = (path: string, id: string) => {
+  const handleNav = (path: string) => {
+    if (path === "#settings") { setIsSettingsOpen(true); return; }
     navigate(path);
-    if (!isCollapsed) toggleExpand(id);
-    onModuleChange(id);
+    onClose();
   };
 
-  const handleChildClick = (parentId: string, childCode: string) => {
-    if (parentId === "projects-all" && childCode) {
-      navigate(`/project/${encodeURIComponent(childCode)}`);
-      onModuleChange("projects-all");
-    } else {
-      navigate(childCode);
-    }
+  const isActive = (path: string) => {
+    if (path === "/") return location.pathname === "/";
+    return location.pathname.startsWith(path);
   };
-
-  const collapsed = isCollapsed;
-
-  interface NavChild {
-    id: string;
-    label: string;
-    code?: string;
-  }
-
-  interface NavItemWithChildren extends NavItem {
-    children?: NavChild[];
-  }
-
-  function NavItemButton({ item }: { item: NavItemWithChildren }) {
-    const hasChildren = item.children && item.children.length > 0;
-    const isExpanded = expandedItems.includes(item.id);
-    const isActive = location.pathname === item.path ||
-      (item.path !== "/" && location.pathname.startsWith(item.path));
-    const childActive = hasChildren && item.children!.some(c =>
-      location.pathname === `/project/${encodeURIComponent(c.code || c.label)}`);
-
-    if (collapsed) {
-      return (
-        <TooltipProvider delayDuration={0}>
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <button
-                onClick={() => item.path ? handleNavClick(item.path, item.id) : toggleExpand(item.id)}
-                className={cn(
-                  "w-full flex items-center justify-center h-9 rounded-md transition-all duration-200",
-                  "hover:bg-accent/10",
-                  (isActive || childActive) ? "bg-accent/15 text-accent" : "text-muted-foreground"
-                )}
-              >
-                <item.icon className="w-4.5 h-4.5" />
-              </button>
-            </TooltipTrigger>
-            <TooltipContent side="right" sideOffset={8} className="text-xs">
-              {item.label}
-            </TooltipContent>
-          </Tooltip>
-        </TooltipProvider>
-      );
-    }
-
-    return (
-      <div>
-        <button
-          onClick={() => hasChildren ? toggleExpand(item.id) : handleNavClick(item.path, item.id)}
-          className={cn(
-            "w-full flex items-center gap-2.5 px-3 py-2 rounded-md text-sm transition-all duration-200",
-            "hover:bg-accent/10",
-            (isActive || childActive) ? "bg-accent/15 text-accent font-medium" : "text-muted-foreground"
-          )}
-        >
-          <item.icon className="w-4 h-4 shrink-0" />
-          <span className="flex-1 text-left truncate">{item.label}</span>
-          {hasChildren && (
-            <ChevronRight className={cn(
-              "w-3.5 h-3.5 shrink-0 transition-transform",
-              isExpanded && "rotate-90"
-            )} />
-          )}
-        </button>
-
-        {hasChildren && isExpanded && (
-          <div className="ml-7 mt-0.5 space-y-0.5 border-l border-border/50 pl-2.5">
-            {item.children!.map(child => (
-              <button
-                key={child.id}
-                onClick={() => handleChildClick(item.id, child.code || child.label)}
-                className={cn(
-                  "w-full flex items-center gap-2 px-2.5 py-1.5 rounded text-xs transition-all",
-                  "hover:bg-accent/10",
-                  location.pathname === `/project/${encodeURIComponent(child.code || child.label)}`
-                    ? "text-accent font-medium"
-                    : "text-muted-foreground"
-                )}
-              >
-                <span className="truncate">{child.label}</span>
-              </button>
-            ))}
-          </div>
-        )}
-      </div>
-    );
-  }
-
-  function SectionLabel({ icon: Icon, label }: { icon: React.ElementType; label: string }) {
-    if (collapsed) {
-      return (
-        <div className="flex items-center justify-center my-2">
-          <Icon className="w-3.5 h-3.5 text-muted-foreground/40" />
-        </div>
-      );
-    }
-    return (
-      <div className="flex items-center gap-1.5 px-3 py-1.5 mt-3 mb-1 text-[10px] font-semibold uppercase tracking-widest text-muted-foreground/60">
-        <Icon className="w-3 h-3" />
-        <span>{label}</span>
-      </div>
-    );
-  }
 
   return (
     <>
-      {/* Mobile overlay */}
-      {isMobileOpen && (
-        <div
-          className="fixed inset-0 bg-black/40 backdrop-blur-sm z-40 lg:hidden"
-          onClick={() => setIsMobileOpen(false)}
-        />
+      {mobileOpen && (
+        <div className="fixed inset-0 bg-black/20 z-40 lg:hidden" onClick={onClose} />
       )}
 
-      <aside className={cn(
-        "fixed top-0 left-0 h-full bg-surface/80 backdrop-blur-md border-r border-border/30 z-50 transition-all duration-300 flex flex-col",
-        collapsed ? "w-[58px]" : "w-[240px]",
-        "lg:relative lg:z-auto",
-        isMobileOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"
-      )}>
-        {/* Header */}
-        <div className={cn(
-          "flex items-center h-14 border-b border-border/30",
-          collapsed ? "px-3 justify-center" : "px-4 justify-between"
-        )}>
-          {!collapsed && (
-            <div className="flex items-center gap-2">
-              <img src={brandLogo} alt={displayName} className="w-6 h-6" />
-              <span className="text-sm font-semibold text-foreground">{displayName}</span>
+      <aside
+        className={cn(
+          "fixed lg:static inset-y-0 left-0 z-50 w-64 bg-white dark:bg-[#1a1a18] border-r border-[#e8e3db] dark:border-[#3a3834]",
+          "flex flex-col transition-transform duration-300 ease-in-out",
+          mobileOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"
+        )}
+      >
+        {/* Logo */}
+        <div className="px-6 pt-8 pb-6">
+          <button onClick={() => handleNav("/")} className="flex items-center gap-3">
+            <div className="w-9 h-9 rounded-lg bg-[#2d2d2d] flex items-center justify-center">
+              <img src={brandLogo} alt="logo" className="w-5 h-5 object-contain invert" />
             </div>
-          )}
-          {collapsed && <img src={brandLogo} alt={displayName} className="w-6 h-6" />}
-
-          <button
-            onClick={toggleSidebar}
-            className="p-1 rounded hover:bg-accent/10 text-muted-foreground hidden lg:flex"
-          >
-            {collapsed ? <PanelLeftOpen className="w-4 h-4" /> : <PanelLeftClose className="w-4 h-4" />}
+            <span className="text-lg font-heading font-bold text-[#2d2d2d] dark:text-[#e8e3db] tracking-tight">
+              {displayName || "QBase"}
+            </span>
           </button>
         </div>
 
         {/* Navigation */}
-        <nav className={cn("flex-1 overflow-y-auto", collapsed ? "px-1.5 py-2" : "px-3 py-1")}>
-          <NavItemButton item={{ id: "dashboard", label: "Dashboard", icon: LayoutDashboard, path: "/" }} />
-
-          <SectionLabel icon={Layers} label="Modules" />
-          <div className="space-y-0.5">
-            {moduleItems.map(item => <NavItemButton key={item.id} item={item} />)}
+        <div className="flex-1 px-4 space-y-6 overflow-y-auto">
+          <div className="space-y-1">
+            <p className="px-3 mb-2 text-[11px] font-heading font-semibold text-[#9f9a8f] uppercase tracking-wider">
+              {MAIN_NAV.title}
+            </p>
+            {MAIN_NAV.items.map((item) => (
+              <SidebarNavItem
+                key={item.path}
+                item={item}
+                isActive={isActive(item.path)}
+                onClick={() => handleNav(item.path)}
+              />
+            ))}
           </div>
 
-          {projects.length > 0 && (
-            <>
-              <SectionLabel icon={Briefcase} label="Projects" />
-              <div className="space-y-0.5 px-0.5">
-                <NavItemButton 
-                  item={{ 
-                    id: "projects-all", 
-                    label: "All Projects", 
-                    icon: Briefcase,
-                    path: "/projects",
-                    children: projects.map(p => ({ 
-                      id: `proj-${p}`, 
-                      label: p,
-                      code: p
-                    })) 
-                  }} 
+          <div className="space-y-1">
+            <p className="px-3 mb-2 text-[11px] font-heading font-semibold text-[#9f9a8f] uppercase tracking-wider">
+              {TOOLS_NAV.title}
+            </p>
+            {TOOLS_NAV.items.map((item) =>
+              item.label === "Notifications" ? (
+                <NotificationNavItem
+                  key={item.path}
+                  isActive={isActive(item.path)}
+                  onClick={() => handleNav(item.path)}
                 />
-              </div>
-            </>
-          )}
-
-          {/* Manual & Procedures — expandable */}
-          <NavItemButton
-            item={{
-              id: "docs",
-              label: "Manual & Procedures",
-              icon: BookOpen,
-              path: "",
-              children: docsItems
-                .filter(item => item.id === "iso-manual" || item.id === "procedures")
-                .map(item => ({
-                  id: item.id,
-                  label: item.label,
-                  code: item.path,
-                }))
-            }}
-          />
-
-          <SectionLabel icon={Wrench} label="Tools" />
-          <div className="space-y-0.5">
-            {toolItems.map(item => <NavItemButton key={item.id} item={item} />)}
+              ) : (
+                <SidebarNavItem
+                  key={item.path}
+                  item={item}
+                  isActive={isActive(item.path)}
+                  onClick={() => handleNav(item.path)}
+                />
+              )
+            )}
           </div>
 
-          {/* Admin — only visible to admins */}
-          {user?.role === "admin" && (
-            <>
-              <SectionLabel icon={Shield} label="Admin" />
-              <div className="space-y-0.5">
-                <NavItemButton item={{ id: "admin-panel", label: "Admin Panel", icon: Shield, path: "/admin/accounts" }} />
-                <NavItemButton item={{ id: "admin-activity", label: "Activity Log", icon: Activity, path: "/activity" }} />
-              </div>
-            </>
-          )}
-        </nav>
+          <div className="space-y-1">
+            <p className="px-3 mb-2 text-[11px] font-heading font-semibold text-[#9f9a8f] uppercase tracking-wider">
+              {SETTINGS_NAV.title}
+            </p>
+            {SETTINGS_NAV.items.map((item) => (
+              <SidebarNavItem
+                key={item.path}
+                item={item}
+                isActive={isActive(item.path)}
+                onClick={() => handleNav(item.path)}
+              />
+            ))}
+          </div>
+        </div>
 
-        {/* Footer */}
-        <div className={cn(
-          "border-t border-border/30 py-3",
-          collapsed ? "px-2" : "px-4"
-        )}>
-          <button
-            onClick={() => setIsMobileOpen(true)}
-            className="lg:hidden w-full p-2 rounded hover:bg-accent/10 text-muted-foreground"
-          >
-            <Menu className="w-4 h-4 mx-auto" />
-          </button>
+        {/* User Profile */}
+        <div className="px-4 pb-6 pt-4">
+          <div className="flex items-center gap-3 px-3 py-3 rounded-lg border border-[#e8e3db] dark:border-[#3a3834] bg-[#f8f6f1] dark:bg-[#1a1a18]">
+            <div className="w-9 h-9 rounded-full bg-[#2d2d2d] flex items-center justify-center">
+              <span className="text-xs font-bold text-white">{userInitials}</span>
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-semibold text-[#2d2d2d] dark:text-[#e8e3db] truncate">{firstName}</p>
+              <p className="text-[11px] text-[#7a756a] truncate">{user?.role || "User"}</p>
+            </div>
+            <button
+              onClick={logout}
+              className="p-1.5 rounded-lg text-[#9f9a8f] hover:text-[#2d2d2d] hover:bg-[#ece8df] transition-colors"
+              title="Logout"
+            >
+              <LogOut className="w-4 h-4" />
+            </button>
+          </div>
         </div>
       </aside>
-
-      {/* Mobile trigger button */}
-      <button
-        onClick={() => setIsMobileOpen(!isMobileOpen)}
-        className="fixed top-3 left-3 z-30 p-2 rounded-md bg-surface/80 backdrop-blur-sm border border-border/30 lg:hidden"
-      >
-        {isMobileOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
-      </button>
+      <SettingsModal open={isSettingsOpen} onOpenChange={setIsSettingsOpen} />
     </>
   );
 }

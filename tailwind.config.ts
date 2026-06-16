@@ -1,3 +1,4 @@
+import tailwindcssAnimate from "tailwindcss-animate";
 import type { Config } from "tailwindcss"
 
 export default {
@@ -19,8 +20,8 @@ export default {
     },
     extend: {
       fontFamily: {
-        sans: ["Outfit", "system-ui", "sans-serif"],
-        heading: ["Outfit", "system-ui", "sans-serif"],
+        sans: ["Inter", "system-ui", "sans-serif"],
+        heading: ["Georgia", "Times New Roman", "serif"],
         mono: ["JetBrains Mono", "monospace"],
       },
       colors: {
@@ -91,9 +92,12 @@ export default {
         },
       },
       borderRadius: {
-        lg: "4px",
-        md: "2px",
-        sm: "0px",
+        lg: "0.75rem",
+        md: "0.5rem",
+        sm: "0.25rem",
+        xl: "0.75rem",
+        "2xl": "1rem",
+        "3xl": "1.5rem",
       },
       spacing: {
         "4xs": "2px",
@@ -157,5 +161,5 @@ export default {
       },
     },
   },
-  plugins: [require("tailwindcss-animate")],
+  plugins: [tailwindcssAnimate],
 } satisfies Config

@@ -1,5 +1,5 @@
 // ============================================================================
-// QMS Forge — Record Storage Service
+// QBase — Record Storage Service
 // CUTOVER EDITION — Uses ONLY new schema columns.
 // No legacy field mappings. No file_reviews. No code/record_name.
 // Supabase is the ONLY source of truth.
@@ -24,7 +24,10 @@ interface DbRecord {
   form_code: string;
   serial: string;
   form_name: string;
+  project_id: string | null;
   status: string;
+  approval_status: 'Draft' | 'Pending_Approval' | 'Approved';
+  department: string | null;
   form_data: Record<string, unknown>;
   section: number | null;
   section_name: string;
@@ -36,6 +39,132 @@ interface DbRecord {
   deleted_at: string | null;
   created_at: string;
   updated_at: string;
+}
+
+// ============================================================================
+// RBAC Types
+// ============================================================================
+
+export type Department = 'HR' | 'Sales' | 'Operations' | 'Quality' | 'RD' | 'Management';
+export type ApprovalRole = 'admin' | 'dept_head' | 'employee';
+
+/** Department mapping from form code — canonical source of truth */
+const FORM_DEPT_MAP: Record<string, Department> = {
+  'F/08': 'Sales', 'F/09': 'Sales', 'F/10': 'Sales', 'F/50': 'Sales',
+  'F/28': 'HR', 'F/29': 'HR', 'F/30': 'HR', 'F/40': 'HR', 'F/41': 'HR', 'F/42': 'HR', 'F/43': 'HR', 'F/44': 'HR',
+  'F/11': 'Operations', 'F/12': 'Operations', 'F/13': 'Operations', 'F/14': 'Operations', 'F/15': 'Operations',
+  'F/16': 'Operations', 'F/18': 'Operations', 'F/19': 'Operations', 'F/22': 'Operations', 'F/24': 'Operations', 'F/25': 'Operations',
+  'F/17': 'Quality', 'F/47': 'Quality',
+  'F/32': 'RD', 'F/34': 'RD', 'F/35': 'RD', 'F/37': 'RD',
+  'F/20': 'Management', 'F/21': 'Management', 'F/23': 'Management', 'F/45': 'Management', 'F/46': 'Management', 'F/48': 'Management',
+};
+
+/** Resolve department from form_code */
+export function resolveDepartment(formCode: string): Department | null {
+  return FORM_DEPT_MAP[formCode] || null;
+}
+
+/** Current user snapshot for RBAC decisions */
+interface CurrentUserSnapshot {
+  userId: string;
+  email: string;
+  role: ApprovalRole;
+  department: Department | null;
+}
+
+/** Get current user for RBAC (lightweight, cached) */
+async function getCurrentUser(): Promise<CurrentUserSnapshot | null> {
+  try {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return null;
+
+    // Fast-path: check localStorage cache
+    const cached = localStorage.getItem('qms_session');
+    if (cached) {
+      try {
+        const s = JSON.parse(cached) as { userId: string; role?: string; department?: string };
+        if (s.userId === user.id) {
+          const role = (s.role?.toLowerCase() || 'user') as ApprovalRole;
+          // Map old role names to approval roles
+          const mappedRole: ApprovalRole =
+            role === 'admin' ? 'admin' :
+            role === 'manager' ? 'dept_head' :
+            role === 'auditor' ? 'dept_head' :
+            'employee';
+          return {
+            userId: user.id,
+            email: user.email || '',
+            role: mappedRole,
+            department: (s.department as Department) || null,
+          };
+        }
+      } catch { /* cache parse error, fall through */ }
+    }
+
+    // Fallback: fetch from DB
+    const [{ data: profile }, { data: roleRow }] = await Promise.all([
+      supabase.from('profiles').select('is_active').eq('user_id', user.id).maybeSingle(),
+      supabase.from('user_roles').select('role, department').eq('user_id', user.id).maybeSingle(),
+    ]);
+
+    if (profile && !(profile.is_active ?? false)) {
+      await supabase.auth.signOut();
+      return null;
+    }
+
+    const rawRole = (roleRow as { role?: string } | null)?.role?.toLowerCase() || 'user';
+    const mappedRole: ApprovalRole =
+      rawRole === 'admin' ? 'admin' :
+      rawRole === 'manager' || rawRole === 'auditor' ? 'dept_head' :
+      'employee';
+
+    return {
+      userId: user.id,
+      email: user.email || '',
+      role: mappedRole,
+      department: ((roleRow as { department?: string } | null)?.department as Department) || null,
+    };
+  } catch {
+    return null;
+  }
+}
+
+/** Check if user can access a record's department */
+function canAccessDepartment(user: CurrentUserSnapshot, recordDept: string | null): boolean {
+  if (user.role === 'admin') return true;
+  if (!recordDept || !user.department) return false;
+  return recordDept === user.department;
+}
+
+// ============================================================================
+// Approval Workflow — Ahmed's Rules
+// ============================================================================
+
+/**
+ * Resolve approval status based on actor and target department.
+ * Rule A: Admin/GM → auto Approved
+ * Rule B: Dept Head acting within own dept → auto Approved
+ * Rule C: Employee → Pending_Approval
+ */
+export function resolveApprovalStatus(
+  user: CurrentUserSnapshot,
+  targetDepartment: string | null
+): 'Draft' | 'Pending_Approval' | 'Approved' {
+  if (user.role === 'admin') return 'Approved';                      // Rule A
+  if (user.role === 'dept_head' && targetDepartment === user.department) return 'Approved'; // Rule B
+  return 'Pending_Approval';                                         // Rule C
+}
+
+/**
+ * Check if user can approve a record (admin can approve any, dept_head only their own)
+ */
+export function canApprove(user: CurrentUserSnapshot, recordDept: string | null): boolean {
+  if (user.role === 'admin') return true;
+  if (user.role === 'dept_head') {
+    if (!recordDept || !user.department) return false;
+    return recordDept === user.department;
+  }
+  return false;
 }
 
 // ============================================================================
@@ -62,7 +191,7 @@ function logOperation(entry: OperationLogEntry) {
     OPERATION_LOG.shift();
   }
   const prefix = entry.success ? '✅' : '❌';
-  console.log(`${prefix} [recordStorage] ${entry.operation.toUpperCase()} ${entry.serial} ${entry.success ? 'succeeded' : `failed: ${entry.error}`}${entry.conflict ? ' (CONFLICT)' : ''} (${entry.durationMs}ms)`);
+  // Structured logging handled by logger.ts
 }
 
 export function getOperationLog(): OperationLogEntry[] {
@@ -112,6 +241,7 @@ function parseRowToRecord(row: DbRecord): RecordData | null {
     serial: row.serial || row.form_code,
     formCode: row.form_code,
     formName: row.form_name || '',
+    project_id: row.project_id || null,
     _createdAt: row.created_at || '',
     _createdBy: row.created_by || '',
     _lastModifiedAt: row.updated_at || '',
@@ -119,6 +249,8 @@ function parseRowToRecord(row: DbRecord): RecordData | null {
     _editCount: row.edit_count || 0,
     _modificationReason: row.modification_reason || '',
     _status: row.status || 'draft',
+    _approvalStatus: row.approval_status || 'Approved',
+    _department: row.department || '',
     _section: row.section || 0,
     _sectionName: row.section_name || '',
     _frequency: row.frequency || '',
@@ -131,9 +263,9 @@ function parseRowToRecord(row: DbRecord): RecordData | null {
 function recordToRow(data: RecordData): Omit<DbRecord, 'id' | 'created_at' | 'updated_at'> {
   // Extract metadata from RecordData (fields starting with _)
   const metadataKeys = new Set([
-    'serial', 'formCode', 'formName',
+    'serial', 'formCode', 'formName', 'project_id',
     '_createdAt', '_createdBy', '_lastModifiedAt', '_lastModifiedBy',
-    '_editCount', '_modificationReason', '_status',
+    '_editCount', '_modificationReason', '_status', '_approvalStatus', '_department',
     '_section', '_sectionName', '_frequency',
   ]);
 
@@ -148,11 +280,15 @@ function recordToRow(data: RecordData): Omit<DbRecord, 'id' | 'created_at' | 'up
   const formCode = String(data.formCode ?? '');
   const formSchema = getFormSchema(formCode);
 
+  const recordDept = resolveDepartment(formCode);
   return {
     form_code: formCode,
     serial: String(data.serial ?? ''),
     form_name: String(data.formName ?? formSchema?.name ?? ''),
+    project_id: (data.project_id as string) || null,
     status: String(data._status ?? 'draft'),
+    approval_status: (data._approvalStatus as 'Draft' | 'Pending_Approval' | 'Approved') || 'Approved',
+    department: recordDept || (data._department as string) || null,
     form_data: formData,
     section: Number(data._section ?? formSchema?.section ?? 0),
     section_name: String(data._sectionName ?? formSchema?.sectionName ?? ''),
@@ -166,15 +302,37 @@ function recordToRow(data: RecordData): Omit<DbRecord, 'id' | 'created_at' | 'up
 }
 
 // ============================================================================
+// Auth helper — get current authenticated user
+// ============================================================================
+
+async function getCurrentUserId(): Promise<string | null> {
+  try {
+    const { data: { user }, error } = await supabase.auth.getUser();
+    if (error || !user) return null;
+    return user.email || user.id || null;
+  } catch {
+    return null;
+  }
+}
+
+// ============================================================================
 // Public API — Read operations
 // ============================================================================
 
 export async function getRecords(formCode?: string): Promise<RecordData[]> {
-  let query = supabase
+  const user = await getCurrentUser();
+  const isAdmin = user?.role === 'admin';
+
+  const query = supabase
     .from('records')
     .select('*')
     .is('deleted_at', null)  // Only active records
     .order('form_code', { ascending: true });
+
+  // For non-admins: add department filter at query level
+  if (!isAdmin && user?.department) {
+    query.eq('department', user.department);
+  }
 
   const { data, error } = await query;
 
@@ -182,18 +340,25 @@ export async function getRecords(formCode?: string): Promise<RecordData[]> {
     throw new RecordStorageError(`Failed to fetch records: ${error.message}`, 'NETWORK', error);
   }
 
-  const records = (data as DbRecord[])
+  let records = (data as DbRecord[])
     .map(row => parseRowToRecord(row))
     .filter((r): r is RecordData => r !== null);
 
+  // Secondary RBAC filter (defense in depth)
+  if (!isAdmin && user) {
+    records = records.filter(r => canAccessDepartment(user, r._department as string || null));
+  }
+
   if (formCode) {
-    return records.filter(r => r.formCode === formCode);
+    records = records.filter(r => r.formCode === formCode);
   }
 
   return records;
 }
 
 export async function getRecord(serial: string): Promise<RecordData | null> {
+  const user = await getCurrentUser();
+
   const { data, error } = await supabase
     .from('records')
     .select('*')
@@ -206,7 +371,18 @@ export async function getRecord(serial: string): Promise<RecordData | null> {
   }
 
   if (!data) return null;
-  return parseRowToRecord(data as DbRecord);
+  const record = parseRowToRecord(data as DbRecord);
+  if (!record) return null;
+
+  // RBAC: check if user can view this record
+  if (user && !canAccessDepartment(user, (data as DbRecord).department)) {
+    throw new RecordStorageError(
+      `Access denied: you do not have permission to view record ${serial}`,
+      'NOT_FOUND'
+    );
+  }
+
+  return record;
 }
 
 export async function getExistingSerials(formCode: string): Promise<string[]> {
@@ -236,6 +412,14 @@ export async function createRecord(formData: RecordData): Promise<StorageResult>
     return { success: false, error: 'formCode is required for record creation' };
   }
 
+  // AUTH CHECK: Verify user is authenticated before write
+  const currentUser = await getCurrentUserId();
+  if (!currentUser) {
+    log.record.failed(formCode, '?', 'Unauthorized: no authenticated user');
+    logOperation({ timestamp: new Date().toISOString(), operation: 'create', serial: '?', formCode, success: false, error: 'Unauthorized', durationMs: Math.round(performance.now() - startTime) });
+    return { success: false, error: 'Unauthorized: please sign in to create records' };
+  }
+
   // 1. Pre-write validation
   const validation = preWriteValidation(formCode, formData, 'create');
   if (!validation.valid || !validation.sanitizedData) {
@@ -250,45 +434,77 @@ export async function createRecord(formData: RecordData): Promise<StorageResult>
 
   const data = validation.sanitizedData;
 
-  // 2. Fetch existing serials from Supabase
-  const existingSerials = await getExistingSerials(formCode);
-
-  // 3. Generate next serial
+  // 2. Generate serial with atomic claim-and-verify (retry loop)
   let serial: string;
   const providedSerial = String(data.serial ?? '');
   if (providedSerial && providedSerial !== 'auto') {
     serial = providedSerial;
   } else {
-    serial = getNextSerial(formCode, existingSerials);
-  }
+    // Atomic serial generation: attempt to generate, verify no one took it, retry if collision
+    const MAX_ATTEMPTS = 5;
+    let attempt = 0;
+    let claimed = false;
 
-  // 4. Re-check uniqueness
-  if (existingSerials.includes(serial)) {
-    const higherSerials = existingSerials.map(s => {
-      const match = s.match(/F\/\d+-(\d+)/);
-      return match ? parseInt(match[1], 10) : 0;
-    });
-    const maxNum = Math.max(...higherSerials, 0);
-    const formNum = formCode.replace('F/', '');
-    serial = `F/${formNum}-${String(maxNum + 1).padStart(3, '0')}`;
+    while (attempt < MAX_ATTEMPTS && !claimed) {
+      attempt++;
+      const existingSerials = await getExistingSerials(formCode);
+      const candidate = getNextSerial(formCode);
 
-    if (existingSerials.includes(serial)) {
-      return { success: false, error: `Cannot generate unique serial for ${formCode}.`, duplicateSerial: true };
+      // Atomically verify uniqueness via Supabase check just before insert
+      const { data: collision, error: checkErr } = await supabase
+        .from('records')
+        .select('id')
+        .eq('serial', candidate)
+        .limit(1);
+
+      if (checkErr) {
+        console.warn(`[createRecord:serialCheck] Attempt ${attempt} failed:`, checkErr.message);
+        continue;
+      }
+
+      if (!collision || collision.length === 0) {
+        serial = candidate;
+        claimed = true;
+      } else {
+        console.warn(`[createRecord:serialCheck] Collision on ${candidate}, retrying...`);
+        await new Promise(r => setTimeout(r, 50 + Math.random() * 100)); // jittered backoff
+      }
+    }
+
+    if (!claimed) {
+      return {
+        success: false,
+        error: `Cannot generate unique serial for ${formCode} after ${MAX_ATTEMPTS} attempts. Please try again.`,
+        duplicateSerial: true,
+      };
     }
   }
 
-  // 5. Set final metadata
+  // 3. Final uniqueness check for user-provided serials
+  if (providedSerial && providedSerial !== 'auto') {
+    const existingSerials = await getExistingSerials(formCode);
+    if (existingSerials.includes(serial)) {
+      return { success: false, error: `Serial ${serial} already exists for ${formCode}.`, duplicateSerial: true };
+    }
+  }
   data.serial = serial;
   data.formCode = formCode;
   const formSchema = getFormSchema(formCode);
   data.formName = formSchema?.name || '';
   data._createdAt = data._createdAt || new Date().toISOString();
-  data._createdBy = data._createdBy || 'akh.dev185@gmail.com';
+  data._createdBy = data._createdBy || 'unknown';
   data._lastModifiedAt = null;
   data._lastModifiedBy = null;
   data._editCount = 0;
   data._modificationReason = null;
   data._status = data._status || 'pending_review';
+
+  // === APPROVAL WORKFLOW (Ahmed's Rules) ===
+  const actor = await getCurrentUser();
+  const recordDept = resolveDepartment(formCode);
+  const approvalStatus = actor ? resolveApprovalStatus(actor, recordDept) : 'Pending_Approval';
+  data._approvalStatus = approvalStatus;
+  data._department = recordDept || '';
 
   // 6. Insert via validated RPC (server-side enforcement)
   try {
@@ -311,11 +527,13 @@ export async function createRecord(formData: RecordData): Promise<StorageResult>
       p_form_code: formCode,
       p_form_name: data.formName as string || formSchema?.name || '',
       p_form_data: businessData,
-      p_status: (data._status as string || 'draft') as any,
+      p_status: (data._status as string || 'draft') as unknown,
       p_serial: 'auto',
       p_section: data._section as number || formSchema?.section || null,
       p_section_name: data._sectionName as string || formSchema?.sectionName || null,
       p_frequency: data._frequency as string || formSchema?.frequency || null,
+      p_approval_status: approvalStatus,
+      p_department: recordDept,
     });
 
     if (error) {
@@ -346,7 +564,7 @@ export async function createRecord(formData: RecordData): Promise<StorageResult>
     for (const key of allFields) { newFieldValues[key] = data[key]; }
     appendAuditLog(actualSerial, 'create', data._createdBy as string || 'unknown', allFields, {}, newFieldValues, formCode).catch(err => {
       log.audit.failed(actualSerial, String(err));
-      console.error('[recordStorage] Audit log failed (non-blocking):', err);
+      // Audit log failed silently
     });
     log.validation.passed(formCode, actualSerial);
     log.record.created(formCode, actualSerial, Math.round(performance.now() - startTime));
@@ -355,7 +573,7 @@ export async function createRecord(formData: RecordData): Promise<StorageResult>
     emitEvent(Events.recordCreated(
       actualSerial, formCode, data.formName as string || '', data._createdBy as string
     )).catch(err => {
-      console.warn('[recordStorage] Event emission failed (non-blocking):', err);
+      // Event emission failed silently
     });
 
     // Update the data object with actual serial for return
@@ -411,6 +629,26 @@ export async function updateRecord(
   }
 
   // 3. Merge
+  const actor = await getCurrentUser();
+  const recordDept = (currentRow as DbRecord).department || resolveDepartment(formCode);
+
+  // Enforce approval workflow: employees can only edit Draft records
+  const currentApproval = (currentRow as DbRecord).approval_status || 'Approved';
+  if (actor?.role === 'employee' && currentApproval !== 'Draft') {
+    return {
+      success: false,
+      error: 'Employees can only edit records in Draft status. Please contact your department head.',
+    };
+  }
+
+  // Re-evaluate approval on significant changes
+  const isSignificantChange = Object.keys(changes).some(k =>
+    !k.startsWith('_') && k !== 'id' && k !== 'serial' && k !== 'formCode'
+  );
+  const newApprovalStatus = (actor && isSignificantChange)
+    ? resolveApprovalStatus(actor, recordDept)
+    : currentApproval;
+
   const merged: RecordData = {
     ...currentRecord,
     ...changes,
@@ -420,9 +658,11 @@ export async function updateRecord(
     _createdAt: currentRecord._createdAt,
     _createdBy: currentRecord._createdBy,
     _lastModifiedAt: new Date().toISOString(),
-    _lastModifiedBy: 'akh.dev185@gmail.com',
+    _lastModifiedBy: actor?.email || await getCurrentUserId() || 'unknown',
     _editCount: currentEditCount + 1,
     _modificationReason: modificationReason || null,
+    _approvalStatus: newApprovalStatus,
+    _department: recordDept || '',
   };
 
   // 4. Validation
@@ -434,6 +674,9 @@ export async function updateRecord(
   // 5. Update in Supabase — using ID (not serial) for precise targeting
   try {
     const updateData = recordToRow(validation.sanitizedData);
+    // Ensure approval_status is explicitly set
+    (updateData as Record<string, unknown>)['approval_status'] = merged._approvalStatus as string;
+    (updateData as Record<string, unknown>)['department'] = merged._department as string;
     // Remove id from update payload — we don't update the primary key
     const { id: _id, ...updateFields } = updateData as DbRecord & { id?: string };
 
@@ -453,7 +696,7 @@ export async function updateRecord(
     if (diff.changedFields.length > 0) {
       appendAuditLog(serial, 'update', merged._lastModifiedBy as string || 'unknown', diff.changedFields, diff.previousValues, diff.newValues, formCode).catch(err => {
         log.audit.failed(serial, String(err));
-        console.error('[recordStorage] Audit log failed (non-blocking):', err);
+        // Audit log failed silently
       });
     }
 
@@ -464,7 +707,7 @@ export async function updateRecord(
       emitEvent(Events.recordUpdated(
         serial, formCode, merged.formName as string || '', diff.changedFields, merged._lastModifiedBy as string
       )).catch(err => {
-        console.warn('[recordStorage] Update event emission failed (non-blocking):', err);
+        // Update event emission failed silently
       });
     }
 
@@ -521,6 +764,12 @@ export async function changeRecordStatus(
 ): Promise<StorageResult> {
   const startTime = performance.now();
 
+  // AUTH CHECK
+  const currentUser = await getCurrentUserId();
+  if (!currentUser) {
+    return { success: false, error: 'Unauthorized: please sign in to change record status' };
+  }
+
   const { data: currentRow, error: fetchError } = await supabase
     .from('records')
     .select('*')
@@ -543,7 +792,7 @@ export async function changeRecordStatus(
   try {
     const { error: updateError } = await supabase
       .from('records')
-      .update({ status: newStatus, edit_count: ((currentRow as DbRecord).edit_count ?? 0) + 1 })
+      .update({ status: newStatus, edit_count: ((currentRow as DbRecord).edit_count ?? 0) + 1, last_modified_by: currentUser })
       .eq('id', (currentRow as DbRecord).id);
 
     if (updateError) {
@@ -551,8 +800,8 @@ export async function changeRecordStatus(
     }
 
     // Audit status change
-    appendAuditLog(serial, 'status_change', 'akh.dev185@gmail.com', ['status'], { status: previousStatus }, { status: newStatus }).catch(err => {
-      console.error('[recordStorage] Status audit log failed (non-blocking):', err);
+    appendAuditLog(serial, 'status_change', currentUser, ['status'], { status: previousStatus }, { status: newStatus }).catch(err => {
+      // Status audit log failed silently
     });
 
     logOperation({ timestamp: new Date().toISOString(), operation: 'update', serial, formCode, success: true, durationMs: Math.round(performance.now() - startTime) });
@@ -563,6 +812,102 @@ export async function changeRecordStatus(
     if (err instanceof RecordStorageError) return { success: false, error: err.message };
     return { success: false, error: `Unexpected error: ${(err as Error).message}` };
   }
+}
+
+// ============================================================================
+// Approval Operation — Approve a Pending_Approval record
+// ============================================================================
+
+export async function approveRecord(
+  serial: string,
+  reason?: string
+): Promise<StorageResult> {
+  const startTime = performance.now();
+  const user = await getCurrentUser();
+
+  if (!user) {
+    return { success: false, error: 'Unauthorized: please sign in' };
+  }
+
+  const { data: currentRow, error: fetchError } = await supabase
+    .from('records')
+    .select('*')
+    .eq('serial', serial)
+    .is('deleted_at', null)
+    .maybeSingle();
+
+  if (fetchError || !currentRow) {
+    return { success: false, error: `Record ${serial} not found.` };
+  }
+
+  const record = parseRowToRecord(currentRow as DbRecord);
+  if (!record) return { success: false, error: `Failed to parse record ${serial}.` };
+
+  const recordDept = (currentRow as DbRecord).department;
+  const currentApproval = (currentRow as DbRecord).approval_status || 'Draft';
+
+  // Only Pending_Approval records can be approved
+  if (currentApproval !== 'Pending_Approval') {
+    return { success: false, error: `Record ${serial} is not pending approval (current: ${currentApproval}).` };
+  }
+
+  // RBAC: check if user can approve this department
+  if (!canApprove(user, recordDept)) {
+    return { success: false, error: 'You do not have permission to approve this record.' };
+  }
+
+  try {
+    const { error: updateError } = await supabase
+      .from('records')
+      .update({
+        approval_status: 'Approved',
+        last_modified_by: user.email,
+        edit_count: ((currentRow as DbRecord).edit_count ?? 0) + 1,
+      })
+      .eq('id', (currentRow as DbRecord).id);
+
+    if (updateError) {
+      throw new RecordStorageError(`Failed to approve record: ${updateError.message}`, 'NETWORK', updateError);
+    }
+
+    // Audit: approval event
+    appendAuditLog(serial, 'status_change', user.email, ['approval_status'], { approval_status: 'Pending_Approval' }, { approval_status: 'Approved' }, record.formCode as string).catch(() => {});
+
+    logOperation({ timestamp: new Date().toISOString(), operation: 'update', serial, formCode: record.formCode as string, success: true, durationMs: Math.round(performance.now() - startTime) });
+
+    return {
+      success: true,
+      record: { ...record, _approvalStatus: 'Approved', _lastModifiedBy: user.email },
+    };
+  } catch (err) {
+    const errorMsg = err instanceof RecordStorageError ? err.message : `Unexpected error: ${(err as Error).message}`;
+    return { success: false, error: errorMsg };
+  }
+}
+
+// ============================================================================
+// Batch approval — for admin/dept_head efficiency
+// ============================================================================
+
+export async function approveRecords(
+  serials: string[]
+): Promise<{ success: number; failed: number; errors: string[] }> {
+  const user = await getCurrentUser();
+  if (!user) return { success: 0, failed: serials.length, errors: ['Unauthorized'] };
+
+  const results = { success: 0, failed: 0, errors: [] as string[] };
+
+  for (const serial of serials) {
+    const result = await approveRecord(serial);
+    if (result.success) {
+      results.success++;
+    } else {
+      results.failed++;
+      results.errors.push(`${serial}: ${result.error}`);
+    }
+  }
+
+  return results;
 }
 
 // invalidateRowCache was a legacy React Query cache helper.

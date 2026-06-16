@@ -23,7 +23,7 @@ import {
 
 // ============================================================================
 // Module Configuration
-// Maps ISO 9001 sections to QMS Forge form schema sections.
+// Maps ISO 9001 sections to QBase form schema sections.
 // section numbers (1-7) correspond to formSchema.section field.
 // ============================================================================
 

@@ -1,5 +1,5 @@
 // ============================================================================
-// QMS Forge — Form Schemas
+// QBase — Form Schemas
 // Each form defines its fields, types, validation, and sections.
 // The DynamicFormRenderer reads these to build UI automatically.
 // ============================================================================

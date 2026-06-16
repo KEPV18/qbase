@@ -1,5 +1,5 @@
 // ============================================================================
-// QMS Forge — Dynamic Form Renderer (Phase 9 Refined)
+// QBase — Dynamic Form Renderer (Phase 9 Refined)
 // Consistent design system classes, improved hierarchy, better interactions.
 // ============================================================================
 
@@ -28,7 +28,25 @@ import { Shield, Loader2, Plus, X, AlertTriangle, FileText } from 'lucide-react'
 // ============================================================================
 
 export interface RecordData {
-  [key: string]: string | number | boolean | RecordData[];
+  id?: string;
+  serial?: string;
+  formCode?: string;
+  formName?: string;
+  _createdAt?: string;
+  _createdBy?: string;
+  _lastModifiedAt?: string | null;
+  _lastModifiedBy?: string | null;
+  _editCount?: number;
+  _modificationReason?: string | null;
+  _status?: string;
+  _approvalStatus?: 'Draft' | 'Pending_Approval' | 'Approved';
+  _department?: string | null;
+  _section?: number;
+  _sectionName?: string;
+  _frequency?: string;
+  project_id?: string;
+  scope?: 'company-wide' | 'project-specific';
+  [key: string]: string | number | boolean | RecordData[] | null | undefined;
 }
 
 export interface FormErrors {

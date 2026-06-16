@@ -559,7 +559,7 @@ function CompanySettingsTab() {
                     className="font-medium"
                 />
                 <p className="text-[11px] text-muted-foreground">
-                    Shown in navigation and headers. Leave empty for default "QMS Forge".
+                    Shown in navigation and headers. Leave empty for default "QBase".
                 </p>
             </div>
 
@@ -650,7 +650,7 @@ function CompanySettingsTab() {
                         <div className="w-6 h-6 rounded bg-primary/20 flex items-center justify-center text-[10px] font-bold text-primary">Q</div>
                     )}
                     <span className="text-sm font-semibold" style={{ color: themeColor || undefined }}>
-                        {companyName || 'QMS Forge'}
+                        {companyName || 'QBase'}
                     </span>
                 </div>
             </div>

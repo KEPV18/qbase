@@ -19,16 +19,13 @@ import { cn } from "@/lib/utils";
 import {
   FileText,
   Search,
-  ChevronDown,
-  ChevronRight,
+  Hash,
   BarChart3,
   ShieldCheck,
   Clock,
-  Hash,
   AlertTriangle,
   Database,
   CalendarDays,
-  Info,
   Layers,
 } from "lucide-react";
 
@@ -67,7 +64,6 @@ export default function FormsRegistryPage() {
   const [sectionFilter, setSectionFilter] = useState<number | null>(null);
   const [importanceFilter, setImportanceFilter] = useState<FormImportance | null>(null);
   const [frequencyFilter, setFrequencyFilter] = useState<FormFrequency | null>(null);
-  const [expandedCard, setExpandedCard] = useState<string | null>(null);
 
   // Filtered forms
   const filteredForms = useMemo(() => {
@@ -109,10 +105,6 @@ export default function FormsRegistryPage() {
     return Array.from(set).sort();
   }, []);
 
-  const toggleExpanded = (code: string) => {
-    setExpandedCard((prev) => (prev === code ? null : code));
-  };
-
   // Importance options
   const importanceOptions: FormImportance[] = ["Critical", "High", "Medium", "Low"];
 
@@ -136,7 +128,7 @@ export default function FormsRegistryPage() {
               </div>
               <div>
                 <h1 className="text-2xl font-bold text-foreground tracking-tight">
-                  QMS Forms Registry
+                  QBase Forms Registry
                 </h1>
                 <p className="text-sm text-muted-foreground mt-0.5">
                   ISO 9001:2015 — Documented Information Control
@@ -331,8 +323,6 @@ export default function FormsRegistryPage() {
                 <FormCard
                   key={form.code}
                   form={form}
-                  isExpanded={expandedCard === form.code}
-                  onToggle={() => toggleExpanded(form.code)}
                 />
               ))}
             </div>
@@ -386,77 +376,47 @@ function StatCard({
 
 function FormCard({
   form,
-  isExpanded,
-  onToggle,
 }: {
   form: FormEntry;
-  isExpanded: boolean;
-  onToggle: () => void;
 }) {
+  const navigate = useNavigate();
   const hasRecords = form.lastRecordCount !== undefined && form.lastRecordCount > 0;
 
   return (
-    <Card
+    <button
       className={cn(
-        "group bg-card/60 border-border/50 shadow-sm transition-all duration-200 hover:shadow-md hover:-translate-y-0.5 cursor-pointer",
-        isExpanded && "ring-1 ring-primary/20 shadow-lg"
+        "group w-full text-left bg-white dark:bg-[#232220] border border-gray-200 dark:border-gray-700 rounded-sm transition-all duration-200 hover:shadow-sm",
       )}
-      onClick={onToggle}
+      onClick={() => navigate(`/form/${form.code}`)}
     >
-      <CardHeader className="pb-2 pt-4 px-4">
+      <div className="p-4">
         <div className="flex items-start justify-between">
           <div className="flex items-center gap-3">
-            <div
-              className={cn(
-                "w-10 h-10 rounded-lg flex items-center justify-center text-[11px] font-mono font-bold border",
-                isExpanded
-                  ? "bg-primary/15 text-primary border-primary/30"
-                  : "bg-muted/30 text-foreground border-border/50 group-hover:bg-primary/10 group-hover:text-primary transition-colors"
-              )}
-            >
+            <div className="w-10 h-10 rounded-lg flex items-center justify-center text-[11px] font-mono font-bold border bg-muted/30 text-foreground border-border/50 group-hover:bg-primary/10 group-hover:text-primary transition-colors">
               {form.code}
             </div>
-            <div className="flex-1 min-w-0">
-              <CardTitle className="text-sm font-semibold text-foreground leading-tight">
+            <div className="flex-1 min-w-0 text-left">
+              <p className="text-sm font-semibold text-foreground leading-tight">
                 {form.name}
-              </CardTitle>
+              </p>
               <div className="flex items-center gap-2 mt-1">
-                <Badge
-                  variant="outline"
-                  className={cn("text-[9px] px-1.5 py-0 h-4 font-mono", getSectionColor(form.section))}
-                >
+                <Badge variant="outline" className={cn("text-[9px] px-1.5 py-0 h-4 font-mono", getSectionColor(form.section))}>
                   S{form.section}
                 </Badge>
-                <Badge
-                  variant="outline"
-                  className={cn("text-[9px] px-1.5 py-0 h-4 font-semibold", getFrequencyBadgeColor(form.frequency))}
-                >
+                <Badge variant="outline" className={cn("text-[9px] px-1.5 py-0 h-4 font-semibold", getFrequencyBadgeColor(form.frequency))}>
                   {form.frequency}
                 </Badge>
               </div>
             </div>
           </div>
 
-          <div className="flex items-center gap-2">
-            <Badge
-              variant="outline"
-              className={cn("text-[9px] px-2 py-0.5 h-5 font-semibold", getImportanceColor(form.importance))}
-            >
-              <span className={cn("w-1.5 h-1.5 rounded-full mr-1", getImportanceDotColor(form.importance))} />
-              {form.importance}
-            </Badge>
-            {isExpanded ? (
-              <ChevronDown className="w-4 h-4 text-muted-foreground" />
-            ) : (
-              <ChevronRight className="w-4 h-4 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
-            )}
-          </div>
+          <Badge variant="outline" className={cn("text-[9px] px-2 py-0.5 h-5 font-semibold shrink-0", getImportanceColor(form.importance))}>
+            <span className={cn("w-1.5 h-1.5 rounded-full mr-1", getImportanceDotColor(form.importance))} />
+            {form.importance}
+          </Badge>
         </div>
-      </CardHeader>
 
-      <CardContent className="px-4 pb-4 pt-1">
-        {/* Record count summary */}
-        <div className="flex items-center gap-4 mb-2">
+        <div className="flex items-center gap-4 mt-3">
           <div className="flex items-center gap-1.5">
             <Database className="w-3 h-3 text-muted-foreground" />
             <span className={cn("text-[11px] font-mono font-semibold", hasRecords ? "text-success" : "text-muted-foreground/60")}>
@@ -471,8 +431,8 @@ function FormCard({
           </div>
         </div>
 
-        {/* Mini progress bar showing record density */}
-        <div className="h-1 w-full rounded-full bg-muted/30 overflow-hidden mb-2">
+        {/* Progress bar */}
+        <div className="h-1 w-full rounded-full bg-muted/30 overflow-hidden mt-2 mb-2">
           <div
             className={cn(
               "h-full rounded-full transition-all duration-500",
@@ -482,47 +442,11 @@ function FormCard({
           />
         </div>
 
-        {/* Quick note preview */}
-        <p className="text-[11px] text-muted-foreground/70 line-clamp-1 leading-relaxed">
+        <p className="text-[11px] text-muted-foreground/70 line-clamp-1 leading-relaxed text-left">
           {form.notes}
         </p>
-
-        {/* Expanded Details */}
-        {isExpanded && (
-          <div className="mt-4 pt-4 border-t border-border/30 space-y-3 animate-fade-in">
-            <div className="grid grid-cols-2 gap-3">
-              <DetailRow icon={Hash} label="Form Code" value={form.code} />
-              <DetailRow icon={FileText} label="Form Name" value={form.name} />
-              <DetailRow icon={Layers} label="Section" value={`S${form.section} — ${form.sectionName}`} />
-              <DetailRow icon={ShieldCheck} label="ISO Clause" value={form.isoClause} />
-              <DetailRow icon={Clock} label="Frequency" value={form.frequency} />
-              <DetailRow icon={AlertTriangle} label="Importance" value={form.importance}>
-                <Badge
-                  variant="outline"
-                  className={cn("text-[9px] px-2 py-0.5 font-semibold ml-1", getImportanceColor(form.importance))}
-                >
-                  {form.importance}
-                </Badge>
-              </DetailRow>
-              <DetailRow icon={Database} label="Record Count" value={String(form.lastRecordCount ?? 0)} />
-              <DetailRow icon={CalendarDays} label="Last Record" value={form.lastRecordDate || "N/A"} />
-            </div>
-
-            <div className="mt-3">
-              <div className="flex items-center gap-1.5 mb-1">
-                <Info className="w-3 h-3 text-muted-foreground" />
-                <span className="text-[10px] font-mono font-bold text-muted-foreground uppercase tracking-widest">
-                  Notes
-                </span>
-              </div>
-              <p className="text-[12px] text-foreground/80 leading-relaxed pl-4 border-l-2 border-primary/20">
-                {form.notes}
-              </p>
-            </div>
-          </div>
-        )}
-      </CardContent>
-    </Card>
+      </div>
+    </button>
   );
 }
 

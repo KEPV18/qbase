@@ -1,5 +1,5 @@
 // ============================================================================
-// QMS Forge — Schema-Driven Record View
+// QBase — Schema-Driven Record View
 // Renders a record as a "submitted form snapshot" using its form schema.
 // No static layouts. Field order, types, and grouping from schema.
 // ============================================================================
@@ -12,6 +12,7 @@ import {
   getFormSections,
 } from '../../data/formSchemas';
 import { isoToDisplay } from '../../schemas';
+import { SafeHtmlContent } from '@/components/ui/SafeHtmlContent';
 import type { RecordData } from './DynamicFormRenderer';
 
 // ============================================================================
@@ -83,11 +84,7 @@ const FieldValue: React.FC<{
     }
 
     case 'textarea':
-      return (
-        <div className="text-foreground whitespace-pre-wrap text-sm leading-relaxed">
-          {String(val)}
-        </div>
-      );
+      return <SafeHtmlContent html={String(val)} />;
 
     case 'checkbox':
       return val ? (

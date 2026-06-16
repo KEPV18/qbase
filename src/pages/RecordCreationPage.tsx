@@ -1,5 +1,5 @@
 // ============================================================================
-// QMS Forge — Record Creation Page (Section-First Flow)
+// QBase — Record Creation Page (Section-First Flow)
 // When navigated from a module: auto-filters to that section's forms.
 // When navigated directly (/create): shows section picker first.
 // No more dumping all 50 forms at once.
@@ -9,7 +9,7 @@ import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import {
   FileText, Search, CheckCircle, XCircle, ArrowLeft, Loader2,
-  ChevronRight, Layers,
+  ChevronRight, Layers, Building2, FolderKanban,
 } from 'lucide-react';
 import { FORM_SCHEMAS, getFormSchema, getFormSections, getFormsBySection } from '../data/formSchemas';
 import { getNextSerial } from '../schemas';
@@ -18,7 +18,8 @@ import { MODULE_CONFIG } from '../config/modules';
 import DynamicFormRenderer, { type RecordData } from '../components/forms/DynamicFormRenderer';
 import { SchemaDrivenRecordView } from '../components/forms/SchemaDrivenRecordView';
 import { getFormTemplateComponent } from '@/components/forms/templates';
-import { useCreateRecord } from '../hooks/useRecordStorage';
+import { useCreateRecord, useRecords } from '../hooks/useRecordStorage';
+import { PROJECTS } from '../data/projectsData';
 import { AppShell } from '@/components/layout/AppShell';
 import { cn } from '@/lib/utils';
 
@@ -52,6 +53,10 @@ const RecordCreationPage: React.FC = () => {
     urlFormCode ? 'gate' : 'select'
   );
   const [createError, setCreateError] = useState<string | null>(null);
+  const [scope, setScope] = useState<'company-wide' | 'project-specific'>('company-wide');
+  const [selectedProjectId, setSelectedProjectId] = useState<string>('');
+
+  const { data: allRecords } = useRecords();
 
   const sections = getFormSections();
   const schema = selectedCode ? getFormSchema(selectedCode) : null;
@@ -88,12 +93,17 @@ const RecordCreationPage: React.FC = () => {
     data.formCode = selectedCode;
     data._createdAt = new Date().toISOString();
     data._createdBy = 'Ahmed Khaled';
+    // Auto-capture frequency scope for compliance tracking (Phase 8)
+    data._frequency = schema.frequency || '';
+    // Add scope and project_id
+    data.scope = scope;
+    if (scope === 'project-specific' && selectedProjectId) {
+      data.project_id = selectedProjectId;
+    }
     // Convert dates from display format (DD/MM/YYYY) to display format (already DD/MM/YYYY from template)
     // No conversion needed — DateOrTextCell stores values as-is
-    console.log('[CreateRecord] Submitting data:', JSON.stringify(data, null, 2));
-    createMutation.mutate(data as any, {
-      onSuccess: (result: any) => {
-        console.log('[CreateRecord] Mutation result:', JSON.stringify(result, null, 2));
+    createMutation.mutate(data as unknown, {
+      onSuccess: (result: unknown) => {
         // Check if the mutation actually succeeded
         if (result?.success === false) {
           setCreateError(result.error || 'Failed to create record');
@@ -102,8 +112,7 @@ const RecordCreationPage: React.FC = () => {
         const serial = result?.record?.serial || data.serial || '';
         setCreated({ code: selectedCode, serial: serial as string, data: data as RecordData });
       },
-      onError: (err: any) => {
-        console.error('[CreateRecord] Mutation error:', err);
+      onError: (err: unknown) => {
         setCreateError(err.message || 'Failed to create record');
       },
     });
@@ -336,6 +345,58 @@ const RecordCreationPage: React.FC = () => {
                   editMode={true}
                   onChange={handleTemplateFieldChange}
                 />
+              </div>
+
+              {/* ── Scope Selector (NotionWarm) ─────────────────────────── */}
+              <div className="mt-4 bg-[#f8f6f1] dark:bg-[#1a1a18] border border-[#e8e3db] dark:border-[#2d2d2b] rounded-sm p-4">
+                <h3 className="text-xs font-semibold text-[#2d2d2d] dark:text-[#e8e3db] uppercase tracking-wider mb-3">
+                  Record Scope
+                </h3>
+                <div className="flex items-center gap-3 mb-3">
+                  <button
+                    type="button"
+                    onClick={() => { setScope('company-wide'); setSelectedProjectId(''); }}
+                    className={`flex items-center gap-2 px-3 py-2 text-xs rounded-sm border transition-all ${
+                      scope === 'company-wide'
+                        ? 'bg-[#2d2d2d] dark:bg-[#e8e3db] text-white dark:text-[#1a1a18] border-[#2d2d2d] dark:border-[#e8e3db]'
+                        : 'bg-white dark:bg-[#1a1a18] text-[#7a756a] dark:text-[#b5b0a5] border-[#e8e3db] dark:border-[#2d2d2b] hover:border-[#d4cfc4] dark:hover:border-[#3d3d3a]'
+                    }`}
+                  >
+                    <Building2 className="w-3.5 h-3.5" />
+                    🏢 Company-Wide
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setScope('project-specific')}
+                    className={`flex items-center gap-2 px-3 py-2 text-xs rounded-sm border transition-all ${
+                      scope === 'project-specific'
+                        ? 'bg-[#2d2d2d] dark:bg-[#e8e3db] text-white dark:text-[#1a1a18] border-[#2d2d2d] dark:border-[#e8e3db]'
+                        : 'bg-white dark:bg-[#1a1a18] text-[#7a756a] dark:text-[#b5b0a5] border-[#e8e3db] dark:border-[#2d2d2b] hover:border-[#d4cfc4] dark:hover:border-[#3d3d3a]'
+                    }`}
+                  >
+                    <FolderKanban className="w-3.5 h-3.5" />
+                    📁 Project-Specific
+                  </button>
+                </div>
+
+                {scope === 'project-specific' && (
+                  <div>
+                    <label className="block text-xs text-[#7a756a] dark:text-[#b5b0a5] mb-1.5">Select Project</label>
+                    <select
+                      value={selectedProjectId}
+                      onChange={e => setSelectedProjectId(e.target.value)}
+                      className="w-full px-3 py-2 text-sm bg-white dark:bg-[#1a1a18] border border-[#e8e3db] dark:border-[#2d2d2b] rounded-sm text-[#2d2d2d] dark:text-[#e8e3db] focus:outline-none focus:border-[#2d2d2d] dark:focus:border-[#e8e3db] focus:ring-1 focus:ring-[#2d2d2d]/20 dark:focus:ring-[#e8e3db]/20"
+                    >
+                      <option value="">— Select a project —</option>
+                      {PROJECTS.map(p => (
+                        <option key={p.id} value={p.id}>{p.name}</option>
+                      ))}
+                    </select>
+                    <p className="text-[10px] text-[#9f9a8f] dark:text-[#7a756a] mt-1">
+                      This record will be linked to the selected project.
+                    </p>
+                  </div>
+                )}
               </div>
             </div>
           );

@@ -1,5 +1,5 @@
 // ============================================================================
-// QMS Forge — Notification Bell (TopNav)
+// QBase — Notification Bell (TopNav)
 // Priority-aware badge, category-aware dropdown, sound integration.
 // ============================================================================
 

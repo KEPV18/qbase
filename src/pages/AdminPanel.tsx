@@ -1,5 +1,5 @@
 // ============================================================================
-// QMS Forge — Admin Panel
+// QBase — Admin Panel
 // Tabs: User Accounts | Company Branding | Activity Log
 // Admin-only page. Full control over users, identity, and system monitoring.
 // ============================================================================
@@ -42,10 +42,19 @@ const TABS: { id: AdminTab; label: string; icon: typeof Shield }[] = [
 
 const ROLE_CONFIG: Record<string, { label: string; color: string; icon: string }> = {
   admin: { label: "Admin", color: "bg-destructive/10 text-destructive border-destructive/20", icon: "🛡️" },
-  manager: { label: "Manager", color: "bg-primary/10 text-primary border-primary/20", icon: "📋" },
-  auditor: { label: "Auditor", color: "bg-warning/10 text-warning-foreground border-warning/20", icon: "🔍" },
-  user: { label: "User", color: "bg-muted text-muted-foreground border-border", icon: "👤" },
+  dept_head: { label: "Dept Head", color: "bg-primary/10 text-primary border-primary/20", icon: "📋" },
+  employee: { label: "Employee", color: "bg-muted text-muted-foreground border-border", icon: "👤" },
 };
+
+const DEPARTMENTS = [
+  "Sales & Customer Service",
+  "HR & Training",
+  "Procurement",
+  "Quality Control",
+  "R&D & Design",
+  "Operations",
+  "Management",
+];
 
 type SortField = "name" | "email" | "role" | "lastLoginAt";
 type SortDir = "asc" | "desc";
@@ -112,7 +121,7 @@ function AccountsTab() {
 
   const { users, addUser, updateUser, removeUser, resetPassword, user, reloadUsers } = useAuth();
   const [newUser, setNewUser] = useState<{ name: string; email: string; role: AppUser["role"] }>({
-    name: "", email: "", role: "user",
+    name: "", email: "", role: "employee",
   });
   const [resettingPw, setResettingPw] = useState<Record<string, boolean>>({});
   const [editState, setEditState] = useState<Record<string, Partial<AppUser>>>({});
@@ -139,7 +148,7 @@ function AccountsTab() {
     if (!newUser.name || !newUser.email) return;
     const tempPassword = crypto.randomUUID().slice(0, 12).replace(/-/g, "");
     addUser({ name: newUser.name, email: newUser.email, role: newUser.role, password: tempPassword, active: user?.role === "admin", needsApprovalNotification: false });
-    setNewUser({ name: "", email: "", role: "user" });
+    setNewUser({ name: "", email: "", role: "employee" });
     toast.success("Account Created", { description: `${newUser.name} created. Temporary password: ${tempPassword}` });
   };
 
@@ -317,89 +326,129 @@ function AccountsTab() {
       </div>
 
       {/* User Table */}
-      <Card>
-        <CardContent className="p-0">
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead>
-                <tr className="border-b border-border/50 text-xs text-muted-foreground">
-                  <th className="text-left px-4 py-3 font-medium cursor-pointer hover:text-foreground" onClick={() => toggleSort("name")}>Name <SortIcon field="name" /></th>
-                  <th className="text-left px-4 py-3 font-medium cursor-pointer hover:text-foreground" onClick={() => toggleSort("email")}>Email <SortIcon field="email" /></th>
-                  <th className="text-left px-4 py-3 font-medium cursor-pointer hover:text-foreground" onClick={() => toggleSort("role")}>Role <SortIcon field="role" /></th>
-                  <th className="text-left px-4 py-3 font-medium">Status</th>
-                  <th className="text-left px-4 py-3 font-medium">Last Login</th>
-                  <th className="text-right px-4 py-3 font-medium">Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {filteredUsers.map(u => (
-                  <tr key={u.id} className={cn(
-                    "border-b border-border/30 hover:bg-muted/20 transition-colors",
-                    !u.active && "opacity-60"
-                  )}>
-                    <td className="px-4 py-3">
-                      <div className="flex items-center gap-2">
-                        <div className="w-7 h-7 rounded-full bg-primary/10 flex items-center justify-center text-xs font-bold">
-                          {u.name?.charAt(0)?.toUpperCase() || "?"}
-                        </div>
-                        <div>
-                          <div className="text-sm font-medium">{u.name}</div>
-                          {isProtectedAdmin(u) && <div className="text-[9px] text-muted-foreground">Protected</div>}
-                        </div>
+      <div className="border border-border bg-card">
+        <div className="overflow-x-auto">
+          <table className="w-full">
+            <thead>
+              <tr className="border-b border-border text-xs text-muted-foreground">
+                <th className="text-left px-4 py-3 font-heading font-semibold cursor-pointer hover:text-foreground" onClick={() => toggleSort("name")}>Name <SortIcon field="name" /></th>
+                <th className="text-left px-4 py-3 font-heading font-semibold cursor-pointer hover:text-foreground" onClick={() => toggleSort("email")}>Email <SortIcon field="email" /></th>
+                <th className="text-left px-4 py-3 font-heading font-semibold">Department</th>
+                <th className="text-left px-4 py-3 font-heading font-semibold cursor-pointer hover:text-foreground" onClick={() => toggleSort("role")}>Role <SortIcon field="role" /></th>
+                <th className="text-left px-4 py-3 font-heading font-semibold">Status</th>
+                <th className="text-left px-4 py-3 font-heading font-semibold">Last Login</th>
+                <th className="text-right px-4 py-3 font-heading font-semibold">Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {filteredUsers.map(u => (
+                <tr key={u.id} className={cn(
+                  "border-b border-border/70 hover:bg-muted/50 transition-colors",
+                  !u.active && "opacity-50"
+                )}>
+                  <td className="px-4 py-2.5">
+                    <div className="flex items-center gap-2">
+                      <div className="w-7 h-7 rounded-full bg-muted flex items-center justify-center text-xs font-bold text-foreground">
+                        {u.name?.charAt(0)?.toUpperCase() || "?"}
                       </div>
-                    </td>
-                    <td className="px-4 py-3 text-sm text-muted-foreground">{u.email}</td>
-                    <td className="px-4 py-3">
-                      <Badge variant="outline" className={cn("text-[10px] px-1.5 py-0", ROLE_CONFIG[u.role]?.color)}>
-                        {ROLE_CONFIG[u.role]?.icon} {ROLE_CONFIG[u.role]?.label || u.role}
-                      </Badge>
-                    </td>
-                    <td className="px-4 py-3">
-                      {u.active ? (
-                        <Badge className="bg-emerald-500/10 text-emerald-400 border-emerald-500/20 text-[10px] px-1.5 py-0">Active</Badge>
-                      ) : (
-                        <Badge className="bg-amber-500/10 text-amber-400 border-amber-500/20 text-[10px] px-1.5 py-0">Pending</Badge>
-                      )}
-                    </td>
-                    <td className="px-4 py-3 text-xs text-muted-foreground">
-                      {u.lastLoginAt ? new Date(u.lastLoginAt).toLocaleDateString() : "—"}
-                    </td>
-                    <td className="px-4 py-3 text-right">
-                      <div className="flex gap-1 justify-end">
-                        {!isProtectedAdmin(u) && (
-                          <>
-                            <Button size="sm" variant="ghost" className="h-7 text-xs" onClick={() => {
-                              const pw = prompt(`Enter new password for ${u.name}:`);
-                              if (pw && pw.length >= 6) {
-                                setResettingPw(p => ({ ...p, [u.id]: true }));
-                                resetPassword(u.id, pw).finally(() => setResettingPw(p => ({ ...p, [u.id]: false })));
-                              }
-                            }} disabled={resettingPw[u.id]}>
-                              {resettingPw[u.id] ? <Loader2 className="w-3 h-3 animate-spin" /> : <KeyRound className="w-3 h-3" />}
-                            </Button>
-                            <Button size="sm" variant="ghost" className="h-7 text-xs text-destructive hover:text-destructive" onClick={() => {
-                              if (confirm(`Remove ${u.name}? This cannot be undone.`)) removeUser(u.id);
-                            }}>
-                              <Trash2 className="w-3 h-3" />
-                            </Button>
-                          </>
+                      <div>
+                        <div className="text-sm font-medium text-foreground">{u.name}</div>
+                        {isProtectedAdmin(u) && <div className="text-[9px] text-muted-foreground">Protected</div>}
+                      </div>
+                    </div>
+                  </td>
+                  <td className="px-4 py-2.5 text-sm text-muted-foreground">{u.email}</td>
+                  <td className="px-4 py-2.5">
+                    <Select
+                      value={u.department || "none"}
+                      onValueChange={(val) => {
+                        const deptVal = val === "none" ? null : val;
+                        updateUser(u.id, { department: deptVal as any });
+                      }}
+                      disabled={!u.active}
+                    >
+                      <SelectTrigger className="h-7 text-xs border-border bg-muted min-w-[140px]">
+                        <SelectValue placeholder="Department" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="none">— None —</SelectItem>
+                        {DEPARTMENTS.map(d => (
+                          <SelectItem key={d} value={d}>{d}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </td>
+                  <td className="px-4 py-2.5">
+                    <Select
+                      value={u.role}
+                      onValueChange={(val) => updateUser(u.id, { role: val as any })}
+                      disabled={!u.active}
+                    >
+                      <SelectTrigger className="h-7 text-xs border-border bg-muted min-w-[110px]">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {Object.entries(ROLE_CONFIG).map(([role, cfg]) => (
+                          <SelectItem key={role} value={role}>{cfg.icon} {cfg.label}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </td>
+                  <td className="px-4 py-2.5">
+                    <div className="flex items-center gap-2">
+                      <Switch
+                        checked={u.active}
+                        onCheckedChange={(checked) => updateUser(u.id, { active: checked })}
+                        className={cn(
+                          "data-[state=checked]:bg-foreground data-[state=unchecked]:bg-muted border-0"
                         )}
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-                {filteredUsers.length === 0 && (
-                  <tr>
-                    <td colSpan={6} className="px-4 py-8 text-center text-muted-foreground text-sm">
-                      No users found matching your filters.
-                    </td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
-          </div>
-        </CardContent>
-      </Card>
+                      />
+                      <span className={cn(
+                        "text-xs font-medium",
+                        u.active ? "text-foreground" : "text-muted-foreground"
+                      )}>
+                        {u.active ? "Active" : "Suspended"}
+                      </span>
+                    </div>
+                  </td>
+                  <td className="px-4 py-2.5 text-xs text-muted-foreground">
+                    {u.lastLoginAt ? new Date(u.lastLoginAt).toLocaleDateString() : "—"}
+                  </td>
+                  <td className="px-4 py-2.5 text-right">
+                    <div className="flex gap-1 justify-end">
+                      {!isProtectedAdmin(u) && (
+                        <>
+                          <Button size="sm" variant="ghost" className="h-7 text-xs text-muted-foreground hover:text-foreground" onClick={() => {
+                            const pw = prompt(`Enter new password for ${u.name}:`);
+                            if (pw && pw.length >= 6) {
+                              setResettingPw(p => ({ ...p, [u.id]: true }));
+                              resetPassword(u.id, pw).finally(() => setResettingPw(p => ({ ...p, [u.id]: false })));
+                            }
+                          }} disabled={resettingPw[u.id]}>
+                            {resettingPw[u.id] ? <Loader2 className="w-3 h-3 animate-spin" /> : <KeyRound className="w-3 h-3" />}
+                          </Button>
+                          <Button size="sm" variant="ghost" className="h-7 text-xs text-[#c44] hover:text-[#a33]" onClick={() => {
+                            if (confirm(`Remove ${u.name}? This cannot be undone.`)) removeUser(u.id);
+                          }}>
+                            <Trash2 className="w-3 h-3" />
+                          </Button>
+                        </>
+                      )}
+                    </div>
+                  </td>
+                </tr>
+              ))}
+              {filteredUsers.length === 0 && (
+                <tr>
+                  <td colSpan={7} className="px-4 py-8 text-center text-muted-foreground text-sm">
+                    No users found matching your filters.
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
+      </div>
     </div>
   );
 }
@@ -482,7 +531,7 @@ function BrandingTab() {
             className="font-medium"
           />
           <p className="text-[11px] text-muted-foreground">
-            Leave empty to use the default name "QMS Forge".
+            Leave empty to use the default name "QBase".
           </p>
         </CardContent>
       </Card>
@@ -590,7 +639,7 @@ function BrandingTab() {
                 )}
               </div>
               <span className="text-sm font-semibold" style={themeColor ? { color: themeColor } : {}}>
-                {companyName || "QMS Forge"}
+                {companyName || "QBase"}
               </span>
             </div>
             {/* Simulated Button */}

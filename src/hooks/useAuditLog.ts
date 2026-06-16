@@ -1,5 +1,5 @@
 // ============================================================================
-// QMS Forge — Audit Log Hooks (React Query)
+// QBase — Audit Log Hooks (React Query)
 // ============================================================================
 
 import { useQuery } from '@tanstack/react-query';

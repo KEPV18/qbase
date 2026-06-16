@@ -474,7 +474,7 @@ export function exportTracePackage(
         gaps: chain.gaps
       }, null, 2);
 
-    case "MARKDOWN":
+    case "MARKDOWN": {
       let md = `# Traceability Package\n\n`;
       md += `**Root Record:** ${chain.rootId}\n\n`;
       md += `**Generated:** ${timestamp}\n\n`;
@@ -497,9 +497,15 @@ export function exportTracePackage(
         chain.gaps.forEach(gap => md += `- ${gap}\n`);
       }
       
+      if (chain.cycles.length > 0) {
+        md += `## ⚠️ Cycles Detected\n\n`;
+        chain.cycles.forEach(cycle => md += `- ${cycle}\n`);
+      }
+      
       return md;
+    }
 
-    case "CSV":
+    case "CSV": {
       let csv = "Depth,Record_ID,Form,Number,Title,Status,Related_To,Relationship,ISO_Clause\n";
       for (const node of chain.ordered) {
         for (const rel of node.record.relatedRecords) {
@@ -507,6 +513,7 @@ export function exportTracePackage(
         }
       }
       return csv;
+    }
 
     default:
       return "";

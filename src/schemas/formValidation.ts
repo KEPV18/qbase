@@ -1,5 +1,5 @@
 // ============================================================================
-// QMS Forge — Zod Validation Schemas
+// QBase — Zod Validation Schemas
 // Every form has a strict schema. Invalid data NEVER passes.
 // ============================================================================
 
@@ -172,43 +172,53 @@ export type F08Data = z.infer<typeof F08Schema>;
 
 export const F09Schema = z.object({
   serial: AUTO_SERIAL,
-  date: ISO_DATE,
-  complainant_name: REQUIRED_TEXT,
-  complainant_contact: OPTIONAL_TEXT,
-  project_name: OPTIONAL_TEXT,
-  complaint_type: COMPLAINT_TYPE,
-  description: REQUIRED_TEXT,
+  date: OPTIONAL_DATE,
+  receipt_date: OPTIONAL_DATE,
+  receipt_time: OPTIONAL_TEXT,
+  received_by: OPTIONAL_TEXT,
+  mode_of_receipt: OPTIONAL_TEXT,
+  client_name: OPTIONAL_TEXT,
+  product_type: OPTIONAL_TEXT,
+  product_details: OPTIONAL_TEXT,
+  description: OPTIONAL_TEXT,
+  complaint_nature: OPTIONAL_TEXT,
   corrective_action: OPTIONAL_TEXT,
-  resolved: z.boolean().default(false),
-  resolution_date: OPTIONAL_DATE,
-  handled_by: SIGNATURE,
+  result_of_action: OPTIONAL_TEXT,
+  actions_proposed: OPTIONAL_TEXT,
+  customer_informed_vide: OPTIONAL_TEXT,
+  customer_informed_date: OPTIONAL_DATE,
+  clientplatform_confirmation: OPTIONAL_TEXT,
+  clientplatform_confirmation_date: OPTIONAL_DATE,
+  analysed_by: OPTIONAL_TEXT,
+  closed_by: OPTIONAL_TEXT,
 });
 export type F09Data = z.infer<typeof F09Schema>;
 
 export const F10Schema = z.object({
   serial: AUTO_SERIAL,
-  date: ISO_DATE,
-  client_name: REQUIRED_TEXT,
-  project_name: REQUIRED_TEXT,
-  product_quality: SATISFACTION_LEVEL,
-  order_processing: SATISFACTION_LEVEL,
-  complaint_handling: SATISFACTION_LEVEL,
-  delivery: SATISFACTION_LEVEL,
-  price: SATISFACTION_NA,
-  comments: OPTIONAL_TEXT,
-  reviewed_by: SIGNATURE,
+  date: OPTIONAL_DATE,
+  year: OPTIONAL_TEXT,
+  client_name: OPTIONAL_TEXT,
+  project_name: OPTIONAL_TEXT,
+  address: OPTIONAL_TEXT,
+  rating_product_quality: OPTIONAL_TEXT,
+  rating_order_processing: OPTIONAL_TEXT,
+  rating_complaint_handling: OPTIONAL_TEXT,
+  rating_delivery: OPTIONAL_TEXT,
+  rating_price: OPTIONAL_TEXT,
+  comment_text: OPTIONAL_TEXT,
+  suggestions: OPTIONAL_TEXT,
+  distributor_signature: OPTIONAL_TEXT,
+  reviewed_by: OPTIONAL_TEXT,
+  action_proposed: OPTIONAL_TEXT,
+  corrective_action_ref: OPTIONAL_TEXT,
+  remarks: OPTIONAL_TEXT,
 });
 export type F10Data = z.infer<typeof F10Schema>;
 
 export const F50Schema = z.object({
   serial: AUTO_SERIAL,
-  date: ISO_DATE,
-  client_name: REQUIRED_TEXT,
-  property_description: REQUIRED_TEXT,
-  quantity: z.number().min(0).default(0),
-  condition_received: PROPERTY_CONDITION,
-  date_returned: OPTIONAL_DATE,
-  recorded_by: SIGNATURE,
+  entries: z.array(z.record(z.string())).optional().default([]),
 });
 export type F50Data = z.infer<typeof F50Schema>;
 
@@ -649,7 +659,7 @@ export type F46Data = z.infer<typeof F46Schema>;
 // Schema Registry — form code → Zod schema
 // ============================================================================
 
-export const FORM_ZOD_SCHEMAS: Record<string, z.ZodObject<any>> = {
+export const FORM_ZOD_SCHEMAS: Record<string, z.ZodObject<unknown>> = {
   'F/08': F08Schema,
   'F/09': F09Schema,
   'F/10': F10Schema,
@@ -688,13 +698,13 @@ export const FORM_ZOD_SCHEMAS: Record<string, z.ZodObject<any>> = {
 };
 
 /** Get the Zod schema for a form code */
-export function getZodSchema(code: string): z.ZodObject<any> | undefined {
+export function getZodSchema(code: string): z.ZodObject<unknown> | undefined {
   return FORM_ZOD_SCHEMAS[code];
 }
 
 /** Validate data against a form's schema. Returns { success, data } or { success: false, errors } */
 export function validateFormData(code: string, data: unknown): 
-  { success: true; data: any } | { success: false; errors: Record<string, string> } {
+  { success: true; data: unknown } | { success: false; errors: Record<string, string> } {
   const schema = FORM_ZOD_SCHEMAS[code];
   if (!schema) {
     return { success: false, errors: { _form: `Unknown form code: ${code}` } };

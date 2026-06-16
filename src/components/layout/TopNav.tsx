@@ -1,24 +1,15 @@
 import { useNavigate, useLocation } from "react-router-dom";
 import {
-  LayoutDashboard, ChevronDown, Search, FileText, Loader2,
-  Menu, X, Layers, Wrench, Briefcase, Shield, Activity,
+  Search, FileText, Bell, Moon, Sun,
 } from "lucide-react";
-import { UserDropdown } from "./UserDropdown";
-import { Input } from "@/components/ui/input";
 import { useState, useEffect, useRef, useMemo } from "react";
 import { useRecords } from "@/hooks/useRecordStorage";
 import { cn } from "@/lib/utils";
-import { useAuth } from "@/hooks/useAuth";
-import { Button } from "@/components/ui/button";
 import { SettingsModal } from "@/components/settings/SettingsModal";
-import { MODULE_NAV_ITEMS, DOCS_NAV_ITEMS, TOOL_NAV_ITEMS, type NavItem } from "@/config/modules";
-import type { RecordData } from "@/components/forms/DynamicFormRenderer";
 import { useTenantIdentity } from "@/hooks/useTenantIdentity";
+import { useTheme } from "@/hooks/useTheme";
 import defaultLogo from "@/assets/qms-logo.png";
-
-const moduleItems = MODULE_NAV_ITEMS;
-const docsItems = DOCS_NAV_ITEMS;
-const toolItems = TOOL_NAV_ITEMS;
+import type { RecordData } from "@/components/forms/DynamicFormRenderer";
 
 interface SearchResult {
   serial: string;
@@ -27,41 +18,53 @@ interface SearchResult {
   match: string;
 }
 
+const PAGE_LABELS: Record<string, string> = {
+  "/": "Dashboard",
+  "/records": "Records",
+  "/forms": "Forms Registry",
+  "/audit": "Analytics",
+  "/activity": "Audit Trail",
+  "/approvals": "Approval Queue",
+  "/notifications": "Notifications",
+  "/procedures": "Procedures",
+  "/iso-manual": "ISO Manual",
+  "/projects": "Projects",
+  "/kpi": "KPI Dashboard",
+  "/kpi/reports": "KPI Reports",
+  "/swot-analysis": "SWOT Analysis",
+  "/traceability": "Traceability",
+  "/integrity": "Data Integrity",
+  "/admin/accounts": "Admin Panel",
+  "/admin/database": "Database",
+  "/admin/approvals": "Approvals",
+  "/create": "Create Record",
+  "/module": "Module",
+};
+
+function getPageLabel(path: string): string {
+  if (PAGE_LABELS[path]) return PAGE_LABELS[path];
+  if (path.startsWith("/records/")) return "Record View";
+  if (path.startsWith("/project/")) return "Project";
+  if (path.startsWith("/module/")) return "Module";
+  if (path.startsWith("/traceability/")) return "Traceability";
+  return "QBase";
+}
+
 export function TopNav() {
   const navigate = useNavigate();
   const location = useLocation();
-  const { user } = useAuth();
   const { data: records } = useRecords();
-  const [isMobileOpen, setIsMobileOpen] = useState(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
-  const [activeDropdown, setActiveDropdown] = useState<string | null>(null);
-  const dropdownTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-
   const [searchTerm, setSearchTerm] = useState("");
   const [results, setResults] = useState<SearchResult[]>([]);
   const [showSearchDropdown, setShowSearchDropdown] = useState(false);
   const searchRef = useRef<HTMLDivElement>(null);
-
-  const projects = useMemo(() => {
-    if (!records) return [];
-    const projs = new Set<string>();
-    records.forEach(r => {
-      const name = (r.formData as Record<string, unknown>)?.project_name || (r.formData as Record<string, unknown>)?.client_name;
-      if (name && typeof name === 'string') projs.add(name);
-    });
-    return Array.from(projs).sort();
-  }, [records]);
+  const { theme, resolvedTheme, setTheme } = useTheme();
 
   const { displayName, logoUrl } = useTenantIdentity();
   const brandLogo = logoUrl || defaultLogo;
+  const pageLabel = getPageLabel(location.pathname);
 
-  useEffect(() => { setIsMobileOpen(false); }, [location.pathname]);
-  useEffect(() => {
-    document.body.style.overflow = isMobileOpen ? 'hidden' : '';
-    return () => { document.body.style.overflow = ''; };
-  }, [isMobileOpen]);
-
-  // Search logic
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (searchRef.current && !searchRef.current.contains(event.target as Node)) {
@@ -77,163 +80,125 @@ export function TopNav() {
     if (!records) return;
     const q = searchTerm.toLowerCase();
     const matches: SearchResult[] = [];
+    const visited = new Set<string>();
     records.forEach(r => {
       const serial = (r.serial as string)?.toLowerCase() || '';
       const formName = (r.formName as string)?.toLowerCase() || '';
       const formCode = (r.formCode as string)?.toLowerCase() || '';
-      if (serial.includes(q)) matches.push({ serial: r.serial as string, formName: r.formName as string, formCode: r.formCode as string, match: 'serial' });
-      else if (formName.includes(q)) matches.push({ serial: r.serial as string, formName: r.formName as string, formCode: r.formCode as string, match: 'name' });
-      else if (formCode.includes(q)) matches.push({ serial: r.serial as string, formName: r.formName as string, formCode: r.formCode as string, match: 'code' });
+
+      // Match serial
+      if (serial.includes(q) && !visited.has(r.serial as string)) {
+        visited.add(r.serial as string);
+        matches.push({ serial: r.serial as string, formName: r.formName as string, formCode: r.formCode as string, match: 'serial' });
+        return;
+      }
+      // Match form name
+      if (formName.includes(q) && !visited.has(r.serial as string)) {
+        visited.add(r.serial as string);
+        matches.push({ serial: r.serial as string, formName: r.formName as string, formCode: r.formCode as string, match: 'name' });
+        return;
+      }
+      // Match form code
+      if (formCode.includes(q) && !visited.has(r.serial as string)) {
+        visited.add(r.serial as string);
+        matches.push({ serial: r.serial as string, formName: r.formName as string, formCode: r.formCode as string, match: 'code' });
+        return;
+      }
+
+      // Deep search: scan form_data JSONB fields for match
+      if (r.form_data && typeof r.form_data === 'object') {
+        const fd = r.form_data as Record<string, unknown>;
+        for (const val of Object.values(fd)) {
+          if (typeof val === 'string' && val.toLowerCase().includes(q)) {
+            if (!visited.has(r.serial as string)) {
+              visited.add(r.serial as string);
+              matches.push({ serial: r.serial as string, formName: r.formName as string, formCode: r.formCode as string, match: 'data' });
+              return;
+            }
+          }
+        }
+      }
     });
-    setResults(matches.slice(0, 12));
+    setResults(matches.slice(0, 10));
     setShowSearchDropdown(true);
   }, [searchTerm, records]);
 
-  const handleDropdownEnter = (id: string) => {
-    if (dropdownTimerRef.current) clearTimeout(dropdownTimerRef.current);
-    setActiveDropdown(id);
-  };
-  const handleDropdownLeave = () => {
-    dropdownTimerRef.current = setTimeout(() => setActiveDropdown(null), 200);
-  };
-
-  const navSections = [
-    { label: "Modules", items: moduleItems },
-    { label: "Documents", items: docsItems },
-    { label: "Tools", items: toolItems },
-  ];
-
   return (
     <>
-      <header className="sticky top-0 z-50 bg-background/80 backdrop-blur-md border-b border-border">
-        <div className="max-w-[1400px] mx-auto px-4 md:px-6 lg:px-8">
-          <div className="flex h-14 items-center gap-4">
-            {/* Logo */}
-            <button onClick={() => navigate('/')} className="flex items-center gap-2.5 shrink-0 group">
-              <div className="w-8 h-8 rounded-lg bg-primary/10 border border-primary/20 flex items-center justify-center group-hover:bg-primary/15 transition-colors">
-                <img src={brandLogo} alt="" className="w-5 h-5" />
-              </div>
-              <span className="text-lg font-bold tracking-tight text-foreground">{displayName || "QBase"}</span>
-            </button>
+      {/* TopNav Capsule */}
+      <div className="bg-white dark:bg-[#232220] border border-[#e8e3db] dark:border-[#3a3834] rounded-xl px-5 py-3 flex items-center justify-between shrink-0">
+        {/* Left — Active Page */}
+        <div className="flex items-center gap-3">
+          <div className="w-8 h-8 rounded-lg bg-[#2d2d2d] flex items-center justify-center">
+            <img src={brandLogo} alt="" className="w-4 h-4 object-contain invert" />
+          </div>
+          <div>
+            <p className="text-[11px] font-heading font-semibold text-[#9f9a8f] uppercase tracking-wider">Active Page</p>
+            <p className="text-sm font-semibold text-[#2d2d2d] dark:text-[#e8e3db]">{pageLabel}</p>
+          </div>
+        </div>
 
-            {/* Desktop nav */}
-            <nav className="hidden lg:flex items-center gap-1 ml-4 flex-1">
-              {navSections.map(section => (
-                <div
-                  key={section.label}
-                  className="relative"
-                  onMouseEnter={() => handleDropdownEnter(section.label)}
-                  onMouseLeave={handleDropdownLeave}
+        {/* Center — Global Search */}
+        <div className="hidden md:block relative flex-1 max-w-md mx-8" ref={searchRef}>
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#9f9a8f]" />
+          <input
+            type="text"
+            placeholder="Search records…"
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            onFocus={() => { if (results.length > 0) setShowSearchDropdown(true); }}
+            onKeyDown={(e) => { if (e.key === 'Escape') setShowSearchDropdown(false); }}
+            className="w-full pl-9 pr-10 py-2 rounded-lg bg-[#f8f6f1] border border-[#e8e3db] text-sm text-[#2d2d2d] dark:text-[#e8e3db] dark:bg-[#1a1a18] dark:border-[#3a3834] placeholder:text-[#9f9a8f] focus:outline-none focus:ring-2 focus:ring-[#2d2d2d]/10 focus:border-[#2d2d2d]/20 transition-all"
+          />
+          <kbd className="absolute right-3 top-1/2 -translate-y-1/2 hidden lg:inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-md bg-[#ece8df] dark:bg-[#302e2a] border border-[#e8e3db] dark:border-[#3a3834] text-[10px] font-medium text-[#9f9a8f]">
+            ⌘ F
+          </kbd>
+          {showSearchDropdown && results.length > 0 && (
+            <div className="absolute top-full left-0 right-0 mt-2 bg-white dark:bg-[#232220] border border-[#e8e3db] dark:border-[#3a3834] rounded-lg py-1 max-h-80 overflow-y-auto z-50">
+              {results.map(r => (
+                <button
+                  key={r.serial}
+                  onClick={() => { navigate(`/records/${encodeURIComponent(r.serial)}`); setShowSearchDropdown(false); setSearchTerm(''); }}
+                  className="w-full text-left px-4 py-2.5 hover:bg-[#f8f6f1] dark:hover:bg-[#1a1a18] flex items-center gap-3 transition-colors"
                 >
-                  <button className={cn(
-                    "flex items-center gap-1 px-3 py-1.5 rounded-md text-sm font-medium transition-colors",
-                    "text-muted-foreground hover:text-foreground hover:bg-secondary"
-                  )}>
-                    {section.label} <ChevronDown className="w-3.5 h-3.5 opacity-50" />
-                  </button>
-                  {activeDropdown === section.label && (
-                    <div className="absolute top-full left-0 mt-1 w-56 bg-popover border border-border rounded-lg shadow-lg py-1 animate-fade-up z-50">
-                      {section.items.map((item: NavItem) => (
-                        <button
-                          key={item.path}
-                          onClick={() => { navigate(item.path); setActiveDropdown(null); }}
-                          className="w-full text-left px-3 py-2 text-sm hover:bg-secondary flex items-center gap-2 transition-colors"
-                        >
-                          <item.icon className="w-4 h-4 text-muted-foreground" />
-                          <span>{item.label}</span>
-                        </button>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              ))}
-              <button onClick={() => navigate('/audit')} className={cn(
-                "px-3 py-1.5 rounded-md text-sm font-medium transition-colors",
-                "text-muted-foreground hover:text-foreground hover:bg-secondary"
-              )}>
-                Audit
-              </button>
-            </nav>
-
-            {/* Search */}
-            <div className="hidden md:block relative flex-1 max-w-xs ml-auto" ref={searchRef}>
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-              <Input
-                placeholder="Search records…"
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                onFocus={() => { if (results.length > 0) setShowSearchDropdown(true); }}
-                onKeyDown={(e) => { if (e.key === 'Escape') setShowSearchDropdown(false); }}
-                className="pl-9 h-9 text-sm bg-secondary/50 border-border/50"
-              />
-              {showSearchDropdown && results.length > 0 && (
-                <div className="absolute top-full left-0 right-0 mt-1 bg-popover border border-border rounded-lg shadow-lg py-1 max-h-80 overflow-y-auto z-50">
-                  {results.map(r => (
-                    <button
-                      key={r.serial}
-                      onClick={() => { navigate(`/records/${encodeURIComponent(r.serial)}`); setShowSearchDropdown(false); setSearchTerm(''); }}
-                      className="w-full text-left px-3 py-2 hover:bg-secondary flex items-center gap-3 transition-colors"
-                    >
-                      <FileText className="w-4 h-4 text-muted-foreground shrink-0" />
-                      <div className="min-w-0 flex-1">
-                        <p className="text-sm font-medium truncate">{r.serial}</p>
-                        <p className="text-xs text-muted-foreground">{r.formName}</p>
-                      </div>
-                      <span className="text-xs text-muted-foreground shrink-0">{r.formCode}</span>
-                    </button>
-                  ))}
-                </div>
-              )}
-            </div>
-
-            {/* User */}
-            <div className="flex items-center gap-2">
-              <UserDropdown />
-              <button onClick={() => setIsMobileOpen(!isMobileOpen)} className="lg:hidden p-2 rounded-md hover:bg-secondary">
-                {isMobileOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
-              </button>
-            </div>
-          </div>
-        </div>
-      </header>
-
-      {/* Mobile nav */}
-      {isMobileOpen && (
-        <div className="fixed inset-0 z-40 lg:hidden">
-          <div className="fixed inset-0 bg-black/50" onClick={() => setIsMobileOpen(false)} />
-          <div className="fixed inset-y-0 right-0 w-72 bg-background border-l border-border shadow-xl overflow-y-auto animate-slide-in-right">
-            <div className="p-4 space-y-4">
-              <div className="flex items-center justify-between">
-                <span className="font-semibold">Menu</span>
-                <button onClick={() => setIsMobileOpen(false)}><X className="w-5 h-5" /></button>
-              </div>
-              {navSections.map(section => (
-                <div key={section.label}>
-                  <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">{section.label}</p>
-                  <div className="space-y-1">
-                    {section.items.map((item: NavItem) => (
-                      <button
-                        key={item.path}
-                        onClick={() => { navigate(item.path); setIsMobileOpen(false); }}
-                        className="w-full text-left px-3 py-2 rounded-md text-sm hover:bg-secondary flex items-center gap-2"
-                      >
-                        <item.icon className="w-4 h-4 text-muted-foreground" />
-                        {item.label}
-                      </button>
-                    ))}
+                  <FileText className="w-4 h-4 text-[#9f9a8f] shrink-0" />
+                  <div className="min-w-0 flex-1">
+                    <p className="text-sm font-medium text-[#2d2d2d] dark:text-[#e8e3db] truncate">{r.serial}</p>
+                    <p className="text-xs text-[#7a756a]">{r.formName}</p>
                   </div>
-                </div>
+                  <span className="text-xs text-[#7a756a] shrink-0 font-mono bg-[#f8f6f1] dark:bg-[#1a1a18] rounded px-1.5 py-0.5">{r.formCode}</span>
+                  <span className={cn(
+                    "text-[9px] uppercase tracking-wider px-1.5 py-0.5 rounded font-medium",
+                    r.match === 'serial' && "text-blue-500 bg-blue-50 dark:bg-blue-900/20",
+                    r.match === 'name' && "text-emerald-500 bg-emerald-50 dark:bg-emerald-900/20",
+                    r.match === 'code' && "text-purple-500 bg-purple-50 dark:bg-purple-900/20",
+                    r.match === 'data' && "text-amber-600 bg-amber-50 dark:bg-amber-900/20",
+                  )}>{r.match}</span>
+                </button>
               ))}
-              <button
-                onClick={() => { navigate('/audit'); setIsMobileOpen(false); }}
-                className="w-full text-left px-3 py-2 rounded-md text-sm hover:bg-secondary"
-              >
-                Audit
-              </button>
             </div>
-          </div>
+          )}
         </div>
-      )}
+
+        {/* Right — Utilities + Avatar */}
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => setTheme(resolvedTheme === 'dark' ? 'light' : 'dark')}
+            className="p-2 rounded-lg text-[#9f9a8f] hover:text-[#2d2d2d] hover:bg-[#f8f6f1] dark:hover:bg-[#1a1a18] transition-colors"
+            title="Toggle theme"
+          >
+            {resolvedTheme === 'dark' ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
+          </button>
+          <button
+            onClick={() => navigate('/notifications')}
+            className="p-2 rounded-lg text-[#9f9a8f] hover:text-[#2d2d2d] hover:bg-[#f8f6f1] dark:hover:bg-[#1a1a18] transition-colors relative"
+            title="Notifications"
+          >
+            <Bell className="w-4 h-4" />
+          </button>
+          <div className="w-px h-5 bg-[#e8e3db] dark:bg-[#3a3834] mx-1" />
+        </div>
+      </div>
 
       <SettingsModal open={isSettingsOpen} onOpenChange={setIsSettingsOpen} />
     </>

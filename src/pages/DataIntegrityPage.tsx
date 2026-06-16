@@ -1,5 +1,5 @@
 // ============================================================================
-// QMS Forge — Data Integrity Dashboard (Phase 9 Refined)
+// QBase — Data Integrity Dashboard (Phase 9 Refined)
 // Consistent design system classes, improved hierarchy, better interactions.
 // Phase 7B+7C: Non-blocking detection + progressive enforcement
 // ============================================================================

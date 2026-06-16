@@ -1,5 +1,5 @@
 // ============================================================================
-// QMS Forge — Schema & Validation Exports
+// QBase — Schema & Validation Exports
 // Central import point for all validation logic
 // ============================================================================
 

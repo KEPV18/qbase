@@ -1,5 +1,5 @@
 // ============================================================================
-// QMS Forge — Event Intelligence System
+// QBase — Event Intelligence System
 // Structured event emission → notification creation.
 // No spam. Only CRITICAL and IMPORTANT events reach UI.
 // INFO events go to logs only.
@@ -16,7 +16,7 @@ export type EventCategory = 'records' | 'users' | 'security' | 'system' | 'tenan
 export type EventPriority = 'critical' | 'important' | 'info';
 export type EventAction =
   | 'create' | 'update' | 'delete' | 'approve' | 'reject'
-  | 'login' | 'role_change' | 'rls_violation' | 'settings_change'
+  | 'login' | 'logout' | 'role_change' | 'rls_violation' | 'settings_change'
   | 'rpc_error' | 'migration' | 'system_boot';
 
 export interface SystemEvent {

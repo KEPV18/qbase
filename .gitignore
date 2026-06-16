@@ -56,3 +56,5 @@ scripts/
 .codex
 .vite
 *.bak
+.vercel
+.env*

@@ -1,4 +1,4 @@
-import { createBrowserClient } from "@supabase/ssr"
+import { createClient } from "@supabase/supabase-js"
 
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL?.trim()
 const supabaseKey = (import.meta.env.VITE_SUPABASE_ANON_KEY?.trim()
@@ -10,14 +10,11 @@ if (!supabaseUrl || !supabaseKey) {
   )
 }
 
-export const supabase = createBrowserClient(supabaseUrl, supabaseKey, {
+export const supabase = createClient(supabaseUrl, supabaseKey, {
   auth: {
-    flowType: 'pkce',
+    autoRefreshToken: true,
+    persistSession: true,
     detectSessionInUrl: true,
-    // Increase lock acquisition timeout to 15s (default is 5s).
-    // React dev mode + slow connections can cause the auth lock to
-    // appear orphaned when it's just slow to release.
-    lockTimeoutMs: 15000,
   },
 })
 

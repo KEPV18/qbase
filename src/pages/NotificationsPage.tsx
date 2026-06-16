@@ -1,5 +1,5 @@
 // ============================================================================
-// QMS Forge — Notification Center
+// QBase — Notification Center
 // Structured, priority-aware, category-filtered, timeline-grouped.
 // Production observability layer, not a UI enhancement.
 // ============================================================================

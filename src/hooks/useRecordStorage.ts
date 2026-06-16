@@ -1,5 +1,5 @@
 // ============================================================================
-// QMS Forge — React Query hooks for record storage
+// QBase — React Query hooks for record storage
 // Google Sheets is the ONLY source of truth.
 // Hooks provide loading states, error handling, cache invalidation.
 // ============================================================================

@@ -1,5 +1,5 @@
 // ============================================================================
-// QMS Forge — Rule Engine & Data Integrity Detection
+// QBase — Rule Engine & Data Integrity Detection
 // Phase 7B+7C: Non-blocking detection + progressive enforcement
 //
 // ALL rules default to "warn" mode. No hard enforcement until explicitly

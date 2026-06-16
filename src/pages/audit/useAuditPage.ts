@@ -1,5 +1,5 @@
 // ============================================================================
-// QMS Forge — Audit Page Hook (Supabase-connected)
+// QBase — Audit Page Hook (Supabase-connected)
 // Replaces useQMSData with useRecords from useRecordStorage.
 // ============================================================================
 

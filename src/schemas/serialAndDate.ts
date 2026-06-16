@@ -1,10 +1,9 @@
 // ============================================================================
-// QMS Forge — Serial Number Generator & Date Utilities
+// QBase — Serial Number Generator & Date Utilities
 // Serial format: F/XX-NNN (e.g. F/12-001, F/43-065)
 // ============================================================================
 
-import { google } from 'googleapis';
-import { get_service } from '../google/oauth_bridge';
+// Removed unused googleapis import
 
 // ============================================================================
 // Date Utilities

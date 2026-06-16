@@ -1,5 +1,5 @@
 // ============================================================================
-// QMS Forge — Record View Page (Phase 9 Refined)
+// QBase — Record View Page (Phase 9 Refined)
 // Consistent design system classes, improved hierarchy, better interactions.
 // ============================================================================
 
@@ -9,13 +9,13 @@ import {
   ArrowLeft, Edit3, Save, X, AlertTriangle, Shield, Clock, User,
   FileText, CheckCircle, Lock, Loader2, RefreshCw, History,
   Download, FileJson, FileSpreadsheet, FileText as FileTextIcon,
-  Trash2,
+  Trash2, Printer,
 } from 'lucide-react';
 import { getFormSchema } from '../data/formSchemas';
 import { isoToDisplay } from '../schemas';
 import DynamicFormRenderer, { type RecordData } from '../components/forms/DynamicFormRenderer';
-import { SchemaDrivenRecordView } from '../components/forms/SchemaDrivenRecordView';
 import { getFormTemplateComponent } from '@/components/forms/templates';
+import { DocumentView, DocHeader, DocSection, DocField, DocTable } from '@/components/forms/DocumentView';
 import { useRecord, useUpdateRecord, useRecords, useDeleteRecord } from '../hooks/useRecordStorage';
 import { useAuditLog } from '../hooks/useAuditLog';
 import { useAuth } from '../hooks/useAuth';
@@ -99,6 +99,32 @@ const RecordViewPage: React.FC = () => {
     { label: "Records", path: "/records" },
     { label: decodedSerial },
   ];
+
+  // ── Data completeness check (MUST be before early returns to avoid React #310)
+  React.useEffect(() => {
+    if (!originalRecord || !schema) return;
+    const suspiciousEmpty = schema.fields
+      .filter(f => {
+        const key = f.key as string;
+        if (f.type === 'heading') return false;
+        if (f.type === 'select' && Array.isArray(f.options) && f.options.length > 0) {
+          return !String((originalRecord as Record<string, unknown>)[key] ?? '');
+        }
+        if (key.startsWith('rating_') || key.includes('_confirmation') || key === 'complaint_nature') {
+          return !String((originalRecord as Record<string, unknown>)[key] ?? '');
+        }
+        if (key.includes('comment') || key === 'description' || key === 'remarks') {
+          return String((originalRecord as Record<string, unknown>)[key] ?? '') === '';
+        }
+        return false;
+      })
+      .map(f => f.key as string);
+
+    if (suspiciousEmpty.length > 3) {
+      console.warn(`[RecordViewPage] Too many empty fields (${suspiciousEmpty.length}) — refetching ${originalRecord.serial}`);
+      refetch();
+    }
+  }, [originalRecord, schema, refetch]);
 
   // ─── Loading state ─────────────────────────────────────────────────────
   if (isLoading) {
@@ -198,7 +224,8 @@ const RecordViewPage: React.FC = () => {
             refetch();
           } else {
             if (result.conflict) {
-              setErrors({ _conflict: result.error || 'Concurrent modification detected. Please reload.' });
+              setErrors({ _conflict: result.error || 'Concurrent modification detected. Another user edited this record. Please refetch the latest version.' });
+              refetch(); // auto-refetch latest to resolve conflict
             } else {
               setErrors({ _save: result.error || 'Failed to save record.' });
             }
@@ -248,49 +275,57 @@ const RecordViewPage: React.FC = () => {
 
   return (
     <AppShell breadcrumbs={getBreadcrumbs()}>
-    <div className="max-w-4xl mx-auto page-transition">
+    <div className="max-w-5xl mx-auto page-transition px-4 py-6">
       {/* Top bar */}
       <div className="flex items-center justify-between mb-6">
-        <button onClick={() => navigate('/records')} className="flex items-center gap-2 text-muted-foreground hover:text-primary transition-colors ds-press rounded-sm px-2 py-1">
-          <ArrowLeft className="w-4 h-4" /> <span className="text-sm">Records</span>
+        <button onClick={() => navigate(`/records?formCode=${encodeURIComponent(originalRecord.formCode as string)}`)} className="flex items-center gap-2 text-muted-foreground hover:text-primary transition-colors ds-press rounded-lg px-2 py-1">
+          <ArrowLeft className="w-4 h-4" /> <span className="text-sm">{schema?.sectionName || 'Records'}</span>
         </button>
 
         <div className="flex items-center gap-2">
           {/* Export */}
           {mode === 'view' && (
-            <div className="relative">
-              <button onClick={() => setExportMenuOpen(!exportMenuOpen)} disabled={isExporting}
-                className="ds-press ds-focus-ring px-3 py-2 text-sm bg-secondary text-secondary-foreground rounded-sm flex items-center gap-2 hover:bg-accent transition-colors">
-                {isExporting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />} Export
+            <>
+              {/* Print button */}
+              <button onClick={() => window.print()}
+                className="ds-press ds-focus-ring px-3 py-2 text-sm bg-secondary text-secondary-foreground rounded-sm flex items-center gap-2 hover:bg-accent transition-colors no-print">
+                <Printer className="w-4 h-4" /> Print
               </button>
-              {exportMenuOpen && (
-                <>
-                  <div className="fixed inset-0 z-40" onClick={() => setExportMenuOpen(false)} />
-                  <div className="absolute right-0 mt-2 w-60 bg-popover border border-border rounded-sm shadow-xl z-50 overflow-hidden ds-fade-enter">
-                    <div className="px-3 py-2 text-xs text-muted-foreground border-b border-border bg-secondary/50">
-                      Export {originalRecord.serial as string}
+              {/* Export dropdown */}
+              <div className="relative">
+                <button onClick={() => setExportMenuOpen(!exportMenuOpen)} disabled={isExporting}
+                  className="ds-press ds-focus-ring px-3 py-2 text-sm bg-secondary text-secondary-foreground rounded-sm flex items-center gap-2 hover:bg-accent transition-colors">
+                  {isExporting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />} Export
+                </button>
+                {exportMenuOpen && (
+                  <>
+                    <div className="fixed inset-0 z-40" onClick={() => setExportMenuOpen(false)} />
+                    <div className="absolute right-0 mt-2 w-60 bg-popover border border-border rounded-sm shadow-xl z-50 overflow-hidden ds-fade-enter">
+                      <div className="px-3 py-2 text-xs text-muted-foreground border-b border-border bg-secondary/50">
+                        Export {originalRecord.serial as string}
+                      </div>
+                      <button onClick={handleExportDocx} className="w-full px-4 py-3 text-sm text-popover-foreground hover:bg-accent flex items-center gap-3 transition-colors">
+                        <FileTextIcon className="w-5 h-5 text-blue-400" />
+                        <div className="text-left"><div className="font-medium">Word Document</div><div className="text-xs text-muted-foreground">.docx — formatted report</div></div>
+                      </button>
+                      <button onClick={handleExportJson} className="w-full px-4 py-3 text-sm text-popover-foreground hover:bg-accent flex items-center gap-3 transition-colors border-t border-border">
+                        <FileJson className="w-5 h-5 text-emerald-400" />
+                        <div className="text-left"><div className="font-medium">JSON</div><div className="text-xs text-muted-foreground">.json — raw data</div></div>
+                      </button>
+                      <button onClick={handleExportCsv} className="w-full px-4 py-3 text-sm text-popover-foreground hover:bg-accent flex items-center gap-3 transition-colors border-t border-border">
+                        <FileSpreadsheet className="w-5 h-5 text-amber-400" />
+                        <div className="text-left"><div className="font-medium">CSV</div><div className="text-xs text-muted-foreground">.csv — key-value pairs</div></div>
+                      </button>
                     </div>
-                    <button onClick={handleExportDocx} className="w-full px-4 py-3 text-sm text-popover-foreground hover:bg-accent flex items-center gap-3 transition-colors">
-                      <FileTextIcon className="w-5 h-5 text-blue-400" />
-                      <div className="text-left"><div className="font-medium">Word Document</div><div className="text-xs text-muted-foreground">.docx — formatted report</div></div>
-                    </button>
-                    <button onClick={handleExportJson} className="w-full px-4 py-3 text-sm text-popover-foreground hover:bg-accent flex items-center gap-3 transition-colors border-t border-border">
-                      <FileJson className="w-5 h-5 text-emerald-400" />
-                      <div className="text-left"><div className="font-medium">JSON</div><div className="text-xs text-muted-foreground">.json — raw data</div></div>
-                    </button>
-                    <button onClick={handleExportCsv} className="w-full px-4 py-3 text-sm text-popover-foreground hover:bg-accent flex items-center gap-3 transition-colors border-t border-border">
-                      <FileSpreadsheet className="w-5 h-5 text-amber-400" />
-                      <div className="text-left"><div className="font-medium">CSV</div><div className="text-xs text-muted-foreground">.csv — key-value pairs</div></div>
-                    </button>
-                  </div>
-                </>
-              )}
-            </div>
+                  </>
+                )}
+              </div>
+            </>
           )}
 
           {mode === 'view' && (
             <button onClick={handleStartEdit}
-              className="ds-press ds-focus-ring px-4 py-2 bg-primary text-primary-foreground rounded-sm flex items-center gap-2 text-sm font-medium hover:bg-primary/90 transition-colors">
+              className="ds-press ds-focus-ring px-4 py-2 bg-primary text-primary-foreground rounded-lg flex items-center gap-2 text-sm font-medium hover:bg-primary/90 transition-colors">
               <Edit3 className="w-4 h-4" /> Edit
             </button>
           )}
@@ -299,11 +334,11 @@ const RecordViewPage: React.FC = () => {
               <div className="flex items-center gap-2">
                 <span className="text-xs text-destructive font-medium">Delete this record?</span>
                 <button onClick={handleDelete} disabled={deleteMutation.isPending}
-                  className="ds-press px-3 py-2 bg-destructive text-destructive-foreground rounded-sm flex items-center gap-2 text-sm font-medium hover:bg-destructive/90 transition-colors">
+                  className="ds-press px-3 py-2 bg-destructive text-destructive-foreground rounded-lg flex items-center gap-2 text-sm font-medium hover:bg-destructive/90 transition-colors">
                   {deleteMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Trash2 className="w-4 h-4" />} Confirm
                 </button>
                 <button onClick={() => setConfirmDelete(false)}
-                  className="ds-press px-3 py-2 bg-secondary text-secondary-foreground rounded-sm flex items-center gap-2 text-sm hover:bg-accent transition-colors">
+                  className="ds-press px-3 py-2 bg-secondary text-secondary-foreground rounded-lg flex items-center gap-2 text-sm hover:bg-accent transition-colors">
                   Cancel
                 </button>
               </div>
@@ -317,7 +352,7 @@ const RecordViewPage: React.FC = () => {
           {mode === 'edit' && (
             <>
               <button onClick={() => { setMode('view'); setErrors({}); }}
-                className="ds-press px-4 py-2 bg-secondary text-secondary-foreground rounded-sm flex items-center gap-2 text-sm hover:bg-accent transition-colors">
+                className="ds-press px-4 py-2 bg-secondary text-secondary-foreground rounded-lg flex items-center gap-2 text-sm hover:bg-accent transition-colors">
                 <X className="w-4 h-4" /> Cancel
               </button>
               {hasChangedFields && (
@@ -325,6 +360,12 @@ const RecordViewPage: React.FC = () => {
                   Unsaved changes
                 </span>
               )}
+              <button onClick={() => handleFormSubmit(editData)}
+                disabled={isSaving}
+                className="ds-press ds-focus-ring px-4 py-2 bg-primary text-primary-foreground rounded-lg flex items-center gap-2 text-sm font-medium hover:bg-primary/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
+                {isSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+                Save
+              </button>
             </>
           )}
         </div>
@@ -402,13 +443,13 @@ const RecordViewPage: React.FC = () => {
 
         {/* Risk warnings */}
         {riskLevel === 'high' && (
-          <div className="mt-4 flex items-center gap-2 px-3 py-2 bg-destructive/10 border border-destructive/20 rounded-sm text-xs text-destructive">
+          <div className="mt-4 flex items-center gap-2 px-3 py-2 bg-destructive/10 border border-destructive/20 rounded-lg text-xs text-destructive">
             <AlertTriangle className="w-4 h-4 shrink-0" />
             <span>Frequently modified ({originalRecord._editCount as number} edits). Verify data integrity.</span>
           </div>
         )}
         {riskLevel === 'medium' && (
-          <div className="mt-4 flex items-center gap-2 px-3 py-2 bg-warning/10 border border-warning/20 rounded-sm text-xs text-warning">
+          <div className="mt-4 flex items-center gap-2 px-3 py-2 bg-warning/10 border border-warning/20 rounded-lg text-xs text-warning">
             <AlertTriangle className="w-4 h-4 shrink-0" />
             <span>This record has been edited {originalRecord._editCount as number} time(s).</span>
           </div>
@@ -416,7 +457,7 @@ const RecordViewPage: React.FC = () => {
 
         {/* Integrity signals */}
         {integritySignals.length > 0 && mode === 'view' && (
-          <div className={`mt-3 px-3 py-2 border rounded-sm text-sm ${
+          <div className={`mt-3 px-3 py-2 border rounded-lg text-sm ${
             integritySeverity === 'critical'
               ? 'bg-destructive/10 border-destructive/20 text-destructive'
               : 'bg-warning/10 border-warning/20 text-warning'
@@ -441,7 +482,7 @@ const RecordViewPage: React.FC = () => {
           </div>
         )}
         {integritySignals.length === 0 && mode === 'view' && riskLevel === 'none' && (
-          <div className="mt-3 flex items-center gap-2 px-3 py-2 bg-success/10 border border-success/20 rounded-sm text-xs text-success">
+          <div className="mt-3 flex items-center gap-2 px-3 py-2 bg-success/10 border border-success/20 rounded-lg text-xs text-success">
             <CheckCircle className="w-4 h-4" />
             <span>No integrity issues detected</span>
           </div>
@@ -451,7 +492,7 @@ const RecordViewPage: React.FC = () => {
         {mode !== 'history' && (
           <button
             onClick={() => { setMode('history'); setErrors({}); }}
-            className="mt-3 ds-press ds-focus-ring flex items-center gap-2 px-3 py-2 bg-secondary border border-border rounded-sm text-xs text-secondary-foreground hover:bg-accent hover:text-accent-foreground transition-colors"
+            className="mt-3 ds-press ds-focus-ring flex items-center gap-2 px-3 py-2 bg-secondary border border-border rounded-lg text-xs text-secondary-foreground hover:bg-accent hover:text-accent-foreground transition-colors"
           >
             <History className="w-4 h-4" />
             View History ({originalRecord._editCount as number} edits)
@@ -462,7 +503,25 @@ const RecordViewPage: React.FC = () => {
       {/* ─── Content ──────────────────────────────────────────────────── */}
 
       {mode === 'view' ? (
-        <div className="ds-card p-6 page-transition">
+        <DocumentView subtitle={`${originalRecord.formCode as string} · ${(originalRecord as any).sectionName || ''}`}>
+          {/* ── Print header (visible only when printing) ── */}
+          <div className="print-only print-header">
+            <h2 className="company-name">QBase — Quality Management System</h2>
+            <p className="print-meta">
+              <span>Serial: <strong>{decodedSerial}</strong></span>
+              <span>Form: <strong>{originalRecord.formCode as string}</strong></span>
+              <span>Date: <strong>{new Date().toLocaleDateString()}</strong></span>
+              <span>Printed: <strong>{new Date().toLocaleString()}</strong></span>
+            </p>
+          </div>
+
+          <DocHeader
+            serial={decodedSerial}
+            formName={(originalRecord.formName as string) || ''}
+            formCode={originalRecord.formCode as string}
+            sectionName={(originalRecord as any).sectionName as string}
+          />
+
           {(() => {
             const TemplateComponent = getFormTemplateComponent(originalRecord.formCode as string);
             if (TemplateComponent) {
@@ -474,13 +533,79 @@ const RecordViewPage: React.FC = () => {
               );
             }
             return (
-              <SchemaDrivenRecordView
-                formCode={originalRecord.formCode as string}
-                data={originalRecord as unknown as RecordData}
-              />
+              <div className="space-y-6">
+                {(() => {
+                  const schema = getFormSchema(originalRecord.formCode as string);
+                  if (!schema) return null;
+                  return schema.fields.map((field, i) => {
+                    if (field.type === 'heading') {
+                      return <DocSection key={i} title={field.label} />;
+                    }
+                    const value = (originalRecord as any)[field.key];
+                    if (value === undefined || value === null || value === '') return null;
+
+                    if (field.type === 'table') {
+                      const rows = Array.isArray(value) ? value : [];
+                      const columns = field.columns || [];
+                      return (
+                        <div key={field.key} className="space-y-1.5">
+                          <p className="text-[11px] font-medium text-gray-400 dark:text-gray-500 uppercase tracking-wider">{field.label}</p>
+                          <DocTable columns={columns} rows={rows} />
+                        </div>
+                      );
+                    }
+
+                    if (field.type === 'textarea') {
+                      return (
+                        <DocField key={field.key} label={field.label} value={
+                          <div className="whitespace-pre-wrap text-sm leading-relaxed">{String(value)}</div>
+                        } />
+                      );
+                    }
+
+                    return (
+                      <DocField key={field.key} label={field.label} value={String(value)} />
+                    );
+                  });
+                })()}
+              </div>
             );
           })()}
-        </div>
+
+          {/* ── Print signature block (visible only when printing) ── */}
+          <div className="print-only print-signature">
+            <div className="sig-line">
+              <div className="sig-field">
+                <div className="sig-label">Prepared by</div>
+                <div className="sig-line-blank"></div>
+              </div>
+              <div className="sig-field">
+                <div className="sig-label">Date</div>
+                <div className="sig-line-blank"></div>
+              </div>
+            </div>
+            <div className="sig-line">
+              <div className="sig-field">
+                <div className="sig-label">Reviewed by</div>
+                <div className="sig-line-blank"></div>
+              </div>
+              <div className="sig-field">
+                <div className="sig-label">Date</div>
+                <div className="sig-line-blank"></div>
+              </div>
+            </div>
+            <div className="sig-line">
+              <div className="sig-field">
+                <div className="sig-label">Approved by</div>
+                <div className="sig-line-blank"></div>
+              </div>
+              <div className="sig-field">
+                <div className="sig-label">Date</div>
+                <div className="sig-line-blank"></div>
+              </div>
+            </div>
+          </div>
+        </DocumentView>
       ) : mode === 'history' ? (
         <div className="ds-card p-6 page-transition">
           <div className="flex items-center justify-between mb-4">
@@ -508,7 +633,7 @@ const RecordViewPage: React.FC = () => {
           ) : (
             <div className="space-y-3">
               {auditEntries.map((entry, idx) => (
-                <div key={entry.id} className={`border rounded-sm p-4 ${
+                <div key={entry.id} className={`border rounded-xl p-4 ${
                   entry.action === 'create'
                     ? 'bg-success/5 border-success/20'
                     : 'bg-primary/5 border-primary/20'
@@ -590,12 +715,12 @@ const RecordViewPage: React.FC = () => {
               )}
             </div>
             <div className="flex justify-end gap-3">
-              <button onClick={handleIntentCancel} className="ds-press px-4 py-2 bg-secondary text-secondary-foreground rounded-sm text-sm hover:bg-accent transition-colors">
+              <button onClick={handleIntentCancel} className="ds-press px-4 py-2 bg-secondary text-secondary-foreground rounded-lg text-sm hover:bg-accent transition-colors">
                 Cancel
               </button>
               <button onClick={handleIntentProceed}
                 disabled={modificationReason.trim().length < 5 || isSaving}
-                className="ds-press ds-focus-ring px-4 py-2 bg-warning text-warning-foreground rounded-sm text-sm flex items-center gap-2 hover:bg-warning/90 disabled:opacity-40 disabled:cursor-not-allowed transition-colors">
+                className="ds-press ds-focus-ring px-4 py-2 bg-warning text-warning-foreground rounded-lg text-sm flex items-center gap-2 hover:bg-warning/90 disabled:opacity-40 disabled:cursor-not-allowed transition-colors">
                 {isSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
                 Save with Reason
               </button>
@@ -616,12 +741,29 @@ const RecordViewPage: React.FC = () => {
               <strong className="text-destructive">Error:</strong> <span className="text-destructive/80">{errors._save}</span>
             </div>
           )}
-          <DynamicFormRenderer
-            formCode={originalRecord.formCode as string}
-            initialData={editData}
-            onSubmit={handleFormSubmit}
-            editMode={true}
-          />
+          {(() => {
+            const TemplateComponent = getFormTemplateComponent(originalRecord.formCode as string);
+            if (TemplateComponent) {
+              return (
+                <div className="ds-card p-6">
+                  <TemplateComponent
+                    data={editData}
+                    isTemplate={false}
+                    editMode={true}
+                    onChange={(field, value) => setEditData(prev => ({ ...prev, [field]: value }))}
+                  />
+                </div>
+              );
+            }
+            return (
+              <DynamicFormRenderer
+                formCode={originalRecord.formCode as string}
+                initialData={editData}
+                onSubmit={handleFormSubmit}
+                editMode={true}
+              />
+            );
+          })()}
         </>
       )}
     </div>

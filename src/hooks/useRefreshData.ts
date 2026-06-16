@@ -2,7 +2,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { useCallback } from "react";
 
 /**
- * Shared hook for invalidating and refetching QMS Forge data.
+ * Shared hook for invalidating and refetching QBase data.
  * Key: 'forge-records' (Supabase-backed).
  */
 export function useRefreshData() {

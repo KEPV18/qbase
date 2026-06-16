@@ -1,6 +1,6 @@
 // ============================================================================
-// QMS Forms Registry — ISO 9001:2015
-// Complete catalogue of all 35 QMS forms organized by section
+// QBase Forms Registry — ISO 9001:2015
+// Complete catalogue of all 35 QBase forms organized by section
 // ============================================================================
 
 export type FormFrequency =

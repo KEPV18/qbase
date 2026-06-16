@@ -1,5 +1,5 @@
 // ============================================================================
-// QMS Forge — Tenant Identity Context
+// QBase — Tenant Identity Context
 // Provides company_name, company_logo_url, theme_color globally.
 // Consumed by TopNav, Sidebar, Footer, RecordView, FormRenderer.
 // No prop drilling. No hardcoded branding.
@@ -21,7 +21,7 @@ export interface TenantIdentity {
   updatedAt: string | null;
   /** Whether settings have been configured (company_name is non-empty) */
   isConfigured: boolean;
-  /** Display name: company_name if set, fallback to "QMS Forge" */
+  /** Display name: company_name if set, fallback to "QBase" */
   displayName: string;
   /** Logo URL if set, null if not configured */
   logoUrl: string | null;
@@ -33,7 +33,7 @@ const DEFAULT_IDENTITY: TenantIdentity = {
   themeColor: '',
   updatedAt: null,
   isConfigured: false,
-  displayName: 'QMS Forge',
+  displayName: 'QBase',
   logoUrl: null,
 };
 
@@ -84,7 +84,7 @@ async function fetchTenantSettings(): Promise<TenantIdentity> {
     themeColor,
     updatedAt: data.updated_at || null,
     isConfigured,
-    displayName: isConfigured ? companyName : 'QMS Forge',
+    displayName: isConfigured ? companyName : 'QBase',
     logoUrl: companyLogoUrl.length > 0 ? companyLogoUrl : null,
   };
 }

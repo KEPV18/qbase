@@ -1,5 +1,5 @@
 // ============================================================================
-// QMS Forge — Project Data (Static Seed)
+// QBase — Project Data (Static Seed)
 // Source of truth for all Vezloo projects with QMS compliance data.
 // This file replaces localStorage-based project storage with a persistent
 // file-based approach that survives browser cache clears.
@@ -47,11 +47,11 @@ export interface Project {
 
 export const PROJECTS: Project[] = [
   {
-    id: "VDP-001",
+    id: "a887a95e-a35b-4c50-927d-cf9c7bcaa882",
     code: "PROJ-001",
     projectCode: "VDP",
     serialNumber: "001",
-    name: "Video Detection Project",
+    name: "Video Detection Client – International",
     type: "Video Classification & Detection",
     client: "External Client",
     status: "active",
@@ -86,11 +86,11 @@ export const PROJECTS: Project[] = [
     updatedAt: "2026-04-20",
   },
   {
-    id: "VAI-002",
+    id: "a70260eb-4ce9-4f5e-892b-e675aa81cf23",
     code: "PROJ-002",
     projectCode: "VAI",
     serialNumber: "002",
-    name: "Vocal AI Project",
+    name: "Vocal AI Service",
     type: "Conversational AI Design, Testing & Optimization",
     client: "Internal R&D",
     status: "active",
@@ -127,11 +127,11 @@ export const PROJECTS: Project[] = [
     updatedAt: "2026-04-20",
   },
   {
-    id: "TSA-003",
+    id: "c11e1c14-388c-47dc-b97a-4e16e86d4da8",
     code: "PROJ-003",
     projectCode: "TSA",
     serialNumber: "003",
-    name: "Tennis / Sports Analytics Project",
+    name: "Tennis / Sports Analytics",
     type: "Sports Data Analysis, Match Review & Performance Tagging",
     client: "Sports Analytics Company",
     status: "active",
@@ -167,11 +167,11 @@ export const PROJECTS: Project[] = [
     updatedAt: "2026-04-15",
   },
   {
-    id: "OMN-004",
+    id: "4a2630c9-c887-42e2-9dd2-02f393c7b12c",
     code: "PROJ-004",
     projectCode: "OMN",
     serialNumber: "004",
-    name: "OMNIAZ — Annotation & Store Miner Project",
+    name: "Omniaz Annotation",
     type: "Data Annotation + Store Miner & Mapping",
     client: "OMNIAZ Platform",
     status: "active",
@@ -204,11 +204,11 @@ export const PROJECTS: Project[] = [
     updatedAt: "2026-04-18",
   },
   {
-    id: "ETH-005",
+    id: "1f897068-a6a4-4ff6-9a56-6792e4698044",
     code: "PROJ-005",
     projectCode: "ETH",
     serialNumber: "005",
-    name: "ETH — AI Model Testing Project",
+    name: "ETH — AI Model Testing",
     type: "AI Output Evaluation & Validation",
     client: "ETH / Adam",
     status: "completed",
@@ -250,11 +250,11 @@ export const PROJECTS: Project[] = [
     updatedAt: "2026-03-05",
   },
   {
-    id: "BTF-006",
+    id: "e333af39-a09c-46c1-ba3e-760a691095c9",
     code: "PROJ-006",
     projectCode: "BTF",
     serialNumber: "006",
-    name: "BatFast Project",
+    name: "BatFast Image Annotation",
     type: "Image Annotation",
     client: "BatFast",
     status: "completed",
@@ -287,7 +287,7 @@ export const PROJECTS: Project[] = [
     updatedAt: "2026-02-17",
   },
   {
-    id: "ETH2-007",
+    id: "1f897068-a6a4-4ff6-9a56-6792e4698044",
     code: "PROJ-007",
     projectCode: "ETH2",
     serialNumber: "007",
@@ -328,11 +328,11 @@ export const PROJECTS: Project[] = [
     updatedAt: "2026-03-05",
   },
   {
-    id: "ETC-008",
+    id: "02a2a1a2-e7fb-4225-965b-0ebadb1d916b",
     code: "PROJ-008",
     projectCode: "ETC",
     serialNumber: "008",
-    name: "ETH-Cedric — Video Annotation Project",
+    name: "ETH-Cedric — Video Annotation",
     type: "Video Annotation & Quality Review",
     client: "Cedric",
     status: "completed",
@@ -372,7 +372,7 @@ export const PROJECTS: Project[] = [
     updatedAt: "2026-03-05",
   },
   {
-    id: "PRJ-009",
+    id: "7b0ba72c-0cde-4630-a490-05b0bf413714",
     code: "PROJ-009",
     projectCode: "PRJ",
     serialNumber: "009",

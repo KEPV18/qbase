@@ -1,5 +1,5 @@
 // ============================================================================
-// QMS Forge — Audit Log Service
+// QBase — Audit Log Service
 // CUTOVER EDITION — Uses ONLY new schema columns.
 // No legacy field references. No last_serial. No code/record_name.
 // Storage: Supabase audit_log table (append-only)
@@ -112,7 +112,6 @@ export async function appendAuditLog(
     return { success: false, id: '' };
   }
 
-  console.log(`[auditLog] ${action} logged for ${serial}`);
   return { success: true, id: recordId };
 }
 
@@ -160,7 +159,7 @@ export async function getAuditLogForSerial(serial: string): Promise<AuditLogRead
     return [];
   }
 
-  return (logs as any[]).map((row) => ({
+  return (logs as unknown[]).map((row) => ({
     id: row.id,
     timestamp: row.created_at,
     serial: row.serial || serial,
@@ -193,7 +192,7 @@ export async function getAllAuditLogs(limit = 100): Promise<AuditLogReadEntry[]>
     return [];
   }
 
-  return (logs as any[]).map((row) => ({
+  return (logs as unknown[]).map((row) => ({
     id: row.id,
     timestamp: row.created_at,
     serial: row.serial || row.records?.serial || '',

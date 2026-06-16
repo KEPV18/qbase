@@ -1,5 +1,5 @@
 // ============================================================================
-// QMS Forge — File Export Service (CSV + JSON)
+// QBase — File Export Service (CSV + JSON)
 // Lightweight export helpers. Read-only — never modifies data.
 // ============================================================================
 
@@ -21,7 +21,7 @@ export function exportRecordToJson(record: Record<string, unknown>): void {
 
 export function exportRecordsToJson(records: Record<string, unknown>[]): void {
   const timestamp = new Date().toISOString().substring(0, 10);
-  const filename = `QMS_Forge_Export_${records.length}_records_${timestamp}.json`;
+  const filename = `QBase_Export_${records.length}_records_${timestamp}.json`;
   const blob = new Blob([JSON.stringify(records, null, 2)], { type: 'application/json' });
   saveAs(blob, filename);
 }
@@ -66,7 +66,7 @@ export function exportRecordsToCsv(records: Record<string, unknown>[]): void {
   }
 
   const timestamp = new Date().toISOString().substring(0, 10);
-  const filename = `QMS_Forge_Export_${records.length}_records_${timestamp}.csv`;
+  const filename = `QBase_Export_${records.length}_records_${timestamp}.csv`;
   const blob = new Blob([rows.join('\n')], { type: 'text/csv;charset=utf-8' });
   saveAs(blob, filename);
 }

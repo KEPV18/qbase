@@ -1,5 +1,5 @@
 // ============================================================================
-// QMS Forge — Record Utility Functions
+// QBase — Record Utility Functions
 // Shared record helpers extracted from mockRecords.ts.
 // Works with RecordData from recordStorage (Supabase-backed).
 // ============================================================================

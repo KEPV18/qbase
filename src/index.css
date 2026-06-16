@@ -52,23 +52,23 @@
     --glow-md: 0 2px 8px hsl(var(--primary) / 0.12), 0 1px 3px hsl(var(--primary) / 0.06);
     --glow-lg: 0 8px 24px hsl(var(--primary) / 0.14), 0 2px 8px hsl(var(--primary) / 0.08);
 
-    /* ── Surface Colors ── */
-    --background: 220 20% 97%;
-    --foreground: 222 47% 11%;
+    /* ── Surface Colors (Warm) ── */
+    --background: 40 20% 96%;      /* #f6f4ef — warm cream */
+    --foreground: 30 10% 18%;      /* #2d2d2d — warm dark */
     --card: 0 0% 100%;
-    --card-foreground: 222 47% 11%;
+    --card-foreground: 30 10% 18%;
     --popover: 0 0% 100%;
-    --popover-foreground: 222 47% 11%;
+    --popover-foreground: 30 10% 18%;
 
     /* ── Brand — Indigo ── */
     --primary: 226 100% 60%;
     --primary-foreground: 0 0% 100%;
 
-    /* ── Neutral Variants ── */
-    --secondary: 220 14% 96%;
-    --secondary-foreground: 222 47% 20%;
-    --muted: 220 14% 96%;
-    --muted-foreground: 220 9% 46%;
+    /* ── Neutral Variants (Warm) ── */
+    --secondary: 40 15% 92%;       /* #ece8df — warm surface */
+    --secondary-foreground: 30 10% 18%;
+    --muted: 40 15% 92%;
+    --muted-foreground: 36 6% 48%; /* #7a756a — warm gray */
     --accent: 226 100% 96%;
     --accent-foreground: 226 70% 30%;
 
@@ -82,9 +82,9 @@
     --info: 199 89% 48%;
     --info-foreground: 0 0% 100%;
 
-    /* ── Interactive ── */
-    --border: 220 13% 91%;
-    --input: 220 13% 91%;
+    /* ── Interactive (Warm) ── */
+    --border: 40 15% 88%;          /* #e8e3db — warm border */
+    --input: 40 15% 88%;
     --ring: 226 100% 60%;
 
     /* ── Module Palette (soft enterprise) ── */
@@ -97,30 +97,30 @@
     --module-management: 226 100% 60%;
   }
 
-  /* ── Dark Mode: Enterprise Soft Dark ── */
+  /* ── Dark Mode: Warm Dark ── */
   .dark {
     color-scheme: dark;
 
-    --background: 224 48% 5%;
-    --foreground: 213 27% 94%;
+    --background: 30 10% 10%;        /* #1a1a18 — warm charcoal */
+    --foreground: 40 15% 90%;        /* #e8e3db — warm off-white */
 
-    --card: 224 44% 8%;
-    --card-foreground: 213 27% 94%;
+    --card: 30 8% 13%;               /* #232220 */
+    --card-foreground: 40 15% 90%;
 
-    --popover: 224 44% 8%;
-    --popover-foreground: 213 27% 94%;
+    --popover: 30 8% 13%;
+    --popover-foreground: 40 15% 90%;
 
     --primary: 226 100% 63%;
-    --primary-foreground: 224 48% 5%;
+    --primary-foreground: 30 10% 10%;
 
-    --secondary: 224 30% 13%;
-    --secondary-foreground: 213 27% 94%;
+    --secondary: 30 8% 18%;          /* #302e2a */
+    --secondary-foreground: 40 15% 90%;
 
-    --muted: 224 30% 13%;
-    --muted-foreground: 215 18% 54%;
+    --muted: 30 8% 18%;
+    --muted-foreground: 36 5% 50%;   /* #8a857a */
 
-    --accent: 224 30% 13%;
-    --accent-foreground: 213 27% 94%;
+    --accent: 30 8% 18%;
+    --accent-foreground: 40 15% 90%;
 
     --destructive: 0 72% 51%;
     --destructive-foreground: 0 0% 98%;
@@ -134,8 +134,8 @@
     --info: 199 89% 55%;
     --info-foreground: 0 0% 100%;
 
-    --border: 224 24% 16%;
-    --input: 224 24% 16%;
+    --border: 30 8% 22%;             /* #3a3834 */
+    --input: 30 8% 22%;
     --ring: 226 100% 63%;
 
     /* ── Subtle Glow ── */
@@ -229,31 +229,61 @@
    ══════════════════════════════════════════════════ */
 @layer components {
 
-  /* ── Surface Cards ── */
+  /* ── Surface Cards — Luxury Modern ── */
   .surface-card {
-    @apply bg-card border border-border shadow-sm rounded-lg;
+    @apply bg-card border border-border/60 shadow-sm rounded-xl;
+    transition: box-shadow var(--duration-normal) var(--ease-standard),
+      border-color var(--duration-normal) var(--ease-standard);
+  }
+
+  .surface-card:hover {
+    box-shadow: var(--shadow-md);
+    border-color: hsl(var(--border));
   }
 
   .surface-elevated {
-    @apply bg-secondary border border-border rounded-lg;
+    @apply bg-secondary border border-border/60 rounded-xl;
   }
 
   .border-subtle {
-    @apply border border-border;
+    @apply border border-border/60;
   }
 
-  /* ── Glass Effect — Subtle ── */
+  /* ── DS Card (Design System Card) ── */
+  .ds-card {
+    @apply bg-card border border-border/60 rounded-xl shadow-sm;
+    transition: all var(--duration-normal) var(--ease-standard);
+  }
+
+  .ds-card:hover {
+    box-shadow: var(--shadow-md);
+    border-color: hsl(var(--primary) / 0.12);
+    transform: translateY(-1px);
+  }
+
+  /* ── DS Input — Zero Ghost + Soft Glow ── */
+  .ds-input {
+    @apply bg-background border border-border/80 rounded-lg px-3 py-2 text-sm;
+    transition: all var(--duration-fast) var(--ease-standard);
+  }
+
+  .ds-input:focus {
+    outline: none;
+    border-color: hsl(var(--primary) / 0.4);
+    box-shadow: 0 0 0 3px hsl(var(--primary) / 0.08);
+  }
+
+  /* ── Glass Effect — Premium ── */
   .glass {
-    @apply border border-border/50 rounded-lg;
-    backdrop-filter: blur(12px);
-    background: hsl(var(--background) / 0.8);
+    @apply border border-border/50 rounded-xl;
+    backdrop-filter: blur(16px) saturate(1.2);
+    background: hsl(var(--background) / 0.85);
   }
 
   .glass-card {
-    @apply rounded-lg border border-border/50 bg-card/80 backdrop-blur-sm;
+    @apply rounded-xl border border-border/50 bg-card/85 backdrop-blur-md;
     box-shadow: var(--shadow-sm);
-    transition:
-      box-shadow var(--duration-normal) var(--ease-standard),
+    transition: box-shadow var(--duration-normal) var(--ease-standard),
       border-color var(--duration-normal) var(--ease-standard);
   }
 
@@ -262,19 +292,20 @@
     box-shadow: var(--shadow-md);
   }
 
-  /* ── Card Variants — Professional ── */
+  /* ── Card Variants ── */
   .card-modern {
-    @apply bg-card border border-border rounded-lg shadow-sm;
-    transition: box-shadow var(--duration-normal) var(--ease-standard);
+    @apply bg-card border border-border/60 rounded-xl shadow-sm;
+    transition: all var(--duration-normal) var(--ease-standard);
   }
 
   .card-modern:hover {
     box-shadow: var(--shadow-md);
+    transform: translateY(-1px);
   }
 
   .card-elevated {
-    @apply bg-card border border-border rounded-lg shadow-md;
-    transition: box-shadow var(--duration-normal) var(--ease-standard);
+    @apply bg-card border border-border/60 rounded-xl shadow-md;
+    transition: all var(--duration-normal) var(--ease-standard);
   }
 
   .card-elevated:hover {
@@ -284,8 +315,7 @@
   /* ── Card Hover Effects ── */
   .card-lift {
     will-change: transform, box-shadow;
-    transition:
-      transform var(--duration-normal) var(--ease-standard),
+    transition: transform var(--duration-normal) var(--ease-standard),
       box-shadow var(--duration-normal) var(--ease-standard);
   }
 
@@ -295,8 +325,7 @@
   }
 
   .card-hover {
-    transition:
-      transform var(--duration-fast) ease,
+    transition: transform var(--duration-fast) ease,
       box-shadow var(--duration-fast) ease,
       border-color var(--duration-fast) ease;
   }
@@ -307,60 +336,9 @@
     border-color: hsl(var(--primary) / 0.15);
   }
 
-  /* ── Gradient Border — Subtle ── */
-  .gradient-border {
-    position: relative;
-    border: none !important;
-    isolation: isolate;
-  }
-
-  .gradient-border::before {
-    content: "";
-    position: absolute;
-    inset: 0;
-    padding: 1px;
-    border-radius: inherit;
-    background: linear-gradient(135deg,
-        hsl(var(--primary) / 0.4),
-        hsl(var(--primary) / 0.05),
-        hsl(var(--neon-violet) / 0.2));
-    mask:
-      linear-gradient(#fff 0 0) content-box,
-      linear-gradient(#fff 0 0);
-    -webkit-mask-composite: xor;
-    mask-composite: exclude;
-    pointer-events: none;
-  }
-
-  /* ── Border Hover ── */
-  .neon-border-hover {
-    transition: border-color var(--duration-fast) var(--ease-sharp), box-shadow var(--duration-fast) var(--ease-sharp);
-  }
-
-  .neon-border-hover:hover {
-    border-color: hsl(var(--primary) / 0.3);
-    box-shadow: var(--shadow-sm);
-  }
-
-  /* ── Accent Line Top ── */
-  .accent-line-top {
-    position: relative;
-    overflow: hidden;
-  }
-
-  .accent-line-top::before {
-    content: "";
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    height: 2px;
-    background: linear-gradient(90deg, hsl(var(--primary)), hsl(var(--neon-violet)));
-  }
-
-  /* ── Status Pills ── */
+  /* ── Status Pills — Micro-Saturated ── */
   .status-pill {
-    @apply inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold border;
+    @apply inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium border;
     transition: color var(--duration-normal), background var(--duration-normal);
   }
 
@@ -369,11 +347,11 @@
   }
 
   .status-pill-success {
-    @apply bg-success/10 text-success border-success/20;
+    @apply bg-emerald-500/10 text-emerald-600 border-emerald-500/20;
   }
 
   .status-pill-warning {
-    @apply bg-warning/10 text-warning border-warning/20;
+    @apply bg-amber-500/10 text-amber-600 border-amber-500/20;
   }
 
   .status-pill-destructive {
@@ -640,20 +618,73 @@
 /* ══════════════════════════════════════════════════
    7. PRINT
    ══════════════════════════════════════════════════ */
+
+/* ── Print-only utility (hidden by default, shown on print) ── */
+.print-only {
+  display: none;
+}
+
+/* ── Print header and signature block ── */
+.print-header {
+  display: none;
+}
+
+.print-signature {
+  display: none;
+}
+
 @media print {
+  /* A4 page setup */
   @page {
-    margin: 1cm;
+    size: A4;
+    margin: 1.5cm;
   }
 
-  .no-print {
-    display: none !important;
-  }
-
+  /* Unset body/page background & color */
+  html,
   body {
     background: white !important;
     color: black !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
   }
 
+  /* Show print-only elements */
+  .print-only {
+    display: block !important;
+  }
+
+  /* Hide navigation, UI chrome */
+  .no-print,
+  nav,
+  .sidebar,
+  .topnav,
+  .navbar,
+  header:not(.print-header),
+  [role="navigation"],
+  .ds-card:not(.print-only),
+  .AppSidebar,
+  .Sidebar,
+  aside {
+    display: none !important;
+  }
+
+  /* Remove all shadows, dark mode overrides */
+  * {
+    box-shadow: none !important;
+    text-shadow: none !important;
+    background: transparent !important;
+  }
+
+  body,
+  .document-content,
+  #root,
+  [class*="page-"],
+  .max-w-5xl {
+    background: white !important;
+  }
+
+  /* Card/content styling for print */
   .card,
   .glass-card,
   .card-modern,
@@ -661,15 +692,112 @@
   .surface-card,
   [class*="card-"] {
     box-shadow: none !important;
-    border: 1px solid #ddd !important;
+    border: none !important;
     background: white !important;
   }
 
+  /* Dark mode forced to light */
+  .dark *,
+  [class*="dark:"] {
+    color: black !important;
+    border-color: #ddd !important;
+    background: white !important;
+  }
+
+  /* Document content scaling — let the content fill the page width */
+  .document-content,
+  [class*="DocView"],
+  [class*="doc-"] {
+    width: 100% !important;
+    max-width: 100% !important;
+    padding: 0 !important;
+    margin: 0 !important;
+  }
+
+  /* DocumentView wrapper — the white page */
+  .min-h-screen {
+    min-height: auto !important;
+    padding: 0 !important;
+    background: white !important;
+  }
+
+  /* Print header at top of first page */
+  .print-header {
+    display: block !important;
+    padding-bottom: 16px;
+    margin-bottom: 16px;
+    border-bottom: 2px solid #000 !important;
+  }
+
+  .print-header .company-name {
+    font-size: 18px;
+    font-weight: 700;
+    margin: 0 0 4px 0;
+  }
+
+  .print-header .print-meta {
+    font-size: 12px;
+    color: #555 !important;
+    margin: 0;
+    display: flex;
+    gap: 16px;
+    flex-wrap: wrap;
+  }
+
+  /* Signature block at bottom */
+  .print-signature {
+    display: block !important;
+    margin-top: 48px;
+    padding-top: 16px;
+    border-top: 1px solid #ccc !important;
+  }
+
+  .print-signature .sig-line {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 32px;
+  }
+
+  .print-signature .sig-field {
+    width: 45%;
+  }
+
+  .print-signature .sig-field .sig-label {
+    font-size: 11px;
+    color: #777 !important;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-bottom: 2px;
+  }
+
+  .print-signature .sig-field .sig-line-blank {
+    border-bottom: 1px solid #999 !important;
+    height: 28px;
+    margin-top: 4px;
+  }
+
+  /* Avoid page breaks inside sections/fields */
+  .DocSection,
+  .DocField,
+  .doc-section,
+  .doc-field {
+    page-break-inside: avoid;
+  }
+
+  /* Links should show URL on print */
+  a[href]:not(.no-print)::after {
+    content: " (" attr(href) ")";
+    font-size: 10px;
+    color: #555 !important;
+  }
+
+  /* Animation/transition reset */
   *,
   *::before,
   *::after {
     animation: none !important;
     transition: none !important;
+    scroll-behavior: auto !important;
   }
 }
 

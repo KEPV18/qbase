@@ -6,8 +6,25 @@ import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
-import { Lock, Mail, Loader2, Eye, EyeOff, ArrowRight } from "lucide-react";
+import { Lock, Mail, Loader2, Eye, EyeOff, ArrowRight, Trash2 } from "lucide-react";
 import logoImg from "@/assets/logo.png";
+
+/* ── Nuclear cache clear ──────────────────────────────────────────── */
+function nukeCache() {
+  localStorage.clear();
+  sessionStorage.clear();
+  document.cookie.split(";").forEach(c => {
+    const [name] = c.split("=");
+    document.cookie = `${name.trim()}=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;`;
+  });
+  if ('caches' in window) {
+    caches.keys().then(names => names.forEach(n => caches.delete(n)));
+  }
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.getRegistrations().then(regs => regs.forEach(r => r.unregister()));
+  }
+  window.location.reload();
+}
 
 export default function Login() {
   const navigate = useNavigate();
@@ -17,7 +34,9 @@ export default function Login() {
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [errors, setErrors] = useState<{ email?: string; password?: string }>({});
-  const { login, user, loading } = useAuth();
+  const [resetSent, setResetSent] = useState(false);
+  const [resetLoading, setResetLoading] = useState(false);
+  const { login, resetPassword, user, loading } = useAuth();
 
   useEffect(() => {
     if (!loading && user) {
@@ -44,11 +63,28 @@ export default function Login() {
       toast.error("Login failed", { description: res.message });
       return;
     }
-    navigate("/");
+    // Don't navigate here — let the useEffect handle redirect when user state updates
+    // navigate("/"); // REMOVED: useEffect handles this
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === "Enter") handleLogin();
+  };
+
+  const handleForgotPassword = async () => {
+    if (!email.trim()) {
+      toast.error("Enter your email first", { description: "Please enter your email address above." });
+      return;
+    }
+    setResetLoading(true);
+    const res = await resetPassword(email.trim());
+    setResetLoading(false);
+    if (res.ok) {
+      setResetSent(true);
+      toast.success("Reset link sent", { description: res.message });
+    } else {
+      toast.error("Failed to send reset link", { description: res.message });
+    }
   };
 
   if (loading) {
@@ -125,6 +161,22 @@ export default function Login() {
               {errors.password && <p className="text-xs text-destructive">{errors.password}</p>}
             </div>
 
+            {/* Forgot Password */}
+            <div className="text-right -mt-2">
+              {resetSent ? (
+                <p className="text-xs text-success font-medium">✓ Reset link sent! Check your inbox.</p>
+              ) : (
+                <button
+                  type="button"
+                  onClick={handleForgotPassword}
+                  disabled={resetLoading}
+                  className="text-xs text-primary hover:underline font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {resetLoading ? "Sending..." : "Forgot password?"}
+                </button>
+              )}
+            </div>
+
             {/* Sign in button */}
             <Button
               className="w-full h-11 font-semibold"
@@ -137,6 +189,16 @@ export default function Login() {
                 <>Sign in <ArrowRight className="w-4 h-4 ml-2" /></>
               )}
             </Button>
+
+            {/* Clear cache button */}
+            <button
+              type="button"
+              onClick={nukeCache}
+              className="w-full flex items-center justify-center gap-1.5 py-2 text-[11px] text-muted-foreground/50 hover:text-muted-foreground transition-colors"
+              title="Use this if the app feels stuck or shows old data"
+            >
+              <Trash2 className="w-3 h-3" /> Clear cache &amp; reload
+            </button>
           </CardContent>
         </Card>
 
