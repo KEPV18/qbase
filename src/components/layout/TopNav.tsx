@@ -106,7 +106,7 @@ export function TopNav() {
 
       // Deep search: scan form_data JSONB fields for match
       if (r.form_data && typeof r.form_data === 'object') {
-        const fd = r.form_data as Record<string, unknown>;
+        const fd = r.form_data as unknown as Record<string, unknown>;
         for (const val of Object.values(fd)) {
           if (typeof val === 'string' && val.toLowerCase().includes(q)) {
             if (!visited.has(r.serial as string)) {
