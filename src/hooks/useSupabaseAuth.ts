@@ -227,11 +227,7 @@ export function useSupabaseAuth({
 
     loginInProgressRef.current = true;
     try {
-      // DEBUG: trace login execution path
-      window.__loginTrace = window.__loginTrace || [];
-      window.__loginTrace.push('login_start');
       const { data: authRes, error: authErr } = await supabase.auth.signInWithPassword({ email, password });
-      window.__loginTrace.push('signin_done:' + (authErr ? authErr.message : 'ok'));
       if (authErr || !authRes?.user?.id) {
         setLoading(false);
         loginInProgressRef.current = false;
@@ -242,13 +238,13 @@ export function useSupabaseAuth({
       const emailName = email.split("@")[0] || "User";
 
       // Parallel fetch: profile, role, department
-      window.__loginTrace.push('before_promise_all');
+      // Uses raw REST (see userService.ts) — bypasses Supabase JS client
+      // query builder which hangs on Vercel after signInWithPassword.
       const [profile, role, department] = await Promise.all([
         fetchUserProfile(authUserId),
         fetchUserRole(authUserId),
         fetchUserDepartment(authUserId),
       ]);
-      window.__loginTrace.push('after_promise_all: profile=' + !!profile + ' role=' + role + ' dept=' + department);
 
       // Set guard so onAuthStateChange SIGNED_IN doesn't re-sync
       isFetchingRef.current = authUserId;

@@ -123,12 +123,10 @@ export async function fetchAllUserProfiles(): Promise<{ profiles: ProfileRow[]; 
 export async function fetchUserProfile(userId: string): Promise<ProfileRow | null> {
   // SECURITY: never select the password column from the client
   // Use raw REST to avoid Supabase JS client query builder hanging on Vercel
-  window.__loginTrace = window.__loginTrace || [];
-  window.__loginTrace.push('fetchUserProfile_start:' + userId.substring(0, 8));
+  // (see note at top of file about the production auth-state race condition)
   const { data, error } = await restGet<ProfileRow[]>(
     `/rest/v1/profiles?user_id=eq.${encodeURIComponent(userId)}&select=id,user_id,display_name,email,is_active,last_login,created_at,updated_at,department`
   );
-  window.__loginTrace.push('fetchUserProfile_done: err=' + (error || 'null') + ' data=' + (data ? (data.length > 0 ? 'yes' : 'empty') : 'null'));
   if (error) {
     log.system.error("userService:fetchUserProfile_failed", error);
     return null;
