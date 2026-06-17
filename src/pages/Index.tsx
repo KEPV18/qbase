@@ -205,7 +205,7 @@ export default function Index() {
 
   // ── Global totals ────────────────────────────────────────────────
   const totalRecords = records?.length || 0;
-  const approvedCount = records?.filter((r) => (r as any)._approvalStatus === "Approved").length || 0;
+  const approvedCount = records?.filter((r) => r._approvalStatus === "Approved").length || 0;
   const globalOverdue = useMemo(() => {
     let count = 0;
     complianceMap.forEach(c => { if (c.isOverdue) count++; });
@@ -246,7 +246,7 @@ export default function Index() {
         <div>
           <h1 className="text-xl font-heading font-bold text-[#2d2d2d] dark:text-[#e8e3db]">Hey, {firstName}!</h1>
           <p className="text-sm text-[#7a756a] mt-1">
-            {totalRecords} records · {approvedCount} approved · {Object.keys(deptHealthMap).length} departments
+            {totalRecords} records · {approvedCount} approved · {deptHealthMap.size} departments
             {globalOverdue > 0 && <span className="text-red-500 ml-1">· {globalOverdue} overdue forms</span>}
           </p>
         </div>
@@ -370,14 +370,14 @@ export default function Index() {
                       <span className="font-mono text-[10px] text-[#7a756a] shrink-0">{record.serial}</span>
                       <div className="flex-1 min-w-0">
                         <p className="text-sm font-medium text-[#2d2d2d] dark:text-[#e8e3db] truncate">
-                          {(record as any).formData?.client_name || (record as any).formData?.project_name || record.formName}
+                          {(record as RecordData).formData?.client_name || (record as RecordData).formData?.project_name || record.formName}
                         </p>
                         <p className="text-[10px] text-[#9f9a8f] mt-0.5">{record.formCode}</p>
                       </div>
                       <div className="flex items-center gap-3 shrink-0">
-                        <StatusText status={String((record as any)._approvalStatus || "Approved")} />
+                        <StatusText status={String(record._approvalStatus || "Approved")} />
                         <span className="text-[10px] text-[#9f9a8f]">
-                          {new Date(String(record.createdAt)).toLocaleDateString("en-GB", { day: "2-digit", month: "short" })}
+                          {new Date(String(record._createdAt || record.createdAt || new Date().toISOString())).toLocaleDateString("en-GB", { day: "2-digit", month: "short" })}
                         </span>
                       </div>
                     </button>

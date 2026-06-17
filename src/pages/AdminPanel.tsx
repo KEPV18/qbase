@@ -7,6 +7,7 @@
 import { useEffect, useState, useMemo } from "react";
 import { AppShell } from "@/components/layout/AppShell";
 import { useAuth, AppUser } from "@/hooks/useAuth";
+import type { Role } from "@/services/userService";
 import { useTenantIdentity, useUpdateTenantIdentity, useInvalidateTenantIdentity } from "@/hooks/useTenantIdentity";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -363,7 +364,7 @@ function AccountsTab() {
                       value={u.department || "none"}
                       onValueChange={(val) => {
                         const deptVal = val === "none" ? null : val;
-                        updateUser(u.id, { department: deptVal as any });
+                        updateUser(u.id, { department: deptVal });
                       }}
                       disabled={!u.active}
                     >
@@ -381,7 +382,7 @@ function AccountsTab() {
                   <td className="px-4 py-2.5">
                     <Select
                       value={u.role}
-                      onValueChange={(val) => updateUser(u.id, { role: val as any })}
+                      onValueChange={(val) => updateUser(u.id, { role: val as Role })}
                       disabled={!u.active}
                     >
                       <SelectTrigger className="h-7 text-xs border-border bg-muted min-w-[110px]">

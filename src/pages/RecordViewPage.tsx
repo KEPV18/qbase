@@ -2,6 +2,7 @@
 // QBase — Record View Page (Phase 9 Refined)
 // Consistent design system classes, improved hierarchy, better interactions.
 // ============================================================================
+import { log } from "@/services/logger";
 
 import React, { useState, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
@@ -121,7 +122,7 @@ const RecordViewPage: React.FC = () => {
       .map(f => f.key as string);
 
     if (suspiciousEmpty.length > 3) {
-      console.warn(`[RecordViewPage] Too many empty fields (${suspiciousEmpty.length}) — refetching ${originalRecord.serial}`);
+      log.system.error("recordView:empty_fields_refetch", `Too many empty fields (${suspiciousEmpty.length}) — refetching ${originalRecord.serial}`);
       refetch();
     }
   }, [originalRecord, schema, refetch]);
@@ -503,7 +504,7 @@ const RecordViewPage: React.FC = () => {
       {/* ─── Content ──────────────────────────────────────────────────── */}
 
       {mode === 'view' ? (
-        <DocumentView subtitle={`${originalRecord.formCode as string} · ${(originalRecord as any).sectionName || ''}`}>
+        <DocumentView subtitle={`${originalRecord.formCode as string} · ${(originalRecord as RecordData)._sectionName || ''}`}>
           {/* ── Print header (visible only when printing) ── */}
           <div className="print-only print-header">
             <h2 className="company-name">QBase — Quality Management System</h2>
@@ -519,7 +520,7 @@ const RecordViewPage: React.FC = () => {
             serial={decodedSerial}
             formName={(originalRecord.formName as string) || ''}
             formCode={originalRecord.formCode as string}
-            sectionName={(originalRecord as any).sectionName as string}
+            sectionName={(originalRecord as RecordData)._sectionName as string}
           />
 
           {(() => {
@@ -541,7 +542,7 @@ const RecordViewPage: React.FC = () => {
                     if (field.type === 'heading') {
                       return <DocSection key={i} title={field.label} />;
                     }
-                    const value = (originalRecord as any)[field.key];
+                    const value = (originalRecord as RecordData)[field.key];
                     if (value === undefined || value === null || value === '') return null;
 
                     if (field.type === 'table') {

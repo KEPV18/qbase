@@ -1,3 +1,4 @@
+import { log } from "@/services/logger";
 /**
  * processInteractionService.ts — Supabase-backed
  * Processes stored in Supabase "processes" table.
@@ -87,7 +88,7 @@ export async function getAllProcesses(): Promise<ProcessInteraction[]> {
     .order('process_id', { ascending: true });
 
   if (error) {
-    console.error('[processInteraction] Failed to fetch processes:', error.message);
+    log.system.error('processInteraction:fetch_failed', (error as Error)?.message || String(error));
     return [];
   }
 
@@ -113,7 +114,7 @@ export async function addProcess(input: ProcessInput): Promise<ProcessInteractio
     .single();
 
   if (error) {
-    console.error('[processInteraction] Failed to add process:', error.message);
+    log.system.error('processInteraction:add_failed', (error as Error)?.message || String(error));
     throw new Error(`Failed to add process: ${error.message}`);
   }
 
@@ -153,7 +154,7 @@ export async function updateProcess(processId: string, updates: ProcessUpdate): 
   }
 
   if (error) {
-    console.error('[processInteraction] Failed to update process:', error.message);
+    log.system.error('processInteraction:update_failed', (error as Error)?.message || String(error));
     throw new Error(`Failed to update process: ${error.message}`);
   }
 

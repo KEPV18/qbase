@@ -458,7 +458,7 @@ export async function createRecord(formData: RecordData): Promise<StorageResult>
         .limit(1);
 
       if (checkErr) {
-        console.warn(`[createRecord:serialCheck] Attempt ${attempt} failed:`, checkErr.message);
+        log.system.error("createRecord:serialCheck_failed", `Attempt ${attempt}: ${checkErr.message}`);
         continue;
       }
 
@@ -466,7 +466,7 @@ export async function createRecord(formData: RecordData): Promise<StorageResult>
         serial = candidate;
         claimed = true;
       } else {
-        console.warn(`[createRecord:serialCheck] Collision on ${candidate}, retrying...`);
+        log.system.error("createRecord:serialCheck_collision", `Collision on ${candidate}, retrying...`);
         await new Promise(r => setTimeout(r, 50 + Math.random() * 100)); // jittered backoff
       }
     }

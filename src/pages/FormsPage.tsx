@@ -15,6 +15,7 @@ import {
   CheckCircle2, Circle, AlertCircle,
 } from "lucide-react";
 import { Input } from "@/components/ui/input";
+import type { RecordData } from "@/components/forms/DynamicFormRenderer";
 
 interface FormEntry {
   code: string;
@@ -28,7 +29,7 @@ interface FormEntry {
   _overdue: boolean;
 }
 
-function parseFormEntries(records: any[]): FormEntry[] {
+function parseFormEntries(records: RecordData[]): FormEntry[] {
   const recordByForm = new Map<string, { count: number; lastDate: string | null }>();
   records?.forEach(r => {
     const code = r.formCode as string;

@@ -1,3 +1,4 @@
+import { log } from "@/services/logger";
 import { useState, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '../hooks/useAuth';
@@ -161,7 +162,7 @@ export function useRecordEditor(recordId: string | undefined) {
     });
 
     if (error) {
-      console.error('Failed to load versions:', error);
+      log.system.error('useRecordEditor:versions_load_failed', (error as Error)?.message || String(error));
       return;
     }
 

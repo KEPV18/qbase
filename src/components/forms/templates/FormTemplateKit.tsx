@@ -326,7 +326,7 @@ export function useDynamicRows<T extends DynamicRowItem>(options: UseDynamicRows
       try {
         const parsed = JSON.parse(raw);
         if (Array.isArray(parsed)) return parsed as T[];
-      } catch {}
+      } catch { /* non-JSON string, ignore parse error */ }
     }
     if (Array.isArray(raw)) return raw as T[];
     return [defaultItem] as T[];

@@ -1,3 +1,4 @@
+import { log } from "@/services/logger";
 import { useState, useEffect, useCallback } from "react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -36,7 +37,7 @@ export function RecordBrowser({ record, isFlat = false }: RecordBrowserProps) {
             setFiles(driveFiles);
         } catch (err) {
             setError("Failed to load files from Drive");
-            console.error("Error");
+            log.system.error("RecordBrowser:load_failed", (err as Error)?.message || String(err));
         } finally {
             setIsLoading(false);
         }

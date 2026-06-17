@@ -40,11 +40,4 @@ export default defineConfig(({ mode }) => ({
     // Increase chunk size warning limit
     chunkSizeWarningLimit: 600,
   } : {},
-  // Vitest configuration
-  test: mode === 'test' ? {
-    globals: true,
-    environment: 'jsdom',
-    setupFiles: ['./src/test/setup.ts'],
-    include: ['src/**/*.{test,spec}.{js,ts,jsx,tsx}'],
-  } : undefined,
 }));

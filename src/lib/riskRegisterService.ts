@@ -1,3 +1,4 @@
+import { log } from "@/services/logger";
 /**
  * Risk Register Service — Supabase-backed
  * Replaces Google Sheets with Supabase as the single source of truth.
@@ -79,7 +80,7 @@ export async function getAllRisks(): Promise<Risk[]> {
     .order("risk_id", { ascending: true });
 
   if (error) {
-    console.error("[riskRegister] Fetch error:", error.message);
+    log.system.error("riskRegister:fetch_failed", (error as Error)?.message || String(error));
     throw new Error(`Failed to fetch risks: ${error.message}`);
   }
   return (data as Risk[]) || [];

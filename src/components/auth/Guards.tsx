@@ -4,25 +4,34 @@ import { useAuth } from "@/hooks/useAuth";
 import { Loader2 } from "lucide-react";
 import { log } from "@/services/logger";
 
+/**
+ * RequireAuth — guards routes that need a logged-in user.
+ *
+ * Behaviour:
+ *   - While `loading` is true, render a spinner and do NOT redirect.
+ *     This lets the bootstrap effect (useSupabaseAuth) restore the
+ *     session from localStorage without bouncing to /login on refresh.
+ *   - A 6s safety timer clears a stuck `loading` state so the UI never
+ *     hangs forever if auth never resolves. Only after that fallback
+ *     do we redirect to /login when there is no user.
+ *   - When `loading` is false and a user exists, render the children.
+ */
 export function RequireAuth({ children }: { children: React.ReactNode }) {
   const { user, loading } = useAuth();
   const location = useLocation();
-  const [showSpinner, setShowSpinner] = useState(loading);
+  const [fallbackReady, setFallbackReady] = useState(false);
 
   useEffect(() => {
     if (!loading) {
-      setShowSpinner(false);
+      setFallbackReady(false);
       return;
     }
-    // SAFETY: if loading stays true for more than 3s, force show content
-    // This prevents infinite spinner if auth state is stuck
-    const timer = setTimeout(() => {
-      setShowSpinner(false);
-    }, 3000);
+    const timer = setTimeout(() => setFallbackReady(true), 6000);
     return () => clearTimeout(timer);
   }, [loading]);
 
-  if (showSpinner && !user) {
+  // Still restoring session — show spinner, do not redirect
+  if (loading && !fallbackReady) {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <Loader2 className="w-8 h-8 animate-spin text-primary" />
@@ -37,21 +46,25 @@ export function RequireAuth({ children }: { children: React.ReactNode }) {
   return <>{children}</>;
 }
 
+/**
+ * RequireRole — guards routes that need a specific role.
+ * Same loading-aware semantics as RequireAuth.
+ */
 export function RequireRole({ roles, children }: { roles: string[]; children: React.ReactNode }) {
   const { user, loading } = useAuth();
   const location = useLocation();
-  const [showSpinner, setShowSpinner] = useState(loading);
+  const [fallbackReady, setFallbackReady] = useState(false);
 
   useEffect(() => {
     if (!loading) {
-      setShowSpinner(false);
+      setFallbackReady(false);
       return;
     }
-    const timer = setTimeout(() => setShowSpinner(false), 3000);
+    const timer = setTimeout(() => setFallbackReady(true), 6000);
     return () => clearTimeout(timer);
   }, [loading]);
 
-  if (showSpinner && !user) {
+  if (loading && !fallbackReady) {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <Loader2 className="w-8 h-8 animate-spin text-primary" />

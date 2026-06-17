@@ -3,6 +3,7 @@
 // Depends on: userService.ts (pure DB layer)
 // Receives shared state setters from useAuth.tsx composition layer.
 // ============================================================================
+import { log } from "@/services/logger";
 
 import * as React from "react";
 import { supabase } from "@/integrations/supabase/client";
@@ -43,7 +44,7 @@ export function useUserManagement({
     const { profiles, roles, error } = await fetchAllUserProfiles();
 
     if (error) {
-      console.warn(`[useUserManagement:reloadUsers] Fetch failed: ${error}`);
+      log.system.error("useUserManagement:reloadUsers_failed", String(error));
       setSupabaseDisabled(true);
       if (!AUTH_LOCAL_DISABLED) {
         const local = saveUsersLocal([]);
@@ -86,7 +87,7 @@ export function useUserManagement({
         last_login: null,
       });
       if (!profileRes.ok) {
-        console.error("[useUserManagement:addUser] Profile insert failed:", profileRes.error);
+        log.system.error("useUserManagement:addUser_profile_failed", String(profileRes.error));
       }
 
       // Role
@@ -96,7 +97,7 @@ export function useUserManagement({
         role: newUser.role,
       });
       if (!roleRes.ok) {
-        console.error("[useUserManagement:addUser] Role insert failed:", roleRes.error);
+        log.system.error("useUserManagement:addUser_role_failed", String(roleRes.error));
       }
 
       await reloadUsers();
@@ -131,7 +132,7 @@ export function useUserManagement({
       if (Object.keys(payload).length > 0) {
         const res = await updateProfile(id, payload);
         if (!res.ok) {
-          console.error("[useUserManagement:updateUser] Profile update failed:", res.error);
+          log.system.error("useUserManagement:updateUser_profile_failed", String(res.error));
           failed = true;
         }
       }
@@ -141,19 +142,19 @@ export function useUserManagement({
       if (typeof updates.role === "string" && !failed) {
         const roleToSave = updates.role.toLowerCase();
         if (!isValidRole(roleToSave)) {
-          console.error("[useUserManagement:updateUser] Invalid role:", roleToSave);
+          log.system.error("useUserManagement:updateUser_invalid_role", String(roleToSave));
           failed = true;
         } else {
           const roleRes = await upsertUserRole(id, roleToSave);
           if (!roleRes.ok) {
-            console.error("[useUserManagement:updateUser] Role upsert failed:", roleRes.error);
+            log.system.error("useUserManagement:updateUser_role_upsert_failed", String(roleRes.error));
             failed = true;
           }
         }
       }
 
       if (failed) {
-        console.warn("[useUserManagement:updateUser] Reverting optimistic update.");
+        log.system.error("useUserManagement:updateUser_revert", "optimistic update reverted");
         setUsers(previousUsers);
         if (!AUTH_LOCAL_DISABLED) saveUsersLocal(previousUsers);
         if (previousUser && user?.id === id) setUser(previousUser);
@@ -187,10 +188,10 @@ export function useUserManagement({
 
     if (supabase) {
       const roleRes = await deleteUserRole(id);
-      if (!roleRes.ok) console.error("[useUserManagement:removeUser] Role delete failed:", roleRes.error);
+      if (!roleRes.ok) log.system.error("useUserManagement:removeUser_role_delete_failed", String(roleRes.error));
 
       const profRes = await deleteUserProfile(id);
-      if (!profRes.ok) console.error("[useUserManagement:removeUser] Profile delete failed:", profRes.error);
+      if (!profRes.ok) log.system.error("useUserManagement:removeUser_profile_delete_failed", String(profRes.error));
 
       await reloadUsers();
     }

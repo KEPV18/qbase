@@ -1,3 +1,4 @@
+import { log } from "@/services/logger";
 import { useState, useEffect, useCallback } from "react";
 import { MANUAL_CONTENT, type ManualSection } from "@/lib/ManualContent";
 
@@ -14,7 +15,7 @@ export function useManualData() {
       try {
         setData(JSON.parse(saved));
       } catch (e) {
-        console.error("Failed to parse saved manual data", e);
+        log.system.error("useManualData:parse_failed", (e as Error)?.message || String(e));
       }
     }
     setIsLoaded(true);

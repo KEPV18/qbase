@@ -3,6 +3,7 @@
 // NO write operation without validation. This is the gatekeeper.
 // Even if the UI passed validation, this layer re-validates before writing.
 // ============================================================================
+import { log } from "@/services/logger";
 
 import { validateFormData, FORM_ZOD_SCHEMAS } from '../schemas/formValidation';
 import type { RecordData } from '../components/forms/DynamicFormRenderer';
@@ -225,7 +226,7 @@ export function preWriteValidation(
       if (!val) {
         // Don't block — just warn. The actual data might genuinely be empty.
         // But log it so we can detect patterns.
-        console.warn(`[preWriteValidation] Field "${field}" is empty on update of ${serial || formCode}. If this was populated by a script, React may not have re-rendered.`);
+        log.validation.rejected(formCode || '', [field], serial);
       }
     }
   }
@@ -327,7 +328,7 @@ export function parseRowToRecord(row: string[]): RecordData | null {
     }
   } catch {
     // Malformed JSON — treat as empty formData but still return record
-    console.warn(`[recordStorage] Malformed JSON in formData for ${serial}:`, formDataJson?.substring(0, 100));
+    log.system.error("recordStorage:malformed_json", `${serial}: ${String(formDataJson).substring(0, 100)}`);
   }
 
   return {

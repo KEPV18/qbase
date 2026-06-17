@@ -2,6 +2,7 @@
 // userService.ts — Pure data access layer for user/profile/role operations
 // NO React. NO hooks. Just Supabase queries with typed interfaces.
 // ============================================================================
+import { log } from "@/services/logger";
 
 import { supabase } from "@/integrations/supabase/client";
 import type { Tables } from "@/integrations/supabase/types";
@@ -19,7 +20,8 @@ export interface AppUser {
   email: string;
   password: string;
   role: Role;
-  department: Department | null;
+  /** Department is stored as a free-form string (DB values vary from the canonical type above). */
+  department: string | null;
   active: boolean;
   lastLoginAt?: number;
   needsApprovalNotification?: boolean;
@@ -57,7 +59,8 @@ export async function fetchAllUserProfiles(): Promise<{ profiles: ProfileRow[]; 
   } catch { /* RPC failed, fall back to standard query */ }
 
   // Fallback: standard query (requires working GoTrue)
-  const pRes = await supabase.from("profiles").select("*");
+  // SECURITY: never select the password column
+  const pRes = await supabase.from("profiles").select("id,user_id,display_name,email,is_active,last_login,created_at,updated_at,department");
   let roles: RoleRow[] = [];
   try {
     const rRes = await supabase.from("user_roles").select("*");
@@ -72,13 +75,14 @@ export async function fetchAllUserProfiles(): Promise<{ profiles: ProfileRow[]; 
 }
 
 export async function fetchUserProfile(userId: string): Promise<ProfileRow | null> {
+  // SECURITY: never select the password column from the client
   const { data, error } = await supabase
     .from("profiles")
-    .select("*")
+    .select("id,user_id,display_name,email,is_active,last_login,created_at,updated_at,department")
     .eq("user_id", userId)
     .maybeSingle();
   if (error) {
-    // console.warn("[userService:fetchUserProfile] Query failed:", error.message);
+    log.system.error("userService:fetchUserProfile_failed", (error as Error)?.message || String(error));
     return null;
   }
   return data as ProfileRow | null;

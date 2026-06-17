@@ -1,3 +1,4 @@
+import { log } from "@/services/logger";
 import { useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
@@ -36,7 +37,7 @@ export default function AuthCallback() {
         const { data: { session }, error } = await supabase.auth.getSession();
 
         if (error || !session?.user) {
-          console.error("Error");
+          log.system.error("AuthCallback:getSession_failed", String(error?.message || "unknown"));
           toast.error("Authentication Failed", { description: "Could not complete authentication" });
           navigate("/login");
           return;
@@ -47,7 +48,7 @@ export default function AuthCallback() {
         navigate("/");
 
       } catch (error) {
-        console.error("Error");
+        log.system.error("AuthCallback:callback_error", (error as Error)?.message || String(error));
         toast.error("Error", { description: "An error occurred during authentication" });
         navigate("/login");
       }

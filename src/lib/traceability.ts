@@ -1,3 +1,4 @@
+import { log } from "@/services/logger";
 /**
  * Relationship-Based Traceability System
  * ISO 9001:2015 QMS — Option 2 Implementation
@@ -390,7 +391,7 @@ export function buildTraceChain(
   
   // Performance logging
   if (endTime - startTime > 2000) {
-    console.warn(`[Traceability] BuildTraceChain took ${(endTime - startTime).toFixed(2)}ms (>2s target)`);
+    log.system.error("traceability:build_slow", `BuildTraceChain took ${(endTime - startTime).toFixed(2)}ms (>2s target)`);
   }
 
   return {

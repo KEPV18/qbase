@@ -5,6 +5,7 @@
 // ALL rules default to "warn" mode. No hard enforcement until explicitly
 // switched to "strict" by admin. Observes first, enforces only when safe.
 // ============================================================================
+import { log } from "@/services/logger";
 
 import React, { useMemo } from 'react';
 import { FORM_SCHEMAS, getFormSchema } from '../data/formSchemas';
@@ -411,7 +412,7 @@ export function evaluateRulesForRecord(
         });
       }
     } catch (err) {
-      console.error(`[ruleEngine] Rule ${rule.id} failed:`, err);
+      log.system.error("ruleEngine:rule_failed", `Rule ${rule.id}: ${(err as Error)?.message || String(err)}`);
     }
   }
 

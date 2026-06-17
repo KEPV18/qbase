@@ -57,7 +57,15 @@ export default function Login() {
   const handleLogin = async () => {
     if (!validate()) return;
     setIsLoading(true);
-    const res = await login(email.trim(), password.trim());
+    // Race login against a 10s timeout so the spinner always clears
+    const loginPromise = login(email.trim(), password.trim());
+    const timeoutPromise = new Promise<{ ok: false; code: string; message: string }>(
+      (resolve) => setTimeout(
+        () => resolve({ ok: false, code: "timeout", message: "Login timed out. Please try again." }),
+        10000,
+      ),
+    );
+    const res = await Promise.race([loginPromise, timeoutPromise]);
     setIsLoading(false);
     if (!res.ok) {
       toast.error("Login failed", { description: res.message });

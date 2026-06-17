@@ -4,6 +4,7 @@
 // No legacy field references. No last_serial. No code/record_name.
 // Storage: Supabase audit_log table (append-only)
 // ============================================================================
+import { log } from "@/services/logger";
 
 import { supabase } from '@/integrations/supabase/client';
 
@@ -108,7 +109,7 @@ export async function appendAuditLog(
   });
 
   if (error) {
-    console.error('[auditLog] Failed to append audit log:', error.message);
+    log.system.error('auditLog:append_failed', (error as Error)?.message || String(error));
     return { success: false, id: '' };
   }
 
@@ -155,7 +156,7 @@ export async function getAuditLogForSerial(serial: string): Promise<AuditLogRead
     .order('created_at', { ascending: true });
 
   if (error || !logs) {
-    console.error('[auditLog] Failed to read audit log:', error?.message);
+    log.system.error('auditLog:read_failed', String(error?.message || 'unknown'));
     return [];
   }
 
@@ -188,7 +189,7 @@ export async function getAllAuditLogs(limit = 100): Promise<AuditLogReadEntry[]>
     .limit(limit);
 
   if (error || !logs) {
-    console.error('[auditLog] Failed to read audit log:', error?.message);
+    log.system.error('auditLog:read_failed', String(error?.message || 'unknown'));
     return [];
   }
 

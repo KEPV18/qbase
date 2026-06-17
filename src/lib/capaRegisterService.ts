@@ -1,3 +1,4 @@
+import { log } from "@/services/logger";
 /**
  * CAPA Register Service — Supabase-backed
  * Replaces Google Sheets with Supabase as the single source of truth.
@@ -79,7 +80,7 @@ export async function getAllCAPAs(): Promise<CAPA[]> {
     .order("capa_id", { ascending: true });
 
   if (error) {
-    console.error("[capaRegister] Fetch error:", error.message);
+    log.system.error("capaRegister:fetch_failed", (error as Error)?.message || String(error));
     throw new Error(`Failed to fetch CAPAs: ${error.message}`);
   }
   return (data as CAPA[]) || [];

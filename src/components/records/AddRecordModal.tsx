@@ -1,3 +1,4 @@
+import { log } from "@/services/logger";
 import { useState } from 'react';
 import {
     Dialog,
@@ -96,7 +97,7 @@ export function AddRecordModal({ isOpen, onClose, templates, onSuccess }: AddRec
                     };
                     await updateSheetCell(selectedTemplate.rowIndex, 'P', JSON.stringify(newReviews));
                 } catch (e) {
-                    console.error("Error");
+                    log.system.error("AddRecordModal:metadata_save_failed", (e as Error)?.message || String(e));
                     // It's not a fatal error if metadata save fails, the file is still generated
                 }
 

@@ -18,7 +18,7 @@ import {
   type DynamicRowItem,
 } from "./FormTemplateKit";
 
-export interface F08Props extends FormTemplateBaseProps {}
+export type F08Props = FormTemplateBaseProps;
 
 export function F08Template({ data, isTemplate = true, editMode = false, onChange, className }: F08Props) {
   const d = data ?? {};

@@ -1,3 +1,4 @@
+import { log } from "@/services/logger";
 /**
  * Live Traceability Resolver Hook — Supabase Edition
  * 
@@ -144,7 +145,7 @@ async function buildFullRegistry(): Promise<RecordRegistry> {
       registry.set(capa.capa_id, transformCAPA(capa));
     });
   } catch (err) {
-    console.warn("[traceability] Failed to load CAPAs:", err);
+    log.system.error("traceability:capas_load_failed", (err as Error)?.message || String(err));
   }
 
   // 2. Load Risks from Supabase
@@ -154,7 +155,7 @@ async function buildFullRegistry(): Promise<RecordRegistry> {
       registry.set(risk.risk_id, transformRisk(risk));
     });
   } catch (err) {
-    console.warn("[traceability] Failed to load Risks:", err);
+    log.system.error("traceability:risks_load_failed", (err as Error)?.message || String(err));
   }
 
   // 3. Load Projects from static data

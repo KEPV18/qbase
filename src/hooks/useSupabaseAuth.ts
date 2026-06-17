@@ -6,6 +6,7 @@
 import * as React from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { emitEvent } from "@/services/eventBus";
+import { log } from "@/services/logger";
 import {
   fetchUserProfile,
   fetchUserRole,
@@ -74,25 +75,48 @@ export function useSupabaseAuth({
         saveSession(appUser.id, appUser.role, appUser.name, appUser.department);
         setUsers(prev => prev.some(u => u.id === appUser.id) ? prev : [appUser, ...prev]);
       } else {
-        // No profile — create minimal user so UI doesn't hang
+        // No profile — auto-create one so bootstrap completes and the user is usable.
+        // Create profile + role in parallel (non-blocking; failures fall back to basic user).
+        const emailName = email.split("@")[0] || "User";
+        try {
+          await Promise.all([
+            createProfile({
+              id: crypto.randomUUID(),
+              user_id: authUserId,
+              display_name: emailName,
+              email,
+              is_active: true,
+              last_login: new Date().toISOString(),
+            }),
+            createUserRole({ id: crypto.randomUUID(), user_id: authUserId, role: "user" }),
+          ]);
+        } catch {
+          // Non-fatal: profile creation may be blocked by RLS; fall back to basic user.
+          log.auth.unauthorized("profile_autocreate_failed", authUserId);
+        }
+        // Set minimal user so UI doesn't hang; setLoading guaranteed in finally below.
         setUser({
           id: authUserId,
-          name: email.split("@")[0] || "User",
+          name: emailName,
           email, password: "", role: "user", department: null, active: true, lastLoginAt: Date.now(),
         });
       }
     } catch (err: unknown) {
-      // console.warn("[useSupabaseAuth] Profile sync failed:", (err as Error).message);
-      // Auth OK but profile fetch failed — set basic user so loading stops
+      // Auth OK but profile fetch failed — set basic user so loading stops.
+      // The finally block guarantees setLoading(false) is called in every path.
+      log.auth.unauthorized("profile_sync_fallback", authUserId);
       setUser({
         id: authUserId,
         name: email.split("@")[0] || "User",
         email, password: "", role: "user", department: null, active: true, lastLoginAt: Date.now(),
       });
     } finally {
+      // CRITICAL: setLoading(false) must run in every path — including exceptions —
+      // so the UI never hangs on a spinner if profile sync rejects or hangs.
+      setLoading(false);
       isFetchingRef.current = null;
     }
-  }, [setUser, setUsers]);
+  }, [setUser, setUsers, setLoading]);
 
   /* ── Bootstrap Effect ─────────────────────────────────────────────────── */
 
@@ -121,8 +145,6 @@ export function useSupabaseAuth({
         const { data } = await supabase.auth.getSession();
         const session = data?.session;
 
-        // console.log("[useSupabaseAuth:bootstrap] getSession result:", session ? "HAS SESSION" : "NO SESSION");
-
         if (mounted && session) {
           // Session found immediately — sync profile
           await syncUserProfile(session as { user: { id: string; email?: string } });
@@ -133,7 +155,7 @@ export function useSupabaseAuth({
         }
         clearLoading();
       } catch (err: unknown) {
-        // console.error("[useSupabaseAuth:bootstrap] getSession error:", (err as Error).message);
+        log.auth.unauthorized("bootstrap_getsession_failed");
         clearLoading();
       }
     };
@@ -142,8 +164,6 @@ export function useSupabaseAuth({
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
       if (!mounted) return;
-
-      // console.log("[useSupabaseAuth:onAuthStateChange] Event:", event, "hasSession:", !!session);
 
       if (event === 'INITIAL_SESSION') {
         if (session) {
@@ -171,7 +191,7 @@ export function useSupabaseAuth({
       clearTimeout(safetyTimer);
       subscription.unsubscribe();
     };
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  }, []);
 
   /* ── Storage Sync ───────────────────────────────────────────────────────── */
 

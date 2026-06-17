@@ -1,3 +1,4 @@
+import { log } from "@/services/logger";
 import { useState, useEffect, useRef, useCallback } from 'react';
 
 /**
@@ -164,7 +165,7 @@ export function useDebouncedLocalStorage<T>(
     try {
       window.localStorage.setItem(key, JSON.stringify(debouncedValue));
     } catch (error) {
-      console.error('Error saving to localStorage:', error);
+      log.system.error('useDebounce:localStorage_save_failed', (error as Error)?.message || String(error));
     }
   }, [key, debouncedValue]);
 

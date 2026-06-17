@@ -1,3 +1,4 @@
+import { log } from "@/services/logger";
 import { useState, useMemo, useEffect, useRef, useCallback } from "react";
 import { AppShell } from "@/components/layout/AppShell";
 import { getAccessToken } from "@/lib/auth";
@@ -154,7 +155,7 @@ export default function ProceduresPage() {
       });
       setFiles(items);
     } catch (err) {
-      console.error("Error");
+      log.system.error("ProceduresPage:load_failed", (err as Error)?.message || String(err));
     } finally {
       setLoading(false);
     }

@@ -1,3 +1,4 @@
+import { log } from "@/services/logger";
 import { saveAs } from 'file-saver';
 
 /**
@@ -9,7 +10,7 @@ export function exportToCSV<T extends Record<string, unknown>>(
   columns?: { key: keyof T; header: string }[]
 ): void {
   if (!data.length) {
-    console.warn('No data to export');
+    log.system.error("export:no_data", "No data to export");
     return;
   }
 

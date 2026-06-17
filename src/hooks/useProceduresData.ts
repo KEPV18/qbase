@@ -1,3 +1,4 @@
+import { log } from "@/services/logger";
 import { useState, useEffect, useCallback } from "react";
 import { PROCEDURES_CONTENT, type ProcedureSection } from "@/lib/ProceduresContent";
 
@@ -13,7 +14,7 @@ export function useProceduresData() {
       try {
         setData(JSON.parse(saved));
       } catch (e) {
-        console.error("Failed to parse saved procedures data", e);
+        log.system.error("useProceduresData:parse_failed", (e as Error)?.message || String(e));
       }
     }
     setIsLoaded(true);
