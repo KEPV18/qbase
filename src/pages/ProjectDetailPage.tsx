@@ -4,7 +4,7 @@
 // Shows full project metadata, team, linked records
 // ============================================================================
 
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { AppShell } from "@/components/layout/AppShell";
 import { useRecords } from "@/hooks/useRecordStorage";
@@ -76,6 +76,11 @@ export default function ProjectDetailPage() {
     });
     return groups;
   }, [linkedRecords]);
+
+  const COLLAPSED_LIMIT = 6;
+  const [expandedGroups, setExpandedGroups] = useState<Record<string, boolean>>({});
+  const toggleGroup = (formCode: string) =>
+    setExpandedGroups(prev => ({ ...prev, [formCode]: !prev[formCode] }));
 
   const teamActivity = useMemo(() => {
     const formCounts: Record<string, number> = {};
@@ -206,14 +211,21 @@ export default function ProjectDetailPage() {
                   <span className="text-[10px] text-[#7a756a] dark:text-[#b5b0a5]">{recs.length} record{recs.length !== 1 ? 's' : ''}</span>
                 </div>
                 <div className="space-y-1">
-                  {recs.slice(0, 6).map(r => (
+                  {(expandedGroups[formCode] ? recs : recs.slice(0, COLLAPSED_LIMIT)).map(r => (
                     <button key={r.serial} onClick={() => navigate(`/records/${encodeURIComponent(r.serial)}`)}
                       className="w-full flex items-center justify-between text-[10px] px-2 py-1 bg-white dark:bg-[#1a1a18] border border-[#e8e3db] dark:border-[#2d2d2b] rounded-sm hover:bg-[#f5f2eb] dark:hover:bg-[#1e1e1c] transition-colors">
                       <span className="font-mono text-[#5a564c] dark:text-[#b5b0a5]">{r.serial}</span>
                       <span className="text-[#9f9a8f] dark:text-[#7a756a]">{r._createdAt ? new Date(r._createdAt).toLocaleDateString() : ''}</span>
                     </button>
                   ))}
-                  {recs.length > 6 && <p className="text-[10px] text-center text-[#9f9a8f] dark:text-[#7a756a] pt-1">+{recs.length - 6} more</p>}
+                  {recs.length > COLLAPSED_LIMIT && (
+                    <button onClick={() => toggleGroup(formCode)}
+                      className="w-full text-[10px] text-center text-[#7a756a] dark:text-[#b5b0a5] hover:text-[#2d2d2d] dark:hover:text-[#e8e3db] pt-1 hover:underline transition-colors">
+                      {expandedGroups[formCode]
+                        ? `− Show ${recs.length - COLLAPSED_LIMIT} less`
+                        : `+${recs.length - COLLAPSED_LIMIT} more — Show all ${recs.length}`}
+                    </button>
+                  )}
                 </div>
               </div>
             ))}

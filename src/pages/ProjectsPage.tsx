@@ -112,6 +112,9 @@ export default function ProjectsPage() {
   const { data: records, isLoading } = useRecords();
   const [selectedProject, setSelectedProject] = useState<DiscoveredProject | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
+  const [expandedGroups, setExpandedGroups] = useState<Record<string, boolean>>({});
+  const toggleGroup = (formCode: string) =>
+    setExpandedGroups(prev => ({ ...prev, [formCode]: !prev[formCode] }));
 
   const discovered = useMemo(() => {
     if (!records) return [];
@@ -377,7 +380,7 @@ export default function ProjectsPage() {
                               <span className="text-[10px] text-[#7a756a] dark:text-[#b5b0a5] font-medium">{recs.length} record{recs.length !== 1 ? 's' : ''}</span>
                             </div>
                             <div className="space-y-1">
-                              {recs.slice(0, 5).map(r => (
+                              {(expandedGroups[formCode] ? recs : recs.slice(0, 5)).map(r => (
                                 <button
                                   key={r.serial}
                                   onClick={() => navigate(`/records/${encodeURIComponent(r.serial)}`)}
@@ -390,9 +393,12 @@ export default function ProjectsPage() {
                                 </button>
                               ))}
                               {recs.length > 5 && (
-                                <p className="text-[10px] text-center text-[#9f9a8f] dark:text-[#7a756a] pt-1">
-                                  +{recs.length - 5} more
-                                </p>
+                                <button onClick={() => toggleGroup(formCode)}
+                                  className="w-full text-[10px] text-center text-[#7a756a] dark:text-[#b5b0a5] hover:text-[#2d2d2d] dark:hover:text-[#e8e3db] pt-1 hover:underline transition-colors">
+                                  {expandedGroups[formCode]
+                                    ? `− Show ${recs.length - 5} less`
+                                    : `+${recs.length - 5} more — Show all ${recs.length}`}
+                                </button>
                               )}
                             </div>
                           </div>
