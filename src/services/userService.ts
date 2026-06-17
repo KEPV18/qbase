@@ -27,6 +27,52 @@ export interface AppUser {
   needsApprovalNotification?: boolean;
 }
 
+// ============================================================================
+// Raw REST helpers — bypass the Supabase JS client query builder which can
+// hang on Vercel's edge runtime after signInWithPassword fires onAuthStateChange.
+// We read the session token from localStorage and call the REST API directly.
+// ============================================================================
+
+const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL?.trim() || "";
+const SUPABASE_ANON_KEY = (import.meta.env.VITE_SUPABASE_ANON_KEY?.trim()
+  || import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY?.trim() || "");
+
+function getStoredAccessToken(): string | null {
+  try {
+    // The supabase project ref is part of the localStorage key: sb-<project-ref>-auth-token
+    const key = `sb-${SUPABASE_URL.replace("https://", "").split(".")[0]}-auth-token`;
+    const raw = localStorage.getItem(key);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw);
+    return parsed?.access_token || null;
+  } catch {
+    return null;
+  }
+}
+
+async function restGet<T>(path: string): Promise<{ data: T | null; error: string | null }> {
+  const token = getStoredAccessToken();
+  if (!token) return { data: null, error: "no_session_token" };
+  try {
+    const res = await fetch(`${SUPABASE_URL}${path}`, {
+      headers: {
+        apikey: SUPABASE_ANON_KEY,
+        Authorization: `Bearer ${token}`,
+        Accept: "application/json",
+        "Content-Type": "application/json",
+      },
+    });
+    if (!res.ok) {
+      const txt = await res.text().catch(() => "");
+      return { data: null, error: `HTTP ${res.status}: ${txt.substring(0, 200)}` };
+    }
+    const data = await res.json();
+    return { data: data as T, error: null };
+  } catch (err: unknown) {
+    return { data: null, error: (err as Error)?.message || String(err) };
+  }
+}
+
 /* ─────────────────────────────────────────────────────────────────────────── */
 
 export async function fetchAllUserProfiles(): Promise<{ profiles: ProfileRow[]; roles: RoleRow[]; error?: string }> {
@@ -76,29 +122,34 @@ export async function fetchAllUserProfiles(): Promise<{ profiles: ProfileRow[]; 
 
 export async function fetchUserProfile(userId: string): Promise<ProfileRow | null> {
   // SECURITY: never select the password column from the client
+  // Use raw REST to avoid Supabase JS client query builder hanging on Vercel
   window.__loginTrace = window.__loginTrace || [];
   window.__loginTrace.push('fetchUserProfile_start:' + userId.substring(0, 8));
-  const { data, error } = await supabase
-    .from("profiles")
-    .select("id,user_id,display_name,email,is_active,last_login,created_at,updated_at,department")
-    .eq("user_id", userId)
-    .maybeSingle();
-  window.__loginTrace.push('fetchUserProfile_done: err=' + (error ? error.message : 'null') + ' data=' + (data ? 'yes' : 'null'));
+  const { data, error } = await restGet<ProfileRow[]>(
+    `/rest/v1/profiles?user_id=eq.${encodeURIComponent(userId)}&select=id,user_id,display_name,email,is_active,last_login,created_at,updated_at,department`
+  );
+  window.__loginTrace.push('fetchUserProfile_done: err=' + (error || 'null') + ' data=' + (data ? (data.length > 0 ? 'yes' : 'empty') : 'null'));
   if (error) {
-    log.system.error("userService:fetchUserProfile_failed", (error as Error)?.message || String(error));
+    log.system.error("userService:fetchUserProfile_failed", error);
     return null;
   }
-  return data as ProfileRow | null;
+  return (data && data.length > 0) ? data[0] : null;
 }
 
 export async function fetchUserRole(userId: string): Promise<string | null> {
-  const { data, error } = await supabase
-    .from("user_roles")
-    .select("role")
-    .eq("user_id", userId)
-    .maybeSingle();
-  if (error || !data) return null;
-  return (data as { role?: string }).role?.toLowerCase() || null;
+  const { data, error } = await restGet<{ role?: string }[]>(
+    `/rest/v1/user_roles?user_id=eq.${encodeURIComponent(userId)}&select=role`
+  );
+  if (error || !data || data.length === 0) return null;
+  return data[0].role?.toLowerCase() || null;
+}
+
+export async function fetchUserDepartment(userId: string): Promise<string | null> {
+  const { data, error } = await restGet<{ department?: string }[]>(
+    `/rest/v1/user_roles?user_id=eq.${encodeURIComponent(userId)}&select=department`
+  );
+  if (error || !data || data.length === 0) return null;
+  return data[0].department || null;
 }
 
 /* ─── Mutations ───────────────────────────────────────────────────────────── */
@@ -206,17 +257,6 @@ export function normalizeDepartment(raw: string | null | undefined): Department 
     case 'management': case 'mgmt': case 'admin': return 'Management';
     default: return null;
   }
-}
-
-/** Get department for a given user_id */
-export async function fetchUserDepartment(userId: string): Promise<string | null> {
-  const { data, error } = await supabase
-    .from("user_roles")
-    .select("department")
-    .eq("user_id", userId)
-    .maybeSingle();
-  if (error || !data) return null;
-  return (data as { department?: string }).department || null;
 }
 
 export const VALID_ROLES: Role[] = ["admin", "manager", "auditor", "user", "moderator", "dept_head", "employee"];
