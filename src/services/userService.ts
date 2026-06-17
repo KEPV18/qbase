@@ -76,11 +76,14 @@ export async function fetchAllUserProfiles(): Promise<{ profiles: ProfileRow[]; 
 
 export async function fetchUserProfile(userId: string): Promise<ProfileRow | null> {
   // SECURITY: never select the password column from the client
+  window.__loginTrace = window.__loginTrace || [];
+  window.__loginTrace.push('fetchUserProfile_start:' + userId.substring(0, 8));
   const { data, error } = await supabase
     .from("profiles")
     .select("id,user_id,display_name,email,is_active,last_login,created_at,updated_at,department")
     .eq("user_id", userId)
     .maybeSingle();
+  window.__loginTrace.push('fetchUserProfile_done: err=' + (error ? error.message : 'null') + ' data=' + (data ? 'yes' : 'null'));
   if (error) {
     log.system.error("userService:fetchUserProfile_failed", (error as Error)?.message || String(error));
     return null;
