@@ -44,6 +44,11 @@ export interface FormSchema {
   importance: "Critical" | "High" | "Medium" | "Low";
   description: string;   // what this form is for
   fields: FieldSchema[];
+  // Template metadata (form shape approval & ownership)
+  templateApprovedDate?: string;  // ISO date — when form shape was approved
+  templateLastModified?: string | null;  // ISO date — last change to form shape, null if never changed
+  templateCreatedBy?: string;    // who created the form template
+  templateApprovedBy?: string;   // who approved the form template
 }
 
 // ============================================================================
@@ -826,6 +831,19 @@ export const FORM_SCHEMAS: FormSchema[] = [
 // ============================================================================
 // Helpers
 // ============================================================================
+
+// Default template metadata — applied to all forms unless individually overridden
+const DEFAULT_TEMPLATE_APPROVED_DATE = "2026-01-01";  // Jan 1, 2026
+const DEFAULT_TEMPLATE_CREATED_BY = "Ahmed Khaled";
+const DEFAULT_TEMPLATE_APPROVED_BY = "Karim Yahya";
+
+// Apply defaults to all forms (post-processing — keeps 35 form definitions clean)
+FORM_SCHEMAS.forEach(f => {
+  if (!f.templateApprovedDate) f.templateApprovedDate = DEFAULT_TEMPLATE_APPROVED_DATE;
+  if (f.templateLastModified === undefined) f.templateLastModified = null;
+  if (!f.templateCreatedBy) f.templateCreatedBy = DEFAULT_TEMPLATE_CREATED_BY;
+  if (!f.templateApprovedBy) f.templateApprovedBy = DEFAULT_TEMPLATE_APPROVED_BY;
+});
 
 export function getFormSchema(code: string): FormSchema | undefined {
   return FORM_SCHEMAS.find(f => f.code === code);

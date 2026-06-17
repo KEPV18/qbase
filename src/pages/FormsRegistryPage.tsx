@@ -27,7 +27,20 @@ import {
   Database,
   CalendarDays,
   Layers,
+  CalendarCheck,
+  User,
+  UserCheck,
+  Edit3,
 } from "lucide-react";
+import { getFormSchema } from "@/data/formSchemas";
+
+// Format ISO date to readable format
+function formatTemplateDate(iso: string | null | undefined): string {
+  if (!iso) return null;
+  const d = new Date(iso);
+  if (isNaN(d.getTime())) return null;
+  return d.toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" });
+}
 
 // ============================================================================
 // Stats helpers
@@ -382,6 +395,13 @@ function FormCard({
   const navigate = useNavigate();
   const hasRecords = form.lastRecordCount !== undefined && form.lastRecordCount > 0;
 
+  // Get template metadata from the schema
+  const schema = getFormSchema(form.code);
+  const approvedDate = formatTemplateDate(schema?.templateApprovedDate);
+  const lastModified = formatTemplateDate(schema?.templateLastModified);
+  const createdBy = schema?.templateCreatedBy;
+  const approvedBy = schema?.templateApprovedBy;
+
   return (
     <button
       className={cn(
@@ -445,6 +465,42 @@ function FormCard({
         <p className="text-[11px] text-muted-foreground/70 line-clamp-1 leading-relaxed text-left">
           {form.notes}
         </p>
+
+        {/* Template metadata — approval & ownership */}
+        <div className="mt-3 pt-3 border-t border-gray-100 dark:border-gray-800 grid grid-cols-2 gap-x-3 gap-y-1.5">
+          <div className="flex items-center gap-1.5">
+            <CalendarCheck className="w-3 h-3 text-emerald-500/70 shrink-0" />
+            <span className="text-[10px] text-muted-foreground/80">
+              Approved: <span className="font-medium text-foreground/70">{approvedDate || "—"}</span>
+            </span>
+          </div>
+          <div className="flex items-center gap-1.5">
+            {lastModified ? (
+              <Edit3 className="w-3 h-3 text-amber-500/70 shrink-0" />
+            ) : (
+              <Clock className="w-3 h-3 text-muted-foreground/40 shrink-0" />
+            )}
+            <span className="text-[10px] text-muted-foreground/80">
+              {lastModified ? (
+                <>Changed: <span className="font-medium text-amber-600/80">{lastModified}</span></>
+              ) : (
+                <span className="text-muted-foreground/40">No changes</span>
+              )}
+            </span>
+          </div>
+          <div className="flex items-center gap-1.5">
+            <User className="w-3 h-3 text-muted-foreground/60 shrink-0" />
+            <span className="text-[10px] text-muted-foreground/80 truncate">
+              Created: <span className="font-medium text-foreground/70">{createdBy || "—"}</span>
+            </span>
+          </div>
+          <div className="flex items-center gap-1.5">
+            <UserCheck className="w-3 h-3 text-emerald-500/70 shrink-0" />
+            <span className="text-[10px] text-muted-foreground/80 truncate">
+              By: <span className="font-medium text-foreground/70">{approvedBy || "—"}</span>
+            </span>
+          </div>
+        </div>
       </div>
     </button>
   );

@@ -9,11 +9,19 @@ import { getFormSchema, type FieldSchema } from "@/data/formSchemas";
 import { getFormTemplateComponent } from "@/components/forms/templates";
 import { AppShell } from "@/components/layout/AppShell";
 import { DocumentView, DocHeader, DocSection, DocField, DocTable } from "@/components/forms/DocumentView";
-import { ArrowLeft, FileText, Layers, FilePlus, AlertTriangle } from "lucide-react";
+import { ArrowLeft, FileText, Layers, FilePlus, AlertTriangle, CalendarCheck, User, UserCheck, Clock, Edit3 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import { FORMS_REGISTRY } from "@/data/formsRegistry";
+
+// Format ISO date to Arabic-English readable format: "1/1/2026" → "January 1, 2026"
+function formatDate(iso: string | null | undefined): string {
+  if (!iso) return "—";
+  const d = new Date(iso);
+  if (isNaN(d.getTime())) return iso;
+  return d.toLocaleDateString("en-GB", { day: "numeric", month: "long", year: "numeric" });
+}
 
 export default function FormTemplatePreview() {
   const { "*": wildcard } = useParams();
@@ -71,6 +79,50 @@ export default function FormTemplatePreview() {
                 {schema.frequency}
               </Badge>
               <span className="text-[10px] text-gray-300 dark:text-gray-600">S{schema.section}</span>
+            </div>
+          </div>
+
+          {/* Template Metadata — approval & ownership info */}
+          <div className="px-12 py-3 bg-gray-50/50 dark:bg-gray-900/30 border-b border-gray-100 dark:border-gray-800">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-xs">
+              {/* Approved Date */}
+              <div className="flex items-center gap-1.5">
+                <CalendarCheck className="w-3.5 h-3.5 text-gray-400 shrink-0" />
+                <div className="min-w-0">
+                  <span className="text-gray-400 dark:text-gray-500 block text-[10px] uppercase tracking-wider">Approved</span>
+                  <span className="text-gray-700 dark:text-gray-300 font-medium truncate">{formatDate(schema.templateApprovedDate)}</span>
+                </div>
+              </div>
+              {/* Last Modified */}
+              <div className="flex items-center gap-1.5">
+                {schema.templateLastModified ? (
+                  <Edit3 className="w-3.5 h-3.5 text-amber-500 shrink-0" />
+                ) : (
+                  <Clock className="w-3.5 h-3.5 text-gray-300 dark:text-gray-600 shrink-0" />
+                )}
+                <div className="min-w-0">
+                  <span className="text-gray-400 dark:text-gray-500 block text-[10px] uppercase tracking-wider">Last Change</span>
+                  <span className={cn("font-medium truncate", schema.templateLastModified ? "text-amber-600 dark:text-amber-400" : "text-gray-300 dark:text-gray-600")}>
+                    {schema.templateLastModified ? formatDate(schema.templateLastModified) : "No changes"}
+                  </span>
+                </div>
+              </div>
+              {/* Created By */}
+              <div className="flex items-center gap-1.5">
+                <User className="w-3.5 h-3.5 text-gray-400 shrink-0" />
+                <div className="min-w-0">
+                  <span className="text-gray-400 dark:text-gray-500 block text-[10px] uppercase tracking-wider">Created By</span>
+                  <span className="text-gray-700 dark:text-gray-300 font-medium truncate">{schema.templateCreatedBy || "—"}</span>
+                </div>
+              </div>
+              {/* Approved By */}
+              <div className="flex items-center gap-1.5">
+                <UserCheck className="w-3.5 h-3.5 text-emerald-500 shrink-0" />
+                <div className="min-w-0">
+                  <span className="text-gray-400 dark:text-gray-500 block text-[10px] uppercase tracking-wider">Approved By</span>
+                  <span className="text-gray-700 dark:text-gray-300 font-medium truncate">{schema.templateApprovedBy || "—"}</span>
+                </div>
+              </div>
             </div>
           </div>
 

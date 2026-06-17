@@ -3,6 +3,7 @@
 -- RLS Absolute Enforcement + Strict Policies + RPC Hardening
 -- ============================================================================
 -- Run this in Supabase Dashboard SQL Editor (single transaction)
+-- Idempotent: safe to re-run (all policies dropped before recreate)
 -- ============================================================================
 
 -- ============================================================================
@@ -70,10 +71,14 @@ GRANT EXECUTE ON FUNCTION public.current_user_department() TO authenticated;
 
 ALTER TABLE public.profiles ENABLE ROW LEVEL SECURITY;
 
--- Drop any overly permissive existing policies
+-- Drop ALL existing policies (idempotent)
 DROP POLICY IF EXISTS "profiles_select_all" ON public.profiles;
 DROP POLICY IF EXISTS "profiles_insert_all" ON public.profiles;
 DROP POLICY IF EXISTS "profiles_update_all" ON public.profiles;
+DROP POLICY IF EXISTS "profiles_read_own_or_admin" ON public.profiles;
+DROP POLICY IF EXISTS "profiles_update_own_or_admin" ON public.profiles;
+DROP POLICY IF EXISTS "profiles_insert_admin_only" ON public.profiles;
+DROP POLICY IF EXISTS "profiles_delete_admin_only" ON public.profiles;
 
 -- Users can read their own profile + admins can read all
 CREATE POLICY "profiles_read_own_or_admin"
@@ -116,6 +121,10 @@ ALTER TABLE public.user_roles ENABLE ROW LEVEL SECURITY;
 
 DROP POLICY IF EXISTS "user_roles_select_all" ON public.user_roles;
 DROP POLICY IF EXISTS "user_roles_insert_all" ON public.user_roles;
+DROP POLICY IF EXISTS "user_roles_read_own_or_admin" ON public.user_roles;
+DROP POLICY IF EXISTS "user_roles_insert_admin_only" ON public.user_roles;
+DROP POLICY IF EXISTS "user_roles_update_admin_only" ON public.user_roles;
+DROP POLICY IF EXISTS "user_roles_delete_admin_only" ON public.user_roles;
 
 -- Users can read their own role; admins/managers can read all
 CREATE POLICY "user_roles_read_own_or_admin"
@@ -152,6 +161,10 @@ ALTER TABLE public.records ENABLE ROW LEVEL SECURITY;
 DROP POLICY IF EXISTS "records_select_all" ON public.records;
 DROP POLICY IF EXISTS "records_insert_all" ON public.records;
 DROP POLICY IF EXISTS "records_update_all" ON public.records;
+DROP POLICY IF EXISTS "records_read_dept_or_owner" ON public.records;
+DROP POLICY IF EXISTS "records_insert_authenticated" ON public.records;
+DROP POLICY IF EXISTS "records_update_owner_or_admin" ON public.records;
+DROP POLICY IF EXISTS "records_delete_owner_or_admin" ON public.records;
 
 -- Records: users can read records in their department or records they created
 CREATE POLICY "records_read_dept_or_owner"
@@ -162,8 +175,8 @@ CREATE POLICY "records_read_dept_or_owner"
     AND (
       public.is_admin()
       OR created_by = auth.uid()::text
-      OR department = public.current_user_department()
-      OR department IS NULL
+      OR section::text = public.current_user_department()
+      OR section IS NULL
     )
   );
 
@@ -199,52 +212,62 @@ CREATE POLICY "records_delete_owner_or_admin"
   );
 
 -- ============================================================================
--- 5. RLS ON CORE TABLES — Notifications
+-- 5. RLS ON CORE TABLES — Notifications (conditional)
 -- ============================================================================
 
-ALTER TABLE public.notifications ENABLE ROW LEVEL SECURITY;
+DO $$
+BEGIN
+  IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_schema = 'public' AND table_name = 'notifications') THEN
+    ALTER TABLE public.notifications ENABLE ROW LEVEL SECURITY;
 
-DROP POLICY IF EXISTS "notifications_select_all" ON public.notifications;
-DROP POLICY IF EXISTS "notifications_insert_all" ON public.notifications;
+    DROP POLICY IF EXISTS "notifications_select_all" ON public.notifications;
+    DROP POLICY IF EXISTS "notifications_insert_all" ON public.notifications;
+    DROP POLICY IF EXISTS "notifications_read_own" ON public.notifications;
+    DROP POLICY IF EXISTS "notifications_update_own" ON public.notifications;
 
--- Users can only read their own notifications
-CREATE POLICY "notifications_read_own"
-  ON public.notifications FOR SELECT
-  TO authenticated
-  USING (user_id = auth.uid()::text);
+    CREATE POLICY "notifications_read_own"
+      ON public.notifications FOR SELECT
+      TO authenticated
+      USING (user_id = auth.uid());
 
--- Users can only update their own notifications (mark as read)
-CREATE POLICY "notifications_update_own"
-  ON public.notifications FOR UPDATE
-  TO authenticated
-  USING (user_id = auth.uid()::text)
-  WITH CHECK (user_id = auth.uid()::text);
+    CREATE POLICY "notifications_update_own"
+      ON public.notifications FOR UPDATE
+      TO authenticated
+      USING (user_id = auth.uid())
+      WITH CHECK (user_id = auth.uid());
+  END IF;
+END $$;
 
 -- ============================================================================
--- 6. RLS ON CORE TABLES — Record Versions
+-- 6. RLS ON CORE TABLES — Record Versions (skip if table doesn't exist)
 -- ============================================================================
 
-ALTER TABLE public.record_versions ENABLE ROW LEVEL SECURITY;
+DO $$
+BEGIN
+  IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_schema = 'public' AND table_name = 'record_versions') THEN
+    ALTER TABLE public.record_versions ENABLE ROW LEVEL SECURITY;
 
-DROP POLICY IF EXISTS "record_versions_select" ON public.record_versions;
-DROP POLICY IF EXISTS "record_versions_insert" ON public.record_versions;
+    DROP POLICY IF EXISTS "record_versions_select" ON public.record_versions;
+    DROP POLICY IF EXISTS "record_versions_insert" ON public.record_versions;
+    DROP POLICY IF EXISTS "record_versions_read_accessible" ON public.record_versions;
 
--- Users can read versions of records they own or have access to
-CREATE POLICY "record_versions_read_accessible"
-  ON public.record_versions FOR SELECT
-  TO authenticated
-  USING (
-    EXISTS (
-      SELECT 1 FROM public.records r
-      WHERE r.id = record_versions.record_id
-        AND r.deleted_at IS NULL
-        AND (
-          public.is_admin()
-          OR r.created_by = auth.uid()::text
-          OR r.department = public.current_user_department()
+    CREATE POLICY "record_versions_read_accessible"
+      ON public.record_versions FOR SELECT
+      TO authenticated
+      USING (
+        EXISTS (
+          SELECT 1 FROM public.records r
+          WHERE r.id = record_versions.record_id
+            AND r.deleted_at IS NULL
+            AND (
+              public.is_admin()
+              OR r.created_by = auth.uid()::text
+              OR r.section::text = public.current_user_department()
+            )
         )
-    )
-  );
+      );
+  END IF;
+END $$;
 
 -- ============================================================================
 -- 7. RLS ON CORE TABLES — Projects
@@ -253,6 +276,8 @@ CREATE POLICY "record_versions_read_accessible"
 ALTER TABLE public.projects ENABLE ROW LEVEL SECURITY;
 
 DROP POLICY IF EXISTS "projects_select_all" ON public.projects;
+DROP POLICY IF EXISTS "projects_read_active" ON public.projects;
+DROP POLICY IF EXISTS "projects_write_manager_or_admin" ON public.projects;
 
 -- All authenticated users can read active projects
 CREATE POLICY "projects_read_active"
@@ -268,59 +293,69 @@ CREATE POLICY "projects_write_manager_or_admin"
   WITH CHECK (public.is_manager());
 
 -- ============================================================================
--- 8. RLS ON AUDIT / LOG TABLES
+-- 8. RLS ON AUDIT / LOG TABLES (conditional — skip if table doesn't exist)
 -- ============================================================================
 
-ALTER TABLE IF EXISTS public.audit_log ENABLE ROW LEVEL SECURITY;
-ALTER TABLE IF EXISTS public.record_locks ENABLE ROW LEVEL SECURITY;
+DO $$
+BEGIN
+  IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_schema = 'public' AND table_name = 'audit_log') THEN
+    ALTER TABLE public.audit_log ENABLE ROW LEVEL SECURITY;
 
--- Audit log: append-only by authenticated users; read by admin/manager
-DROP POLICY IF EXISTS "audit_log_select" ON public.audit_log;
-CREATE POLICY IF NOT EXISTS "audit_log_read_admin"
-  ON public.audit_log FOR SELECT
-  TO authenticated
-  USING (public.is_manager());
+    DROP POLICY IF EXISTS "audit_log_select" ON public.audit_log;
+    DROP POLICY IF EXISTS "audit_log_read_admin" ON public.audit_log;
+    DROP POLICY IF EXISTS "audit_log_insert_authenticated" ON public.audit_log;
 
-CREATE POLICY IF NOT EXISTS "audit_log_insert_authenticated"
-  ON public.audit_log FOR INSERT
-  TO authenticated
-  WITH CHECK (true);
+    CREATE POLICY "audit_log_read_admin"
+      ON public.audit_log FOR SELECT
+      TO authenticated
+      USING (public.is_manager());
 
--- Record locks: users can read their own locks; admin can read all
-CREATE POLICY IF NOT EXISTS "record_locks_read_own_or_admin"
-  ON public.record_locks FOR SELECT
-  TO authenticated
-  USING (
-    user_id = auth.uid()
-    OR public.is_admin()
-  );
+    CREATE POLICY "audit_log_insert_authenticated"
+      ON public.audit_log FOR INSERT
+      TO authenticated
+      WITH CHECK (true);
+  END IF;
+
+  IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_schema = 'public' AND table_name = 'record_locks') THEN
+    ALTER TABLE public.record_locks ENABLE ROW LEVEL SECURITY;
+
+    DROP POLICY IF EXISTS "record_locks_read_own_or_admin" ON public.record_locks;
+
+    CREATE POLICY "record_locks_read_own_or_admin"
+      ON public.record_locks FOR SELECT
+      TO authenticated
+      USING (
+        user_id = auth.uid()
+        OR public.is_admin()
+      );
+  END IF;
+END $$;
 
 -- ============================================================================
 -- 9. RPC FUNCTION HARDENING — search_path fix
 -- ============================================================================
 
--- Re-create all SECURITY DEFINER functions with SET search_path = pg_catalog, public
--- (Prevents search-path hijacking attacks)
-
--- Already in migration files but ensure correct search_path:
--- NOTE: These functions already have SET search_path = public in previous migrations.
--- We ALTER them to use the stricter pg_catalog, public.
+-- Set search_path on all SECURITY DEFINER functions (prevents search-path hijacking)
+-- Uses pg_proc.oid with regprocedure for unambiguous function reference
 
 DO $$
 DECLARE
   r RECORD;
 BEGIN
   FOR r IN
-    SELECT routine_schema, routine_name
-    FROM information_schema.routines
-    WHERE routine_schema = 'public'
-      AND security_type = 'DEFINER'
-      AND routine_type = 'FUNCTION'
+    SELECT p.oid,
+           p.proname,
+           pg_get_function_identity_arguments(p.oid) AS args
+    FROM pg_proc p
+    JOIN pg_namespace n ON p.pronamespace = n.oid
+    WHERE n.nspname = 'public'
+      AND p.prosecdef = true  -- SECURITY DEFINER
+      AND p.prokind = 'f'     -- functions only (not procedures)
   LOOP
-    -- Functions with SET search_path = public need upgrade
     EXECUTE format(
-      'ALTER FUNCTION %I.%I SET search_path = pg_catalog, public',
-      r.routine_schema, r.routine_name
+      'ALTER FUNCTION public.%I(%s) SET search_path = pg_catalog, public',
+      r.proname,
+      r.args
     );
   END LOOP;
 END $$;
@@ -330,29 +365,54 @@ END $$;
 -- ============================================================================
 
 -- Revoke all direct table access from anon role (they must auth first)
-REVOKE ALL ON public.profiles FROM anon;
-REVOKE ALL ON public.user_roles FROM anon;
-REVOKE ALL ON public.records FROM anon;
-REVOKE ALL ON public.record_versions FROM anon;
-REVOKE ALL ON public.notifications FROM anon;
-REVOKE ALL ON public.projects FROM anon;
-REVOKE ALL ON public.audit_log FROM anon;
-REVOKE ALL ON public.record_locks FROM anon;
-REVOKE ALL ON public.risks FROM anon;
-REVOKE ALL ON public.capas FROM anon;
-REVOKE ALL ON public.processes FROM anon;
-REVOKE ALL ON public.process_interactions FROM anon;
-
--- Keep SELECT on non-sensitive tables if needed (e.g. ISO manual content)
--- But default is block everything.
+-- Only revoke for tables that exist
+DO $$
+BEGIN
+  IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_schema = 'public' AND table_name = 'profiles') THEN
+    REVOKE ALL ON public.profiles FROM anon;
+  END IF;
+  IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_schema = 'public' AND table_name = 'user_roles') THEN
+    REVOKE ALL ON public.user_roles FROM anon;
+  END IF;
+  IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_schema = 'public' AND table_name = 'records') THEN
+    REVOKE ALL ON public.records FROM anon;
+  END IF;
+  IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_schema = 'public' AND table_name = 'record_versions') THEN
+    REVOKE ALL ON public.record_versions FROM anon;
+  END IF;
+  IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_schema = 'public' AND table_name = 'notifications') THEN
+    REVOKE ALL ON public.notifications FROM anon;
+  END IF;
+  IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_schema = 'public' AND table_name = 'projects') THEN
+    REVOKE ALL ON public.projects FROM anon;
+  END IF;
+  IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_schema = 'public' AND table_name = 'audit_log') THEN
+    REVOKE ALL ON public.audit_log FROM anon;
+  END IF;
+  IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_schema = 'public' AND table_name = 'record_locks') THEN
+    REVOKE ALL ON public.record_locks FROM anon;
+  END IF;
+  IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_schema = 'public' AND table_name = 'risks') THEN
+    REVOKE ALL ON public.risks FROM anon;
+  END IF;
+  IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_schema = 'public' AND table_name = 'capas') THEN
+    REVOKE ALL ON public.capas FROM anon;
+  END IF;
+  IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_schema = 'public' AND table_name = 'processes') THEN
+    REVOKE ALL ON public.processes FROM anon;
+  END IF;
+  IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_schema = 'public' AND table_name = 'process_interactions') THEN
+    REVOKE ALL ON public.process_interactions FROM anon;
+  END IF;
+END $$;
 
 -- ============================================================================
 -- 11. GRANT EXECUTE ON HELPER FUNCTIONS TO AUTHENTICATED
 -- ============================================================================
 
-GRANT EXECUTE ON FUNCTION public.is_admin TO authenticated;
-GRANT EXECUTE ON FUNCTION public.is_manager TO authenticated;
-GRANT EXECUTE ON FUNCTION public.current_user_department TO authenticated;
+GRANT EXECUTE ON FUNCTION public.is_admin() TO authenticated;
+GRANT EXECUTE ON FUNCTION public.is_manager() TO authenticated;
+GRANT EXECUTE ON FUNCTION public.current_user_department() TO authenticated;
 
 -- ============================================================================
 -- Migration Complete — All tables now have strict RLS
