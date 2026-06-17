@@ -50,14 +50,17 @@ function getStoredAccessToken(): string | null {
   }
 }
 
-export async function restGet<T>(path: string): Promise<{ data: T | null; error: string | null }> {
+export async function restGet<T>(path: string, opts?: { allowAnon?: boolean }): Promise<{ data: T | null; error: string | null }> {
   const token = getStoredAccessToken();
-  if (!token) return { data: null, error: "no_session_token" };
+  if (!token && !opts?.allowAnon) return { data: null, error: "no_session_token" };
   try {
+    // Use session token if available, otherwise fall back to anon key (for
+    // anon-readable tables like tenant_settings)
+    const bearer = token || SUPABASE_ANON_KEY;
     const res = await fetch(`${SUPABASE_URL}${path}`, {
       headers: {
         apikey: SUPABASE_ANON_KEY,
-        Authorization: `Bearer ${token}`,
+        Authorization: `Bearer ${bearer}`,
         Accept: "application/json",
         "Content-Type": "application/json",
       },

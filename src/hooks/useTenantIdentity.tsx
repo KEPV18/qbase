@@ -8,6 +8,7 @@
 import React, { createContext, useContext, useMemo } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import { restGet } from '@/services/userService';
 import { emitEvent, Events } from '@/services/eventBus';
 
 // ============================================================================
@@ -57,32 +58,43 @@ const TENANT_KEY = ['tenant-settings'] as const;
 // Fetcher
 // ============================================================================
 
+interface TenantSettingsRow {
+  id: string;
+  company_name: string | null;
+  company_logo_url: string | null;
+  theme_color: string | null;
+  updated_at: string | null;
+}
+
 async function fetchTenantSettings(): Promise<TenantIdentity> {
-  const { data, error } = await supabase
-    .from('tenant_settings')
-    .select('*')
-    .limit(1)
-    .maybeSingle();
+  // Raw fetch bypass — supabase.from().select().maybeSingle() can hang on
+  // Vercel's edge runtime. tenant_settings is anon-readable, so the anon
+  // key alone suffices (no session token required).
+  const { data, error } = await restGet<TenantSettingsRow[]>(
+    '/rest/v1/tenant_settings?select=id,company_name,company_logo_url,theme_color,updated_at&limit=1',
+    { allowAnon: true }
+  );
 
   if (error) {
     // Let React Query retry — don't swallow the error as default identity
-    throw new Error(`[tenantIdentity] ${error.message}`);
+    throw new Error(`[tenantIdentity] ${error}`);
   }
 
-  if (!data) {
+  const row = Array.isArray(data) && data.length > 0 ? data[0] : null;
+  if (!row) {
     return DEFAULT_IDENTITY;
   }
 
-  const companyName = data.company_name || '';
-  const companyLogoUrl = data.company_logo_url || '';
-  const themeColor = data.theme_color || '';
+  const companyName = row.company_name || '';
+  const companyLogoUrl = row.company_logo_url || '';
+  const themeColor = row.theme_color || '';
   const isConfigured = companyName.length > 0;
 
   return {
     companyName,
     companyLogoUrl,
     themeColor,
-    updatedAt: data.updated_at || null,
+    updatedAt: row.updated_at || null,
     isConfigured,
     displayName: isConfigured ? companyName : 'QBase',
     logoUrl: companyLogoUrl.length > 0 ? companyLogoUrl : null,
@@ -144,15 +156,15 @@ export function useUpdateTenantIdentity() {
     if (updates.companyLogoUrl !== undefined) row.company_logo_url = updates.companyLogoUrl;
     if (updates.themeColor !== undefined) row.theme_color = updates.themeColor;
 
-    // Fetch the singleton row ID dynamically (don't hardcode it)
-    const { data: existing } = await supabase
-      .from('tenant_settings')
-      .select('id')
-      .limit(1)
-      .maybeSingle();
+    // Fetch the singleton row ID dynamically (don't hardcode it) — raw fetch
+    const { data: existingRows } = await restGet<{ id: string }[]>(
+      '/rest/v1/tenant_settings?select=id&limit=1',
+      { allowAnon: true }
+    );
+    const existing = Array.isArray(existingRows) && existingRows.length > 0 ? existingRows[0] : null;
 
     if (!existing) {
-      // No row yet — insert
+      // No row yet — insert (mutation via supabase client — only the read path hangs)
       const { error } = await supabase.from('tenant_settings').insert(row);
       if (error) throw new Error(`Failed to create tenant settings: ${error.message}`);
     } else {
