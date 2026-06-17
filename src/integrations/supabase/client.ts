@@ -16,6 +16,17 @@ export const supabase = createClient(supabaseUrl, supabaseKey, {
     persistSession: true,
     detectSessionInUrl: true,
   },
+  // CRITICAL: Disable Realtime WebSocket at the config level.
+  // Vercel runs behind a CDN/edge that rejects the Supabase Realtime WebSocket
+  // handshake (__cf_bm cookie rejection → ERR_CONNECTION_CLOSED). This poisons
+  // the shared HTTP connection pool, causing subsequent REST calls
+  // (fetchUserProfile, fetchUserRole, fetchUserDepartment) to silently hang.
+  // Disabling realtime here prevents the WebSocket attempt entirely, instead
+  // of trying to disconnect after the damage is done.
+  realtime: {
+    params: { eventsPerSecond: 0 },
+  },
+  // Use a single global fetch instance to avoid pool contamination issues.
 })
 
 // ============================================================================
