@@ -35,6 +35,9 @@ export function useSupabaseAuth({
 
   const isFetchingRef = React.useRef<string | null>(null);
   const lastSyncTimestampRef = React.useRef<number>(0);
+  // Guards against SIGNED_IN event racing with login() — prevents
+  // syncUserProfile from wiping user state set by login().
+  const loginInProgressRef = React.useRef<boolean>(false);
 
   /* ── Profile Sync ───────────────────────────────────────────────────────── */
 
@@ -177,6 +180,10 @@ export function useSupabaseAuth({
       }
 
       if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED' || event === 'USER_UPDATED') {
+        // Skip re-sync when login() just set the user — prevents the SIGNED_IN
+        // event (fired by signInWithPassword) from racing with login() and
+        // clobbering the AppUser state via a stale syncUserProfile call.
+        if (loginInProgressRef.current) return;
         if (session) {
           await syncUserProfile(session as { user: { id: string; email?: string } });
         }
@@ -218,11 +225,13 @@ export function useSupabaseAuth({
       return { ok: false, code: "password_empty", message: "Password is required", backend };
     }
 
+    loginInProgressRef.current = true;
     try {
       // Native GoTrue signIn — creates sb-*-auth-token in localStorage
       const { data: authRes, error: authErr } = await supabase.auth.signInWithPassword({ email, password });
       if (authErr || !authRes?.user?.id) {
         setLoading(false);
+        loginInProgressRef.current = false;
         return { ok: false, code: "failed", message: authErr?.message || "Invalid credentials", backend };
       }
 
@@ -277,12 +286,14 @@ export function useSupabaseAuth({
           message: `${newUser.name} logged in (${newUser.role})`, targetId: newUser.id,
           metadata: { role: newUser.role, backend },
         }).catch(() => {});
+        loginInProgressRef.current = false;
         return { ok: true, code: "ok", message: "Logged in successfully", user: newUser, backend };
       }
 
       const isActive = !!(profile.is_active ?? true);
       if (!isActive) {
         setLoading(false);
+        loginInProgressRef.current = false;
         await supabase.auth.signOut();
         return { ok: false, code: "inactive", message: "Account not activated", backend };
       }
@@ -313,9 +324,11 @@ export function useSupabaseAuth({
         metadata: { role: appUser.role, backend },
       }).catch(() => {});
 
+      loginInProgressRef.current = false;
       return { ok: true, code: "ok", message: "Logged in successfully", user: appUser, backend };
     } catch (err: unknown) {
       setLoading(false); // <-- CRITICAL: clear loading on catch
+      loginInProgressRef.current = false;
       return { ok: false, code: "failed", message: (err as Error).message || "Invalid credentials", backend };
     }
   }, [setUser, setUsers, setSupabaseDisabled, setLoading]);

@@ -71,8 +71,10 @@ export default function Login() {
       toast.error("Login failed", { description: res.message });
       return;
     }
-    // Don't navigate here — let the useEffect handle redirect when user state updates
-    // navigate("/"); // REMOVED: useEffect handles this
+    // Explicit navigate on success — don't rely solely on useEffect redirect
+    // (useEffect still handles session-restore on refresh; this handles fresh login)
+    const from = location.state?.from?.pathname || "/";
+    navigate(from, { replace: true });
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
