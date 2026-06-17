@@ -13,8 +13,6 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useNotifications } from "@/hooks/useNotifications";
-import { SettingsModal } from "@/components/settings/SettingsModal";
-import { useState } from "react";
 import defaultLogo from "@/assets/qms-logo.png";
 
 interface NavSection {
@@ -49,7 +47,7 @@ const SETTINGS_NAV: NavSection = {
   title: "SETTINGS",
   items: [
     { label: "Admin", icon: Users, path: "/admin/accounts" },
-    { label: "Settings", icon: Settings, path: "#settings" },
+    { label: "Settings", icon: Settings, path: "/settings" },
   ],
 };
 
@@ -106,15 +104,12 @@ export function Sidebar({ mobileOpen, onClose }: { mobileOpen: boolean; onClose:
   const location = useLocation();
   const { user, logout } = useAuth();
   const { displayName, logoUrl } = useTenantIdentity();
-  // useNotifications isolated into NotificationNavItem — keeps Sidebar from re-rendering on badge changes
-  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
 
   const brandLogo = logoUrl || defaultLogo;
   const firstName = (user?.name || "User").split(" ")[0];
   const userInitials = (user?.name || "U").slice(0, 2).toUpperCase();
 
   const handleNav = (path: string) => {
-    if (path === "#settings") { setIsSettingsOpen(true); return; }
     navigate(path);
     onClose();
   };
@@ -222,7 +217,6 @@ export function Sidebar({ mobileOpen, onClose }: { mobileOpen: boolean; onClose:
           </div>
         </div>
       </aside>
-      <SettingsModal open={isSettingsOpen} onOpenChange={setIsSettingsOpen} />
     </>
   );
 }

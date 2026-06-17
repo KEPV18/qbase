@@ -5,7 +5,6 @@ import {
 import { useState, useEffect, useRef, useMemo } from "react";
 import { useRecords } from "@/hooks/useRecordStorage";
 import { cn } from "@/lib/utils";
-import { SettingsModal } from "@/components/settings/SettingsModal";
 import { useTenantIdentity } from "@/hooks/useTenantIdentity";
 import { useTheme } from "@/hooks/useTheme";
 import defaultLogo from "@/assets/qms-logo.png";
@@ -37,6 +36,7 @@ const PAGE_LABELS: Record<string, string> = {
   "/admin/accounts": "Admin Panel",
   "/admin/database": "Database",
   "/admin/approvals": "Approvals",
+  "/settings": "Settings",
   "/create": "Create Record",
   "/module": "Module",
 };
@@ -54,7 +54,6 @@ export function TopNav() {
   const navigate = useNavigate();
   const location = useLocation();
   const { data: records } = useRecords();
-  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
   const [results, setResults] = useState<SearchResult[]>([]);
   const [showSearchDropdown, setShowSearchDropdown] = useState(false);
@@ -199,8 +198,6 @@ export function TopNav() {
           <div className="w-px h-5 bg-[#e8e3db] dark:bg-[#3a3834] mx-1" />
         </div>
       </div>
-
-      <SettingsModal open={isSettingsOpen} onOpenChange={setIsSettingsOpen} />
     </>
   );
 }

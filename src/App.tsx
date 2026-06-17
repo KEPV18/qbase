@@ -38,6 +38,7 @@ const KPIDashboardPage = lazy(() => import("./pages/KPIDashboardPage"));
 const KPIReportsPage = lazy(() => import("./pages/KPIReportsPage"));
 const SWOTAnalysisPage = lazy(() => import("./pages/SWOTAnalysisPage"));
 const TraceabilityPage = lazy(() => import("./pages/TraceabilityPage"));
+const SettingsPage = lazy(() => import("./pages/Settings"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 
 const queryClient = new QueryClient({
@@ -116,6 +117,7 @@ const App = () => {
                       <Route path="/records" element={<PageBoundary><RecordListPage /></PageBoundary>} />
                       <Route path="/records/:serial" element={<PageBoundary><RecordViewPage /></PageBoundary>} />
                       <Route path="/integrity" element={<PageBoundary><DataIntegrityPage /></PageBoundary>} />
+                      <Route path="/settings" element={<PageBoundary><SettingsPage /></PageBoundary>} />
                       <Route path="/admin/accounts" element={<RequireRole roles={["admin"]}><PageBoundary><AdminPanel /></PageBoundary></RequireRole>} />
                       <Route path="/admin/database" element={<RequireRole roles={["admin"]}><PageBoundary><DatabaseManagementPage /></PageBoundary></RequireRole>} />
                       <Route path="/admin/approvals" element={<PageBoundary><ApprovalQueuePage /></PageBoundary>} />
