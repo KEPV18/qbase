@@ -63,8 +63,9 @@ export function useUserManagement({
     const mapped = profiles.map(p => mapProfileToAppUser(p, roleByUserId.get(p.user_id || p.id)));
     setUsers(mapped);
     setSupabaseDisabled(false);
-
-    const sessionData = saveSession(null);
+    // NOTE: Do NOT call saveSession(null) here — it wipes the current user's
+    // qms_session cache, forcing recordStorage.getCurrentUser() into the
+    // .from().select().maybeSingle() fallback which hangs on Vercel production.
   }, [setUsers, setSupabaseDisabled]);
 
   /* ── Add User ───────────────────────────────────────────────────────────── */

@@ -50,7 +50,7 @@ function getStoredAccessToken(): string | null {
   }
 }
 
-async function restGet<T>(path: string): Promise<{ data: T | null; error: string | null }> {
+export async function restGet<T>(path: string): Promise<{ data: T | null; error: string | null }> {
   const token = getStoredAccessToken();
   if (!token) return { data: null, error: "no_session_token" };
   try {

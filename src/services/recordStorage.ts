@@ -13,6 +13,7 @@ import { getNextSerial, isSerialUnique } from '../schemas/serialAndDate';
 import { appendAuditLog, computeDiff } from './auditLog';
 import { log } from './logger';
 import { emitEvent, Events } from './eventBus';
+import { restGet } from './userService';
 import type { RecordData } from '../components/forms/DynamicFormRenderer';
 
 // ============================================================================
@@ -101,11 +102,14 @@ async function getCurrentUser(): Promise<CurrentUserSnapshot | null> {
       } catch { /* cache parse error, fall through */ }
     }
 
-    // Fallback: fetch from DB
-    const [{ data: profile }, { data: roleRow }] = await Promise.all([
-      supabase.from('profiles').select('is_active').eq('user_id', user.id).maybeSingle(),
-      supabase.from('user_roles').select('role, department').eq('user_id', user.id).maybeSingle(),
+    // Fallback: fetch from DB via raw REST (supabase.from().maybeSingle() hangs on Vercel)
+    const [profileRes, roleRes] = await Promise.all([
+      restGet<{ is_active: boolean | null }>(`/rest/v1/profiles?select=is_active&user_id=eq.${user.id}`),
+      restGet<{ role: string | null; department: string | null }[]>(`/rest/v1/user_roles?select=role,department&user_id=eq.${user.id}`),
     ]);
+
+    const profile = profileRes.data;
+    const roleRow = Array.isArray(roleRes.data) ? roleRes.data[0] : null;
 
     if (profile && !(profile.is_active ?? false)) {
       await supabase.auth.signOut();
