@@ -32,6 +32,7 @@ export interface RecordData {
   serial?: string;
   formCode?: string;
   formName?: string;
+  form_data?: Record<string, unknown>;
   _createdAt?: string;
   _createdBy?: string;
   _lastModifiedAt?: string | null;
@@ -46,7 +47,7 @@ export interface RecordData {
   _frequency?: string;
   project_id?: string;
   scope?: 'company-wide' | 'project-specific';
-  [key: string]: string | number | boolean | RecordData[] | null | undefined;
+  [key: string]: string | number | boolean | RecordData[] | Record<string, unknown> | null | undefined;
 }
 
 export interface FormErrors {

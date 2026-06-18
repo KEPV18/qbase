@@ -370,7 +370,7 @@ export default function Index() {
                       <span className="font-mono text-[10px] text-[#7a756a] shrink-0">{record.serial}</span>
                       <div className="flex-1 min-w-0">
                         <p className="text-sm font-medium text-[#2d2d2d] dark:text-[#e8e3db] truncate">
-                          {(record as RecordData).formData?.client_name || (record as RecordData).formData?.project_name || record.formName}
+                          {(record as RecordData).form_data?.client_name as string || (record as RecordData).form_data?.project_name as string || record.formName}
                         </p>
                         <p className="text-[10px] text-[#9f9a8f] mt-0.5">{record.formCode}</p>
                       </div>
