@@ -165,7 +165,7 @@ export default function TraceabilityPage() {
           Live Traceability
         </Button>
         <Button
-          variant={activeTab === "capa-evidence" ? "default" : "outline"}
+          variant={(activeTab as string) === "capa-evidence" ? "default" : "outline"}
           size="sm"
           onClick={() => setActiveTab("capa-evidence")}
         >

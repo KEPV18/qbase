@@ -14,6 +14,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   type TraceableRecord,
   type RecordRegistry,
+  type RelatedRecord,
   buildTraceChain,
   type TraceChain,
 } from "@/lib/traceability";
@@ -223,8 +224,8 @@ export function useTraceabilityResolver(recordId?: string) {
 
   // Compute broken links
   const brokenLinks: string[] = [];
-  registry.forEach((record) => {
-    record.relatedRecords?.forEach((ref) => {
+  registry.forEach((record: { id: string; relatedRecords?: RelatedRecord[] }) => {
+    record.relatedRecords?.forEach((ref: { form: string; number: string }) => {
       const lookupId = `${ref.form}-${ref.number}`;
       const altId = ref.form === "Risk" ? ref.number : lookupId;
       if (!registry.has(lookupId) && !registry.has(altId)) {

@@ -75,9 +75,9 @@ describe('statusService', () => {
   describe('getStatusStats', () => {
     it('should calculate stats from records', () => {
       const records = [
-        { auditStatus: 'Approved', reviewed: true, actualRecordCount: 1 },
-        { auditStatus: 'Pending', reviewed: false, actualRecordCount: 2 },
-        { auditStatus: 'Draft', reviewed: false, actualRecordCount: 0 },
+        { formData: { _status: 'approved', auditStatus: 'Approved', reviewed: true, actualRecordCount: 1 } },
+        { formData: { _status: 'pending_review', auditStatus: 'Pending', reviewed: false, actualRecordCount: 2 } },
+        { formData: { _status: 'draft', auditStatus: 'Draft', reviewed: false, actualRecordCount: 0 } },
       ];
       const stats = getStatusStats(records);
       expect(stats.total).toBe(3);

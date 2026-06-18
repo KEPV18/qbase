@@ -178,7 +178,8 @@ const RecordViewPage: React.FC = () => {
     schema.fields.forEach(field => {
       if (field.type === 'heading') return;
       const key = field.key as string;
-      data[key] = (originalRecord as Record<string, unknown>)[key] ?? field.defaultValue ?? '';
+      const val = (originalRecord as Record<string, unknown>)[key];
+      data[key] = (val !== undefined && val !== null ? val : (field.defaultValue ?? '')) as string | number | boolean | Record<string, unknown> | RecordData[] | null;
     });
     setEditData(data);
     setErrors({});
@@ -411,7 +412,7 @@ const RecordViewPage: React.FC = () => {
             <span className="text-xs text-muted-foreground uppercase tracking-wider">By</span>
             <p className="text-foreground truncate mt-0.5">{originalRecord._createdBy as string}</p>
           </div>
-          {(originalRecord._lastModifiedAt || originalRecord._editCount > 0) && (
+          {(originalRecord._lastModifiedAt || (originalRecord._editCount ?? 0) > 0) && (
             <>
               <div>
                 <span className="text-xs text-muted-foreground uppercase tracking-wider">Last Modified</span>

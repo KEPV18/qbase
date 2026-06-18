@@ -47,7 +47,7 @@ export default function ActivityPage() {
         icon={Activity}
         title="Activity Log"
         description={`${entries.length} recent record changes`}
-        actions={
+        action={
           <Button size="sm" variant="outline" onClick={() => refetch()}>
             <RefreshCw className="w-4 h-4 mr-1" /> Refresh
           </Button>

@@ -83,8 +83,8 @@ export function RiskHeatMap({ risks }: RiskHeatMapProps) {
                         <TooltipContent side="top" className="max-w-[220px]">
                           <p className="text-[10px] font-bold mb-1">L={l} × I={i} = {score}</p>
                           {cellRisks.map(r => (
-                            <p key={r.riskId} className="text-[10px] text-muted-foreground truncate">
-                              {r.riskId}: {r.riskDescription}
+                            <p key={r.risk_id} className="text-[10px] text-muted-foreground truncate">
+                              {r.risk_id}: {r.risk_description}
                             </p>
                           ))}
                         </TooltipContent>

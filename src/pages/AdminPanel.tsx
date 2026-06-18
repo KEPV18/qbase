@@ -148,7 +148,7 @@ function AccountsTab() {
   const handleAdd = () => {
     if (!newUser.name || !newUser.email) return;
     const tempPassword = crypto.randomUUID().slice(0, 12).replace(/-/g, "");
-    addUser({ name: newUser.name, email: newUser.email, role: newUser.role, password: tempPassword, active: user?.role === "admin", needsApprovalNotification: false });
+    addUser({ name: newUser.name, email: newUser.email, role: newUser.role, password: tempPassword, department: null, active: user?.role === "admin", needsApprovalNotification: false });
     setNewUser({ name: "", email: "", role: "employee" });
     toast.success("Account Created", { description: `${newUser.name} created. Temporary password: ${tempPassword}` });
   };
@@ -214,7 +214,7 @@ function AccountsTab() {
         case "name": cmp = a.name.localeCompare(b.name); break;
         case "email": cmp = a.email.localeCompare(b.email); break;
         case "role": cmp = a.role.localeCompare(b.role); break;
-        case "lastLoginAt": cmp = (a.lastLoginAt || "").localeCompare(b.lastLoginAt || ""); break;
+        case "lastLoginAt": cmp = (a.lastLoginAt || 0) - (b.lastLoginAt || 0); break;
       }
       return sortDir === "asc" ? cmp : -cmp;
     });
@@ -423,7 +423,7 @@ function AccountsTab() {
                             const pw = prompt(`Enter new password for ${u.name}:`);
                             if (pw && pw.length >= 6) {
                               setResettingPw(p => ({ ...p, [u.id]: true }));
-                              resetPassword(u.id, pw).finally(() => setResettingPw(p => ({ ...p, [u.id]: false })));
+                              resetPassword(u.email).finally(() => setResettingPw(p => ({ ...p, [u.id]: false })));
                             }
                           }} disabled={resettingPw[u.id]}>
                             {resettingPw[u.id] ? <Loader2 className="w-3 h-3 animate-spin" /> : <KeyRound className="w-3 h-3" />}

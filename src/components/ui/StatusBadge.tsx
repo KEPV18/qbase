@@ -1,6 +1,6 @@
 import { Badge } from "@/components/ui/badge";
 import { STATUS_LABELS, getStatusBadgeClass } from "@/lib/statusService";
-import type { RecordStatus } from "@/lib/googleSheets";
+import type { RecordStatus } from "@/config/modules";
 import { CheckCircle, Clock, FileEdit, XCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
 

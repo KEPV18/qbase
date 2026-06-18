@@ -236,7 +236,7 @@ const DataIntegrityPage: React.FC = () => {
                 <span className="font-mono text-primary">{gap.beforeSerial}</span>
                 <ArrowRight className="w-3 h-3 text-muted-foreground" />
                 <span className="font-mono text-primary">{gap.afterSerial}</span>
-                <span className="text-warning ml-auto">{gap.missingCount} missing</span>
+                <span className="text-warning ml-auto">Gap detected</span>
               </div>
             ))}
           </div>
@@ -256,13 +256,13 @@ const DataIntegrityPage: React.FC = () => {
             {missingReferences.map((ref, i) => (
               <div key={i} className="flex items-center gap-2 text-xs px-3 py-2 bg-warning/5 border border-warning/20 rounded-sm">
                 <button
-                  onClick={() => navigate(`/records/${encodeURIComponent(ref.forSerial)}`)}
+                  onClick={() => navigate(`/records/${encodeURIComponent(ref.fromSerial)}`)}
                   className="font-mono text-primary hover:underline flex items-center gap-1"
                 >
-                  {ref.forSerial}
+                  {ref.fromSerial}
                   <ExternalLink className="w-3 h-3 text-muted-foreground" />
                 </button>
-                <span className="text-muted-foreground">({ref.forFormCode})</span>
+                <span className="text-muted-foreground">({ref.referencedFormCode})</span>
                 <ArrowRight className="w-3 h-3 text-muted-foreground" />
                 <span className="text-foreground">needs {ref.referencedFormCode}</span>
                 <span className="text-muted-foreground">(field: {ref.fromField})</span>

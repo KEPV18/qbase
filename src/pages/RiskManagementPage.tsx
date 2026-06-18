@@ -52,9 +52,9 @@ export default function RiskManagementPage() {
                 <StatsRow stats={[
                     { icon: AlertTriangle, value: risks.length, label: "Total Risks", variant: "default" },
                     { icon: AlertTriangle, value: risks.filter(r => r.status === "Open").length, label: "Open Risks", variant: "destructive" },
-                    { icon: AlertTriangle, value: risks.filter(r => r.riskScore >= 12).length, label: "High/Critical", variant: "warning" },
+                    { icon: AlertTriangle, value: risks.filter(r => r.risk_score >= 12).length, label: "High/Critical", variant: "warning" },
                     { icon: Shield, value: capas.filter(c => c.status === "Open" || c.status === "In Progress").length, label: "Active CAPAs", variant: "info" },
-                    { icon: Clock, value: capas.filter(c => c.status !== "Closed" && c.targetCompletionDate && new Date(c.targetCompletionDate) < new Date()).length, label: "Overdue CAPAs", variant: "warning" },
+                    { icon: Clock, value: capas.filter(c => c.status !== "Closed" && c.target_completion_date && new Date(c.target_completion_date) < new Date()).length, label: "Overdue CAPAs", variant: "warning" },
                     { icon: CheckCircle, value: risks.filter(r => r.status === "Controlled" || r.status === "Closed").length, label: "Controlled", variant: "success" },
                 ]} />
 

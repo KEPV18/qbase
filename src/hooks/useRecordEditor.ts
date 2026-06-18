@@ -22,7 +22,7 @@ export interface VersionInfo {
 }
 
 export function useRecordEditor(recordId: string | undefined) {
-  const { user, role } = useAuth();
+  const { user } = useAuth();
   const [state, setState] = useState<EditorState>({
     isEditing: false,
     isSaving: false,
@@ -45,7 +45,7 @@ export function useRecordEditor(recordId: string | undefined) {
 
     if (!record) return false;
 
-    const isAdmin = ['admin', 'qa_manager'].includes(role || '');
+    const isAdmin = ['admin', 'qa_manager'].includes(user?.role || '');
     const isOwner = record.created_by === user.id;
     
     const isLockedByOther = record.locked_by 
@@ -62,7 +62,7 @@ export function useRecordEditor(recordId: string | undefined) {
     }));
 
     return canEdit;
-  }, [recordId, user, role]);
+  }, [recordId, user, user?.role]);
 
   const startEditing = useCallback(async () => {
     if (!recordId || !user) return false;
@@ -116,7 +116,7 @@ export function useRecordEditor(recordId: string | undefined) {
       return { success: false, errors };
     }
 
-    const updatePayload: unknown = {
+    const updatePayload: Record<string, unknown> = {
       form_data: formData,
       status: 'draft',
     };

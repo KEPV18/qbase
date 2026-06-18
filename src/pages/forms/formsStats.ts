@@ -44,14 +44,14 @@ export function filterForms(forms: FormEntry[], filters: {
     filtered = filtered.filter(f => f.frequency === filters.frequency);
   }
   if (filters.section !== "all") {
-    filtered = filtered.filter(f => f.section === filters.section);
+    filtered = filtered.filter(f => String(f.section) === filters.section);
   }
   if (filters.search) {
     const s = filters.search.toLowerCase();
     filtered = filtered.filter(f =>
       f.code.toLowerCase().includes(s) ||
       f.name.toLowerCase().includes(s) ||
-      f.description?.toLowerCase().includes(s)
+      f.notes?.toLowerCase().includes(s)
     );
   }
 

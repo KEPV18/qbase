@@ -10,14 +10,14 @@ interface RiskStatsProps {
 
 export function RiskStats({ risks, capas }: RiskStatsProps) {
   const openRisks = risks.filter(r => r.status === "Open").length;
-  const highRisks = risks.filter(r => r.riskScore >= 12).length;
+  const highRisks = risks.filter(r => r.risk_score >= 12).length;
   const controlledRisks = risks.filter(r => r.status === "Controlled" || r.status === "Closed").length;
 
   const openCapas = capas.filter(c => c.status === "Open" || c.status === "In Progress").length;
   const overdueCapas = capas.filter(c => {
     if (c.status === "Closed") return false;
-    if (!c.targetCompletionDate) return false;
-    return new Date(c.targetCompletionDate) < new Date();
+    if (!c.target_completion_date) return false;
+    return new Date(c.target_completion_date) < new Date();
   }).length;
   const closedCapas = capas.filter(c => c.status === "Closed").length;
 

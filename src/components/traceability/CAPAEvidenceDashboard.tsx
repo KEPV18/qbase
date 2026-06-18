@@ -155,11 +155,11 @@ const mapCAPAToEvidence = (capa: CAPA): CAPAWithEvidence => {
     linkedToKPIs: [],
     evidence,
     canClose,
-    source_of_capa: capa.source_of_capa,
-    type: capa.type,
-    responsible_person: capa.responsible_person,
-    effectiveness: capa.effectiveness,
-    related_risk: capa.related_risk,
+    source_of_capa: capa.source_of_capa || 'Unknown',
+    type: (capa.type as EvidenceType) || 'OTHER',
+    responsible_person: capa.responsible_person || 'Unassigned',
+    effectiveness: capa.effectiveness || '',
+    related_risk: capa.related_risk || '',
   };
 };
 

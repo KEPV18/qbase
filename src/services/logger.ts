@@ -117,8 +117,12 @@ export const log = {
   system: {
     startup: (version: string) =>
       push({ ts: ts(), level: 'info', cat: 'system', action: 'startup', meta: { version } }),
-    error: (context: string, err: string) =>
-      push({ ts: ts(), level: 'error', cat: 'system', action: 'error', err, meta: { context } }),
+    error: (context: string, err: string, meta?: Record<string, unknown>) =>
+      push({ ts: ts(), level: 'error', cat: 'system', action: 'error', err, meta: { context, ...(meta || {}) } }),
+    warn: (context: string, msg: string, meta?: Record<string, unknown>) =>
+      push({ ts: ts(), level: 'warn', cat: 'system', action: 'warn', meta: { context, msg, ...(meta || {}) } }),
+    info: (context: string, msg: string, meta?: Record<string, unknown>) =>
+      push({ ts: ts(), level: 'info', cat: 'system', action: 'info', meta: { context, msg, ...(meta || {}) } }),
   },
 };
 
@@ -159,8 +163,8 @@ export function getMetrics(): SystemMetrics {
     }
   }
 
-  const normalizedByCat: Record<LogCategory, number> = {} as unknown;
-  const normalizedErrByCat: Record<LogCategory, number> = {} as unknown;
+  const normalizedByCat = {} as Record<LogCategory, number>;
+  const normalizedErrByCat = {} as Record<LogCategory, number>;
   for (const c of categories) {
     normalizedByCat[c] = byCat[c] || 0;
     normalizedErrByCat[c] = errByCat[c] || 0;

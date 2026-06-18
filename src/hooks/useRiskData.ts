@@ -43,7 +43,7 @@ export function useRiskData() {
     mutationFn: (input: RiskInput) => addRisk(input),
     onSuccess: (newRisk) => {
       queryClient.invalidateQueries({ queryKey: QUERY_KEY });
-      toast.success("Risk Added", { description: `Risk ${newRisk.riskId} has been created successfully.` });
+      toast.success("Risk Added", { description: `Risk ${newRisk.risk_id} has been created successfully.` });
     },
     onError: (error: Error) => {
       toast.error("Failed to Add Risk", {
@@ -60,7 +60,7 @@ export function useRiskData() {
       updateRisk(riskId, updates),
     onSuccess: (updatedRisk) => {
       queryClient.invalidateQueries({ queryKey: QUERY_KEY });
-      toast.success("Risk Updated", { description: `Risk ${updatedRisk.riskId} has been updated successfully.` });
+      toast.success("Risk Updated", { description: `Risk ${updatedRisk.risk_id} has been updated successfully.` });
     },
     onError: (error: Error) => {
       toast.error("Failed to Update Risk", {
@@ -93,7 +93,7 @@ export function useRiskData() {
  */
 export function useRisk(riskId: string) {
   const { risks, isLoading, isError } = useRiskData();
-  const risk = risks.find((r) => r.riskId === riskId);
+  const risk = risks.find((r) => r.risk_id === riskId);
 
   return {
     risk,

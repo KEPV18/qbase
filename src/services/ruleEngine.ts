@@ -11,6 +11,7 @@ import React, { useMemo } from 'react';
 import { FORM_SCHEMAS, getFormSchema } from '../data/formSchemas';
 import { useRecords } from '../hooks/useRecordStorage';
 import type { RecordData } from '../components/forms/DynamicFormRenderer';
+export type { RecordData };
 
 // ============================================================================
 // Types
@@ -121,7 +122,7 @@ const RULES: IntegrityRule[] = [
     mode: 'warn',
     check: (record, allRecords) => {
       if (record.formCode !== 'F/22') return null;
-      const ncRef = record.nc_reference || record.related_nc;
+      const ncRef = String(record.nc_reference || record.related_nc || '');
       if (!ncRef) return null;
       const f12s = allRecords.filter(r => r.formCode === 'F/12');
       const exists = f12s.some(r => r.serial === ncRef || (r as Record<string, unknown>).serial === ncRef);

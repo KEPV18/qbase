@@ -99,13 +99,15 @@ export async function getAllProcesses(): Promise<ProcessInteraction[]> {
 
 export async function addProcess(input: ProcessInput): Promise<ProcessInteraction> {
   const processRow = mapProcessToRow({
-    processName: input.name,
+    processName: input.processName,
     description: input.description,
     inputs: input.inputs,
     outputs: input.outputs,
-    processOwner: input.responsible,
+    processOwner: input.processOwner,
+    mainActivities: input.mainActivities,
     supporting: input.supporting,
     kpi: input.kpi,
+    receiver: input.receiver,
     status: 'Active',
   });
 

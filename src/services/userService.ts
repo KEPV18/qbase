@@ -10,7 +10,7 @@ import type { Tables } from "@/integrations/supabase/types";
 export type ProfileRow = Tables<'profiles'>;
 export type RoleRow    = Tables<'user_roles'>;
 
-export type Role = "admin" | "manager" | "auditor" | "user" | "moderator";
+export type Role = "admin" | "manager" | "auditor" | "user" | "moderator" | "dept_head" | "employee";
 export type Department = "HR" | "Sales" | "Operations" | "Quality" | "RD" | "Management";
 export type ApprovalRole = "admin" | "dept_head" | "employee";
 
@@ -118,7 +118,7 @@ export async function fetchAllUserProfiles(): Promise<{ profiles: ProfileRow[]; 
 
   if (pRes.error) return { profiles: [], roles: [], error: pRes.error.message };
   return {
-    profiles: (pRes.data || []) as ProfileRow[],
+    profiles: (pRes.data || []) as unknown as ProfileRow[],
     roles,
   };
 }

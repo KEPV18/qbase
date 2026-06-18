@@ -1,10 +1,16 @@
 import { supabase } from "../supabase/client";
 
+interface AuthCallbackResult {
+  error?: unknown;
+  tokens?: { access_token: string; refresh_token: string };
+}
+
 export const lovable = {
   auth: {
     callback: async (result: unknown) => {
-      if (result.error) {
-        return { error: result.error };
+      const r = result as AuthCallbackResult;
+      if (r.error) {
+        return { error: r.error };
       }
 
       try {
@@ -13,14 +19,16 @@ export const lovable = {
           return { error: new Error("Supabase client not initialized") };
         }
 
-        await supabaseClient.auth.setSession(result.tokens);
+        if (r.tokens) {
+          await supabaseClient.auth.setSession(r.tokens);
+        }
 
         // Verify session was stored
         await supabaseClient.auth.getSession();
       } catch (e) {
         return { error: e instanceof Error ? e : new Error(String(e)) };
       }
-      return result;
+      return r;
     }
   }
 };

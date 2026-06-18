@@ -85,12 +85,11 @@ async function getCurrentUser(): Promise<CurrentUserSnapshot | null> {
       try {
         const s = JSON.parse(cached) as { userId: string; role?: string; department?: string };
         if (s.userId === user.id) {
-          const role = (s.role?.toLowerCase() || 'user') as ApprovalRole;
+          const role = (s.role?.toLowerCase() || 'user') as string;
           // Map old role names to approval roles
           const mappedRole: ApprovalRole =
             role === 'admin' ? 'admin' :
-            role === 'manager' ? 'dept_head' :
-            role === 'auditor' ? 'dept_head' :
+            role === 'manager' || role === 'auditor' ? 'dept_head' :
             'employee';
           return {
             userId: user.id,
@@ -245,7 +244,7 @@ function parseRowToRecord(row: DbRecord): RecordData | null {
     serial: row.serial || row.form_code,
     formCode: row.form_code,
     formName: row.form_name || '',
-    project_id: row.project_id || null,
+    project_id: row.project_id || undefined,
     _createdAt: row.created_at || '',
     _createdBy: row.created_by || '',
     _lastModifiedAt: row.updated_at || '',
@@ -439,7 +438,7 @@ export async function createRecord(formData: RecordData): Promise<StorageResult>
   const data = validation.sanitizedData;
 
   // 2. Generate serial with atomic claim-and-verify (retry loop)
-  let serial: string;
+  let serial = '';
   const providedSerial = String(data.serial ?? '');
   if (providedSerial && providedSerial !== 'auto') {
     serial = providedSerial;

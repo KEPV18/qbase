@@ -156,7 +156,7 @@ export function preWriteValidation(
   // We must restore them so serializeRecordToRow can write them to the correct columns
   for (const [key, value] of Object.entries(savedMetadata)) {
     if (!(key in validatedData)) {
-      validatedData[key] = value;
+      validatedData[key] = value as RecordData[string];
     }
   }
 

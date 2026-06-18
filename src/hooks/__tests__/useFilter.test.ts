@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
-import { useFilter } from '../hooks/useFilter';
+import { useFilter } from '../useFilter';
 
 describe('useFilter', () => {
   const mockData = [

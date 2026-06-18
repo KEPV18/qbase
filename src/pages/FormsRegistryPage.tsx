@@ -35,7 +35,7 @@ import {
 import { getFormSchema } from "@/data/formSchemas";
 
 // Format ISO date to readable format
-function formatTemplateDate(iso: string | null | undefined): string {
+function formatTemplateDate(iso: string | null | undefined): string | null {
   if (!iso) return null;
   const d = new Date(iso);
   if (isNaN(d.getTime())) return null;

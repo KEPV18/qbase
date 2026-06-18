@@ -43,7 +43,7 @@ export function useCAPAData() {
     mutationFn: (input: CAPAInput) => addCAPA(input),
     onSuccess: (newCAPA) => {
       queryClient.invalidateQueries({ queryKey: QUERY_KEY });
-      toast.success("CAPA Created", { description: `CAPA ${newCAPA.capaId} has been created successfully.` });
+      toast.success("CAPA Created", { description: `CAPA ${newCAPA.capa_id} has been created successfully.` });
     },
     onError: (error: Error) => {
       toast.error("Failed to Create CAPA", {
@@ -60,7 +60,7 @@ export function useCAPAData() {
       updateCAPA(capaId, updates),
     onSuccess: (updatedCAPA) => {
       queryClient.invalidateQueries({ queryKey: QUERY_KEY });
-      toast.success("CAPA Updated", { description: `CAPA ${updatedCAPA.capaId} has been updated successfully.` });
+      toast.success("CAPA Updated", { description: `CAPA ${updatedCAPA.capa_id} has been updated successfully.` });
     },
     onError: (error: Error) => {
       toast.error("Failed to Update CAPA", {
@@ -93,7 +93,7 @@ export function useCAPAData() {
  */
 export function useCAPA(capaId: string) {
   const { capas, isLoading, isError } = useCAPAData();
-  const capa = capas.find((c) => c.capaId === capaId);
+  const capa = capas.find((c) => c.capa_id === capaId);
 
   return {
     capa,

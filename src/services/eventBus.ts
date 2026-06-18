@@ -146,7 +146,7 @@ export async function emitEvent(event: SystemEvent): Promise<string | null> {
 
   // INFO events → log only, no notification
   if (resolvedPriority === 'info') {
-    log.info('event', event.eventType, {
+    log.system.warn('event', event.eventType, {
       title: event.title,
       actor: event.actorId,
       target: event.targetId,
@@ -160,7 +160,7 @@ export async function emitEvent(event: SystemEvent): Promise<string | null> {
     const targetUserIds = await resolveTargetUserIds(event);
 
     if (targetUserIds.length === 0) {
-      log.warn('event', `No target users for ${event.eventType}`, { title: event.title });
+      log.system.warn('event', `No target users for ${event.eventType}`, { title: event.title });
       return null;
     }
 
@@ -184,11 +184,11 @@ export async function emitEvent(event: SystemEvent): Promise<string | null> {
     });
 
     if (error) {
-      log.error('event', `Failed to emit ${event.eventType}: ${error.message}`);
+      log.system.error('event', `Failed to emit ${event.eventType}: ${error.message}`);
       return null;
     }
 
-    log.info('event', `Emitted ${event.eventType} → ${targetUserIds.length} users`, {
+    log.system.warn('event', `Emitted ${event.eventType} → ${targetUserIds.length} users`, {
       category: resolvedCategory,
       priority: resolvedPriority,
     });
@@ -196,7 +196,7 @@ export async function emitEvent(event: SystemEvent): Promise<string | null> {
     // Return the count of notifications created
     return typeof rpcResult === 'number' ? String(rpcResult) : 'ok';
   } catch (err) {
-    log.error('event', `emitEvent failed: ${err}`);
+    log.system.error('event', `emitEvent failed: ${err}`);
     return null;
   }
 }

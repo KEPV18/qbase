@@ -123,7 +123,7 @@ export function useNotifications() {
       .limit(100);
 
     if (error) {
-      log.error('notifications', `Fetch failed: ${error.message}`);
+      log.system.error('notifications', `Fetch failed: ${error.message}`);
       return;
     }
 
@@ -177,11 +177,11 @@ export function useNotifications() {
       .select('id');
 
     if (error) {
-      log.error('notifications', `markAsRead failed: ${error.message}`);
+      log.system.error('notifications', `markAsRead failed: ${error.message}`);
       return;
     }
     if (!data || data.length === 0) {
-      log.warn('notifications', `markAsRead had no effect (RLS?) for id: ${id}`);
+      log.system.warn('notifications', `markAsRead had no effect (RLS?) for id: ${id}`);
       await fetchNotifications();
       return;
     }
@@ -196,7 +196,7 @@ export function useNotifications() {
       .select('id');
 
     if (error) {
-      log.error('notifications', `markAsUnread failed: ${error.message}`);
+      log.system.error('notifications', `markAsUnread failed: ${error.message}`);
       return;
     }
     if (!data || data.length === 0) {
@@ -216,7 +216,7 @@ export function useNotifications() {
       .select('id');
 
     if (error) {
-      log.error('notifications', `markAllRead failed: ${error.message}`);
+      log.system.error('notifications', `markAllRead failed: ${error.message}`);
       return;
     }
     setNotifications(prev => prev.map(n => ({ ...n, read: true })));
@@ -230,7 +230,7 @@ export function useNotifications() {
       .select('id');
 
     if (error) {
-      log.error('notifications', `removeNotification failed: ${error.message}`);
+      log.system.error('notifications', `removeNotification failed: ${error.message}`);
       return;
     }
     if (!data || data.length === 0) {
@@ -249,7 +249,7 @@ export function useNotifications() {
       .select('id');
 
     if (error) {
-      log.error('notifications', `clearAll failed: ${error.message}`);
+      log.system.error('notifications', `clearAll failed: ${error.message}`);
       return;
     }
     setNotifications([]);

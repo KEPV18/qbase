@@ -6,7 +6,7 @@
 import { useState, useRef, useCallback } from "react";
 import { AppShell } from "@/components/layout/AppShell";
 import { useBackup } from "@/hooks/useBackup";
-import { importFromJson, importFromCsv, previewImport, type ImportResult } from "@/services/importService";
+import { importFromJson, importFromCsv, previewImport, type ImportResult, type ImportRow } from "@/services/importService";
 import { useRefreshData } from "@/hooks/useRefreshData";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -311,7 +311,7 @@ function RestoreTab() {
 
 function ImportTab() {
   const [file, setFile] = useState<File | null>(null);
-  const [preview, setPreview] = useState<{ type: "json" | "csv"; rows: number; sample: ImportPreviewRow[] } | null>(null);
+  const [preview, setPreview] = useState<{ type: "json" | "csv"; rows: number; sample: ImportRow[] } | null>(null);
   const [importing, setImporting] = useState(false);
   const [dryRun, setDryRun] = useState(true);
   const [result, setResult] = useState<ImportResult | null>(null);

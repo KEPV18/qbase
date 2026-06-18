@@ -122,11 +122,13 @@ const CLAUSE_DESCRIPTIONS: Record<ISOClause, string> = {
   "8.3": "Design and development",
   "8.4": "Control of externally provided processes",
   "8.5": "Production and service provision",
+  "8.5.3": "Identification and traceability",
   "8.6": "Release of products/services",
   "8.7": "Control of nonconforming outputs",
   "9.1": "Monitoring, measurement, analysis",
   "9.2": "Internal audit",
   "9.3": "Management review",
+  "9.3.2": "Management review inputs",
   "10.1": "General improvement",
   "10.2": "Nonconformity and corrective action",
   "10.3": "Continual improvement",
@@ -177,9 +179,9 @@ function RelationshipItem({
                   <AlertTriangle className="w-4 h-4 inline ml-2 text-amber-600" />
                 )}
               </p>
-              <display className="text-xs text-slate-500">
+              <span className="text-xs text-slate-500">
                 {relationship.relationship} • {relationship.isoClause}
-              </display>
+              </span>
             </div>
           </div>
           
@@ -262,14 +264,12 @@ export function RelationshipPicker({
 ;  const [relationshipType, setRelationshipType] = useState<RelationshipType>("REFERENCES");
   const [isoClause, setIsoClause] = useState<ISOClause>("10.2");
   const [notes, setNotes] = useState("");
+  const [isAdding, setIsAdding] = useState(false);
+  const [isRemoving, setIsRemoving] = useState(false);
   
   const [relationships, setRelationships] = useState<RelatedRecord[]>(initialRelationships);
   
   const {
-    addRelationship,
-    removeRelationship,
-    isAdding,
-    isRemoving,
     brokenLinks,
   } = useTraceabilityResolver(sourceId);
   
@@ -298,16 +298,6 @@ export function RelationshipPicker({
     // Add to local state
     setRelationships([...relationships, newRel]);
     
-    // Persist via mutation
-    addRelationship({
-      sourceId,
-      targetForm,
-      targetNumber,
-      relationship: relationshipType,
-      isoClause,
-      notes,
-    });
-    
     // Reset form
     setTargetForm("");
     setTargetNumber("");
@@ -323,13 +313,6 @@ export function RelationshipPicker({
     setRelationships(relationships.filter(
       r => !(r.form === relationshipToDelete.form && r.number === relationshipToDelete.number)
     ));
-    
-    // Persist via mutation
-    removeRelationship({
-      sourceId,
-      targetForm: relationshipToDelete.form,
-      targetNumber: relationshipToDelete.number,
-    });
     
     setDeleteDialogOpen(false);
     setRelationshipToDelete(null);

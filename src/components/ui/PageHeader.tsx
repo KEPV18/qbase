@@ -9,18 +9,25 @@ import type { LucideIcon } from "lucide-react";
 export interface PageHeaderProps {
   title: string;
   icon?: LucideIcon;
+  iconClassName?: string;
   description?: string;
   badge?: { text: string; variant?: "default" | "secondary" | "destructive" | "outline" };
+  badgeVariant?: "default" | "secondary" | "destructive" | "outline";
   action?: React.ReactNode;
+  onBack?: string;
+  actions?: Array<{ label: string; icon?: LucideIcon; onClick: () => void; variant?: "default" | "outline"; disabled?: boolean }>;
   className?: string;
 }
 
 export const PageHeader: React.FC<PageHeaderProps> = ({
   title,
   icon: Icon,
+  iconClassName,
   description,
   badge,
   action,
+  onBack,
+  actions,
   className,
 }) => {
   return (

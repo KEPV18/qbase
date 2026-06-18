@@ -1,5 +1,7 @@
+import React from 'react';
 import { Inbox, FileX, SearchX, FolderOpen } from 'lucide-react';
 import { Button } from './button';
+import { cn } from '@/lib/utils';
 
 type EmptyStateVariant = 'default' | 'search' | 'no-results' | 'no-files' | 'custom';
 
@@ -15,7 +17,7 @@ interface EmptyStateProps {
   className?: string;
 }
 
-const defaultConfig = {
+const defaultConfig: Record<EmptyStateVariant, { icon: React.ReactNode; title: string; description: string }> = {
   default: {
     icon: <Inbox className="h-12 w-12 text-muted-foreground/50" />,
     title: 'No data yet',
@@ -35,6 +37,11 @@ const defaultConfig = {
     icon: <FolderOpen className="h-12 w-12 text-muted-foreground/50" />,
     title: 'No files',
     description: 'Upload files or create new records.',
+  },
+  custom: {
+    icon: <Inbox className="h-12 w-12 text-muted-foreground/50" />,
+    title: '',
+    description: '',
   },
 };
 

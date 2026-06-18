@@ -157,8 +157,8 @@ export function useUpdateTenantIdentity() {
     if (updates.themeColor !== undefined) row.theme_color = updates.themeColor;
 
     // Fetch the singleton row ID dynamically (don't hardcode it) — raw fetch
-    const { data: existingRows } = await restGet<{ id: string }[]>(
-      '/rest/v1/tenant_settings?select=id&limit=1',
+    const { data: existingRows } = await restGet<{ id: string; company_name?: string }[]>(
+      '/rest/v1/tenant_settings?select=id,company_name&limit=1',
       { allowAnon: true }
     );
     const existing = Array.isArray(existingRows) && existingRows.length > 0 ? existingRows[0] : null;
@@ -182,7 +182,7 @@ export function useUpdateTenantIdentity() {
     emitEvent(Events.tenantSettingsChanged(
       'companyName',
       existing?.company_name || '',
-      updates.company_name || '',
+      updates.companyName || '',
       undefined
     )).catch(() => {});
   };
