@@ -55,7 +55,7 @@ interface CAPAWithEvidence {
   id: string;
   title: string;
   rootCause: string;
-  correctiveAction: string;
+  corrective_action: string;
   status: EvidenceStatus;
   createdAt: string;
   targetCloseDate: string;
@@ -63,11 +63,11 @@ interface CAPAWithEvidence {
   linkedToKPIs: string[];
   evidence: EvidenceItem[];
   canClose: boolean;
-  sourceOfCAPA: string;
+  source_of_capa: string;
   type: string;
-  responsiblePerson: string;
-  effectivenessCheck: string;
-  relatedRisk: string;
+  responsible_person: string;
+  effectiveness: string;
+  related_risk: string;
 }
 
 // ============================================================================
@@ -95,47 +95,47 @@ const mapCAPAToEvidence = (capa: CAPA): CAPAWithEvidence => {
   const evidence: EvidenceItem[] = [];
 
   // Root cause analysis counts as evidence if present
-  if (capa.rootCauseAnalysis?.trim()) {
+  if (capa.root_cause_analysis?.trim()) {
     evidence.push({
       type: 'PROCEDURE_UPDATED',
-      description: `Root cause analysis: ${capa.rootCauseAnalysis.substring(0, 100)}${capa.rootCauseAnalysis.length > 100 ? '...' : ''}`,
+      description: `Root cause analysis: ${capa.root_cause_analysis.substring(0, 100)}${capa.root_cause_analysis.length > 100 ? '...' : ''}`,
       linkedId: capa.reference || undefined,
       verifiedBy: capa.status === 'Closed' ? 'QMS System' : undefined,
-      verifiedAt: capa.effectivenessReviewDate || undefined,
+      verifiedAt: capa.verification_date || undefined,
       status: capa.status === 'Closed' ? 'verified' : 'pending',
     });
   }
 
   // Corrective action evidence
-  if (capa.correctiveAction?.trim()) {
+  if (capa.corrective_action?.trim()) {
     evidence.push({
       type: 'AUDIT_FINDING_CLOSED',
-      description: `Corrective action: ${capa.correctiveAction.substring(0, 100)}${capa.correctiveAction.length > 100 ? '...' : ''}`,
+      description: `Corrective action: ${capa.corrective_action.substring(0, 100)}${capa.corrective_action.length > 100 ? '...' : ''}`,
       linkedId: capa.reference || undefined,
       verifiedBy: capa.status === 'Closed' ? 'QMS System' : undefined,
-      verifiedAt: capa.effectivenessReviewDate || undefined,
+      verifiedAt: capa.verification_date || undefined,
       status: capa.status === 'Closed' ? 'verified' : 'pending',
     });
   }
 
   // Preventive action evidence
-  if (capa.preventiveAction?.trim()) {
+  if (capa.preventive_action?.trim()) {
     evidence.push({
       type: 'KPI_IMPROVEMENT',
-      description: `Preventive action: ${capa.preventiveAction.substring(0, 100)}${capa.preventiveAction.length > 100 ? '...' : ''}`,
+      description: `Preventive action: ${capa.preventive_action.substring(0, 100)}${capa.preventive_action.length > 100 ? '...' : ''}`,
       status: capa.status === 'Closed' ? 'verified' : 'pending',
       verifiedBy: capa.status === 'Closed' ? 'QMS System' : undefined,
-      verifiedAt: capa.effectivenessReviewDate || undefined,
+      verifiedAt: capa.verification_date || undefined,
     });
   }
 
   // Effectiveness check evidence
-  if (capa.effectivenessCheck?.trim()) {
+  if (capa.effectiveness?.trim()) {
     evidence.push({
       type: 'OTHER',
-      description: `Effectiveness check: ${capa.effectivenessCheck}`,
-      verifiedBy: capa.closureApproval || undefined,
-      verifiedAt: capa.effectivenessReviewDate || undefined,
+      description: `Effectiveness check: ${capa.effectiveness}`,
+      verifiedBy: capa.effectiveness || undefined,
+      verifiedAt: capa.verification_date || undefined,
       status: capa.status === 'Closed' ? 'verified' : 'pending',
     });
   }
@@ -144,22 +144,22 @@ const mapCAPAToEvidence = (capa: CAPA): CAPAWithEvidence => {
   const canClose = evidence.length > 0 && evidence.every(e => e.status === 'verified');
 
   return {
-    id: capa.capaId,
-    title: capa.description || capa.capaId,
-    rootCause: capa.rootCauseAnalysis || 'Not specified',
-    correctiveAction: capa.correctiveAction || 'Not specified',
+    id: capa.capa_id,
+    title: capa.description || capa.capa_id,
+    rootCause: capa.root_cause_analysis || 'Not specified',
+    corrective_action: capa.corrective_action || 'Not specified',
     status,
-    createdAt: capa.targetCompletionDate || new Date().toISOString().split('T')[0],
-    targetCloseDate: capa.targetCompletionDate || '',
+    createdAt: capa.target_completion_date || new Date().toISOString().split('T')[0],
+    targetCloseDate: capa.target_completion_date || '',
     linkedToF09: capa.reference || undefined,
     linkedToKPIs: [],
     evidence,
     canClose,
-    sourceOfCAPA: capa.sourceOfCAPA,
+    source_of_capa: capa.source_of_capa,
     type: capa.type,
-    responsiblePerson: capa.responsiblePerson,
-    effectivenessCheck: capa.effectivenessCheck,
-    relatedRisk: capa.relatedRisk,
+    responsible_person: capa.responsible_person,
+    effectiveness: capa.effectiveness,
+    related_risk: capa.related_risk,
   };
 };
 
@@ -390,10 +390,10 @@ const CAPACard: React.FC<{
       </div>
 
       {/* Linked risk */}
-      {capa.relatedRisk && (
+      {capa.related_risk && (
         <div className="mt-2 text-[10px] text-primary flex items-center">
           <LinkIcon className="h-3 w-3 mr-1" />
-          Risk: {capa.relatedRisk}
+          Risk: {capa.related_risk}
         </div>
       )}
     </div>
@@ -609,14 +609,14 @@ const CAPAEvidenceDashboard: React.FC = () => {
                   </div>
                   <div className="bg-muted rounded p-3">
                     <div className="text-xs text-muted-foreground mb-1">Corrective Action</div>
-                    <div className="text-sm text-foreground">{selectedCapa.correctiveAction}</div>
+                    <div className="text-sm text-foreground">{selectedCapa.corrective_action}</div>
                   </div>
                 </div>
 
                 {/* Metadata */}
                 <div className="mt-3 flex flex-wrap gap-3 text-xs text-muted-foreground">
-                  {selectedCapa.responsiblePerson && (
-                    <span className="flex items-center"><Users className="h-3 w-3 mr-1" /> {selectedCapa.responsiblePerson}</span>
+                  {selectedCapa.responsible_person && (
+                    <span className="flex items-center"><Users className="h-3 w-3 mr-1" /> {selectedCapa.responsible_person}</span>
                   )}
                   {selectedCapa.type && (
                     <span className={`px-2 py-0.5 rounded-full text-xs ${selectedCapa.type === 'Corrective' ? 'bg-red-500/10 text-red-700 dark:text-red-300' : 'bg-blue-500/10 text-blue-700 dark:text-blue-300'}`}>
@@ -634,10 +634,10 @@ const CAPAEvidenceDashboard: React.FC = () => {
                     Traces to: {selectedCapa.linkedToF09}
                   </div>
                 )}
-                {selectedCapa.relatedRisk && (
+                {selectedCapa.related_risk && (
                   <div className="mt-1 flex items-center text-sm text-primary">
                     <AlertTriangle className="h-4 w-4 mr-1" />
-                    Related Risk: {selectedCapa.relatedRisk}
+                    Related Risk: {selectedCapa.related_risk}
                   </div>
                 )}
               </div>

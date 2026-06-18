@@ -160,13 +160,13 @@ export async function getAuditLogForSerial(serial: string): Promise<AuditLogRead
     return [];
   }
 
-  return (logs as unknown[]).map((row) => ({
-    id: row.id,
-    timestamp: row.created_at,
-    serial: row.serial || serial,
-    formCode: row.form_code || '',
+  return (logs as unknown[]).map((row: Record<string, unknown>) => ({
+    id: row.id as string,
+    timestamp: row.created_at as string,
+    serial: (row.serial as string) || serial,
+    formCode: (row.form_code as string) || '',
     action: row.action as 'create' | 'update' | 'delete' | 'status_change',
-    user: row.performed_by,
+    user: row.performed_by as string,
     changedFields: Array.isArray(row.changed_fields) ? row.changed_fields : [],
     previousValues: (row.previous_values as Record<string, unknown>) || {},
     newValues: (row.new_values as Record<string, unknown>) || {},
@@ -193,13 +193,15 @@ export async function getAllAuditLogs(limit = 100): Promise<AuditLogReadEntry[]>
     return [];
   }
 
-  return (logs as unknown[]).map((row) => ({
-    id: row.id,
-    timestamp: row.created_at,
-    serial: row.serial || row.records?.serial || '',
-    formCode: row.form_code || row.records?.form_code || '',
+  return (logs as unknown[]).map((row: Record<string, unknown>) => {
+    const recordRef = row.records as Record<string, unknown> | undefined;
+    return {
+    id: row.id as string,
+    timestamp: row.created_at as string,
+    serial: (row.serial as string) || (recordRef?.serial as string) || '',
+    formCode: (row.form_code as string) || (recordRef?.form_code as string) || '',
     action: row.action as 'create' | 'update' | 'delete' | 'status_change',
-    user: row.performed_by,
+    user: row.performed_by as string,
     changedFields: Array.isArray(row.changed_fields) ? row.changed_fields : [],
     previousValues: (row.previous_values as Record<string, unknown>) || {},
     newValues: (row.new_values as Record<string, unknown>) || {},
@@ -208,5 +210,6 @@ export async function getAllAuditLogs(limit = 100): Promise<AuditLogReadEntry[]>
       previousValues: JSON.stringify(row.previous_values),
       newValues: JSON.stringify(row.new_values),
     },
-  }));
+  };
+  });
 }

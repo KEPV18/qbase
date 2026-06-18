@@ -57,16 +57,16 @@ export const EditableSchemaField: React.FC<EditableSchemaFieldProps> = ({
           className={`w-full px-3 py-2 border rounded-md text-sm ${error ? 'border-red-500' : 'border-input'} ${readOnly ? 'bg-muted/50' : 'bg-white'}`}
         >
           <option value="">Select {field.label}...</option>
-          {field.options?.map(opt => <option key={opt.value} value={opt.value}>{opt.label}</option>)}
+          {field.options?.map(opt => <option key={opt} value={opt}>{opt}</option>)}
         </select>;
 
       case 'radio':
         return <div className="flex flex-wrap gap-3">
-          {field.options?.map(opt => <label key={opt.value} className="flex items-center gap-1.5 cursor-pointer">
-            <input type="radio" name={field.key} value={opt.value} checked={value === opt.value}
+          {field.options?.map(opt => <label key={opt} className="flex items-center gap-1.5 cursor-pointer">
+            <input type="radio" name={field.key} value={opt} checked={value === opt}
               onChange={e => handleChange(e.target.value)} disabled={readOnly} className="w-4 h-4"
             />
-            <span className="text-sm">{opt.label}</span>
+            <span className="text-sm">{opt}</span>
           </label>)}
         </div>;
 
@@ -81,19 +81,19 @@ export const EditableSchemaField: React.FC<EditableSchemaFieldProps> = ({
       case 'multiselect': {
         const currentValues = Array.isArray(value) ? value : String(value || '').split(',').map(s => s.trim()).filter(Boolean);
         return <div className="flex flex-wrap gap-2">
-          {field.options?.map(opt => <label key={opt.value}
+          {field.options?.map(opt => <label key={opt}
             className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full border text-sm cursor-pointer transition-colors ${
-              currentValues.includes(opt.value) ? 'bg-primary/10 border-primary text-primary' : 'bg-white border-border text-muted-foreground hover:bg-accent'
+              currentValues.includes(opt) ? 'bg-primary/10 border-primary text-primary' : 'bg-white border-border text-muted-foreground hover:bg-accent'
             } ${readOnly ? 'cursor-not-allowed opacity-60' : ''}`}
           >
-            <input type="checkbox" value={opt.value} checked={currentValues.includes(opt.value)}
+            <input type="checkbox" value={opt} checked={currentValues.includes(opt)}
               onChange={e => {
-                const newValues = e.target.checked ? [...currentValues, opt.value] : currentValues.filter(v => v !== opt.value);
+                const newValues = e.target.checked ? [...currentValues, opt] : currentValues.filter(v => v !== opt);
                 handleChange(newValues);
               }}
               disabled={readOnly} className="hidden"
             />
-            {opt.label}
+            {opt}
           </label>)}
         </div>;
       }
@@ -111,14 +111,14 @@ export const EditableSchemaField: React.FC<EditableSchemaFieldProps> = ({
               </tr>
             </thead>
             <tbody>
-              {rows.map((row: unknown, i: number) => (
+              {rows.map((row, i) => (
                 <tr key={i} className="border-t border-border/50">
                   <td className="px-2 py-1.5 text-muted-foreground">{i + 1}</td>
                   {columns.map(col => <td key={col.key} className="px-2 py-1.5">
-                    <input type="text" value={String(row[col.key] || '')}
+                    <input type="text" value={String((row as Record<string, unknown>)?.[col.key] || '')}
                       onChange={e => {
                         const newRows = [...rows];
-                        newRows[i] = { ...newRows[i], [col.key]: e.target.value };
+                        newRows[i] = { ...(newRows[i] as Record<string, unknown>), [col.key]: e.target.value };
                         handleChange(newRows);
                       }}
                       readOnly={readOnly}
@@ -126,7 +126,7 @@ export const EditableSchemaField: React.FC<EditableSchemaFieldProps> = ({
                     />
                   </td>)}
                   {!readOnly && <td className="px-2 py-1.5">
-                    <button onClick={() => handleChange(rows.filter((_: unknown, ri: number) => ri !== i))}
+                    <button onClick={() => handleChange(rows.filter((_, ri) => ri !== i))}
                       className="text-red-500 hover:text-red-700"
                     >×</button>
                   </td>}
@@ -135,7 +135,7 @@ export const EditableSchemaField: React.FC<EditableSchemaFieldProps> = ({
             </tbody>
           </table>
           {!readOnly && <button onClick={() => {
-            const newRow: unknown = {};
+            const newRow: Record<string, unknown> = {};
             columns.forEach(col => newRow[col.key] = '');
             handleChange([...rows, newRow]);
           }} className="w-full px-3 py-2 text-sm text-muted-foreground hover:bg-accent border-t"
@@ -156,7 +156,6 @@ export const EditableSchemaField: React.FC<EditableSchemaFieldProps> = ({
         <div className="flex items-center gap-1.5">
           <span className="text-sm font-medium text-foreground">{field.label}</span>
           {field.required && <span className="text-red-500">*</span>}
-          {field.readOnly && <span className="text-[10px] px-1.5 py-0.5 rounded bg-muted text-muted-foreground">Read-only</span>}
         </div>
       )}
       {renderInput()}

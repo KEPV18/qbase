@@ -37,16 +37,16 @@ export default function CAPARegisterPage() {
 
   // New CAPA form state
   const [newCAPA, setNewCAPA] = useState<CAPAInput>({
-    sourceOfCAPA: "",
+    source_of_capa: "",
     type: "Corrective",
     description: "",
     reference: "",
-    rootCauseAnalysis: "",
-    correctiveAction: "",
-    preventiveAction: "",
-    responsiblePerson: "",
-    targetCompletionDate: "",
-    relatedRisk: "",
+    root_cause_analysis: "",
+    corrective_action: "",
+    preventive_action: "",
+    responsible_person: "",
+    target_completion_date: "",
+    related_risk: "",
   });
 
   const handleAddCAPA = () => {
@@ -54,16 +54,16 @@ export default function CAPARegisterPage() {
       onSuccess: () => {
         setIsAddDialogOpen(false);
         setNewCAPA({
-          sourceOfCAPA: "",
+          source_of_capa: "",
           type: "Corrective",
           description: "",
           reference: "",
-          rootCauseAnalysis: "",
-          correctiveAction: "",
-          preventiveAction: "",
-          responsiblePerson: "",
-          targetCompletionDate: "",
-          relatedRisk: "",
+          root_cause_analysis: "",
+          corrective_action: "",
+          preventive_action: "",
+          responsible_person: "",
+          target_completion_date: "",
+          related_risk: "",
         });
       },
     });
@@ -80,8 +80,8 @@ export default function CAPARegisterPage() {
       case "verification": return capas.filter(c => c.status === "Under Verification");
       case "closed": return capas.filter(c => c.status === "Closed");
       case "overdue": return capas.filter(c => {
-        if (c.status === "Closed") return false;
-        const targetDate = new Date(c.targetCompletionDate);
+        if (c.status === "Closed" || !c.target_completion_date) return false;
+        const targetDate = new Date(c.target_completion_date);
         return !isNaN(targetDate.getTime()) && targetDate < new Date();
       });
       default: return capas;
@@ -126,8 +126,8 @@ export default function CAPARegisterPage() {
                         <Label htmlFor="source">Source of CAPA</Label>
                         <Input
                           id="source"
-                          value={newCAPA.sourceOfCAPA}
-                          onChange={(e) => setNewCAPA({ ...newCAPA, sourceOfCAPA: e.target.value })}
+                          value={newCAPA.source_of_capa}
+                          onChange={(e) => setNewCAPA({ ...newCAPA, source_of_capa: e.target.value })}
                           placeholder="e.g., Internal Audit, Customer Complaint"
                         />
                       </div>
@@ -162,8 +162,8 @@ export default function CAPARegisterPage() {
                         <Label htmlFor="relatedRisk">Related Risk ID</Label>
                         <Input
                           id="relatedRisk"
-                          value={newCAPA.relatedRisk}
-                          onChange={(e) => setNewCAPA({ ...newCAPA, relatedRisk: e.target.value })}
+                          value={newCAPA.related_risk}
+                          onChange={(e) => setNewCAPA({ ...newCAPA, related_risk: e.target.value })}
                           placeholder="e.g., RISK-25-001"
                         />
                       </div>
@@ -187,8 +187,8 @@ export default function CAPARegisterPage() {
                       </Label>
                       <Textarea
                         id="rootCause"
-                        value={newCAPA.rootCauseAnalysis}
-                        onChange={(e) => setNewCAPA({ ...newCAPA, rootCauseAnalysis: e.target.value })}
+                        value={newCAPA.root_cause_analysis}
+                        onChange={(e) => setNewCAPA({ ...newCAPA, root_cause_analysis: e.target.value })}
                         placeholder="Identify the root cause of the issue..."
                         rows={3}
                       />
@@ -199,8 +199,8 @@ export default function CAPARegisterPage() {
                         <Label htmlFor="correctiveAction">Corrective Action</Label>
                         <Textarea
                           id="correctiveAction"
-                          value={newCAPA.correctiveAction}
-                          onChange={(e) => setNewCAPA({ ...newCAPA, correctiveAction: e.target.value })}
+                          value={newCAPA.corrective_action}
+                          onChange={(e) => setNewCAPA({ ...newCAPA, corrective_action: e.target.value })}
                           placeholder="Action to correct the issue..."
                           rows={3}
                         />
@@ -209,8 +209,8 @@ export default function CAPARegisterPage() {
                         <Label htmlFor="preventiveAction">Preventive Action</Label>
                         <Textarea
                           id="preventiveAction"
-                          value={newCAPA.preventiveAction}
-                          onChange={(e) => setNewCAPA({ ...newCAPA, preventiveAction: e.target.value })}
+                          value={newCAPA.preventive_action}
+                          onChange={(e) => setNewCAPA({ ...newCAPA, preventive_action: e.target.value })}
                           placeholder="Action to prevent recurrence..."
                           rows={3}
                         />
@@ -222,8 +222,8 @@ export default function CAPARegisterPage() {
                         <Label htmlFor="responsible">Responsible Person</Label>
                         <Input
                           id="responsible"
-                          value={newCAPA.responsiblePerson}
-                          onChange={(e) => setNewCAPA({ ...newCAPA, responsiblePerson: e.target.value })}
+                          value={newCAPA.responsible_person}
+                          onChange={(e) => setNewCAPA({ ...newCAPA, responsible_person: e.target.value })}
                           placeholder="Person responsible for this CAPA"
                         />
                       </div>
@@ -232,8 +232,8 @@ export default function CAPARegisterPage() {
                         <Input
                           id="targetDate"
                           type="date"
-                          value={newCAPA.targetCompletionDate}
-                          onChange={(e) => setNewCAPA({ ...newCAPA, targetCompletionDate: e.target.value })}
+                          value={newCAPA.target_completion_date}
+                          onChange={(e) => setNewCAPA({ ...newCAPA, target_completion_date: e.target.value })}
                         />
                       </div>
                     </div>
@@ -433,21 +433,22 @@ export default function CAPARegisterPage() {
                         <TableBody>
                           {filteredCAPAs.map((capa) => {
                             const isOverdue = capa.status !== "Closed" &&
-                              new Date(capa.targetCompletionDate) < new Date();
+                              capa.target_completion_date != null &&
+                              new Date(capa.target_completion_date) < new Date();
 
                             return (
-                              <TableRow key={capa.capaId} className={isOverdue ? "bg-orange-50" : ""}>
-                                <TableCell className="font-mono font-medium">{capa.capaId}</TableCell>
+                              <TableRow key={capa.capa_id} className={isOverdue ? "bg-orange-50" : ""}>
+                                <TableCell className="font-mono font-medium">{capa.capa_id}</TableCell>
                                 <TableCell>
                                   <Badge variant={capa.type === "Corrective" ? "default" : "secondary"}>
                                     {capa.type}
                                   </Badge>
                                 </TableCell>
-                                <TableCell>{capa.sourceOfCAPA}</TableCell>
+                                <TableCell>{capa.source_of_capa}</TableCell>
                                 <TableCell className="max-w-xs truncate">{capa.description}</TableCell>
-                                <TableCell>{capa.responsiblePerson}</TableCell>
+                                <TableCell>{capa.responsible_person}</TableCell>
                                 <TableCell className={isOverdue ? "text-orange-600 font-medium" : ""}>
-                                  {capa.targetCompletionDate}
+                                  {capa.target_completion_date}
                                   {isOverdue && <AlertTriangle className="w-4 h-4 inline ml-1" />}
                                 </TableCell>
                                 <TableCell>
@@ -459,7 +460,7 @@ export default function CAPARegisterPage() {
                                   <Button
                                     variant="ghost"
                                     size="sm"
-                                    onClick={() => navigate(`/capa/${encodeURIComponent(capa.capaId)}`)}
+                                    onClick={() => navigate(`/capa/${encodeURIComponent(capa.capa_id)}`)}
                                   >
                                     View
                                   </Button>

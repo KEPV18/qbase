@@ -24,13 +24,15 @@ export interface ProcessInteraction {
 }
 
 export interface ProcessInput {
-  name: string;
+  processName: string;
   description?: string;
   inputs?: string;
   outputs?: string;
-  responsible?: string;
+  processOwner?: string;
+  mainActivities?: string;
   supporting?: string;
   kpi?: string;
+  receiver?: string;
 }
 
 export interface ProcessUpdate {
@@ -162,10 +164,18 @@ export async function updateProcess(processId: string, updates: ProcessUpdate): 
 }
 
 export function calculateProcessStats(processes: ProcessInteraction[]) {
+  const uniqueOwners = new Set(processes.map(p => p.processOwner).filter(Boolean)).size;
+  const kpiCoverage = processes.length > 0
+    ? Math.round((processes.filter(p => p.kpi && p.kpi.trim()).length / processes.length) * 100)
+    : 0;
+  const recordReferences = processes.filter(p => p.inputs || p.outputs).length;
   return {
     total: processes.length,
     active: processes.filter(p => p.status === 'Active').length,
     inactive: processes.filter(p => p.status !== 'Active').length,
+    uniqueOwners,
+    kpiCoverage,
+    recordReferences,
   };
 }
 

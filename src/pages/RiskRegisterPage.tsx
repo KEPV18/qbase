@@ -36,14 +36,14 @@ export default function RiskRegisterPage() {
 
   // New risk form state
   const [newRisk, setNewRisk] = useState<RiskInput>({
-    processDepartment: "",
-    riskDescription: "",
+    process_department: "",
+    risk_description: "",
     cause: "",
     likelihood: 3,
     impact: 3,
-    actionControl: "",
+    action_control: "",
     owner: "",
-    reviewDate: "",
+    review_date: "",
   });
 
   const handleAddRisk = () => {
@@ -51,14 +51,14 @@ export default function RiskRegisterPage() {
       onSuccess: () => {
         setIsAddDialogOpen(false);
         setNewRisk({
-          processDepartment: "",
-          riskDescription: "",
+          process_department: "",
+          risk_description: "",
           cause: "",
           likelihood: 3,
           impact: 3,
-          actionControl: "",
+          action_control: "",
           owner: "",
-          reviewDate: "",
+          review_date: "",
         });
       },
     });
@@ -108,8 +108,8 @@ export default function RiskRegisterPage() {
                         <Label htmlFor="department">Process / Department</Label>
                         <Input
                           id="department"
-                          value={newRisk.processDepartment}
-                          onChange={(e) => setNewRisk({ ...newRisk, processDepartment: e.target.value })}
+                          value={newRisk.process_department}
+                          onChange={(e) => setNewRisk({ ...newRisk, process_department: e.target.value })}
                           placeholder="e.g., Operations, Sales"
                         />
                       </div>
@@ -128,8 +128,8 @@ export default function RiskRegisterPage() {
                       <Label htmlFor="description">Risk Description</Label>
                       <Textarea
                         id="description"
-                        value={newRisk.riskDescription}
-                        onChange={(e) => setNewRisk({ ...newRisk, riskDescription: e.target.value })}
+                        value={newRisk.risk_description}
+                        onChange={(e) => setNewRisk({ ...newRisk, risk_description: e.target.value })}
                         placeholder="Describe the identified risk..."
                         rows={3}
                       />
@@ -195,8 +195,8 @@ export default function RiskRegisterPage() {
                       <Label htmlFor="action">Action / Control Measures</Label>
                       <Textarea
                         id="action"
-                        value={newRisk.actionControl}
-                        onChange={(e) => setNewRisk({ ...newRisk, actionControl: e.target.value })}
+                        value={newRisk.action_control}
+                        onChange={(e) => setNewRisk({ ...newRisk, action_control: e.target.value })}
                         placeholder="Control measures to mitigate this risk..."
                         rows={2}
                       />
@@ -207,8 +207,8 @@ export default function RiskRegisterPage() {
                       <Input
                         id="reviewDate"
                         type="date"
-                        value={newRisk.reviewDate}
-                        onChange={(e) => setNewRisk({ ...newRisk, reviewDate: e.target.value })}
+                        value={newRisk.review_date}
+                        onChange={(e) => setNewRisk({ ...newRisk, review_date: e.target.value })}
                       />
                     </div>
                   </div>
@@ -401,22 +401,22 @@ export default function RiskRegisterPage() {
                     </TableHeader>
                     <TableBody>
                       {filteredRisks.map((risk) => (
-                        <TableRow key={risk.riskId}>
-                          <TableCell className="font-mono font-medium">{risk.riskId}</TableCell>
-                          <TableCell>{risk.processDepartment}</TableCell>
-                          <TableCell className="max-w-xs truncate">{risk.riskDescription}</TableCell>
+                        <TableRow key={risk.risk_id}>
+                          <TableCell className="font-mono font-medium">{risk.risk_id}</TableCell>
+                          <TableCell>{risk.process_department}</TableCell>
+                          <TableCell className="max-w-xs truncate">{risk.risk_description}</TableCell>
                           <TableCell className="text-center">{risk.likelihood}</TableCell>
                           <TableCell className="text-center">{risk.impact}</TableCell>
                           <TableCell className="text-center">
-                            <Badge className={getRiskLevelColor(risk.riskScore)}>
-                              {risk.riskScore}
+                            <Badge className={getRiskLevelColor(risk.risk_score)}>
+                              {risk.risk_score}
                             </Badge>
                           </TableCell>
                           <TableCell>{risk.owner}</TableCell>
                           <TableCell>
                             <Select
                               value={risk.status}
-                              onValueChange={(v) => handleStatusChange(risk.riskId, v as RiskStatus)}
+                              onValueChange={(v) => handleStatusChange(risk.risk_id, v as RiskStatus)}
                             >
                               <SelectTrigger className="w-32 h-8">
                                 <SelectValue />
@@ -433,7 +433,7 @@ export default function RiskRegisterPage() {
                             <Button
                               variant="ghost"
                               size="sm"
-                              onClick={() => navigate(`/risk/${encodeURIComponent(risk.riskId)}`)}
+                              onClick={() => navigate(`/risk/${encodeURIComponent(risk.risk_id)}`)}
                             >
                               View
                             </Button>

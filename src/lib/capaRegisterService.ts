@@ -153,5 +153,16 @@ export function calculateCAPAStats(capas: CAPA[]) {
     bySource[c.source_of_capa] = (bySource[c.source_of_capa] || 0) + 1;
   });
 
-  return { total, open, inProgress, underVerification, closed, corrective, preventive, bySource };
+  // Overdue: non-closed CAPAs past their target_completion_date
+  const now = new Date().toISOString();
+  const overdue = capas.filter(c =>
+    c.status !== "Closed" &&
+    c.target_completion_date &&
+    c.target_completion_date < now
+  ).length;
+
+  // Closure rate: percentage of closed CAPAs
+  const closureRate = total > 0 ? Math.round((closed / total) * 100) : 0;
+
+  return { total, open, inProgress, underVerification, closed, corrective, preventive, bySource, overdue, closureRate };
 }

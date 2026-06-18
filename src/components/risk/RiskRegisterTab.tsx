@@ -10,7 +10,7 @@ import { Pencil, Loader2, RefreshCw, Search, X, Download, Plus, Link2, ExternalL
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog";
 import { useRiskData } from "@/hooks/useRiskData";
 import { useCAPAData } from "@/hooks/useCAPAData";
-import type { Risk, RiskUpdate } from "@/lib/riskRegisterService";
+import type { Risk, RiskUpdate, RiskStatus } from "@/lib/riskRegisterService";
 import { getRiskLevel, getRiskLevelColor } from "@/lib/riskRegisterService";
 import { cn } from "@/lib/utils";
 import { useNavigate } from "react-router-dom";
@@ -31,11 +31,11 @@ export function RiskRegisterTab() {
     const [newCAPAData, setNewCAPAData] = useState({
         type: "Corrective" as "Corrective" | "Preventive",
         description: "",
-        rootCauseAnalysis: "",
-        correctiveAction: "",
-        preventiveAction: "",
-        responsiblePerson: "",
-        targetCompletionDate: "",
+        root_cause_analysis: "",
+        corrective_action: "",
+        preventive_action: "",
+        responsible_person: "",
+        target_completion_date: "",
     });
 
     // Link existing CAPA dialog
@@ -48,9 +48,9 @@ export function RiskRegisterTab() {
         if (search) {
             const q = search.toLowerCase();
             result = result.filter(r =>
-                r.riskId.toLowerCase().includes(q) ||
-                r.riskDescription.toLowerCase().includes(q) ||
-                r.processDepartment.toLowerCase().includes(q) ||
+                r.risk_id.toLowerCase().includes(q) ||
+                r.risk_description.toLowerCase().includes(q) ||
+                r.process_department.toLowerCase().includes(q) ||
                 r.owner.toLowerCase().includes(q)
             );
         }
@@ -61,7 +61,7 @@ export function RiskRegisterTab() {
     }, [risks, search, statusFilter]);
 
     const unlinkedCAPAs = useMemo(() => {
-        return capas.filter(c => !c.relatedRisk || c.relatedRisk.trim() === "");
+        return capas.filter(c => !c.related_risk || c.related_risk.trim() === "");
     }, [capas]);
 
     const getStatusColor = (status: string) => {
@@ -74,9 +74,9 @@ export function RiskRegisterTab() {
         }
     };
 
-    const getLinkedCAPAStatus = (linkedCAPA: string) => {
-        if (!linkedCAPA) return null;
-        const capa = capas.find(c => c.capaId === linkedCAPA);
+    const getLinkedCAPAStatus = (linked_capa: string | null) => {
+        if (!linked_capa) return null;
+        const capa = capas.find(c => c.capa_id === linked_capa);
         return capa;
     };
 
@@ -88,18 +88,18 @@ export function RiskRegisterTab() {
     const handleSave = () => {
         if (!editingRisk) return;
         const updates: RiskUpdate = {
-            processDepartment: editingRisk.processDepartment,
-            riskDescription: editingRisk.riskDescription,
+            process_department: editingRisk.process_department,
+            risk_description: editingRisk.risk_description,
             cause: editingRisk.cause,
             likelihood: editingRisk.likelihood,
             impact: editingRisk.impact,
-            actionControl: editingRisk.actionControl,
+            action_control: editingRisk.action_control,
             owner: editingRisk.owner,
             status: editingRisk.status,
-            reviewDate: editingRisk.reviewDate,
-            linkedCAPA: editingRisk.linkedCAPA,
+            review_date: editingRisk.review_date ?? undefined,
+            linked_capa: editingRisk.linked_capa ?? undefined,
         };
-        updateRisk({ riskId: editingRisk.riskId, updates });
+        updateRisk({ riskId: editingRisk.risk_id, updates });
         setIsEditOpen(false);
         setEditingRisk(null);
     };
@@ -107,12 +107,12 @@ export function RiskRegisterTab() {
     const handleAddRisk = () => {
         if (!editingRisk) return;
         addRisk({
-            processDepartment: editingRisk.processDepartment || "",
-            riskDescription: editingRisk.riskDescription || "",
+            process_department: editingRisk.process_department || "",
+            risk_description: editingRisk.risk_description || "",
             cause: editingRisk.cause || "",
             likelihood: editingRisk.likelihood || 1,
             impact: editingRisk.impact || 1,
-            actionControl: editingRisk.actionControl || "",
+            action_control: editingRisk.action_control || "",
             owner: editingRisk.owner || "",
         });
         setIsAddOpen(false);
@@ -123,12 +123,12 @@ export function RiskRegisterTab() {
         setCAPASourceRisk(risk);
         setNewCAPAData({
             type: "Corrective",
-            description: `CAPA for Risk: ${risk.riskDescription}`,
-            rootCauseAnalysis: risk.cause || "",
-            correctiveAction: risk.actionControl || "",
-            preventiveAction: "",
-            responsiblePerson: risk.owner || "",
-            targetCompletionDate: "",
+            description: `CAPA for Risk: ${risk.risk_description}`,
+            root_cause_analysis: risk.cause || "",
+            corrective_action: risk.action_control || "",
+            preventive_action: "",
+            responsible_person: risk.owner || "",
+            target_completion_date: "",
         });
         setIsCreateCAPAOpen(true);
     };
@@ -136,22 +136,22 @@ export function RiskRegisterTab() {
     const handleSubmitCreateCAPA = () => {
         if (!capaSourceRisk) return;
         addCAPA({
-            sourceOfCAPA: "Risk Register",
+            source_of_capa: "Risk Register",
             type: newCAPAData.type,
             description: newCAPAData.description,
-            reference: capaSourceRisk.riskId,
-            rootCauseAnalysis: newCAPAData.rootCauseAnalysis,
-            correctiveAction: newCAPAData.correctiveAction,
-            preventiveAction: newCAPAData.preventiveAction,
-            responsiblePerson: newCAPAData.responsiblePerson,
-            targetCompletionDate: newCAPAData.targetCompletionDate,
-            relatedRisk: capaSourceRisk.riskId,
+            reference: capaSourceRisk.risk_id,
+            root_cause_analysis: newCAPAData.root_cause_analysis,
+            corrective_action: newCAPAData.corrective_action,
+            preventive_action: newCAPAData.preventive_action,
+            responsible_person: newCAPAData.responsible_person,
+            target_completion_date: newCAPAData.target_completion_date,
+            related_risk: capaSourceRisk.risk_id,
         }, {
             onSuccess: (newCAPA) => {
                 // Update risk with linked CAPA
                 updateRisk({
-                    riskId: capaSourceRisk.riskId,
-                    updates: { linkedCAPA: newCAPA.capaId },
+                    riskId: capaSourceRisk.risk_id,
+                    updates: { linked_capa: newCAPA.capa_id },
                 });
                 setIsCreateCAPAOpen(false);
                 setCAPASourceRisk(null);
@@ -168,8 +168,8 @@ export function RiskRegisterTab() {
     const handleSubmitLinkCAPA = () => {
         if (!linkSourceRisk || !selectedCAPAId) return;
         updateRisk({
-            riskId: linkSourceRisk.riskId,
-            updates: { linkedCAPA: selectedCAPAId },
+            riskId: linkSourceRisk.risk_id,
+            updates: { linked_capa: selectedCAPAId },
         });
         setIsLinkCAPAOpen(false);
         setLinkSourceRisk(null);
@@ -178,9 +178,9 @@ export function RiskRegisterTab() {
     const handleExportCSV = () => {
         const headers = ["Risk ID", "Department", "Description", "Cause", "L", "I", "Score", "Level", "Action", "Owner", "Status", "Linked CAPA"];
         const rows = filteredRisks.map(r => [
-            r.riskId, r.processDepartment, r.riskDescription, r.cause,
-            r.likelihood, r.impact, r.riskScore, getRiskLevel(r.riskScore),
-            r.actionControl, r.owner, r.status, r.linkedCAPA
+            r.risk_id, r.process_department, r.risk_description, r.cause,
+            r.likelihood, r.impact, r.risk_score, getRiskLevel(r.risk_score),
+            r.action_control, r.owner, r.status, r.linked_capa
         ]);
         const csv = [headers, ...rows].map(r => r.map(c => `"${String(c).replace(/"/g, '""')}"`).join(",")).join("\n");
         const blob = new Blob([csv], { type: "text/csv" });
@@ -192,7 +192,7 @@ export function RiskRegisterTab() {
         URL.revokeObjectURL(url);
     };
 
-    const navigateToCAPA = (capaId: string) => {
+    const navigateToCAPA = (capa_id: string) => {
         navigate(`/risk-management?tab=capa`);
     };
 
@@ -254,7 +254,7 @@ export function RiskRegisterTab() {
                     <Button variant="outline" size="sm" className="h-9 gap-1.5" onClick={() => refetch()}>
                         <RefreshCw className="w-3.5 h-3.5" /> Sync
                     </Button>
-                    <Button size="sm" className="h-9 gap-1.5 bg-primary" onClick={() => { setEditingRisk({ riskId: "", processDepartment: "", riskDescription: "", cause: "", likelihood: 3, impact: 3, actionControl: "", owner: "", status: "Open", reviewDate: "", linkedCAPA: "", rowIndex: 0 }); setIsAddOpen(true); }}>
+                    <Button size="sm" className="h-9 gap-1.5 bg-primary" onClick={() => { setEditingRisk({ id: "", risk_id: "", process_department: "", risk_description: "", cause: "", likelihood: 3, impact: 3, risk_score: 9, action_control: "", owner: "", status: "Open", review_date: null, linked_capa: null, created_at: "", updated_at: "" }); setIsAddOpen(true); }}>
                         <Plus className="w-3.5 h-3.5" /> Add Risk
                     </Button>
                 </div>
@@ -284,22 +284,22 @@ export function RiskRegisterTab() {
                                 </TableCell>
                             </TableRow>
                         ) : filteredRisks.map((risk) => {
-                            const linkedCapa = getLinkedCAPAStatus(risk.linkedCAPA);
+                            const linkedCapa = getLinkedCAPAStatus(risk.linked_capa);
                             return (
-                                <TableRow key={risk.riskId} className="hover:bg-muted/20 transition-colors border-b border-border/30">
-                                    <TableCell className="font-bold text-xs font-mono">{risk.riskId}</TableCell>
-                                    <TableCell className="text-xs font-medium">{risk.processDepartment}</TableCell>
+                                <TableRow key={risk.risk_id} className="hover:bg-muted/20 transition-colors border-b border-border/30">
+                                    <TableCell className="font-bold text-xs font-mono">{risk.risk_id}</TableCell>
+                                    <TableCell className="text-xs font-medium">{risk.process_department}</TableCell>
                                     <TableCell className="max-w-[200px]">
-                                        <div className="text-xs font-semibold truncate" title={risk.riskDescription}>{risk.riskDescription}</div>
+                                        <div className="text-xs font-semibold truncate" title={risk.risk_description}>{risk.risk_description}</div>
                                         <div className="text-[10px] text-muted-foreground truncate mt-0.5" title={risk.cause}>{risk.cause}</div>
                                     </TableCell>
                                     <TableCell className="text-center">
-                                        <Badge variant="outline" className={cn("font-bold text-[10px]", getRiskLevelColor(risk.riskScore))}>
-                                            {risk.riskScore}
+                                        <Badge variant="outline" className={cn("font-bold text-[10px]", getRiskLevelColor(risk.risk_score))}>
+                                            {risk.risk_score}
                                         </Badge>
                                         <div className="text-[8px] text-muted-foreground mt-0.5">{risk.likelihood}×{risk.impact}</div>
                                     </TableCell>
-                                    <TableCell className="text-[10px] text-muted-foreground truncate max-w-[130px] hidden lg:table-cell" title={risk.actionControl}>{risk.actionControl || "—"}</TableCell>
+                                    <TableCell className="text-[10px] text-muted-foreground truncate max-w-[130px] hidden lg:table-cell" title={risk.action_control}>{risk.action_control || "—"}</TableCell>
                                     <TableCell className="text-xs font-medium">{risk.owner}</TableCell>
                                     <TableCell>
                                         <Badge variant={getStatusColor(risk.status)} className="font-bold uppercase tracking-wider text-[8px]">{risk.status}</Badge>
@@ -307,10 +307,10 @@ export function RiskRegisterTab() {
                                     <TableCell className="hidden md:table-cell">
                                         {linkedCapa ? (
                                             <button
-                                                onClick={() => navigateToCAPA(linkedCapa.capaId)}
+                                                onClick={() => navigateToCAPA(linkedCapa.capa_id)}
                                                 className="flex items-center gap-1 group"
                                             >
-                                                <span className="text-[10px] font-mono font-bold text-primary group-hover:underline">{linkedCapa.capaId}</span>
+                                                <span className="text-[10px] font-mono font-bold text-primary group-hover:underline">{linkedCapa.capa_id}</span>
                                                 <Badge variant="outline" className={cn("text-[7px] font-bold", getCAPABadgeColor(linkedCapa.status))}>
                                                     {linkedCapa.status}
                                                 </Badge>
@@ -325,7 +325,7 @@ export function RiskRegisterTab() {
                                             <Button variant="ghost" size="icon" className="h-7 w-7 hover:text-primary" onClick={() => handleEditClick(risk)} title="Edit Risk">
                                                 <Pencil className="w-3 h-3" />
                                             </Button>
-                                            {!risk.linkedCAPA && (
+                                            {!risk.linked_capa && (
                                                 <>
                                                     <Button variant="ghost" size="icon" className="h-7 w-7 hover:text-green-600" onClick={() => handleCreateCAPAForRisk(risk)} title="Create CAPA">
                                                         <Plus className="w-3 h-3" />
@@ -353,23 +353,23 @@ export function RiskRegisterTab() {
             <Dialog open={isEditOpen} onOpenChange={setIsEditOpen}>
                 <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
                     <DialogHeader>
-                        <DialogTitle className="font-bold text-xl">Edit Risk {editingRisk?.riskId}</DialogTitle>
+                        <DialogTitle className="font-bold text-xl">Edit Risk {editingRisk?.risk_id}</DialogTitle>
                     </DialogHeader>
                     {editingRisk && (
                         <div className="grid gap-4 py-4">
                             <div className="grid grid-cols-2 gap-4">
                                 <div className="space-y-2">
                                     <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Risk ID</Label>
-                                    <Input value={editingRisk.riskId} disabled className="bg-muted/30" />
+                                    <Input value={editingRisk.risk_id} disabled className="bg-muted/30" />
                                 </div>
                                 <div className="space-y-2">
                                     <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Department</Label>
-                                    <Input value={editingRisk.processDepartment} onChange={(e) => setEditingRisk({ ...editingRisk, processDepartment: e.target.value })} />
+                                    <Input value={editingRisk.process_department} onChange={(e) => setEditingRisk({ ...editingRisk, process_department: e.target.value })} />
                                 </div>
                             </div>
                             <div className="space-y-2">
                                 <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Description</Label>
-                                <Textarea value={editingRisk.riskDescription} onChange={(e) => setEditingRisk({ ...editingRisk, riskDescription: e.target.value })} className="min-h-[80px]" />
+                                <Textarea value={editingRisk.risk_description} onChange={(e) => setEditingRisk({ ...editingRisk, risk_description: e.target.value })} className="min-h-[80px]" />
                             </div>
                             <div className="space-y-2">
                                 <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Cause</Label>
@@ -393,7 +393,7 @@ export function RiskRegisterTab() {
                             </div>
                             <div className="space-y-2">
                                 <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Action / Control</Label>
-                                <Textarea value={editingRisk.actionControl} onChange={(e) => setEditingRisk({ ...editingRisk, actionControl: e.target.value })} className="min-h-[80px]" />
+                                <Textarea value={editingRisk.action_control} onChange={(e) => setEditingRisk({ ...editingRisk, action_control: e.target.value })} className="min-h-[80px]" />
                             </div>
                             <div className="grid grid-cols-2 gap-4">
                                 <div className="space-y-2">
@@ -402,7 +402,7 @@ export function RiskRegisterTab() {
                                 </div>
                                 <div className="space-y-2">
                                     <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Status</Label>
-                                    <Select value={editingRisk.status} onValueChange={(val: string) => setEditingRisk({ ...editingRisk, status: val })}>
+                                    <Select value={editingRisk.status} onValueChange={(val: string) => setEditingRisk({ ...editingRisk, status: val as RiskStatus })}>
                                         <SelectTrigger><SelectValue /></SelectTrigger>
                                         <SelectContent>
                                             <SelectItem value="Open">Open</SelectItem>
@@ -416,29 +416,29 @@ export function RiskRegisterTab() {
                             <div className="grid grid-cols-2 gap-4">
                                 <div className="space-y-2">
                                     <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Review Date</Label>
-                                    <Input value={editingRisk.reviewDate} onChange={(e) => setEditingRisk({ ...editingRisk, reviewDate: e.target.value })} />
+                                    <Input value={editingRisk.review_date ?? ''} onChange={(e) => setEditingRisk({ ...editingRisk, review_date: e.target.value })} />
                                 </div>
                                 <div className="space-y-2">
                                     <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Linked CAPA</Label>
                                     <Select
-                                        value={editingRisk.linkedCAPA || "none"}
-                                        onValueChange={(val) => setEditingRisk({ ...editingRisk, linkedCAPA: val === "none" ? "" : val })}
+                                        value={editingRisk.linked_capa || "none"}
+                                        onValueChange={(val) => setEditingRisk({ ...editingRisk, linked_capa: val === "none" ? "" : val })}
                                     >
                                         <SelectTrigger><SelectValue placeholder="Select CAPA..." /></SelectTrigger>
                                         <SelectContent>
                                             <SelectItem value="none">— None —</SelectItem>
                                             {capas.map(c => (
-                                                <SelectItem key={c.capaId} value={c.capaId}>
-                                                    {c.capaId} — {c.description?.substring(0, 40)}
+                                                <SelectItem key={c.capa_id} value={c.capa_id}>
+                                                    {c.capa_id} — {c.description?.substring(0, 40)}
                                                 </SelectItem>
                                             ))}
                                         </SelectContent>
                                     </Select>
-                                    {editingRisk.linkedCAPA && (() => {
-                                        const lc = capas.find(c => c.capaId === editingRisk.linkedCAPA);
+                                    {editingRisk.linked_capa && (() => {
+                                        const lc = capas.find(c => c.capa_id === editingRisk.linked_capa);
                                         return lc ? (
                                             <div className="text-[10px] text-muted-foreground mt-1 p-2 rounded bg-muted/30 border border-border/30">
-                                                <span className="font-bold">{lc.capaId}</span> — Status: <Badge variant="outline" className={cn("text-[7px]", getCAPABadgeColor(lc.status))}>{lc.status}</Badge>
+                                                <span className="font-bold">{lc.capa_id}</span> — Status: <Badge variant="outline" className={cn("text-[7px]", getCAPABadgeColor(lc.status))}>{lc.status}</Badge>
                                             </div>
                                         ) : null;
                                     })()}
@@ -462,23 +462,23 @@ export function RiskRegisterTab() {
                     <DialogHeader>
                         <DialogTitle className="font-bold text-xl flex items-center gap-2">
                             <Plus className="w-5 h-5 text-green-600" />
-                            Create CAPA for {capaSourceRisk?.riskId}
+                            Create CAPA for {capaSourceRisk?.risk_id}
                         </DialogTitle>
                         <DialogDescription className="text-xs">
-                            This will create a new CAPA linked to risk <span className="font-bold">{capaSourceRisk?.riskId}</span> and automatically update both records.
+                            This will create a new CAPA linked to risk <span className="font-bold">{capaSourceRisk?.risk_id}</span> and automatically update both records.
                         </DialogDescription>
                     </DialogHeader>
                     <div className="grid gap-4 py-4">
                         {/* Risk summary */}
                         <div className="p-3 rounded-sm bg-muted/30 border border-border/30 space-y-1">
                             <div className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Source Risk</div>
-                            <div className="text-sm font-semibold">{capaSourceRisk?.riskDescription}</div>
+                            <div className="text-sm font-semibold">{capaSourceRisk?.risk_description}</div>
                             <div className="text-xs text-muted-foreground">Cause: {capaSourceRisk?.cause}</div>
                         </div>
 
                         <div className="space-y-2">
                             <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Type</Label>
-                            <Select value={newCAPAData.type} onValueChange={(val: string) => setNewCAPAData({ ...newCAPAData, type: val })}>
+                            <Select value={newCAPAData.type} onValueChange={(val: string) => setNewCAPAData({ ...newCAPAData, type: val as "Corrective" | "Preventive" })}>
                                 <SelectTrigger><SelectValue /></SelectTrigger>
                                 <SelectContent>
                                     <SelectItem value="Corrective">Corrective</SelectItem>
@@ -494,28 +494,28 @@ export function RiskRegisterTab() {
                             <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
                                 Root Cause Analysis <span className="text-destructive">*</span>
                             </Label>
-                            <Textarea value={newCAPAData.rootCauseAnalysis} onChange={(e) => setNewCAPAData({ ...newCAPAData, rootCauseAnalysis: e.target.value })} className="min-h-[60px]" />
+                            <Textarea value={newCAPAData.root_cause_analysis} onChange={(e) => setNewCAPAData({ ...newCAPAData, root_cause_analysis: e.target.value })} className="min-h-[60px]" />
                         </div>
                         <div className="grid grid-cols-2 gap-4">
                             <div className="space-y-2">
                                 <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Corrective Action</Label>
-                                <Textarea value={newCAPAData.correctiveAction} onChange={(e) => setNewCAPAData({ ...newCAPAData, correctiveAction: e.target.value })} className="min-h-[60px]" />
+                                <Textarea value={newCAPAData.corrective_action} onChange={(e) => setNewCAPAData({ ...newCAPAData, corrective_action: e.target.value })} className="min-h-[60px]" />
                             </div>
                             <div className="space-y-2">
                                 <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Preventive Action</Label>
-                                <Textarea value={newCAPAData.preventiveAction} onChange={(e) => setNewCAPAData({ ...newCAPAData, preventiveAction: e.target.value })} className="min-h-[60px]" />
+                                <Textarea value={newCAPAData.preventive_action} onChange={(e) => setNewCAPAData({ ...newCAPAData, preventive_action: e.target.value })} className="min-h-[60px]" />
                             </div>
                         </div>
                         <div className="grid grid-cols-2 gap-4">
                             <div className="space-y-2">
                                 <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Responsible Person</Label>
-                                <Input value={newCAPAData.responsiblePerson} onChange={(e) => setNewCAPAData({ ...newCAPAData, responsiblePerson: e.target.value })} />
+                                <Input value={newCAPAData.responsible_person} onChange={(e) => setNewCAPAData({ ...newCAPAData, responsible_person: e.target.value })} />
                             </div>
                             <div className="space-y-2">
                                 <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
                                     Target Date <span className="text-destructive">*</span>
                                 </Label>
-                                <Input type="date" value={newCAPAData.targetCompletionDate} onChange={(e) => setNewCAPAData({ ...newCAPAData, targetCompletionDate: e.target.value })} />
+                                <Input type="date" value={newCAPAData.target_completion_date} onChange={(e) => setNewCAPAData({ ...newCAPAData, target_completion_date: e.target.value })} />
                             </div>
                         </div>
                     </div>
@@ -523,7 +523,7 @@ export function RiskRegisterTab() {
                         <Button variant="outline" onClick={() => setIsCreateCAPAOpen(false)}>Cancel</Button>
                         <Button
                             onClick={handleSubmitCreateCAPA}
-                            disabled={isAddingCAPA || !newCAPAData.rootCauseAnalysis || !newCAPAData.targetCompletionDate}
+                            disabled={isAddingCAPA || !newCAPAData.root_cause_analysis || !newCAPAData.target_completion_date}
                             className="gap-2"
                         >
                             {isAddingCAPA && <Loader2 className="w-4 h-4 animate-spin" />}
@@ -539,7 +539,7 @@ export function RiskRegisterTab() {
                     <DialogHeader>
                         <DialogTitle className="font-bold text-lg flex items-center gap-2">
                             <Link2 className="w-5 h-5 text-blue-600" />
-                            Link CAPA to {linkSourceRisk?.riskId}
+                            Link CAPA to {linkSourceRisk?.risk_id}
                         </DialogTitle>
                         <DialogDescription className="text-xs">
                             Select an existing CAPA to link to this risk. Both records will be updated.
@@ -552,18 +552,18 @@ export function RiskRegisterTab() {
                                 <SelectTrigger><SelectValue placeholder="Choose CAPA..." /></SelectTrigger>
                                 <SelectContent>
                                     {capas.map(c => (
-                                        <SelectItem key={c.capaId} value={c.capaId}>
-                                            {c.capaId} — {c.status} — {c.description?.substring(0, 30)}
+                                        <SelectItem key={c.capa_id} value={c.capa_id}>
+                                            {c.capa_id} — {c.status} — {c.description?.substring(0, 30)}
                                         </SelectItem>
                                     ))}
                                 </SelectContent>
                             </Select>
                         </div>
                         {selectedCAPAId && (() => {
-                            const sc = capas.find(c => c.capaId === selectedCAPAId);
+                            const sc = capas.find(c => c.capa_id === selectedCAPAId);
                             return sc ? (
                                 <div className="p-3 rounded-sm bg-muted/30 border border-border/30 space-y-1 text-xs">
-                                    <div className="font-bold">{sc.capaId}</div>
+                                    <div className="font-bold">{sc.capa_id}</div>
                                     <div className="text-muted-foreground">{sc.description}</div>
                                     <div className="flex gap-2 mt-1">
                                         <Badge variant="outline" className={cn("text-[7px]", getCAPABadgeColor(sc.status))}>{sc.status}</Badge>
@@ -579,8 +579,8 @@ export function RiskRegisterTab() {
                             onClick={() => {
                                 if (!linkSourceRisk || !selectedCAPAId) return;
                                 updateRisk({
-                                    riskId: linkSourceRisk.riskId,
-                                    updates: { linkedCAPA: selectedCAPAId },
+                                    riskId: linkSourceRisk.risk_id,
+                                    updates: { linked_capa: selectedCAPAId },
                                 });
                                 setIsLinkCAPAOpen(false);
                                 setLinkSourceRisk(null);
@@ -623,8 +623,8 @@ export function RiskRegisterTab() {
                                 <Label className="text-[10px] font-bold uppercase text-muted-foreground">Department</Label>
                                 <Input 
                                     placeholder="Quality" 
-                                    value={editingRisk.processDepartment || ''}
-                                    onChange={(e) => setEditingRisk({...editingRisk, processDepartment: e.target.value})}
+                                    value={editingRisk.process_department || ''}
+                                    onChange={(e) => setEditingRisk({...editingRisk, process_department: e.target.value})}
                                 />
                             </div>
                         </div>
@@ -632,8 +632,8 @@ export function RiskRegisterTab() {
                             <Label className="text-[10px] font-bold uppercase text-muted-foreground">Risk Description</Label>
                             <Textarea 
                                 placeholder="Describe the risk..." 
-                                value={editingRisk.riskDescription || ''}
-                                onChange={(e) => setEditingRisk({...editingRisk, riskDescription: e.target.value})}
+                                value={editingRisk.risk_description || ''}
+                                onChange={(e) => setEditingRisk({...editingRisk, risk_description: e.target.value})}
                                 rows={3}
                             />
                         </div>

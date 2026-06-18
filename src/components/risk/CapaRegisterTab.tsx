@@ -10,7 +10,7 @@ import { Pencil, Loader2, RefreshCw, Search, X, Download, AlertTriangle, Externa
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog";
 import { useCAPAData } from "@/hooks/useCAPAData";
 import { useRiskData } from "@/hooks/useRiskData";
-import type { CAPA, CAPAUpdate } from "@/lib/capaRegisterService";
+import type { CAPA, CAPAUpdate, CAPAType, CAPAStatus } from "@/lib/capaRegisterService";
 import { getCAPAStatusColor } from "@/lib/capaRegisterService";
 import { cn } from "@/lib/utils";
 import { useNavigate } from "react-router-dom";
@@ -33,10 +33,10 @@ export function CapaRegisterTab() {
         if (search) {
             const q = search.toLowerCase();
             result = result.filter(c =>
-                c.capaId.toLowerCase().includes(q) ||
+                c.capa_id.toLowerCase().includes(q) ||
                 c.description.toLowerCase().includes(q) ||
-                c.responsiblePerson.toLowerCase().includes(q) ||
-                c.relatedRisk.toLowerCase().includes(q)
+                c.responsible_person.toLowerCase().includes(q) ||
+                c.related_risk?.toLowerCase().includes(q)
             );
         }
         if (statusFilter !== "all") {
@@ -47,13 +47,13 @@ export function CapaRegisterTab() {
 
     const isOverdue = (capa: CAPA) => {
         if (capa.status === "Closed") return false;
-        if (!capa.targetCompletionDate) return false;
-        return new Date(capa.targetCompletionDate) < new Date();
+        if (!capa.target_completion_date) return false;
+        return new Date(capa.target_completion_date) < new Date();
     };
 
-    const getLinkedRisk = (relatedRisk: string) => {
-        if (!relatedRisk) return null;
-        return risks.find(r => r.riskId === relatedRisk);
+    const getLinkedRisk = (related_risk: string | null) => {
+        if (!related_risk) return null;
+        return risks.find(r => r.risk_id === related_risk);
     };
 
     const handleEditClick = (capa: CAPA) => {
@@ -65,22 +65,18 @@ export function CapaRegisterTab() {
         if (!editingCapa) return;
 
         // If closing, show confirmation dialog
-        const originalCapa = capas.find(c => c.capaId === editingCapa.capaId);
+        const originalCapa = capas.find(c => c.capa_id === editingCapa.capa_id);
         if (editingCapa.status === "Closed" && originalCapa?.status !== "Closed") {
-            if (!editingCapa.rootCauseAnalysis) {
+            if (!editingCapa.root_cause_analysis) {
                 alert("Cannot close CAPA without Root Cause Analysis.");
                 return;
             }
-            if (!editingCapa.effectivenessCheck) {
+            if (!editingCapa.effectiveness) {
                 alert("Cannot close CAPA without Effectiveness Check.");
                 return;
             }
-            if (!editingCapa.closureApproval) {
-                alert("Cannot close CAPA without Closure Approval.");
-                return;
-            }
             // Show confirmation if there's a linked risk
-            if (editingCapa.relatedRisk) {
+            if (editingCapa.related_risk) {
                 setClosingCapa(editingCapa);
                 setIsCloseConfirmOpen(true);
                 return;
@@ -92,32 +88,31 @@ export function CapaRegisterTab() {
 
     const submitCAPAUpdate = (capa: CAPA, updateLinkedRisk: boolean = false) => {
         const updates: CAPAUpdate = {
-            sourceOfCAPA: capa.sourceOfCAPA,
+            source_of_capa: capa.source_of_capa,
             type: capa.type,
             description: capa.description,
-            reference: capa.reference,
-            rootCauseAnalysis: capa.rootCauseAnalysis,
-            correctiveAction: capa.correctiveAction,
-            preventiveAction: capa.preventiveAction,
-            responsiblePerson: capa.responsiblePerson,
-            targetCompletionDate: capa.targetCompletionDate,
+            reference: capa.reference ?? undefined,
+            root_cause_analysis: capa.root_cause_analysis,
+            corrective_action: capa.corrective_action ?? undefined,
+            preventive_action: capa.preventive_action ?? undefined,
+            responsible_person: capa.responsible_person,
+            target_completion_date: capa.target_completion_date ?? undefined,
             status: capa.status,
-            effectivenessCheck: capa.effectivenessCheck,
-            effectivenessReviewDate: capa.effectivenessReviewDate,
-            closureApproval: capa.closureApproval,
-            relatedRisk: capa.relatedRisk,
+            effectiveness: capa.effectiveness ?? undefined,
+            verification_date: capa.verification_date ?? undefined,
+            related_risk: capa.related_risk ?? undefined,
         };
-        updateCAPA({ capaId: capa.capaId, updates });
+        updateCAPA({ capaId: capa.capa_id, updates });
 
         // If closing and linked risk, update the risk status to "Controlled"
-        if (updateLinkedRisk && capa.status === "Closed" && capa.relatedRisk) {
-            const linkedRisk = risks.find(r => r.riskId === capa.relatedRisk);
+        if (updateLinkedRisk && capa.status === "Closed" && capa.related_risk) {
+            const linkedRisk = risks.find(r => r.risk_id === capa.related_risk);
             if (linkedRisk && linkedRisk.status !== "Closed") {
                 updateRisk({
-                    riskId: linkedRisk.riskId,
+                    riskId: linkedRisk.risk_id,
                     updates: {
                         status: "Controlled",
-                        reviewDate: new Date().toISOString().split("T")[0],
+                        review_date: new Date().toISOString().split("T")[0],
                     },
                 });
             }
@@ -130,9 +125,9 @@ export function CapaRegisterTab() {
     const handleExportCSV = () => {
         const headers = ["CAPA ID", "Type", "Description", "Root Cause", "CA", "PA", "Responsible", "Target Date", "Status", "Effectiveness", "Related Risk"];
         const rows = filteredCapas.map(c => [
-            c.capaId, c.type, c.description, c.rootCauseAnalysis,
-            c.correctiveAction, c.preventiveAction, c.responsiblePerson,
-            c.targetCompletionDate, c.status, c.effectivenessCheck, c.relatedRisk,
+            c.capa_id, c.type, c.description, c.root_cause_analysis,
+            c.corrective_action, c.preventive_action, c.responsible_person,
+            c.target_completion_date, c.status, c.effectiveness, c.related_risk,
         ]);
         const csv = [headers, ...rows].map(r => r.map(c => `"${String(c || "").replace(/"/g, '""')}"`).join(",")).join("\n");
         const blob = new Blob([csv], { type: "text/csv" });
@@ -229,10 +224,10 @@ export function CapaRegisterTab() {
                                 </TableCell>
                             </TableRow>
                         ) : filteredCapas.map((capa) => {
-                            const linkedRisk = getLinkedRisk(capa.relatedRisk);
+                            const linkedRisk = getLinkedRisk(capa.related_risk);
                             return (
                                 <TableRow
-                                    key={capa.capaId}
+                                    key={capa.capa_id}
                                     className={cn(
                                         "hover:bg-muted/20 transition-colors border-b border-border/30",
                                         isOverdue(capa) && "bg-destructive/5"
@@ -240,7 +235,7 @@ export function CapaRegisterTab() {
                                 >
                                     <TableCell className="font-bold text-xs font-mono">
                                         <div className="flex items-center gap-1.5">
-                                            {capa.capaId}
+                                            {capa.capa_id}
                                             {isOverdue(capa) && <AlertTriangle className="w-3 h-3 text-destructive" />}
                                         </div>
                                     </TableCell>
@@ -251,17 +246,17 @@ export function CapaRegisterTab() {
                                     </TableCell>
                                     <TableCell className="max-w-[220px]">
                                         <div className="text-xs font-semibold truncate">{capa.description}</div>
-                                        {capa.rootCauseAnalysis && (
-                                            <div className="text-[10px] text-muted-foreground truncate mt-0.5">RC: {capa.rootCauseAnalysis}</div>
+                                        {capa.root_cause_analysis && (
+                                            <div className="text-[10px] text-muted-foreground truncate mt-0.5">RC: {capa.root_cause_analysis}</div>
                                         )}
                                     </TableCell>
                                     <TableCell className="hidden lg:table-cell max-w-[180px]">
-                                        {capa.correctiveAction && <div className="text-[10px] text-muted-foreground truncate"><span className="font-bold text-foreground">CA:</span> {capa.correctiveAction}</div>}
-                                        {capa.preventiveAction && <div className="text-[10px] text-muted-foreground truncate mt-0.5"><span className="font-bold text-foreground">PA:</span> {capa.preventiveAction}</div>}
+                                        {capa.corrective_action && <div className="text-[10px] text-muted-foreground truncate"><span className="font-bold text-foreground">CA:</span> {capa.corrective_action}</div>}
+                                        {capa.preventive_action && <div className="text-[10px] text-muted-foreground truncate mt-0.5"><span className="font-bold text-foreground">PA:</span> {capa.preventive_action}</div>}
                                     </TableCell>
-                                    <TableCell className="text-xs font-medium">{capa.responsiblePerson}</TableCell>
+                                    <TableCell className="text-xs font-medium">{capa.responsible_person}</TableCell>
                                     <TableCell className={cn("text-xs font-medium", isOverdue(capa) ? "text-destructive" : "text-muted-foreground")}>
-                                        {capa.targetCompletionDate || "—"}
+                                        {capa.target_completion_date || "—"}
                                     </TableCell>
                                     <TableCell>
                                         <Badge variant="outline" className={cn("font-bold uppercase tracking-wider text-[8px]", getCAPAStatusColor(capa.status))}>
@@ -274,14 +269,14 @@ export function CapaRegisterTab() {
                                                 onClick={() => navigate(`/risk-management?tab=risk`)}
                                                 className="flex items-center gap-1 group"
                                             >
-                                                <span className="text-[10px] font-mono font-bold text-primary group-hover:underline">{linkedRisk.riskId}</span>
+                                                <span className="text-[10px] font-mono font-bold text-primary group-hover:underline">{linkedRisk.risk_id}</span>
                                                 <Badge variant="outline" className={cn("text-[7px] font-bold", getRiskBadgeColor(linkedRisk.status))}>
                                                     {linkedRisk.status}
                                                 </Badge>
                                                 <ExternalLink className="w-2.5 h-2.5 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
                                             </button>
-                                        ) : capa.relatedRisk ? (
-                                            <span className="text-[10px] font-mono text-muted-foreground">{capa.relatedRisk}</span>
+                                        ) : capa.related_risk ? (
+                                            <span className="text-[10px] font-mono text-muted-foreground">{capa.related_risk}</span>
                                         ) : (
                                             <span className="text-[10px] text-muted-foreground">—</span>
                                         )}
@@ -307,12 +302,12 @@ export function CapaRegisterTab() {
             <Dialog open={isEditOpen} onOpenChange={setIsEditOpen}>
                 <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
                     <DialogHeader>
-                        <DialogTitle className="font-bold text-xl">Edit CAPA {editingCapa?.capaId}</DialogTitle>
+                        <DialogTitle className="font-bold text-xl">Edit CAPA {editingCapa?.capa_id}</DialogTitle>
                     </DialogHeader>
                     {editingCapa && (
                         <div className="grid gap-4 py-4">
                             {/* Closure warning */}
-                            {editingCapa.status === "Closed" && (!editingCapa.rootCauseAnalysis || !editingCapa.effectivenessCheck || !editingCapa.closureApproval) && (
+                            {editingCapa.status === "Closed" && (!editingCapa.root_cause_analysis || !editingCapa.effectiveness || !editingCapa.effectiveness) && (
                                 <div className="p-3 rounded-sm bg-destructive/10 border border-destructive/20 flex gap-2 items-start">
                                     <AlertTriangle className="w-4 h-4 text-destructive shrink-0 mt-0.5" />
                                     <p className="text-xs text-destructive">
@@ -323,15 +318,15 @@ export function CapaRegisterTab() {
                             <div className="grid grid-cols-3 gap-4">
                                 <div className="space-y-2">
                                     <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">CAPA ID</Label>
-                                    <Input value={editingCapa.capaId} disabled className="bg-muted/30" />
+                                    <Input value={editingCapa.capa_id} disabled className="bg-muted/30" />
                                 </div>
                                 <div className="space-y-2">
                                     <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Source</Label>
-                                    <Input value={editingCapa.sourceOfCAPA} onChange={(e) => setEditingCapa({ ...editingCapa, sourceOfCAPA: e.target.value })} />
+                                    <Input value={editingCapa.source_of_capa} onChange={(e) => setEditingCapa({ ...editingCapa, source_of_capa: e.target.value })} />
                                 </div>
                                 <div className="space-y-2">
                                     <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Type</Label>
-                                    <Select value={editingCapa.type} onValueChange={(val: string) => setEditingCapa({ ...editingCapa, type: val })}>
+                                    <Select value={editingCapa.type} onValueChange={(val: string) => setEditingCapa({ ...editingCapa, type: val as CAPAType })}>
                                         <SelectTrigger><SelectValue /></SelectTrigger>
                                         <SelectContent>
                                             <SelectItem value="Corrective">Corrective</SelectItem>
@@ -348,30 +343,30 @@ export function CapaRegisterTab() {
                                 <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
                                     Root Cause Analysis <span className="text-destructive">*</span>
                                 </Label>
-                                <Textarea value={editingCapa.rootCauseAnalysis} onChange={(e) => setEditingCapa({ ...editingCapa, rootCauseAnalysis: e.target.value })} className="min-h-[60px]" />
+                                <Textarea value={editingCapa.root_cause_analysis} onChange={(e) => setEditingCapa({ ...editingCapa, root_cause_analysis: e.target.value })} className="min-h-[60px]" />
                             </div>
                             <div className="grid grid-cols-2 gap-4">
                                 <div className="space-y-2">
                                     <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Corrective Action</Label>
-                                    <Textarea value={editingCapa.correctiveAction} onChange={(e) => setEditingCapa({ ...editingCapa, correctiveAction: e.target.value })} className="min-h-[60px]" />
+                                    <Textarea value={editingCapa.corrective_action ?? ''} onChange={(e) => setEditingCapa({ ...editingCapa, corrective_action: e.target.value })} className="min-h-[60px]" />
                                 </div>
                                 <div className="space-y-2">
                                     <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Preventive Action</Label>
-                                    <Textarea value={editingCapa.preventiveAction} onChange={(e) => setEditingCapa({ ...editingCapa, preventiveAction: e.target.value })} className="min-h-[60px]" />
+                                    <Textarea value={editingCapa.preventive_action ?? ''} onChange={(e) => setEditingCapa({ ...editingCapa, preventive_action: e.target.value })} className="min-h-[60px]" />
                                 </div>
                             </div>
                             <div className="grid grid-cols-3 gap-4">
                                 <div className="space-y-2">
                                     <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Responsible</Label>
-                                    <Input value={editingCapa.responsiblePerson} onChange={(e) => setEditingCapa({ ...editingCapa, responsiblePerson: e.target.value })} />
+                                    <Input value={editingCapa.responsible_person} onChange={(e) => setEditingCapa({ ...editingCapa, responsible_person: e.target.value })} />
                                 </div>
                                 <div className="space-y-2">
                                     <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Target Date</Label>
-                                    <Input type="date" value={editingCapa.targetCompletionDate} onChange={(e) => setEditingCapa({ ...editingCapa, targetCompletionDate: e.target.value })} />
+                                    <Input type="date" value={editingCapa.target_completion_date ?? ''} onChange={(e) => setEditingCapa({ ...editingCapa, target_completion_date: e.target.value })} />
                                 </div>
                                 <div className="space-y-2">
                                     <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Status</Label>
-                                    <Select value={editingCapa.status} onValueChange={(val: string) => setEditingCapa({ ...editingCapa, status: val })}>
+                                    <Select value={editingCapa.status} onValueChange={(val: string) => setEditingCapa({ ...editingCapa, status: val as CAPAStatus })}>
                                         <SelectTrigger><SelectValue /></SelectTrigger>
                                         <SelectContent>
                                             <SelectItem value="Open">Open</SelectItem>
@@ -387,40 +382,34 @@ export function CapaRegisterTab() {
                                     <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
                                         Effectiveness Check <span className="text-destructive">*</span>
                                     </Label>
-                                    <Input value={editingCapa.effectivenessCheck} onChange={(e) => setEditingCapa({ ...editingCapa, effectivenessCheck: e.target.value })} />
+                                    <Input value={editingCapa.effectiveness ?? ''} onChange={(e) => setEditingCapa({ ...editingCapa, effectiveness: e.target.value })} />
                                 </div>
                                 <div className="space-y-2">
                                     <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Effectiveness Date</Label>
-                                    <Input type="date" value={editingCapa.effectivenessReviewDate} onChange={(e) => setEditingCapa({ ...editingCapa, effectivenessReviewDate: e.target.value })} />
-                                </div>
-                                <div className="space-y-2">
-                                    <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
-                                        Closure Approval <span className="text-destructive">*</span>
-                                    </Label>
-                                    <Input value={editingCapa.closureApproval} onChange={(e) => setEditingCapa({ ...editingCapa, closureApproval: e.target.value })} />
+                                    <Input type="date" value={editingCapa.verification_date ?? ''} onChange={(e) => setEditingCapa({ ...editingCapa, verification_date: e.target.value })} />
                                 </div>
                             </div>
                             <div className="space-y-2">
                                 <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Related Risk</Label>
                                 <Select
-                                    value={editingCapa.relatedRisk || "none"}
-                                    onValueChange={(val) => setEditingCapa({ ...editingCapa, relatedRisk: val === "none" ? "" : val })}
+                                    value={editingCapa.related_risk || "none"}
+                                    onValueChange={(val) => setEditingCapa({ ...editingCapa, related_risk: val === "none" ? "" : val })}
                                 >
                                     <SelectTrigger><SelectValue placeholder="Select Risk..." /></SelectTrigger>
                                     <SelectContent>
                                         <SelectItem value="none">— None —</SelectItem>
                                         {risks.map(r => (
-                                            <SelectItem key={r.riskId} value={r.riskId}>
-                                                {r.riskId} — {r.riskDescription?.substring(0, 40)}
+                                            <SelectItem key={r.risk_id} value={r.risk_id}>
+                                                {r.risk_id} — {r.risk_description?.substring(0, 40)}
                                             </SelectItem>
                                         ))}
                                     </SelectContent>
                                 </Select>
-                                {editingCapa.relatedRisk && (() => {
-                                    const lr = risks.find(r => r.riskId === editingCapa.relatedRisk);
+                                {editingCapa.related_risk && (() => {
+                                    const lr = risks.find(r => r.risk_id === editingCapa.related_risk);
                                     return lr ? (
                                         <div className="text-[10px] text-muted-foreground mt-1 p-2 rounded bg-muted/30 border border-border/30">
-                                            <span className="font-bold">{lr.riskId}</span> — {lr.riskDescription?.substring(0, 60)} — Status: <Badge variant="outline" className={cn("text-[7px]", getRiskBadgeColor(lr.status))}>{lr.status}</Badge>
+                                            <span className="font-bold">{lr.risk_id}</span> — {lr.risk_description?.substring(0, 60)} — Status: <Badge variant="outline" className={cn("text-[7px]", getRiskBadgeColor(lr.status))}>{lr.status}</Badge>
                                         </div>
                                     ) : null;
                                 })()}
@@ -446,15 +435,15 @@ export function CapaRegisterTab() {
                             Close CAPA & Update Risk?
                         </DialogTitle>
                         <DialogDescription className="text-xs">
-                            This CAPA is linked to <span className="font-bold">{closingCapa?.relatedRisk}</span>. 
+                            This CAPA is linked to <span className="font-bold">{closingCapa?.related_risk}</span>. 
                             Would you like to update the linked risk status to "Controlled" as well?
                         </DialogDescription>
                     </DialogHeader>
-                    {closingCapa?.relatedRisk && (() => {
-                        const lr = risks.find(r => r.riskId === closingCapa.relatedRisk);
+                    {closingCapa?.related_risk && (() => {
+                        const lr = risks.find(r => r.risk_id === closingCapa.related_risk);
                         return lr ? (
                             <div className="p-3 rounded-sm bg-muted/30 border border-border/30 space-y-1 text-xs">
-                                <div className="font-bold">{lr.riskId} — {lr.riskDescription}</div>
+                                <div className="font-bold">{lr.risk_id} — {lr.risk_description}</div>
                                 <div className="text-muted-foreground">Current Status: <Badge variant="outline" className={cn("text-[7px]", getRiskBadgeColor(lr.status))}>{lr.status}</Badge></div>
                                 <div className="text-muted-foreground mt-1">→ Will be updated to: <Badge variant="outline" className="text-[7px] text-green-600 bg-green-100">Controlled</Badge></div>
                             </div>

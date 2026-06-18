@@ -162,5 +162,13 @@ export function calculateRiskStats(risks: Risk[]) {
     byDepartment[r.process_department] = (byDepartment[r.process_department] || 0) + 1;
   });
 
-  return { total, open, underReview, controlled, closed, highCritical, medium, low, byDepartment };
+  // Aliases used by UI
+  const highRisks = highCritical;
+  const mediumRisks = medium;
+  const lowRisks = low;
+  const avgRiskScore = total > 0
+    ? Math.round((risks.reduce((sum, r) => sum + r.risk_score, 0) / total) * 10) / 10
+    : 0;
+
+  return { total, open, underReview, controlled, closed, highCritical, medium, low, byDepartment, highRisks, mediumRisks, lowRisks, avgRiskScore };
 }
