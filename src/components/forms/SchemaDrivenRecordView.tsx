@@ -154,7 +154,7 @@ export const SchemaDrivenRecordView: React.FC<SchemaDrivenRecordViewProps> = ({
   compact = false,
 }) => {
   const schema = useMemo(() => getFormSchema(formCode), [formCode]);
-  const sections = useMemo(() => getFormSections(formCode), [formCode]);
+  const sections = useMemo(() => getFormSections(), []);
 
   if (!schema) {
     // Fallback: no schema found, render raw key-value pairs

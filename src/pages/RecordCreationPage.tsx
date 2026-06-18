@@ -19,6 +19,7 @@ import DynamicFormRenderer, { type RecordData } from '../components/forms/Dynami
 import { SchemaDrivenRecordView } from '../components/forms/SchemaDrivenRecordView';
 import { getFormTemplateComponent } from '@/components/forms/templates';
 import { useCreateRecord, useRecords } from '../hooks/useRecordStorage';
+import type { StorageResult } from '../services/recordStorage';
 import { PROJECTS } from '../data/projectsData';
 import { AppShell } from '@/components/layout/AppShell';
 import { cn } from '@/lib/utils';
@@ -86,7 +87,7 @@ const RecordCreationPage: React.FC = () => {
   const handleFormSubmit = useCallback(() => {
     if (!schema || !selectedCode) return;
     // Build RecordData from template form data
-    const data: RecordData = { ...formData };
+    const data = { ...formData } as RecordData;
     if (!data.serial || data.serial === 'auto') {
       data.serial = getNextSerial(selectedCode);
     }
@@ -102,17 +103,17 @@ const RecordCreationPage: React.FC = () => {
     }
     // Convert dates from display format (DD/MM/YYYY) to display format (already DD/MM/YYYY from template)
     // No conversion needed — DateOrTextCell stores values as-is
-    createMutation.mutate(data as unknown, {
-      onSuccess: (result: unknown) => {
+    createMutation.mutate(data, {
+      onSuccess: (result: StorageResult) => {
         // Check if the mutation actually succeeded
-        if (result?.success === false) {
+        if (!result.success) {
           setCreateError(result.error || 'Failed to create record');
           return;
         }
-        const serial = result?.record?.serial || data.serial || '';
-        setCreated({ code: selectedCode, serial: serial as string, data: data as RecordData });
+        const serial = result.record?.serial || data.serial || '';
+        setCreated({ code: selectedCode, serial: serial as string, data });
       },
-      onError: (err: unknown) => {
+      onError: (err: Error) => {
         setCreateError(err.message || 'Failed to create record');
       },
     });

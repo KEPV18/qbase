@@ -60,6 +60,7 @@ interface DynamicFormRendererProps {
   onCancel?: () => void;
   readOnly?: boolean;
   editMode?: boolean;
+  isSubmitting?: boolean;
 }
 
 // ============================================================================
@@ -498,6 +499,7 @@ const DynamicFormRenderer: React.FC<DynamicFormRendererProps> = ({
   onCancel,
   readOnly = false,
   editMode = false,
+  isSubmitting: externalSubmitting = false,
 }) => {
   const [selectedCode, setSelectedCode] = useState(formCode || '');
   const [formData, setFormData] = useState<RecordData>(initialData || {});
@@ -507,6 +509,9 @@ const DynamicFormRenderer: React.FC<DynamicFormRendererProps> = ({
   const [gatePassed, setGatePassed] = useState(editMode);
   const [gateAnswers, setGateAnswers] = useState<PreCreationGateData | null>(null);
   const [showGate, setShowGate] = useState(false);
+
+  // Merge external submitting state (from parent) with internal state
+  const submitting = isSubmitting || externalSubmitting;
 
   const schema = selectedCode ? getFormSchema(selectedCode) : null;
 
@@ -572,7 +577,7 @@ const DynamicFormRenderer: React.FC<DynamicFormRendererProps> = ({
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (isSubmitting) return;
+    if (submitting) return;
 
     const dataToValidate = { ...formData };
     if (!dataToValidate.serial || dataToValidate.serial === 'auto') {
@@ -764,9 +769,9 @@ const DynamicFormRenderer: React.FC<DynamicFormRendererProps> = ({
               <div className="flex gap-3 mt-6 pt-4 border-t border-border">
                 <button
                   type="submit"
-                  disabled={isSubmitting || readOnly}
+                  disabled={submitting || readOnly}
                   className={`ds-press ds-focus-ring px-6 py-2 rounded-sm font-medium flex items-center gap-2 ${
-                    (isSubmitting || readOnly)
+                    (submitting || readOnly)
                       ? 'bg-muted text-muted-foreground cursor-not-allowed'
                       : 'bg-primary text-primary-foreground hover:bg-primary/90'
                   } transition-colors`}

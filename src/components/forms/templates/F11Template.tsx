@@ -93,12 +93,12 @@ export function F11Template({ data, isTemplate = true, editMode = false, onChang
 
       {/* Table header - two-level */}
       <div className="grid grid-cols-[35px_100px_60px_60px_60px_60px_60px_60px_50px] border-x border-b border-black text-[9px] font-semibold bg-gray-100">
-        <div className="p-1 border-r border-black" rowSpan={2}>Sr.</div>
-        <div className="p-1 border-r border-black" rowSpan={2}>Product</div>
-        <div className="p-1 border-r border-black" rowSpan={2}>Batch No.</div>
+        <div className="p-1 border-r border-black">Sr.</div>
+        <div className="p-1 border-r border-black">Product</div>
+        <div className="p-1 border-r border-black">Batch No.</div>
         <div className="p-1 border-r border-black col-span={3} text-center bg-blue-50">Plan For Completion</div>
         <div className="p-1 col-span={2} text-center bg-green-50">Actual Completion</div>
-        <div className="p-1 border-l border-r border-black" rowSpan={2}>% Yield</div>
+        <div className="p-1 border-l border-r border-black">% Yield</div>
       </div>
       <div className="grid grid-cols-[35px_100px_60px_60px_60px_60px_60px_60px_50px] border-x border-b border-black text-[9px] font-semibold bg-gray-100">
         <div className="p-1 border-r border-black"></div>

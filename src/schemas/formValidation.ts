@@ -218,7 +218,7 @@ export type F10Data = z.infer<typeof F10Schema>;
 
 export const F50Schema = z.object({
   serial: AUTO_SERIAL,
-  entries: z.array(z.record(z.string())).optional().default([]),
+  entries: z.array(z.record(z.string(), z.string())).optional().default([]),
 });
 export type F50Data = z.infer<typeof F50Schema>;
 
@@ -659,7 +659,7 @@ export type F46Data = z.infer<typeof F46Schema>;
 // Schema Registry — form code → Zod schema
 // ============================================================================
 
-export const FORM_ZOD_SCHEMAS: Record<string, z.ZodObject<unknown>> = {
+export const FORM_ZOD_SCHEMAS: Record<string, z.ZodType> = {
   'F/08': F08Schema,
   'F/09': F09Schema,
   'F/10': F10Schema,
@@ -698,13 +698,13 @@ export const FORM_ZOD_SCHEMAS: Record<string, z.ZodObject<unknown>> = {
 };
 
 /** Get the Zod schema for a form code */
-export function getZodSchema(code: string): z.ZodObject<unknown> | undefined {
+export function getZodSchema(code: string): z.ZodType | undefined {
   return FORM_ZOD_SCHEMAS[code];
 }
 
 /** Validate data against a form's schema. Returns { success, data } or { success: false, errors } */
 export function validateFormData(code: string, data: unknown): 
-  { success: true; data: unknown } | { success: false; errors: Record<string, string> } {
+  { success: true; data: Record<string, unknown> } | { success: false; errors: Record<string, string> } {
   const schema = FORM_ZOD_SCHEMAS[code];
   if (!schema) {
     return { success: false, errors: { _form: `Unknown form code: ${code}` } };
@@ -712,12 +712,12 @@ export function validateFormData(code: string, data: unknown):
   
   const result = schema.safeParse(data);
   if (result.success) {
-    return { success: true, data: result.data };
+    return { success: true, data: result.data as Record<string, unknown> };
   }
   
   const errors: Record<string, string> = {};
-  const issues = result.error.issues || result.error.errors || [];
-  issues.forEach((err: { path: (string | number)[]; message: string }) => {
+  const issues = result.error.issues;
+  issues.forEach((err: z.ZodIssue) => {
     const path = err.path.join('.');
     errors[path || '_form'] = err.message;
   });
@@ -732,8 +732,8 @@ export function validatePreCreationGate(data: unknown):
     return { success: true, data: result.data };
   }
   const errors: Record<string, string> = {};
-  const issues = result.error.issues || result.error.errors || [];
-  issues.forEach((err: { path: (string | number)[]; message: string }) => {
+  const issues = result.error.issues;
+  issues.forEach((err: z.ZodIssue) => {
     const path = err.path.join('.');
     errors[path || '_gate'] = err.message;
   });
