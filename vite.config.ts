@@ -30,7 +30,7 @@ export default defineConfig(({ mode }) => ({
         manualChunks: {
           // Vendor chunks for better caching
           'vendor-react': ['react', 'react-dom', 'react-router-dom'],
-          'vendor-ui': ['@radix-ui/react-dialog', '@radix-ui/react-dropdown-menu', '@radix-ui/react-select', '@radix-ui/react-popover'],
+          'vendor-ui': ['@radix-ui/react-dialog', '@radix-ui/react-select', '@radix-ui/react-popover'],
           'vendor-utils': ['lucide-react', 'clsx', 'class-variance-authority', 'tailwind-merge'],
           'vendor-supabase': ['@supabase/supabase-js'],
           'vendor-query': ['@tanstack/react-query'],
