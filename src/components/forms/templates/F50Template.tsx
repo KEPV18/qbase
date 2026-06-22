@@ -107,32 +107,32 @@ export function F50Template({ data, isTemplate = true, editMode = false, onChang
   }, [onChange]);
 
   // ── Styling presets ─────────────────────────────────────────────────
-  const labelCls = "bg-slate-100 dark:bg-slate-800 font-semibold text-sm px-3 py-2 border border-slate-300 dark:border-slate-600 text-slate-700 dark:text-slate-300";
-  const valueCls = "px-2 py-2 border border-slate-300 dark:border-slate-600 text-sm text-slate-900 dark:text-slate-100 min-h-[2.25rem]";
+  const labelCls = "bg-slate-100 dark:bg-slate-800 font-semibold text-sm px-2 py-1.5 border border-slate-300 dark:border-slate-600 text-slate-700 dark:text-slate-300";
+  const valueCls = "px-1.5 py-1.5 border border-slate-300 dark:border-slate-600 text-sm text-slate-900 dark:text-slate-100 min-h-[2rem]";
   const emptyValueCls = cn(valueCls, isTemplate ? "text-slate-300 dark:text-slate-600" : "");
-  const titleCls = "bg-slate-100 dark:bg-slate-800 font-bold text-base px-4 py-3 border border-slate-300 dark:border-slate-600 text-slate-900 dark:text-slate-100";
-  const headerCls = "bg-indigo-50 dark:bg-indigo-950 font-semibold text-xs uppercase tracking-wide px-2 py-2 border border-indigo-200 dark:border-indigo-800 text-indigo-800 dark:text-indigo-300";
+  const titleCls = "bg-slate-100 dark:bg-slate-800 font-bold text-base px-3 py-2 border border-slate-300 dark:border-slate-600 text-slate-900 dark:text-slate-100";
+  const headerCls = "bg-indigo-50 dark:bg-indigo-950 font-semibold text-xs uppercase tracking-wide px-1.5 py-1.5 border border-indigo-200 dark:border-indigo-800 text-indigo-800 dark:text-indigo-300";
   const inputCls = "w-full bg-transparent outline-none text-sm text-slate-900 dark:text-slate-100 placeholder:text-slate-300 dark:placeholder:text-slate-600";
 
   const serialValue = val(d, "serial") || val(d, "formCode") || "";
 
   return (
     <div className={cn("overflow-x-auto", className)}>
-      <table className="w-full border-collapse">
+      <table className="w-full table-auto border-collapse">
         <colgroup>
-          <col className="w-[8%]" />
+          <col className="w-[7%]" />
           <col className="w-[9%]" />
           <col className="w-[8%]" />
-          <col className="w-[7%]" />
-          <col className="w-[8%]" />
-          <col className="w-[8%]" />
+          <col className="w-[6%]" />
           <col className="w-[8%]" />
           <col className="w-[8%]" />
           <col className="w-[7%]" />
           <col className="w-[7%]" />
+          <col className="w-[6%]" />
+          <col className="w-[6%]" />
+          <col className="w-[10%]" />
           <col className="w-[8%]" />
-          <col className="w-[8%]" />
-          <col className="w-[8%]" />
+          <col className="w-[5%]" />
         </colgroup>
         <tbody>
           {/* ── Row 0: Title + Serial ─────────────────────── */}
