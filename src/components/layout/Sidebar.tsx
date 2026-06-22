@@ -9,7 +9,7 @@ import { useTenantIdentity } from "@/hooks/useTenantIdentity";
 import {
   LayoutDashboard, Layers, FileText, Settings, Bell,
   Database, Shield, Users, BarChart3, Briefcase,
-  CheckCircle, LogOut, BookOpen, FileCheck,
+  CheckCircle, LogOut, BookOpen, FileCheck, ShieldCheck,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useNotifications } from "@/hooks/useNotifications";
@@ -47,6 +47,7 @@ const SETTINGS_NAV: NavSection = {
   title: "SETTINGS",
   items: [
     { label: "Admin", icon: Users, path: "/admin/accounts" },
+    { label: "Data Integrity", icon: ShieldCheck, path: "/admin/data-sanitizer" },
     { label: "Settings", icon: Settings, path: "/settings" },
   ],
 };

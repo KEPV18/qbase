@@ -18,6 +18,7 @@ const RiskManagementPage = lazy(() => import("./pages/RiskManagementPage"));
 const ApprovalQueuePage = lazy(() => import("./pages/ApprovalQueuePage"));
 const DatabaseManagementPage = lazy(() => import("./pages/DatabaseManagementPage"));
 const AdminPanel = lazy(() => import("./pages/AdminPanel"));
+const DataSanitizer = lazy(() => import("./pages/admin/DataSanitizer"));
 const Login = lazy(() => import("./pages/Login"));
 const Register = lazy(() => import("./pages/Register"));
 const AuthCallback = lazy(() => import("./pages/AuthCallback"));
@@ -120,6 +121,7 @@ const App = () => {
                       <Route path="/settings" element={<PageBoundary><SettingsPage /></PageBoundary>} />
                       <Route path="/admin/accounts" element={<RequireRole roles={["admin"]}><PageBoundary><AdminPanel /></PageBoundary></RequireRole>} />
                       <Route path="/admin/database" element={<RequireRole roles={["admin"]}><PageBoundary><DatabaseManagementPage /></PageBoundary></RequireRole>} />
+                      <Route path="/admin/data-sanitizer" element={<RequireRole roles={["admin"]}><PageBoundary><DataSanitizer /></PageBoundary></RequireRole>} />
                       <Route path="/admin/approvals" element={<PageBoundary><ApprovalQueuePage /></PageBoundary>} />
                       {/* Redirects for sidebar links */}
                       <Route path="/modules" element={<Navigate to="/module/sales" replace />} />
