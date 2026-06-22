@@ -36,6 +36,8 @@ export function F44Template({ data, isTemplate = true, editMode = false, onChang
       </span>
     );
 
+  const signedDocUrl = val(d, "signed_document_url");
+
   return (
     <div className={cn("bg-background dark:bg-[#1e1d1a] text-foreground text-sm print:bg-white print:text-black print:border-black", className)}>
       {/* Header */}
@@ -46,6 +48,28 @@ export function F44Template({ data, isTemplate = true, editMode = false, onChang
           Rev No. {val(d, "serial") || (ph ? "{{SERIAL}}" : "—")}
         </div>
       </div>
+
+      {/* Signed Document Link */}
+      {signedDocUrl && (
+        <div className="mb-4 p-2 bg-blue-50 dark:bg-blue-950 border border-blue-200 dark:border-blue-800 rounded-md text-xs flex items-center gap-2">
+          <span className="font-semibold">📎 Signed Document:</span>
+          <a
+            href={signedDocUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-blue-600 dark:text-blue-400 underline hover:text-blue-800"
+          >
+            View Signed PDF (Physical Signature)
+          </a>
+        </div>
+      )}
+
+      {/* Employee Name */}
+      {val(d, "employee_name") && (
+        <div className="mb-2 text-xs text-muted-foreground">
+          <span className="font-semibold">Employee:</span> {val(d, "employee_name")}
+        </div>
+      )}
 
       <table className="w-full border-collapse border border-border text-xs">
         <tbody>
