@@ -184,7 +184,7 @@ const RecordViewPage: React.FC = () => {
         <FileText className="w-12 h-12 text-muted-foreground/40 mb-4" />
         <h2 className="text-xl text-foreground mb-2">Record Not Found</h2>
         <p className="text-muted-foreground mb-4">No record with serial <code className="text-primary font-mono">{decodedSerial}</code></p>
-        <button onClick={() => navigate('/records')} className="ds-press ds-focus-ring px-4 py-2 bg-primary text-primary-foreground rounded-sm flex items-center gap-2">
+        <button onClick={() => navigate('/')} className="ds-press ds-focus-ring px-4 py-2 bg-primary text-primary-foreground rounded-sm flex items-center gap-2">
           <ArrowLeft className="w-4 h-4" /> Back to Records
         </button>
       </div>
@@ -288,7 +288,7 @@ const RecordViewPage: React.FC = () => {
     try {
       await deleteMutation.mutateAsync(recordId);
       setConfirmDelete(false);
-      navigate('/records');
+      navigate('/');
     } catch {
       // Error handled by mutation onError
     }

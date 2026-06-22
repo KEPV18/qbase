@@ -113,12 +113,12 @@ export default {
       },
       boxShadow: {
         sm: "0 1px 2px 0 rgb(0 0 0 / 0.05)",
-        DEFAULT: "0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1)",
-        md: "0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1)",
-        lg: "0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1)",
-        "glow-sm": "0 0 8px hsl(186 100% 50% / 0.15)",
-        "glow-md": "0 0 16px hsl(186 100% 50% / 0.2), 0 0 32px hsl(186 100% 50% / 0.08)",
-        "glow-lg": "0 0 24px hsl(186 100% 50% / 0.3), 0 0 48px hsl(186 100% 50% / 0.12), 0 0 64px hsl(186 100% 50% / 0.06)",
+        DEFAULT: "0 1px 3px 0 rgb(15 23 42 / 0.08), 0 1px 2px -1px rgb(15 23 42 / 0.06)",
+        md: "0 4px 6px -1px rgb(15 23 42 / 0.08), 0 2px 4px -2px rgb(15 23 42 / 0.06)",
+        lg: "0 10px 15px -3px rgb(15 23 42 / 0.08), 0 4px 6px -4px rgb(15 23 42 / 0.06)",
+        "glow-sm": "0 0 8px hsl(239 84% 59% / 0.15)",
+        "glow-md": "0 0 16px hsl(239 84% 59% / 0.2), 0 0 32px hsl(239 84% 59% / 0.08)",
+        "glow-lg": "0 0 24px hsl(239 84% 59% / 0.25), 0 0 48px hsl(239 84% 59% / 0.1), 0 0 64px hsl(239 84% 59% / 0.05)",
       },
       fontSize: {
         xs: ["12px", { lineHeight: "16px", fontWeight: "400" }],
@@ -143,8 +143,8 @@ export default {
           "100%": { backgroundPosition: "0% 50%" },
         },
         "glow-breathe": {
-          "0%, 100%": { boxShadow: "0 0 4px hsl(186 100% 50% / 0.1)" },
-          "50%": { boxShadow: "0 0 16px hsl(186 100% 50% / 0.3), 0 0 32px hsl(186 100% 50% / 0.1)" },
+          "0%, 100%": { boxShadow: "0 0 4px hsl(239 84% 59% / 0.1)" },
+          "50%": { boxShadow: "0 0 16px hsl(239 84% 59% / 0.3), 0 0 32px hsl(239 84% 59% / 0.1)" },
         },
         "grid-pulse": {
           "0%, 100%": { opacity: "1" },

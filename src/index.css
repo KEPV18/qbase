@@ -36,13 +36,13 @@
     --duration-slow: 500ms;
 
     /* ── Shadow Scale ── */
-    --shadow-sm: 0 1px 2px rgb(0 0 0 / 0.04), 0 1px 3px rgb(0 0 0 / 0.02);
-    --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.07), 0 2px 4px -2px rgb(0 0 0 / 0.05);
-    --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.08), 0 4px 6px -4px rgb(0 0 0 / 0.04);
+    --shadow-sm: 0 1px 2px rgb(15 23 42 / 0.04), 0 1px 3px rgb(15 23 42 / 0.02);
+    --shadow-md: 0 4px 6px -1px rgb(15 23 42 / 0.06), 0 2px 4px -2px rgb(15 23 42 / 0.04);
+    --shadow-lg: 0 10px 15px -3px rgb(15 23 42 / 0.06), 0 4px 6px -4px rgb(15 23 42 / 0.04);
 
     /* ── Brand — Indigo ── */
-    --neon-cyan: 226 100% 60%;
-    --neon-violet: 263 70% 50%;
+    --neon-cyan: 199 89% 48%;
+    --neon-violet: 239 84% 59%;
     --neon-emerald: 160 84% 39%;
     --neon-amber: 38 92% 50%;
     --neon-red: 0 72% 51%;
@@ -52,25 +52,25 @@
     --glow-md: 0 2px 8px hsl(var(--primary) / 0.12), 0 1px 3px hsl(var(--primary) / 0.06);
     --glow-lg: 0 8px 24px hsl(var(--primary) / 0.14), 0 2px 8px hsl(var(--primary) / 0.08);
 
-    /* ── Surface Colors (Warm) ── */
-    --background: 40 20% 96%;      /* #f6f4ef — warm cream */
-    --foreground: 30 10% 18%;      /* #2d2d2d — warm dark */
-    --card: 0 0% 100%;
-    --card-foreground: 30 10% 18%;
-    --popover: 0 0% 100%;
-    --popover-foreground: 30 10% 18%;
+    /* ── Surface Colors (Slate) ── */
+    --background: 0 0% 100%;      /* #ffffff */
+    --foreground: 222 47% 11%;    /* #0f172a */
+    --card: 210 40% 98%;          /* #f8fafc */
+    --card-foreground: 222 47% 11%;
+    --popover: 210 40% 98%;       /* #f8fafc */
+    --popover-foreground: 222 47% 11%;
 
     /* ── Brand — Indigo ── */
-    --primary: 226 100% 60%;
+    --primary: 239 84% 59%;       /* #4f46e5 */
     --primary-foreground: 0 0% 100%;
 
     /* ── Neutral Variants (Warm) ── */
-    --secondary: 40 15% 92%;       /* #ece8df — warm surface */
-    --secondary-foreground: 30 10% 18%;
-    --muted: 40 15% 92%;
-    --muted-foreground: 36 6% 48%; /* #7a756a — warm gray */
-    --accent: 226 100% 96%;
-    --accent-foreground: 226 70% 30%;
+    --secondary: 210 40% 96%;     /* #f1f5f9 */
+    --secondary-foreground: 222 47% 11%;
+    --muted: 210 40% 96%;         /* #f1f5f9 */
+    --muted-foreground: 215 16% 47%; /* #64748b */
+    --accent: 239 84% 95%;        /* indigo/50 */
+    --accent-foreground: 239 84% 30%; /* indigo-800 */
 
     /* ── Semantic Colors ── */
     --destructive: 0 84% 60%;
@@ -82,10 +82,10 @@
     --info: 199 89% 48%;
     --info-foreground: 0 0% 100%;
 
-    /* ── Interactive (Warm) ── */
-    --border: 40 15% 88%;          /* #e8e3db — warm border */
-    --input: 40 15% 88%;
-    --ring: 226 100% 60%;
+    /* ── Interactive ── */
+    --border: 214 32% 91%;          /* #e2e8f0 */
+    --input: 214 32% 91%;           /* #e2e8f0 */
+    --ring: 239 84% 59%;            /* #4f46e5 */
 
     /* Module colors */
     --module-operations: 263 70% 58%;
@@ -97,30 +97,30 @@
     --module-sales: 186 100% 50%;
   }
 
-  /* ── Dark Mode: Warm Dark ── */
+  /* ── Dark Mode: Obsidian ── */
   .dark {
     color-scheme: dark;
 
-    --background: 30 10% 10%;        /* #1a1a18 — warm charcoal */
-    --foreground: 40 15% 90%;        /* #e8e3db — warm off-white */
+    --background: 240 4% 4%;         /* #0a0a0c — obsidian black */
+    --foreground: 0 0% 98%;          /* #fafafa */
 
-    --card: 30 8% 13%;               /* #232220 */
-    --card-foreground: 40 15% 90%;
+    --card: 240 4% 10%;              /* #18181b */
+    --card-foreground: 0 0% 98%;
 
-    --popover: 30 8% 13%;
-    --popover-foreground: 40 15% 90%;
+    --popover: 240 4% 10%;
+    --popover-foreground: 0 0% 98%;
 
-    --primary: 226 100% 63%;
-    --primary-foreground: 30 10% 10%;
+    --primary: 239 84% 64%;          /* #6366f1 */
+    --primary-foreground: 0 0% 100%;
 
-    --secondary: 30 8% 22%;          /* #3a3834 */
-    --secondary-foreground: 40 15% 90%;
+    --secondary: 240 4% 15%;         /* #27272a */
+    --secondary-foreground: 0 0% 98%;
 
-    --muted: 30 8% 18%;
-    --muted-foreground: 36 5% 50%;   /* #8a857a */
+    --muted: 240 4% 15%;
+    --muted-foreground: 215 8% 65%;  /* #94a3b8 */
 
-    --accent: 30 8% 18%;
-    --accent-foreground: 40 15% 90%;
+    --accent: 239 84% 12%;
+    --accent-foreground: 0 0% 98%;
 
     --destructive: 0 72% 51%;
     --destructive-foreground: 0 0% 98%;
@@ -134,14 +134,9 @@
     --info: 199 89% 55%;
     --info-foreground: 0 0% 100%;
 
-    --border: 30 8% 22%;             /* #3a3834 */
-    --input: 30 8% 22%;
-    --ring: 226 100% 63%;
-
-    /* ── Subtle Glow ── */
-    --glow-sm: 0 1px 4px hsl(var(--primary) / 0.1);
-    --glow-md: 0 2px 12px hsl(var(--primary) / 0.15), 0 1px 4px hsl(var(--primary) / 0.08);
-    --glow-lg: 0 8px 32px hsl(var(--primary) / 0.18), 0 2px 8px hsl(var(--primary) / 0.1);
+    --border: 240 4% 15%;            /* #27272a */
+    --input: 240 4% 15%;
+    --ring: 239 84% 64%;
   }
 
   /* ── Accent Color Overrides ── */
@@ -223,43 +218,10 @@
     background: hsl(var(--muted-foreground) / 0.35);
   }
 }
-
 /* ══════════════════════════════════════════════════
    3. COMPONENTS
    ══════════════════════════════════════════════════ */
 @layer components {
-
-  /* ── Surface Cards — Luxury Modern ── */
-  .surface-card {
-    @apply bg-card border border-border/60 shadow-sm rounded-xl;
-    transition: box-shadow var(--duration-normal) var(--ease-standard),
-      border-color var(--duration-normal) var(--ease-standard);
-  }
-
-  .surface-card:hover {
-    box-shadow: var(--shadow-md);
-    border-color: hsl(var(--border));
-  }
-
-  .surface-elevated {
-    @apply bg-secondary border border-border/60 rounded-xl;
-  }
-
-  .border-subtle {
-    @apply border border-border/60;
-  }
-
-  /* ── DS Card (Design System Card) ── */
-  .ds-card {
-    @apply bg-card border border-border/60 rounded-xl shadow-sm;
-    transition: all var(--duration-normal) var(--ease-standard);
-  }
-
-  .ds-card:hover {
-    box-shadow: var(--shadow-md);
-    border-color: hsl(var(--primary) / 0.12);
-    transform: translateY(-1px);
-  }
 
   /* ── DS Input — Zero Ghost + Soft Glow ── */
   .ds-input {
@@ -292,50 +254,6 @@
     box-shadow: var(--shadow-md);
   }
 
-  /* ── Card Variants ── */
-  .card-modern {
-    @apply bg-card border border-border/60 rounded-xl shadow-sm;
-    transition: all var(--duration-normal) var(--ease-standard);
-  }
-
-  .card-modern:hover {
-    box-shadow: var(--shadow-md);
-    transform: translateY(-1px);
-  }
-
-  .card-elevated {
-    @apply bg-card border border-border/60 rounded-xl shadow-md;
-    transition: all var(--duration-normal) var(--ease-standard);
-  }
-
-  .card-elevated:hover {
-    box-shadow: var(--glow-md);
-  }
-
-  /* ── Card Hover Effects ── */
-  .card-lift {
-    will-change: transform, box-shadow;
-    transition: transform var(--duration-normal) var(--ease-standard),
-      box-shadow var(--duration-normal) var(--ease-standard);
-  }
-
-  .card-lift:hover {
-    transform: translateY(-2px);
-    box-shadow: var(--shadow-md);
-  }
-
-  .card-hover {
-    transition: transform var(--duration-fast) ease,
-      box-shadow var(--duration-fast) ease,
-      border-color var(--duration-fast) ease;
-  }
-
-  .card-hover:hover {
-    transform: translateY(-1px);
-    box-shadow: var(--shadow-sm);
-    border-color: hsl(var(--primary) / 0.15);
-  }
-
   /* ── Status Pills — Micro-Saturated ── */
   .status-pill {
     @apply inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium border;
@@ -347,11 +265,11 @@
   }
 
   .status-pill-success {
-    @apply bg-emerald-500/10 text-emerald-600 border-emerald-500/20;
+    @apply bg-success/10 text-success border-success/20;
   }
 
   .status-pill-warning {
-    @apply bg-amber-500/10 text-amber-600 border-amber-500/20;
+    @apply bg-warning/10 text-warning border-warning/20;
   }
 
   .status-pill-destructive {
@@ -687,9 +605,7 @@
   /* Card/content styling for print */
   .card,
   .glass-card,
-  .card-modern,
   .card-elevated,
-  .surface-card,
   [class*="card-"] {
     box-shadow: none !important;
     border: none !important;
@@ -805,19 +721,6 @@
    8. DESIGN SYSTEM — Unified Patterns
    ══════════════════════════════════════════════════ */
 
-/* ── Unified Card Style ── */
-.ds-card {
-  @apply bg-card backdrop-blur-sm border border-border rounded-lg
-         transition-all duration-300 overflow-hidden relative;
-}
-
-.ds-card:hover {
-  @apply border-primary/20 shadow-md;
-}
-
-.ds-card-elevated {
-  @apply ds-card shadow-sm hover:shadow-lg hover:-translate-y-0.5;
-}
 
 /* ── Critical Item Highlighting ── */
 .ds-critical {

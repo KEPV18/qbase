@@ -227,8 +227,8 @@ const RecordCreationPage: React.FC = () => {
             <button onClick={() => navigate(`/records/${encodeURIComponent(created.serial)}`)} className="ds-press px-6 py-2 bg-secondary text-secondary-foreground rounded-sm font-medium hover:bg-accent transition-colors">
               View Record
             </button>
-            <button onClick={() => navigate('/records')} className="ds-press px-6 py-2 bg-secondary text-secondary-foreground rounded-sm font-medium hover:bg-accent transition-colors">
-              All Records
+            <button onClick={() => navigate('/')} className="ds-press px-6 py-2 bg-secondary text-secondary-foreground rounded-sm font-medium hover:bg-accent transition-colors">
+              Dashboard
             </button>
           </div>
         </div>

@@ -26,7 +26,6 @@ const MAIN_NAV: NavSection = {
     { label: "Dashboard", icon: LayoutDashboard, path: "/" },
     { label: "Modules", icon: Layers, path: "/module/operations" },
     { label: "Forms", icon: FileText, path: "/forms" },
-    { label: "Records", icon: Database, path: "/records" },
     { label: "Projects Workspace", icon: Briefcase, path: "/projects" },
     { label: "Analytics", icon: BarChart3, path: "/audit" },
     { label: "Procedures", icon: BookOpen, path: "/procedures" },
@@ -128,7 +127,7 @@ export function Sidebar({ mobileOpen, onClose }: { mobileOpen: boolean; onClose:
 
       <aside
         className={cn(
-          "fixed lg:static inset-y-0 left-0 z-50 w-64 bg-white dark:bg-[#1a1a18] border-r border-border dark:border-[#3a3834]",
+          "fixed lg:static inset-y-0 left-0 z-50 w-64 bg-background/80 backdrop-blur-xl border-r border-border",
           "flex flex-col transition-transform duration-300 ease-in-out",
           mobileOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"
         )}
@@ -139,7 +138,7 @@ export function Sidebar({ mobileOpen, onClose }: { mobileOpen: boolean; onClose:
             <div className="w-9 h-9 rounded-lg bg-foreground flex items-center justify-center">
               <img src={brandLogo} alt="logo" className="w-5 h-5 object-contain invert" />
             </div>
-            <span className="text-lg font-heading font-bold text-foreground dark:text-[#e8e3db] tracking-tight">
+            <span className="text-lg font-heading font-bold text-foreground dark:text-foreground tracking-tight">
               {displayName || "QBase"}
             </span>
           </button>
@@ -200,17 +199,17 @@ export function Sidebar({ mobileOpen, onClose }: { mobileOpen: boolean; onClose:
 
         {/* User Profile */}
         <div className="px-4 pb-6 pt-4">
-          <div className="flex items-center gap-3 px-3 py-3 rounded-lg border border-border dark:border-[#3a3834] bg-background dark:bg-[#1a1a18]">
+          <div className="flex items-center gap-3 px-3 py-3 rounded-lg border border-border bg-card">
             <div className="w-9 h-9 rounded-full bg-foreground flex items-center justify-center">
               <span className="text-xs font-bold text-white">{userInitials}</span>
             </div>
             <div className="flex-1 min-w-0">
               <p className="text-sm font-semibold text-foreground dark:text-[#e8e3db] truncate">{firstName}</p>
-              <p className="text-[11px] text-[#7a756a] truncate">{user?.role || "User"}</p>
+              <p className="text-[11px] text-muted-foreground truncate">{user?.role || "User"}</p>
             </div>
             <button
               onClick={logout}
-              className="p-1.5 rounded-lg text-[#9f9a8f] hover:text-[#2d2d2d] hover:bg-[#ece8df] transition-colors"
+              className="p-1.5 rounded-lg text-muted-foreground/70 hover:text-foreground hover:bg-muted transition-colors"
               title="Logout"
             >
               <LogOut className="w-4 h-4" />

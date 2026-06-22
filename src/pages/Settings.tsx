@@ -25,7 +25,7 @@ import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import {
   User, UserCircle, Mail, Crown, KeyRound, LogOut, Eye, EyeOff,
-  Moon, Sun, Palette, Bell, Shield, Server, HardDrive, CheckCircle,
+  Moon, Sun, Palette, Bell, Shield, Server, CheckCircle, Database, Activity,
   AlertTriangle, Loader2, Wifi, WifiOff, Monitor, Settings as SettingsIcon,
 } from "lucide-react";
 
@@ -40,17 +40,6 @@ const SECTIONS: { id: SectionId; label: string; icon: React.ElementType; adminOn
   { id: "security", label: "Security", icon: Shield },
   { id: "notifications", label: "Notifications", icon: Bell },
   { id: "preferences", label: "Preferences", icon: Palette },
-];
-
-const ACCENT_COLORS = [
-  { id: "cyan", label: "Cyan", hsl: "186 100% 50%" },
-  { id: "blue", label: "Blue", hsl: "221 83% 53%" },
-  { id: "green", label: "Green", hsl: "142 71% 45%" },
-  { id: "purple", label: "Purple", hsl: "262 83% 58%" },
-  { id: "red", label: "Red", hsl: "0 84% 60%" },
-  { id: "orange", label: "Orange", hsl: "25 95% 53%" },
-  { id: "pink", label: "Pink", hsl: "330 81% 60%" },
-  { id: "gold", label: "Gold", hsl: "45 93% 47%", adminOnly: true },
 ];
 
 // ---------------------------------------------------------------------------
@@ -455,24 +444,11 @@ function NotificationsSection() {
 function PreferencesSection() {
   const { user } = useAuth();
   const { theme, setTheme, resolvedTheme } = useTheme();
-  const [accentColor, setAccentColor] = useState(localStorage.getItem("accentColor") || "cyan");
-
-  useEffect(() => {
-    const saved = localStorage.getItem("accentColor") || "cyan";
-    setAccentColor(saved);
-    document.documentElement.setAttribute("data-accent", saved);
-  }, []);
 
   const isDark = resolvedTheme === "dark";
   const isAdmin = user?.role === "admin";
 
   const toggleDark = (checked: boolean) => setTheme(checked ? "dark" : "light");
-
-  const handleAccentChange = (color: string) => {
-    setAccentColor(color);
-    localStorage.setItem("accentColor", color);
-    document.documentElement.setAttribute("data-accent", color);
-  };
 
   return (
     <div className="space-y-8">
@@ -496,31 +472,6 @@ function PreferencesSection() {
             </div>
           </div>
           <Switch checked={isDark} onCheckedChange={toggleDark} />
-        </div>
-      </Card>
-
-      {/* Accent color */}
-      <Card>
-        <CardLabel icon={Palette} title="Accent Color" description="Personalize your interface accent." />
-        <div className="grid grid-cols-4 sm:grid-cols-7 gap-2.5 max-w-lg">
-          {ACCENT_COLORS.filter((c) => !c.adminOnly || isAdmin).map((color) => (
-            <button
-              key={color.id}
-              onClick={() => handleAccentChange(color.id)}
-              className={cn(
-                "flex flex-col items-center gap-1.5 p-2 rounded-lg border transition-all",
-                accentColor === color.id
-                  ? "border-[#2d2d2d] dark:border-[#e8e3db] ring-2 ring-primary/20"
-                  : "border-[#e8e3db] dark:border-[#3a3834] hover:border-primary/30"
-              )}
-            >
-              <div
-                className="w-7 h-7 rounded-full border border-[#e8e3db] dark:border-[#3a3834]"
-                style={{ backgroundColor: `hsl(${color.hsl})` }}
-              />
-              <span className="text-[10px] text-[#7a756a]">{color.label}</span>
-            </button>
-          ))}
         </div>
       </Card>
 
@@ -701,85 +652,177 @@ function CompanySettingsCard() {
 }
 
 // ---------------------------------------------------------------------------
-// Diagnostics Card — admin-only system health checks
+// Diagnostics Card — Supabase health checks
 // ---------------------------------------------------------------------------
 
 function DiagnosticsCard() {
-  const [serverStatus, setServerStatus] = useState<"idle" | "checking" | "online" | "offline">("idle");
-  const [driveStatus, setDriveStatus] = useState<"idle" | "checking" | "success" | "error">("success");
+  const [checks, setChecks] = useState<{
+    supabase: { status: "idle" | "checking" | "ok" | "error"; latency?: number; msg?: string };
+    db: { status: "idle" | "checking" | "ok" | "error"; latency?: number; msg?: string };
+    auth: { status: "idle" | "checking" | "ok" | "error"; latency?: number; msg?: string };
+  }>({
+    supabase: { status: "idle" },
+    db: { status: "idle" },
+    auth: { status: "idle" },
+  });
 
-  const handleCheckServer = async () => {
-    setServerStatus("checking");
+  const isChecking = checks.supabase.status === "checking" || checks.db.status === "checking" || checks.auth.status === "checking";
+
+  const runDiagnostics = async () => {
+    setChecks({ supabase: { status: "checking" }, db: { status: "checking" }, auth: { status: "checking" } });
+
+    // 1. Supabase connectivity (ping via auth session)
+    const sbStart = performance.now();
     try {
-      const response = await fetch("/api/auth?health=true");
-      setServerStatus(response.ok ? "online" : "offline");
-      if (response.ok) {
-        toast.success("Server Online", { description: "Backend connection active." });
-      } else {
-        toast.error("Server Error", { description: "Could not reach backend." });
-      }
-    } catch {
-      setServerStatus("offline");
-      toast.error("Server Offline", { description: "Network error." });
+      const { data: sessionData, error: sessionErr } = await supabase.auth.getSession();
+      const sbLatency = Math.round(performance.now() - sbStart);
+      if (sessionErr) throw sessionErr;
+      setChecks((prev) => ({
+        ...prev,
+        supabase: { status: "ok", latency: sbLatency, msg: sessionData.session ? "Session active" : "No session (guest)" },
+      }));
+    } catch (err: any) {
+      setChecks((prev) => ({
+        ...prev,
+        supabase: { status: "error", msg: err.message || "Connection failed" },
+      }));
     }
-  };
 
-  const handleCheckDrive = async () => {
-    setDriveStatus("success");
-    toast.success("Backend Verified", { description: "Supabase is the data source." });
+    // 2. Database query (lightweight count on tenant_settings)
+    const dbStart = performance.now();
+    try {
+      const { count, error: dbErr } = await supabase
+        .from("tenant_settings")
+        .select("*", { count: "exact", head: true });
+      const dbLatency = Math.round(performance.now() - dbStart);
+      if (dbErr) throw dbErr;
+      setChecks((prev) => ({
+        ...prev,
+        db: { status: "ok", latency: dbLatency, msg: `Tables accessible (${count ?? 0} rows)` },
+      }));
+    } catch (err: any) {
+      setChecks((prev) => ({
+        ...prev,
+        db: { status: "error", msg: err.message || "DB unreachable" },
+      }));
+    }
+
+    // 3. Auth service (get user count to verify auth API)
+    const authStart = performance.now();
+    try {
+      const { data: userData, error: userErr } = await supabase.auth.getUser();
+      const authLatency = Math.round(performance.now() - authStart);
+      if (userErr && userErr.message?.includes("network")) throw userErr;
+      setChecks((prev) => ({
+        ...prev,
+        auth: { status: "ok", latency: authLatency, msg: userData.user ? `User: ${userData.user.email}` : "Auth API ready" },
+      }));
+    } catch (err: any) {
+      setChecks((prev) => ({
+        ...prev,
+        auth: { status: "error", msg: err.message || "Auth service failed" },
+      }));
+    }
   };
 
   return (
     <Card>
-      <CardLabel icon={Server} title="System Diagnostics" description="Backend connectivity and health checks. Admin only." />
+      <CardLabel
+        icon={Activity}
+        title="System Diagnostics"
+        description="Supabase connectivity and health checks. Admin only."
+      />
       <div className="space-y-3">
-        {/* Server status */}
-        <div className="flex items-center justify-between p-4 rounded-lg border border-[#e8e3db] dark:border-[#3a3834]">
-          <div className="flex items-center gap-3">
-            <div className={cn(
-              "w-9 h-9 rounded-lg flex items-center justify-center",
-              serverStatus === "online" ? "bg-green-500/10" : serverStatus === "offline" ? "bg-red-500/10" : "bg-[#f8f6f1] dark:bg-[#2a2a26]"
-            )}>
-              <Server className={cn(
-                "w-4 h-4",
-                serverStatus === "online" ? "text-green-600" : serverStatus === "offline" ? "text-red-500" : "text-[#7a756a]"
-              )} />
-            </div>
-            <div>
-              <p className="text-sm font-semibold text-[#2d2d2d] dark:text-[#e8e3db]">Backend Server</p>
-              <p className="text-xs text-[#9f9a8f]">API server connectivity</p>
-            </div>
-          </div>
-          <StatusBadge status={serverStatus} />
-        </div>
-
-        {/* Drive status */}
-        <div className="flex items-center justify-between p-4 rounded-lg border border-[#e8e3db] dark:border-[#3a3834]">
-          <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-lg bg-green-500/10 flex items-center justify-center">
-              <HardDrive className="w-4 h-4 text-green-600" />
-            </div>
-            <div>
-              <p className="text-sm font-semibold text-[#2d2d2d] dark:text-[#e8e3db]">Data Backend</p>
-              <p className="text-xs text-[#9f9a8f]">Supabase — no Drive integration required</p>
-            </div>
-          </div>
-          <Badge variant="outline" className="bg-green-500/10 text-green-600 border-green-500/20 text-[10px] h-6 font-bold gap-1">
-            <CheckCircle className="w-2.5 h-2.5" /> Connected
-          </Badge>
-        </div>
+        <HealthRow
+          icon={Server}
+          label="Supabase API"
+          sublabel="REST endpoint connectivity"
+          check={checks.supabase}
+        />
+        <HealthRow
+          icon={Database}
+          label="PostgreSQL Database"
+          sublabel="Query execution & response time"
+          check={checks.db}
+        />
+        <HealthRow
+          icon={Shield}
+          label="Auth Service"
+          sublabel="GoTrue session management"
+          check={checks.auth}
+        />
 
         <div className="flex gap-2 pt-1">
-          <Button size="sm" variant="outline" onClick={handleCheckServer} disabled={serverStatus === "checking"} className="h-8 text-xs">
-            {serverStatus === "checking" && <Loader2 className="w-3 h-3 mr-1.5 animate-spin" />}
-            Test Server
+          <Button size="sm" variant="outline" onClick={runDiagnostics} disabled={isChecking} className="h-8 text-xs">
+            {isChecking && <Loader2 className="w-3 h-3 mr-1.5 animate-spin" />}
+            Run Diagnostics
           </Button>
-          <Button size="sm" variant="ghost" onClick={handleCheckDrive} className="h-8 text-xs">
-            Verify Backend
+          <Button size="sm" variant="ghost" onClick={() => setChecks({ supabase: { status: "idle" }, db: { status: "idle" }, auth: { status: "idle" } })} className="h-8 text-xs">
+            Reset
           </Button>
         </div>
       </div>
     </Card>
+  );
+}
+
+function HealthRow({
+  icon: Icon,
+  label,
+  sublabel,
+  check,
+}: {
+  icon: React.ElementType;
+  label: string;
+  sublabel: string;
+  check: { status: string; latency?: number; msg?: string };
+}) {
+  const isOk = check.status === "ok";
+  const isErr = check.status === "error";
+  const isChecking = check.status === "checking";
+
+  return (
+    <div className="flex items-center justify-between p-4 rounded-lg border border-[#e8e3db] dark:border-[#3a3834]">
+      <div className="flex items-center gap-3">
+        <div
+          className={cn(
+            "w-9 h-9 rounded-lg flex items-center justify-center",
+            isOk ? "bg-green-500/10" : isErr ? "bg-red-500/10" : "bg-[#f8f6f1] dark:bg-[#2a2a26]"
+          )}
+        >
+          <Icon
+            className={cn(
+              "w-4 h-4",
+              isOk ? "text-green-600" : isErr ? "text-red-500" : "text-[#7a756a]"
+            )}
+          />
+        </div>
+        <div>
+          <p className="text-sm font-semibold text-[#2d2d2d] dark:text-[#e8e3db]">{label}</p>
+          <p className="text-xs text-[#9f9a8f]">{sublabel}</p>
+          {check.msg && <p className="text-[11px] text-[#7a756a] mt-0.5">{check.msg}</p>}
+        </div>
+      </div>
+      <div className="flex items-center gap-2">
+        {check.latency && (
+          <span className="text-[10px] text-[#9f9a8f] font-mono">{check.latency}ms</span>
+        )}
+        {isChecking && <Loader2 className="w-4 h-4 animate-spin text-[#9f9a8f]" />}
+        {isOk && (
+          <Badge variant="outline" className="bg-green-500/10 text-green-600 border-green-500/20 text-[10px] h-6 font-bold gap-1">
+            <Wifi className="w-2.5 h-2.5" /> OK
+          </Badge>
+        )}
+        {isErr && (
+          <Badge variant="outline" className="bg-red-500/10 text-red-500 border-red-500/20 text-[10px] h-6 font-bold gap-1">
+            <WifiOff className="w-2.5 h-2.5" /> Failed
+          </Badge>
+        )}
+        {!isOk && !isErr && !isChecking && (
+          <Badge variant="outline" className="text-[10px] h-6 text-[#9f9a8f] border-[#e8e3db]">Not Checked</Badge>
+        )}
+      </div>
+    </div>
   );
 }
 

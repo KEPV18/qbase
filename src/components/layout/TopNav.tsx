@@ -19,7 +19,6 @@ interface SearchResult {
 
 const PAGE_LABELS: Record<string, string> = {
   "/": "Dashboard",
-  "/records": "Records",
   "/forms": "Forms Registry",
   "/audit": "Analytics",
   "/activity": "Audit Trail",
@@ -125,21 +124,21 @@ export function TopNav() {
   return (
     <>
       {/* TopNav Capsule */}
-      <div className="bg-white dark:bg-[#232220] border border-[#e8e3db] dark:border-[#3a3834] rounded-xl px-5 py-3 flex items-center justify-between shrink-0">
+      <div className="bg-background/80 backdrop-blur-xl border border-border rounded-xl px-5 py-3 flex items-center justify-between shrink-0">
         {/* Left — Active Page */}
         <div className="flex items-center gap-3">
-          <div className="w-8 h-8 rounded-lg bg-[#2d2d2d] flex items-center justify-center">
+          <div className="w-8 h-8 rounded-lg bg-foreground flex items-center justify-center">
             <img src={brandLogo} alt="" className="w-4 h-4 object-contain invert" />
           </div>
           <div>
-            <p className="text-[11px] font-heading font-semibold text-[#9f9a8f] uppercase tracking-wider">Active Page</p>
-            <p className="text-sm font-semibold text-[#2d2d2d] dark:text-[#e8e3db]">{pageLabel}</p>
+            <p className="text-[11px] font-heading font-semibold text-muted-foreground/70 uppercase tracking-wider">Active Page</p>
+            <p className="text-sm font-semibold text-foreground dark:text-foreground">{pageLabel}</p>
           </div>
         </div>
 
         {/* Center — Global Search */}
         <div className="hidden md:block relative flex-1 max-w-md mx-8" ref={searchRef}>
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#9f9a8f]" />
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground/70" />
           <input
             type="text"
             placeholder="Search records…"
@@ -147,25 +146,25 @@ export function TopNav() {
             onChange={(e) => setSearchTerm(e.target.value)}
             onFocus={() => { if (results.length > 0) setShowSearchDropdown(true); }}
             onKeyDown={(e) => { if (e.key === 'Escape') setShowSearchDropdown(false); }}
-            className="w-full pl-9 pr-10 py-2 rounded-lg bg-[#f8f6f1] border border-[#e8e3db] text-sm text-[#2d2d2d] dark:text-[#e8e3db] dark:bg-[#1a1a18] dark:border-[#3a3834] placeholder:text-[#9f9a8f] focus:outline-none focus:ring-2 focus:ring-[#2d2d2d]/10 focus:border-[#2d2d2d]/20 transition-all"
+            className="w-full pl-9 pr-10 py-2 rounded-lg bg-background border border-border text-sm text-foreground dark:text-foreground dark:bg-card dark:border-border placeholder:text-muted-foreground/70 focus:outline-none focus:ring-2 focus:ring-foreground/10 focus:border-foreground/20 transition-all"
           />
-          <kbd className="absolute right-3 top-1/2 -translate-y-1/2 hidden lg:inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-md bg-[#ece8df] dark:bg-[#302e2a] border border-[#e8e3db] dark:border-[#3a3834] text-[10px] font-medium text-[#9f9a8f]">
+            <kbd className="absolute right-3 top-1/2 -translate-y-1/2 hidden lg:inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-md bg-muted dark:bg-muted border border-border dark:border-border text-[10px] font-medium text-muted-foreground/70">
             ⌘ F
           </kbd>
           {showSearchDropdown && results.length > 0 && (
-            <div className="absolute top-full left-0 right-0 mt-2 bg-white dark:bg-[#232220] border border-[#e8e3db] dark:border-[#3a3834] rounded-lg py-1 max-h-80 overflow-y-auto z-50">
+            <div className="absolute top-full left-0 right-0 mt-2 bg-card border border-border dark:border-[#3a3834] rounded-lg py-1 max-h-80 overflow-y-auto z-50">
               {results.map(r => (
                 <button
                   key={r.serial}
                   onClick={() => { navigate(`/records/${encodeURIComponent(r.serial)}`); setShowSearchDropdown(false); setSearchTerm(''); }}
-                  className="w-full text-left px-4 py-2.5 hover:bg-[#f8f6f1] dark:hover:bg-[#1a1a18] flex items-center gap-3 transition-colors"
+                  className="w-full text-left px-4 py-2.5 hover:bg-background dark:hover:bg-muted flex items-center gap-3 transition-colors"
                 >
-                  <FileText className="w-4 h-4 text-[#9f9a8f] shrink-0" />
+                  <FileText className="w-4 h-4 text-muted-foreground/70 shrink-0" />
                   <div className="min-w-0 flex-1">
-                    <p className="text-sm font-medium text-[#2d2d2d] dark:text-[#e8e3db] truncate">{r.serial}</p>
-                    <p className="text-xs text-[#7a756a]">{r.formName}</p>
+                    <p className="text-sm font-medium text-foreground dark:text-[#e8e3db] truncate">{r.serial}</p>
+                    <p className="text-xs text-muted-foreground">{r.formName}</p>
                   </div>
-                  <span className="text-xs text-[#7a756a] shrink-0 font-mono bg-[#f8f6f1] dark:bg-[#1a1a18] rounded px-1.5 py-0.5">{r.formCode}</span>
+                  <span className="text-xs text-muted-foreground shrink-0 font-mono bg-background dark:bg-[#1a1a18] rounded px-1.5 py-0.5">{r.formCode}</span>
                   <span className={cn(
                     "text-[9px] uppercase tracking-wider px-1.5 py-0.5 rounded font-medium",
                     r.match === 'serial' && "text-blue-500 bg-blue-50 dark:bg-blue-900/20",
@@ -183,19 +182,19 @@ export function TopNav() {
         <div className="flex items-center gap-2">
           <button
             onClick={() => setTheme(resolvedTheme === 'dark' ? 'light' : 'dark')}
-            className="p-2 rounded-lg text-[#9f9a8f] hover:text-[#2d2d2d] hover:bg-[#f8f6f1] dark:hover:bg-[#1a1a18] transition-colors"
+            className="p-2 rounded-lg text-muted-foreground/70 hover:text-foreground hover:bg-background dark:hover:bg-[#1a1a18] transition-colors"
             title="Toggle theme"
           >
             {resolvedTheme === 'dark' ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
           </button>
           <button
             onClick={() => navigate('/notifications')}
-            className="p-2 rounded-lg text-[#9f9a8f] hover:text-[#2d2d2d] hover:bg-[#f8f6f1] dark:hover:bg-[#1a1a18] transition-colors relative"
+            className="p-2 rounded-lg text-muted-foreground/70 hover:text-foreground hover:bg-background dark:hover:bg-[#1a1a18] transition-colors relative"
             title="Notifications"
           >
             <Bell className="w-4 h-4" />
           </button>
-          <div className="w-px h-5 bg-[#e8e3db] dark:bg-[#3a3834] mx-1" />
+          <div className="w-px h-5 bg-border dark:bg-[#3a3834] mx-1" />
         </div>
       </div>
     </>

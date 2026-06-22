@@ -116,7 +116,7 @@ export default function DataSanitizer() {
           <div>
             <h1 className="text-2xl font-bold text-foreground flex items-center gap-2">
               <Archive className="w-7 h-7 text-primary" />
-              لوحة استكمال المستندات والأرشفة
+              Data Retrofitting & Completion Hub
               <span className="text-base font-normal text-muted-foreground">(Data Retrofitting Hub)</span>
             </h1>
             <p className="text-sm text-muted-foreground mt-1">
@@ -241,7 +241,7 @@ export default function DataSanitizer() {
                     Records Awaiting Data Population
                   </CardTitle>
                   <CardDescription className="mt-1">
-                    {ghosts.length} record{ghosts.length !== 1 ? "s" : ""} with empty form data — click "استكمال البيانات" to populate from your offline Word document.
+                    {ghosts.length} record{ghosts.length !== 1 ? "s" : ""} with empty form data — click "Complete Data" to populate from your offline Word document.
                   </CardDescription>
                 </div>
               </div>
@@ -307,7 +307,7 @@ export default function DataSanitizer() {
                             onClick={() => populateRecord(ghost)}
                           >
                             <FileEdit className="w-4 h-4 mr-1.5" />
-                            استكمال البيانات
+                            Complete Data
                           </Button>
                         </td>
                       </tr>
@@ -326,7 +326,7 @@ export default function DataSanitizer() {
             <div className="text-xs text-muted-foreground">
               <p className="font-medium text-foreground mb-1">Retrofitting Workflow</p>
               <ol className="list-decimal list-inside space-y-0.5">
-                <li>Click "استكمال البيانات" next to any flagged record.</li>
+                <li>Click "Complete Data" next to any flagged record.</li>
                 <li>The record opens in edit mode — Form Code, Serial, Created By, and Department remain locked.</li>
                 <li>Copy the data from your offline Word document and paste into the empty form fields.</li>
                 <li>Save — the record is now fully populated and the CHECK constraint will protect it going forward.</li>

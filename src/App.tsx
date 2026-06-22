@@ -111,7 +111,7 @@ const App = () => {
                       <Route path="/traceability" element={<PageBoundary><TraceabilityPage /></PageBoundary>} />
                       <Route path="/traceability/:recordId" element={<PageBoundary><TraceabilityPage /></PageBoundary>} />
                       <Route path="/create" element={<PageBoundary><RecordCreationPage /></PageBoundary>} />
-                      <Route path="/records" element={<PageBoundary><RecordListPage /></PageBoundary>} />
+                      <Route path="/records" element={<Navigate to="/" replace />} />
                       <Route path="/records/:serial" element={<PageBoundary><RecordViewPage /></PageBoundary>} />
                       <Route path="/integrity" element={<PageBoundary><DataIntegrityPage /></PageBoundary>} />
                       <Route path="/settings" element={<PageBoundary><SettingsPage /></PageBoundary>} />

@@ -34,10 +34,10 @@ function StatusText({ status }: { status: string }) {
   const colors: Record<string, string> = {
     Approved: "bg-emerald-500/5 text-emerald-700 dark:bg-emerald-400/10 dark:text-emerald-300",
     Pending_Approval: "bg-amber-500/5 text-amber-700 dark:bg-amber-400/10 dark:text-amber-300",
-    Draft: "bg-zinc-500/5 text-[#7a756a] dark:bg-zinc-400/10 dark:text-zinc-400",
+    Draft: "bg-zinc-500/5 text-muted-foreground dark:bg-zinc-400/10 dark:text-zinc-400",
   };
   const label = status === "Pending_Approval" ? "Pending" : status;
-  return <span className={cn("px-2 py-0.5 rounded-md text-xs font-medium", colors[status] || "bg-zinc-500/5 text-[#7a756a]")}>{label}</span>;
+  return <span className={cn("px-2 py-0.5 rounded-md text-xs font-medium", colors[status] || "bg-zinc-500/5 text-muted-foreground")}>{label}</span>;
 }
 
 /* ─── SLA Health Pill ─────────────────────────────────────────────── */
@@ -81,23 +81,23 @@ function DeptMetricCard({
       className={cn(
         "text-left rounded-xl border p-4 transition-all w-full",
         isActive
-          ? "bg-white dark:bg-[#232220] border-[#2d2d2d]/20 shadow-sm"
-          : "bg-white dark:bg-[#232220] border-[#e8e3db] dark:border-[#3a3834] hover:border-[#2d2d2d]/20"
+          ? "bg-card border-foreground/20 shadow-sm"
+          : "bg-card border-border dark:border-border hover:border-foreground/20"
       )}
     >
       <div className="flex items-center justify-between mb-2">
-        <p className="text-sm font-semibold text-[#2d2d2d] dark:text-[#e8e3db]">{dept}</p>
+        <p className="text-sm font-semibold text-foreground dark:text-foreground">{dept}</p>
         <HealthPill health={health} />
       </div>
       <div className="flex items-center gap-4">
         <div>
-          <p className="text-lg font-bold text-[#2d2d2d] dark:text-[#e8e3db]">{health.totalForms}</p>
-          <p className="text-[10px] text-[#9f9a8f]">Forms Available</p>
+          <p className="text-lg font-bold text-foreground dark:text-foreground">{health.totalForms}</p>
+          <p className="text-[10px] text-muted-foreground/70">Forms Available</p>
         </div>
         <div className="w-px h-8 bg-[#e8e3db] dark:bg-[#3a3834]" />
         <div>
-          <p className="text-lg font-bold text-[#2d2d2d] dark:text-[#e8e3db]">{health.totalSubmissions}</p>
-          <p className="text-[10px] text-[#9f9a8f]">Records Filed</p>
+          <p className="text-lg font-bold text-foreground dark:text-foreground">{health.totalSubmissions}</p>
+          <p className="text-[10px] text-muted-foreground/70">Records Filed</p>
         </div>
       </div>
     </button>
@@ -109,10 +109,10 @@ function ComplianceBadge({ compliance }: { compliance: FormCompliance }) {
   const { frequencyType, daysSinceLast, isOverdue, overdueDays } = compliance;
 
   if (frequencyType === 'Event-Driven') {
-    return <span className="text-[10px] text-[#9f9a8f] font-medium">On-Demand Event</span>;
+    return <span className="text-[10px] text-muted-foreground/70 font-medium">On-Demand Event</span>;
   }
   if (frequencyType === 'Per-Project') {
-    return <span className="text-[10px] text-[#9f9a8f] font-medium">Required per Project</span>;
+    return <span className="text-[10px] text-muted-foreground/70 font-medium">Required per Project</span>;
   }
   if (!daysSinceLast) {
     return <span className="text-[10px] text-amber-600 font-medium">Never filed</span>;
@@ -244,15 +244,15 @@ export default function Index() {
       {/* Welcome + Global Overdue Alert */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-xl font-heading font-bold text-[#2d2d2d] dark:text-[#e8e3db]">Hey, {firstName}!</h1>
-          <p className="text-sm text-[#7a756a] mt-1">
+          <h1 className="text-xl font-heading font-bold text-foreground dark:text-foreground">Hey, {firstName}!</h1>
+          <p className="text-sm text-muted-foreground mt-1">
             {totalRecords} records · {approvedCount} approved · {deptHealthMap.size} departments
             {globalOverdue > 0 && <span className="text-red-500 ml-1">· {globalOverdue} overdue forms</span>}
           </p>
         </div>
         <button
           onClick={() => navigate("/create")}
-          className="flex items-center gap-2 px-4 py-2.5 rounded-lg bg-[#2d2d2d] text-white text-sm font-medium hover:bg-[#1a1a1a] transition-colors"
+          className="flex items-center gap-2 px-4 py-2.5 rounded-lg bg-foreground text-white text-sm font-medium hover:bg-foreground/90 transition-colors"
         >
           <Plus className="w-4 h-4" />
           New Record
@@ -276,25 +276,25 @@ export default function Index() {
       <div className="grid grid-cols-12 gap-5 flex-1 min-h-0">
         {/* Left — Forms with Compliance Telemetry */}
         <div className="col-span-12 lg:col-span-4 flex flex-col gap-4">
-          <div className="bg-white dark:bg-[#232220] border border-[#e8e3db] dark:border-[#3a3834] rounded-xl flex flex-col h-full overflow-hidden">
-            <div className="px-5 pt-5 pb-3 border-b border-[#e8e3db] dark:border-[#3a3834]/50">
+          <div className="bg-card border-border rounded-xl flex flex-col h-full overflow-hidden">
+            <div className="px-5 pt-5 pb-3 border-b border-border dark:border-border/50">
               <div className="flex items-center justify-between mb-3">
-                <h2 className="text-sm font-heading font-bold text-[#2d2d2d] dark:text-[#e8e3db]">Forms</h2>
-                <span className="text-[11px] text-[#7a756a]">{filteredForms.length}</span>
+                <h2 className="text-sm font-heading font-bold text-foreground dark:text-foreground">Forms</h2>
+                <span className="text-[11px] text-muted-foreground">{filteredForms.length}</span>
               </div>
               <div className="relative">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-[#9f9a8f]" />
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground/70" />
                 <input
                   type="text"
                   placeholder="Search forms…"
                   value={formSearch}
                   onChange={(e) => setFormSearch(e.target.value)}
-                  className="w-full pl-8 pr-3 py-2 rounded-lg bg-[#f8f6f1] dark:bg-[#1a1a18] border border-[#e8e3db] dark:border-[#3a3834] text-sm text-[#2d2d2d] dark:text-[#e8e3db] placeholder:text-[#9f9a8f] focus:outline-none focus:ring-2 focus:ring-[#2d2d2d]/10"
+                  className="w-full pl-8 pr-3 py-2 rounded-lg bg-background dark:bg-[#1a1a18] border border-border dark:border-border text-sm text-foreground dark:text-foreground placeholder:text-muted-foreground/70 focus:outline-none focus:ring-2 focus:ring-foreground/10"
                 />
               </div>
             </div>
             <div className="flex-1 overflow-y-auto">
-              <div className="divide-y divide-[#e8e3db]/50 dark:divide-[#3a3834]/30">
+              <div className="divide-y divide-border">
                 {filteredForms.map((schema) => {
                   const isSelected = selectedForm === schema.code;
                   const compliance = complianceMap.get(schema.code);
@@ -305,26 +305,26 @@ export default function Index() {
                       onClick={() => setSelectedForm(isSelected ? null : schema.code)}
                       className={cn(
                         "w-full flex items-center gap-3 px-5 py-3 text-left transition-colors",
-                        isSelected ? "bg-[#f8f6f1] dark:bg-[#1a1a18]" : "hover:bg-[#f8f6f1] dark:hover:bg-[#1a1a18]/50"
+                        isSelected ? "bg-background dark:bg-[#1a1a18]" : "hover:bg-background dark:hover:bg-[#1a1a18]/50"
                       )}
                     >
-                      <div className="w-7 h-7 rounded flex items-center justify-center bg-[#f8f6f1] dark:bg-[#1a1a18] border border-[#e8e3db] dark:border-[#3a3834] shrink-0">
-                        <FileText className="w-3.5 h-3.5 text-[#9f9a8f]" />
+                      <div className="w-7 h-7 rounded flex items-center justify-center bg-background dark:bg-[#1a1a18] border border-border dark:border-border shrink-0">
+                        <FileText className="w-3.5 h-3.5 text-muted-foreground/70" />
                       </div>
                       <div className="flex-1 min-w-0">
-                        <p className="text-sm font-medium text-[#2d2d2d] dark:text-[#e8e3db] truncate">{schema.name}</p>
+                        <p className="text-sm font-medium text-foreground dark:text-foreground truncate">{schema.name}</p>
                         <div className="flex items-center gap-2 mt-0.5">
-                          <p className="text-[10px] font-mono text-[#9f9a8f]">{schema.code}</p>
+                          <p className="text-[10px] font-mono text-muted-foreground/70">{schema.code}</p>
                           {compliance && (<ComplianceBadge compliance={compliance} />)}
                         </div>
                         {/* Last Filed line */}
-                        <p className="text-[10px] text-[#9f9a8f] mt-0.5">
+                        <p className="text-[10px] text-muted-foreground/70 mt-0.5">
                           Last record: {getLastFiledText(compliance?.lastRecordDate || null)}
                         </p>
                       </div>
                       <div className="flex items-center gap-2 shrink-0">
                         {recordCount > 0 && (
-                          <span className="text-[10px] font-mono text-[#9f9a8f]">{recordCount}</span>
+                          <span className="text-[10px] font-mono text-muted-foreground/70">{recordCount}</span>
                         )}
                         <ChevronRight className="w-3.5 h-3.5 text-[#e8e3db] dark:text-[#3a3834]" />
                       </div>
@@ -338,45 +338,45 @@ export default function Index() {
 
         {/* Right — Records */}
         <div className="col-span-12 lg:col-span-8 flex flex-col gap-4">
-          <div className="bg-white dark:bg-[#232220] border border-[#e8e3db] dark:border-[#3a3834] rounded-xl flex flex-col h-full overflow-hidden">
-            <div className="px-5 pt-5 pb-3 border-b border-[#e8e3db] dark:border-[#3a3834]/50 flex items-center justify-between">
+          <div className="bg-card border-border rounded-xl flex flex-col h-full overflow-hidden">
+            <div className="px-5 pt-5 pb-3 border-b border-border dark:border-border/50 flex items-center justify-between">
               <div>
-                <h2 className="text-sm font-heading font-bold text-[#2d2d2d] dark:text-[#e8e3db]">
+                <h2 className="text-sm font-heading font-bold text-foreground dark:text-foreground">
                   {selectedForm
                     ? `Records — ${FORM_SCHEMAS.find((f: FormSchema) => f.code === selectedForm)?.name || selectedForm}`
                     : `${activeDept} Records`}
                 </h2>
-                <p className="text-[11px] text-[#7a756a] mt-0.5">{displayedRecords.length} entries</p>
+                <p className="text-[11px] text-muted-foreground mt-0.5">{displayedRecords.length} entries</p>
               </div>
               {selectedForm && (
-                <button onClick={() => setSelectedForm(null)} className="text-xs font-medium text-[#7a756a] hover:text-[#2d2d2d]">Clear</button>
+                <button onClick={() => setSelectedForm(null)} className="text-xs font-medium text-muted-foreground hover:text-foreground">Clear</button>
               )}
             </div>
             <div className="flex-1 overflow-y-auto">
               {displayedRecords.length === 0 ? (
                 <div className="flex flex-col items-center justify-center h-full py-16">
                   <Folder className="w-8 h-8 text-[#e8e3db] dark:text-[#3a3834] mb-3" />
-                  <p className="text-sm text-[#7a756a] font-medium">No records</p>
-                  <p className="text-xs text-[#9f9a8f] mt-1">Select a form or department to view records.</p>
+                  <p className="text-sm text-muted-foreground font-medium">No records</p>
+                  <p className="text-xs text-muted-foreground/70 mt-1">Select a form or department to view records.</p>
                 </div>
               ) : (
-                <div className="divide-y divide-[#e8e3db]/50 dark:divide-[#3a3834]/30">
+                <div className="divide-y divide-border">
                   {displayedRecords.map((record) => (
                     <button
                       key={record.id}
                       onClick={() => navigate(`/records/${encodeURIComponent(record.serial || "")}`)}
-                      className="w-full flex items-center gap-4 px-5 py-4 hover:bg-[#f8f6f1] dark:hover:bg-[#1a1a18]/50 transition-colors text-left group"
+                      className="w-full flex items-center gap-4 px-5 py-4 hover:bg-background dark:hover:bg-[#1a1a18]/50 transition-colors text-left group"
                     >
-                      <span className="font-mono text-[10px] text-[#7a756a] shrink-0">{record.serial}</span>
+                      <span className="font-mono text-[10px] text-muted-foreground shrink-0">{record.serial}</span>
                       <div className="flex-1 min-w-0">
-                        <p className="text-sm font-medium text-[#2d2d2d] dark:text-[#e8e3db] truncate">
+                        <p className="text-sm font-medium text-foreground dark:text-foreground truncate">
                           {(record as RecordData).form_data?.client_name as string || (record as RecordData).form_data?.project_name as string || record.formName}
                         </p>
-                        <p className="text-[10px] text-[#9f9a8f] mt-0.5">{record.formCode}</p>
+                        <p className="text-[10px] text-muted-foreground/70 mt-0.5">{record.formCode}</p>
                       </div>
                       <div className="flex items-center gap-3 shrink-0">
                         <StatusText status={String(record._approvalStatus || "Approved")} />
-                        <span className="text-[10px] text-[#9f9a8f]">
+                        <span className="text-[10px] text-muted-foreground/70">
                           {new Date(String(record._createdAt || record.createdAt || new Date().toISOString())).toLocaleDateString("en-GB", { day: "2-digit", month: "short" })}
                         </span>
                       </div>
