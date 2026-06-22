@@ -244,9 +244,9 @@ export default function Index() {
   }, []);
 
   return (
-    <div className="space-y-5 h-full flex flex-col">
+    <div className="space-y-6">
       {/* Welcome + Global Overdue Alert */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <div>
           <h1 className="text-xl font-heading font-bold text-foreground dark:text-foreground">Hey, {firstName}!</h1>
           <p className="text-sm text-muted-foreground mt-1">
@@ -256,7 +256,7 @@ export default function Index() {
         </div>
         <button
           onClick={() => navigate("/create")}
-          className="flex items-center gap-2 px-4 py-2.5 rounded-lg bg-foreground text-primary-foreground dark:bg-primary dark:text-primary-foreground text-sm font-medium hover:bg-foreground/90 dark:hover:bg-primary/90 transition-colors"
+          className="self-start shrink-0 flex items-center gap-2 px-4 py-2.5 rounded-lg bg-foreground text-primary-foreground dark:bg-primary dark:text-primary-foreground text-sm font-medium hover:bg-foreground/90 dark:hover:bg-primary/90 transition-colors"
         >
           <Plus className="w-4 h-4" />
           New Record
@@ -264,7 +264,7 @@ export default function Index() {
       </div>
 
       {/* Department Metric Cards (Executive Row) */}
-      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-7 gap-3">
+      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-7 gap-3">
         {DEPT_ORDER.map((dept) => (
           <DeptMetricCard
             key={dept}
@@ -277,10 +277,10 @@ export default function Index() {
       </div>
 
       {/* Workspace */}
-      <div className="grid grid-cols-12 gap-5 flex-1 min-h-0">
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-5">
         {/* Left — Forms with Compliance Telemetry */}
-        <div className="col-span-12 lg:col-span-4 flex flex-col gap-4">
-          <div className="bg-card border-border rounded-xl flex flex-col h-full overflow-hidden">
+        <div className="lg:col-span-4">
+          <div className="bg-card border-border rounded-xl">
             <div className="px-5 pt-5 pb-3 border-b border-border dark:border-border/50">
               <div className="flex items-center justify-between mb-3">
                 <h2 className="text-sm font-heading font-bold text-foreground dark:text-foreground">Forms</h2>
@@ -297,7 +297,7 @@ export default function Index() {
                 />
               </div>
             </div>
-            <div className="flex-1 overflow-y-auto">
+            <div>
               <div className="divide-y divide-border">
                 {filteredForms.map((schema) => {
                   const isSelected = selectedForm === schema.code;
@@ -321,7 +321,6 @@ export default function Index() {
                           <p className="text-[10px] font-mono text-muted-foreground/70">{schema.code}</p>
                           {compliance && (<ComplianceBadge compliance={compliance} />)}
                         </div>
-                        {/* Last Filed line */}
                         <p className="text-[10px] text-muted-foreground/70 mt-0.5">
                           Last record: {getLastFiledText(compliance?.lastRecordDate || null)}
                         </p>
@@ -341,8 +340,8 @@ export default function Index() {
         </div>
 
         {/* Right — Records */}
-        <div className="col-span-12 lg:col-span-8 flex flex-col gap-4">
-          <div className="bg-card border-border rounded-xl flex flex-col h-full overflow-hidden">
+        <div className="lg:col-span-8">
+          <div className="bg-card border-border rounded-xl">
             <div className="px-5 pt-5 pb-3 border-b border-border dark:border-border/50 flex items-center justify-between">
               <div>
                 <h2 className="text-sm font-heading font-bold text-foreground dark:text-foreground">
@@ -356,9 +355,9 @@ export default function Index() {
                 <button onClick={() => setSelectedForm(null)} className="text-xs font-medium text-muted-foreground hover:text-foreground">Clear</button>
               )}
             </div>
-            <div className="flex-1 overflow-y-auto">
+            <div>
               {displayedRecords.length === 0 ? (
-                <div className="flex flex-col items-center justify-center h-full py-16">
+                <div className="flex flex-col items-center justify-center py-16">
                   <Folder className="w-8 h-8 text-[#e8e3db] dark:text-[#3a3834] mb-3" />
                   <p className="text-sm text-muted-foreground font-medium">No records</p>
                   <p className="text-xs text-muted-foreground/70 mt-1">Select a form or department to view records.</p>
