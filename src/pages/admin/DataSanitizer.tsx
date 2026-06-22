@@ -1,18 +1,19 @@
 // ============================================================================
-// QBase — Data Integrity & Sanitizer
-// Admin-only page for detecting and purging ghost (empty) records.
-// Live scanner via RPC: get_empty_records(), get_record_count()
-// Actions: individual purge + global purge-all.
+// QBase — Data Retrofitting & Completion Hub
+// Admin-only page for detecting empty/ghost records and populating them
+// from offline Word documents. NO deletion — records are preserved for
+// ISO compliance (sequential serial integrity).
 // ============================================================================
 
 import { useState, useEffect, useCallback } from "react";
+import { useNavigate } from "react-router-dom";
 import { AppShell } from "@/components/layout/AppShell";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
 import {
-  ShieldCheck, Trash2, RefreshCw, Loader2, AlertTriangle,
-  Database, Ghost, CheckCircle,
+  ShieldCheck, RefreshCw, Loader2, AlertTriangle,
+  Database, Ghost, CheckCircle, FileEdit, Archive,
 } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
@@ -47,13 +48,11 @@ interface ScanSummary {
 // ============================================================================
 
 export default function DataSanitizer() {
+  const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [scanning, setScanning] = useState(false);
-  const [purging, setPurging] = useState<string | null>(null);
-  const [purgingAll, setPurgingAll] = useState(false);
   const [ghosts, setGhosts] = useState<GhostRecord[]>([]);
   const [summary, setSummary] = useState<ScanSummary>({ totalRecords: 0, ghostCount: 0 });
-  const [confirmPurgeAll, setConfirmPurgeAll] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   // ── Scan: fetch ghost records + total count ──────────────────────────────
@@ -89,64 +88,15 @@ export default function DataSanitizer() {
     scan();
   }, [scan]);
 
-  // ── Purge single record ──────────────────────────────────────────────────
-  const purgeRecord = async (id: string, serial: string) => {
-    setPurging(id);
-    try {
-      const { data, error: rpcError } = await supabase.rpc("purge_empty_record", {
-        p_record_id: id,
-      });
-
-      if (rpcError) throw rpcError;
-
-      const result = data as { deleted_serial: string }[] | null;
-      const deletedSerial = result?.[0]?.deleted_serial || serial;
-
-      toast.success(`Purged ghost record ${deletedSerial}`);
-      setGhosts((prev) => prev.filter((g) => g.id !== id));
-      setSummary((prev) => ({
-        ...prev,
-        ghostCount: Math.max(0, prev.ghostCount - 1),
-        totalRecords: Math.max(0, prev.totalRecords - 1),
-      }));
-    } catch (err) {
-      const msg = err instanceof Error ? err.message : "Purge failed";
-      toast.error(`Failed to purge ${serial}: ${msg}`);
-    } finally {
-      setPurging(null);
-    }
-  };
-
-  // ── Purge all ghost records ──────────────────────────────────────────────
-  const purgeAll = async () => {
-    setPurgingAll(true);
-    setConfirmPurgeAll(false);
-    try {
-      const { data, error: rpcError } = await supabase.rpc("purge_all_empty_records");
-
-      if (rpcError) throw rpcError;
-
-      const result = data as { deleted_count: number; serials: string[] }[] | null;
-      const count = result?.[0]?.deleted_count || 0;
-
-      toast.success(`Purged ${count} ghost record${count !== 1 ? "s" : ""}`);
-      setGhosts([]);
-      setSummary((prev) => ({
-        totalRecords: Math.max(0, prev.totalRecords - count),
-        ghostCount: 0,
-      }));
-    } catch (err) {
-      const msg = err instanceof Error ? err.message : "Purge all failed";
-      toast.error(`Purge all failed: ${msg}`);
-    } finally {
-      setPurgingAll(false);
-    }
+  // ── Navigate to record edit page ────────────────────────────────────────
+  const populateRecord = (ghost: GhostRecord) => {
+    navigate(`/records/${encodeURIComponent(ghost.serial)}?edit=true`);
   };
 
   // ── Render ───────────────────────────────────────────────────────────────
   if (loading) {
     return (
-      <AppShell breadcrumbs={[{ label: "Admin", path: "/admin/accounts" }, { label: "Data Integrity" }]}>
+      <AppShell breadcrumbs={[{ label: "Admin", path: "/admin/accounts" }, { label: "Data Retrofitting" }]}>
         <div className="flex items-center justify-center min-h-[400px]">
           <Loader2 className="w-8 h-8 text-primary animate-spin" />
         </div>
@@ -159,17 +109,18 @@ export default function DataSanitizer() {
     : 100;
 
   return (
-    <AppShell breadcrumbs={[{ label: "Admin", path: "/admin/accounts" }, { label: "Data Integrity" }]}>
+    <AppShell breadcrumbs={[{ label: "Admin", path: "/admin/accounts" }, { label: "Data Retrofitting" }]}>
       <div className="space-y-6 max-w-[1200px]">
         {/* ── Header ── */}
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-2xl font-bold text-foreground flex items-center gap-2">
-              <ShieldCheck className="w-7 h-7 text-primary" />
-              Data Integrity &amp; Sanitizer
+              <Archive className="w-7 h-7 text-primary" />
+              لوحة استكمال المستندات والأرشفة
+              <span className="text-base font-normal text-muted-foreground">(Data Retrofitting Hub)</span>
             </h1>
             <p className="text-sm text-muted-foreground mt-1">
-              Detect and purge ghost records with empty or null form data payloads.
+              Populate empty records from offline Word documents. Serial integrity preserved for ISO compliance.
             </p>
           </div>
           <Button
@@ -217,15 +168,15 @@ export default function DataSanitizer() {
             </CardContent>
           </Card>
 
-          {/* Ghost Records */}
+          {/* Records Awaiting Completion */}
           <Card className={cn(
             "border-border",
-            summary.ghostCount > 0 && "border-destructive/30 bg-destructive/5"
+            summary.ghostCount > 0 && "border-warning/30 bg-warning/5"
           )}>
             <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardDescription>Flagged Ghost Records</CardDescription>
+              <CardDescription>Awaiting Population</CardDescription>
               {summary.ghostCount > 0 ? (
-                <Ghost className="w-5 h-5 text-destructive" />
+                <Ghost className="w-5 h-5 text-warning" />
               ) : (
                 <CheckCircle className="w-5 h-5 text-success" />
               )}
@@ -233,20 +184,20 @@ export default function DataSanitizer() {
             <CardContent>
               <div className={cn(
                 "text-3xl font-bold",
-                summary.ghostCount > 0 ? "text-destructive" : "text-success"
+                summary.ghostCount > 0 ? "text-warning" : "text-success"
               )}>
                 {summary.ghostCount.toLocaleString()}
               </div>
               <p className="text-xs text-muted-foreground mt-1">
-                {summary.ghostCount > 0 ? "Empty or null payloads" : "No ghosts detected"}
+                {summary.ghostCount > 0 ? "Empty records to populate" : "All records complete"}
               </p>
             </CardContent>
           </Card>
 
-          {/* Health Score */}
+          {/* Completion Score */}
           <Card className="border-border">
             <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardDescription>Data Integrity Score</CardDescription>
+              <CardDescription>Completion Score</CardDescription>
               <ShieldCheck className={cn(
                 "w-5 h-5",
                 healthScore >= 95 ? "text-success" : healthScore >= 80 ? "text-warning" : "text-destructive"
@@ -266,42 +217,33 @@ export default function DataSanitizer() {
           </Card>
         </div>
 
-        {/* ── All Clear State ── */}
+        {/* ── All Complete State ── */}
         {!error && ghosts.length === 0 && (
           <Card className="border-success/20 bg-success/5">
             <CardContent className="flex flex-col items-center justify-center py-12">
               <CheckCircle className="w-12 h-12 text-success mb-3" />
-              <h3 className="text-lg font-semibold text-foreground">All Records Clean</h3>
+              <h3 className="text-lg font-semibold text-foreground">All Records Populated</h3>
               <p className="text-sm text-muted-foreground mt-1 text-center max-w-md">
-                No ghost records detected. All {summary.totalRecords.toLocaleString()} active records have valid form data payloads.
+                All {summary.totalRecords.toLocaleString()} active records have valid form data payloads. No retrofitting needed.
               </p>
             </CardContent>
           </Card>
         )}
 
-        {/* ── Ghost Records Table ── */}
+        {/* ── Records Awaiting Completion Grid ── */}
         {!error && ghosts.length > 0 && (
           <Card className="border-border">
             <CardHeader>
               <div className="flex items-center justify-between">
                 <div>
                   <CardTitle className="flex items-center gap-2">
-                    <Ghost className="w-5 h-5 text-destructive" />
-                    Ghost Records Audit Grid
+                    <FileEdit className="w-5 h-5 text-warning" />
+                    Records Awaiting Data Population
                   </CardTitle>
                   <CardDescription className="mt-1">
-                    {ghosts.length} record{ghosts.length !== 1 ? "s" : ""} flagged with empty or null form data.
+                    {ghosts.length} record{ghosts.length !== 1 ? "s" : ""} with empty form data — click "استكمال البيانات" to populate from your offline Word document.
                   </CardDescription>
                 </div>
-                <Button
-                  variant="destructive"
-                  size="sm"
-                  onClick={() => setConfirmPurgeAll(true)}
-                  disabled={purgingAll || scanning}
-                >
-                  <Trash2 className="w-4 h-4 mr-2" />
-                  Purge All Ghost Records
-                </Button>
               </div>
             </CardHeader>
             <CardContent>
@@ -360,20 +302,12 @@ export default function DataSanitizer() {
                         </td>
                         <td className="py-3 px-3 text-right">
                           <Button
-                            variant="ghost"
+                            variant="default"
                             size="sm"
-                            onClick={() => purgeRecord(ghost.id, ghost.serial)}
-                            disabled={purging === ghost.id || purgingAll}
-                            className="text-destructive hover:text-destructive hover:bg-destructive/10"
+                            onClick={() => populateRecord(ghost)}
                           >
-                            {purging === ghost.id ? (
-                              <Loader2 className="w-4 h-4 animate-spin" />
-                            ) : (
-                              <>
-                                <Trash2 className="w-4 h-4 mr-1" />
-                                Purge
-                              </>
-                            )}
+                            <FileEdit className="w-4 h-4 mr-1.5" />
+                            استكمال البيانات
                           </Button>
                         </td>
                       </tr>
@@ -385,34 +319,19 @@ export default function DataSanitizer() {
           </Card>
         )}
 
-        {/* ── Confirm Purge All Modal ── */}
-        {confirmPurgeAll && (
-          <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4" onClick={() => !purgingAll && setConfirmPurgeAll(false)}>
-            <Card className="w-full max-w-md border-border shadow-xl" onClick={(e) => e.stopPropagation()}>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2 text-destructive">
-                  <AlertTriangle className="w-5 h-5" />
-                  Confirm Global Purge
-                </CardTitle>
-                <CardDescription>
-                  This will permanently delete {summary.ghostCount} ghost record{summary.ghostCount !== 1 ? "s" : ""}.
-                  This action cannot be undone.
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="flex justify-end gap-2">
-                <Button variant="outline" onClick={() => setConfirmPurgeAll(false)} disabled={purgingAll}>
-                  Cancel
-                </Button>
-                <Button variant="destructive" onClick={purgeAll} disabled={purgingAll}>
-                  {purgingAll ? (
-                    <Loader2 className="w-4 h-4 animate-spin mr-2" />
-                  ) : (
-                    <Trash2 className="w-4 h-4 mr-2" />
-                  )}
-                  {purgingAll ? "Purging..." : "Purge All"}
-                </Button>
-              </CardContent>
-            </Card>
+        {/* ── Info Banner ── */}
+        {!error && ghosts.length > 0 && (
+          <div className="flex items-start gap-3 p-4 bg-muted/30 border border-border rounded-lg">
+            <Archive className="w-5 h-5 text-muted-foreground shrink-0 mt-0.5" />
+            <div className="text-xs text-muted-foreground">
+              <p className="font-medium text-foreground mb-1">Retrofitting Workflow</p>
+              <ol className="list-decimal list-inside space-y-0.5">
+                <li>Click "استكمال البيانات" next to any flagged record.</li>
+                <li>The record opens in edit mode — Form Code, Serial, Created By, and Department remain locked.</li>
+                <li>Copy the data from your offline Word document and paste into the empty form fields.</li>
+                <li>Save — the record is now fully populated and the CHECK constraint will protect it going forward.</li>
+              </ol>
+            </div>
           </div>
         )}
       </div>

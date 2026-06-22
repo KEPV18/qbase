@@ -4,8 +4,8 @@
 // ============================================================================
 import { log } from "@/services/logger";
 
-import React, { useState, useMemo } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import React, { useState, useMemo, useEffect } from 'react';
+import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import {
   ArrowLeft, Edit3, Save, X, AlertTriangle, Shield, Clock, User,
   FileText, CheckCircle, Lock, Loader2, RefreshCw, History,
@@ -60,6 +60,27 @@ const RecordViewPage: React.FC = () => {
   const [modificationReason, setModificationReason] = useState('');
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [exportMenuOpen, setExportMenuOpen] = useState(false);
+  const [searchParams] = useSearchParams();
+
+  // Auto-enter edit mode when navigated with ?edit=true (from Data Retrofitting Hub)
+  useEffect(() => {
+    if (searchParams.get('edit') === 'true' && originalRecord && mode === 'view') {
+      const data: RecordData = {};
+      const s = getFormSchema(originalRecord.formCode as string);
+      if (s) {
+        s.fields.forEach(field => {
+          if (field.type === 'heading') return;
+          const key = field.key as string;
+          const val = (originalRecord as Record<string, unknown>)[key];
+          data[key] = (val !== undefined && val !== null ? val : (field.defaultValue ?? '')) as string | number | boolean | Record<string, unknown> | RecordData[] | null;
+        });
+        setEditData(data);
+        setErrors({});
+        setModificationReason('Retrofitting empty record from offline Word document');
+        setMode('edit');
+      }
+    }
+  }, [searchParams, originalRecord, mode]);
   const [isExporting, setIsExporting] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
 
