@@ -66,45 +66,45 @@ export function F42Template({ data, isTemplate = true, editMode = false, onChang
     );
 
   return (
-    <div className={cn("bg-white text-black text-sm", className)}>
+    <div className={cn("bg-background dark:bg-[#1e1d1a] text-foreground text-sm print:bg-white print:text-black print:border-black", className)}>
       {/* Header */}
-      <div className="grid grid-cols-[6fr_1fr] border border-black">
+      <div className="grid grid-cols-[6fr_1fr] border border-border">
         <div className="p-2 font-bold bg-primary/5 text-base">Annual Training Program</div>
-        <div className="p-2 border-l border-black bg-primary/5 text-right text-xs">
+        <div className="p-2 border-l border-border bg-primary/5 text-right text-xs">
           F/42 Rev No. {val(d, "serial") || (ph ? "{{SERIAL}}" : "—")}
         </div>
       </div>
 
       {/* Date/Year row */}
-      <div className="grid grid-cols-[1fr_1fr] border-x border-b border-black text-xs">
-        <div className="p-1.5 border-r border-black">Date 🡪 {inp("date", "Date", "w-28")}</div>
+      <div className="grid grid-cols-[1fr_1fr] border-x border-b border-border text-xs">
+        <div className="p-1.5 border-r border-border">Date 🡪 {inp("date", "Date", "w-28")}</div>
         <div className="p-1.5">Year 🡪 {inp("year", "Year", "w-20")}</div>
       </div>
 
       {/* Column headers */}
-      <div className="grid grid-cols-[40px_1fr_1fr_80px_1fr_40px_40px_80px_70px] border-x border-b border-black text-[9px] font-semibold bg-gray-100">
-        <div className="p-1 border-r border-black">Topic No.</div>
-        <div className="p-1 border-r border-black">Title Of Training</div>
-        <div className="p-1 border-r border-black">Participants</div>
-        <div className="p-1 border-r border-black">Identified By</div>
-        <div className="p-1 border-r border-black">Reason For Need</div>
-        <div className="p-1 border-r border-black text-center">Int.</div>
-        <div className="p-1 border-r border-black text-center">Ext.</div>
-        <div className="p-1 border-r border-black">Faculty</div>
+      <div className="grid grid-cols-[40px_1fr_1fr_80px_1fr_40px_40px_80px_70px] border-x border-b border-border text-[9px] font-semibold bg-muted">
+        <div className="p-1 border-r border-border">Topic No.</div>
+        <div className="p-1 border-r border-border">Title Of Training</div>
+        <div className="p-1 border-r border-border">Participants</div>
+        <div className="p-1 border-r border-border">Identified By</div>
+        <div className="p-1 border-r border-border">Reason For Need</div>
+        <div className="p-1 border-r border-border text-center">Int.</div>
+        <div className="p-1 border-r border-border text-center">Ext.</div>
+        <div className="p-1 border-r border-border">Faculty</div>
         <div className="p-1">Planned Date</div>
       </div>
 
       {/* Data rows */}
       {rows.map((row, idx) => (
-        <div key={idx} className="grid grid-cols-[40px_1fr_1fr_80px_1fr_40px_40px_80px_70px] border-x border-b border-black text-xs relative group min-h-[26px]">
-          <div className="p-1 border-r border-black text-center">{cellInp(idx, "topicNo", "#")}</div>
-          <div className="p-1 border-r border-black">{cellInp(idx, "title", "Title")}</div>
-          <div className="p-1 border-r border-black">{cellInp(idx, "participants", "Who")}</div>
-          <div className="p-1 border-r border-black">{cellInp(idx, "identifiedBy", "By")}</div>
-          <div className="p-1 border-r border-black">{cellInp(idx, "reason", "Reason")}</div>
-          <div className="p-1 border-r border-black text-center">{cellInp(idx, "modeInternal", "✓")}</div>
-          <div className="p-1 border-r border-black text-center">{cellInp(idx, "modeExternal", "✓")}</div>
-          <div className="p-1 border-r border-black">{cellInp(idx, "faculty", "Name")}</div>
+        <div key={idx} className="grid grid-cols-[40px_1fr_1fr_80px_1fr_40px_40px_80px_70px] border-x border-b border-border text-xs relative group min-h-[26px]">
+          <div className="p-1 border-r border-border text-center">{cellInp(idx, "topicNo", "#")}</div>
+          <div className="p-1 border-r border-border">{cellInp(idx, "title", "Title")}</div>
+          <div className="p-1 border-r border-border">{cellInp(idx, "participants", "Who")}</div>
+          <div className="p-1 border-r border-border">{cellInp(idx, "identifiedBy", "By")}</div>
+          <div className="p-1 border-r border-border">{cellInp(idx, "reason", "Reason")}</div>
+          <div className="p-1 border-r border-border text-center">{cellInp(idx, "modeInternal", "✓")}</div>
+          <div className="p-1 border-r border-border text-center">{cellInp(idx, "modeExternal", "✓")}</div>
+          <div className="p-1 border-r border-border">{cellInp(idx, "faculty", "Name")}</div>
           <div className="p-1">{cellInp(idx, "plannedDate", "Date")}</div>
           {editMode && rows.length > 1 && (
             <button onClick={() => removeRow(idx)} className="absolute -right-6 top-1/2 -translate-y-1/2 text-destructive opacity-0 group-hover:opacity-100 transition-opacity">
@@ -121,7 +121,7 @@ export function F42Template({ data, isTemplate = true, editMode = false, onChang
       )}
 
       {/* Approval */}
-      <div className="border border-t-2 border-black text-xs mt-2 p-1.5">
+      <div className="border border-t-2 border-border text-xs mt-2 p-1.5">
         Reviewed And Approved By: {inp("approved_by", "Authorised Person")}
       </div>
     </div>

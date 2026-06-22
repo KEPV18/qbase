@@ -41,13 +41,13 @@ export function F48Template({ data, isTemplate = true, editMode = false, onChang
     );
 
   return (
-    <div className={cn("bg-white text-black text-sm", className)}>
-      <table className="w-full border-collapse border border-black text-xs">
+    <div className={cn("bg-background dark:bg-[#1e1d1a] text-foreground text-sm print:bg-white print:text-black print:border-black", className)}>
+      <table className="w-full border-collapse border border-border text-xs">
         <tbody>
           {/* Row 0: TYPE | DATE | REPORT NO */}
           <tr>
-            <td className="border border-black p-2 font-semibold bg-gray-50 w-1/3">TYPE OF AUDIT:</td>
-            <td className="border border-black p-2 w-1/3">
+            <td className="border border-border p-2 font-semibold bg-muted/50 w-1/3">TYPE OF AUDIT:</td>
+            <td className="border border-border p-2 w-1/3">
               {editMode ? (
                 <select className="w-full bg-transparent text-xs" value={val(d, "audit_type")} onChange={e => onChange?.("audit_type", e.target.value)}>
                   <option value="">Select...</option>
@@ -59,41 +59,41 @@ export function F48Template({ data, isTemplate = true, editMode = false, onChang
                 val(d, "audit_type") || (ph ? "___" : "")
               )}
             </td>
-            <td className="border border-black p-2 font-semibold bg-gray-50 w-1/6">DATE OF AUDIT:</td>
+            <td className="border border-border p-2 font-semibold bg-muted/50 w-1/6">DATE OF AUDIT:</td>
           </tr>
           <tr>
-            <td className="border border-black p-2">{inp("audit_type_value", "Type")}</td>
-            <td className="border border-black p-2">{inp("date_of_audit", "Date")}</td>
-            <td className="border border-black p-2 text-xs">
+            <td className="border border-border p-2">{inp("audit_type_value", "Type")}</td>
+            <td className="border border-border p-2">{inp("date_of_audit", "Date")}</td>
+            <td className="border border-border p-2 text-xs">
               AUDIT REPORT NO: {val(d, "serial") || (ph ? "{{SERIAL}}" : "—")}
             </td>
           </tr>
           {/* Row 1: TEAM | STANDARD | LOCATION */}
           <tr>
-            <td className="border border-black p-1.5 font-semibold bg-gray-50">AUDIT TEAM:</td>
-            <td className="border border-black p-1.5 font-semibold bg-gray-50">AUDIT STANDARD:</td>
-            <td className="border border-black p-1.5 font-semibold bg-gray-50">AUDIT LOCATION:</td>
+            <td className="border border-border p-1.5 font-semibold bg-muted/50">AUDIT TEAM:</td>
+            <td className="border border-border p-1.5 font-semibold bg-muted/50">AUDIT STANDARD:</td>
+            <td className="border border-border p-1.5 font-semibold bg-muted/50">AUDIT LOCATION:</td>
           </tr>
           <tr>
-            <td className="border border-black p-1.5">{inp("audit_team", "Team members")}</td>
-            <td className="border border-black p-1.5">{inp("audit_standard", "ISO 9001:2015")}</td>
-            <td className="border border-black p-1.5">{inp("audit_location", "Location")}</td>
+            <td className="border border-border p-1.5">{inp("audit_team", "Team members")}</td>
+            <td className="border border-border p-1.5">{inp("audit_standard", "ISO 9001:2015")}</td>
+            <td className="border border-border p-1.5">{inp("audit_location", "Location")}</td>
           </tr>
           {/* Row 2: SCOPE + AUDITEE */}
           <tr>
-            <td className="border border-black p-1.5 font-semibold bg-gray-50" colSpan={2}>AUDIT SCOPE:</td>
-            <td className="border border-black p-1.5 font-semibold bg-gray-50">AUDITEE:</td>
+            <td className="border border-border p-1.5 font-semibold bg-muted/50" colSpan={2}>AUDIT SCOPE:</td>
+            <td className="border border-border p-1.5 font-semibold bg-muted/50">AUDITEE:</td>
           </tr>
           <tr>
-            <td className="border border-black p-1.5" colSpan={2}>{inp("audit_scope", "Scope of audit")}</td>
-            <td className="border border-black p-1.5">{inp("auditee", "Auditee")}</td>
+            <td className="border border-border p-1.5" colSpan={2}>{inp("audit_scope", "Scope of audit")}</td>
+            <td className="border border-border p-1.5">{inp("auditee", "Auditee")}</td>
           </tr>
           {/* Summary Report */}
           <tr>
-            <td className="border border-black p-1.5 font-semibold bg-gray-50" colSpan={3}>Summary Report:</td>
+            <td className="border border-border p-1.5 font-semibold bg-muted/50" colSpan={3}>Summary Report:</td>
           </tr>
           <tr>
-            <td className="border border-black p-2 min-h-[100px]" colSpan={3}>
+            <td className="border border-border p-2 min-h-[100px]" colSpan={3}>
               {editMode ? (
                 <textarea className="w-full min-h-[100px] bg-transparent text-xs p-1" value={val(d, "summary_report") || ""} onChange={e => onChange?.("summary_report", e.target.value)} placeholder="Enter summary report..." />
               ) : (
@@ -103,10 +103,10 @@ export function F48Template({ data, isTemplate = true, editMode = false, onChang
           </tr>
           {/* Audit Findings */}
           <tr>
-            <td className="border border-black p-1.5 font-semibold bg-gray-50" colSpan={3}>Audit Findings (NCs):</td>
+            <td className="border border-border p-1.5 font-semibold bg-muted/50" colSpan={3}>Audit Findings (NCs):</td>
           </tr>
           <tr>
-            <td className="border border-black p-2 min-h-[100px]" colSpan={3}>
+            <td className="border border-border p-2 min-h-[100px]" colSpan={3}>
               {editMode ? (
                 <textarea className="w-full min-h-[100px] bg-transparent text-xs p-1" value={val(d, "audit_findings") || ""} onChange={e => onChange?.("audit_findings", e.target.value)} placeholder="Enter audit findings..." />
               ) : (
@@ -116,7 +116,7 @@ export function F48Template({ data, isTemplate = true, editMode = false, onChang
           </tr>
           {/* Follow-up */}
           <tr>
-            <td className="border border-black p-2" colSpan={3}>
+            <td className="border border-border p-2" colSpan={3}>
               <div className="space-y-1">
                 <div>FOLLOW-UP AUDIT REQUIRED: {inp("followup_required", "Yes/No")}</div>
                 <div>DATE OF FOLLOW UP AUDIT: {inp("followup_date", "Date")}</div>
@@ -125,7 +125,7 @@ export function F48Template({ data, isTemplate = true, editMode = false, onChang
           </tr>
           {/* Signature */}
           <tr>
-            <td className="border border-black p-2" colSpan={3}>
+            <td className="border border-border p-2" colSpan={3}>
               <div className="text-center">
                 SIGNATURE<br/><br/>
                 (Auditor) {inp("auditor_signature", "Name", "w-48")}

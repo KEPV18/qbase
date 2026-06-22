@@ -23,20 +23,20 @@ export function DocumentView({
   maxWidth = "max-w-[800px]",
 }: DocumentViewProps) {
   return (
-    <div className="min-h-screen bg-[#e8e8e8] dark:bg-[#1a1a18] flex justify-center py-8 px-4">
+    <div className="min-h-screen bg-muted/30 dark:bg-[#1a1a18] flex justify-center py-8 px-4 print:bg-white">
       <div
         className={cn(
-          "w-full bg-white dark:bg-[#232220] shadow-[0_1px_4px_rgba(0,0,0,0.12),0_2px_8px_rgba(0,0,0,0.06)]",
-          "min-h-[500px]",
+          "w-full bg-background dark:bg-[#1e1d1a] shadow-sm rounded-lg border border-border",
+          "min-h-[500px] print:bg-white print:text-black print:border-black print:shadow-none print:rounded-none",
           maxWidth,
           className
         )}
       >
         {/* Page header with document info line */}
         {subtitle && (
-          <div className="px-12 pt-8 pb-3 border-b border-gray-100 dark:border-gray-800">
+          <div className="px-12 pt-8 pb-3 border-b border-border print:border-black">
             <div className="flex items-center justify-between">
-              <span className="text-[11px] text-gray-400 dark:text-gray-500 uppercase tracking-[0.05em]">
+              <span className="text-[11px] text-muted-foreground uppercase tracking-[0.05em]">
                 {subtitle}
               </span>
             </div>
@@ -44,7 +44,7 @@ export function DocumentView({
         )}
 
         {/* Content area with Google Docs margins */}
-        <div className="px-12 py-8 space-y-6">
+        <div className="px-12 py-8 space-y-6 print:text-black">
           {children}
         </div>
       </div>
@@ -65,16 +65,16 @@ interface DocHeaderProps {
 
 export function DocHeader({ serial, formName, formCode, sectionName }: DocHeaderProps) {
   return (
-    <div className="mb-8">
-      <p className="text-[11px] text-gray-400 dark:text-gray-500 font-medium tracking-wider uppercase mb-1">
+    <div className="mb-8 print:text-black">
+      <p className="text-[11px] text-muted-foreground font-medium tracking-wider uppercase mb-1">
         {sectionName || "Record"}
       </p>
-      <h1 className="text-2xl font-normal text-gray-900 dark:text-gray-100 leading-snug mb-2">
+      <h1 className="text-2xl font-normal text-foreground leading-snug mb-2">
         {formName}
       </h1>
-      <div className="flex items-center gap-3 text-sm text-gray-500 dark:text-gray-400">
+      <div className="flex items-center gap-3 text-sm text-muted-foreground">
         <span className="font-mono text-[13px]">{serial}</span>
-        <span className="text-gray-300 dark:text-gray-600">·</span>
+        <span className="text-border">·</span>
         <span className="text-[13px]">{formCode}</span>
       </div>
     </div>
@@ -94,10 +94,10 @@ interface DocFieldProps {
 export function DocField({ label, value, fullWidth }: DocFieldProps) {
   return (
     <div className={cn("space-y-1.5", fullWidth ? "" : "")}>
-      <p className="text-[11px] font-medium text-gray-400 dark:text-gray-500 uppercase tracking-wider">
+      <p className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider">
         {label}
       </p>
-      <div className="text-sm text-gray-900 dark:text-gray-100 leading-relaxed">
+      <div className="text-sm text-foreground leading-relaxed">
         {value}
       </div>
     </div>
@@ -115,7 +115,7 @@ interface DocSectionProps {
 export function DocSection({ title }: DocSectionProps) {
   return (
     <div className="pt-4">
-      <h2 className="text-base font-medium text-gray-900 dark:text-gray-100 border-b border-gray-200 dark:border-gray-700 pb-2">
+      <h2 className="text-base font-medium text-foreground border-b border-border pb-2">
         {title}
       </h2>
     </div>
@@ -132,18 +132,18 @@ interface DocTableProps {
 }
 
 export function DocTable({ columns, rows }: DocTableProps) {
-  if (rows.length === 0) return <p className="text-sm text-gray-400 italic">No entries</p>;
+  if (rows.length === 0) return <p className="text-sm text-muted-foreground italic">No entries</p>;
 
   return (
-    <div className="overflow-x-auto border border-gray-200 dark:border-gray-700 rounded-sm">
+    <div className="overflow-x-auto border border-border rounded-sm">
       <table className="w-full text-sm">
         <thead>
-          <tr className="bg-gray-50 dark:bg-gray-800/50 border-b border-gray-200 dark:border-gray-700">
-            <th className="px-4 py-2.5 text-left text-xs font-medium text-gray-500 dark:text-gray-400 w-10">#</th>
+          <tr className="bg-muted/50 border-b border-border">
+            <th className="px-4 py-2.5 text-left text-xs font-medium text-muted-foreground w-10">#</th>
             {columns.map((col) => (
               <th
                 key={col.key}
-                className="px-4 py-2.5 text-left text-xs font-medium text-gray-500 dark:text-gray-400"
+                className="px-4 py-2.5 text-left text-xs font-medium text-muted-foreground"
               >
                 {col.label}
               </th>
@@ -154,14 +154,14 @@ export function DocTable({ columns, rows }: DocTableProps) {
           {rows.map((row, i) => (
             <tr
               key={i}
-              className="border-b border-gray-100 dark:border-gray-800 last:border-0"
+              className="border-b border-border last:border-0"
             >
-              <td className="px-4 py-2.5 text-gray-400 text-xs">{i + 1}</td>
+              <td className="px-4 py-2.5 text-muted-foreground text-xs">{i + 1}</td>
               {columns.map((col) => (
-                <td key={col.key} className="px-4 py-2.5 text-gray-900 dark:text-gray-100">
+                <td key={col.key} className="px-4 py-2.5 text-foreground">
                   {row[col.key] !== undefined && row[col.key] !== null && row[col.key] !== ""
                     ? String(row[col.key])
-                    : <span className="text-gray-300 dark:text-gray-600">—</span>}
+                    : <span className="text-border">—</span>}
                 </td>
               ))}
             </tr>

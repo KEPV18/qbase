@@ -64,31 +64,31 @@ export function F37Template({ data, isTemplate = true, editMode = false, onChang
     );
 
   return (
-    <div className={cn("bg-white text-black text-sm", className)}>
+    <div className={cn("bg-background dark:bg-[#1e1d1a] text-foreground text-sm print:bg-white print:text-black print:border-black", className)}>
       {/* Header */}
-      <div className="grid grid-cols-[5fr_1fr] border border-black">
+      <div className="grid grid-cols-[5fr_1fr] border border-border">
         <div className="p-2 font-bold bg-primary/5 text-base">Experiment Data Sheet</div>
-        <div className="p-2 border-l border-black bg-primary/5 text-right text-xs">
+        <div className="p-2 border-l border-border bg-primary/5 text-right text-xs">
           F/37 Issue No. {val(d, "serial") || (ph ? "{{SERIAL}}" : "—")}
         </div>
       </div>
 
       {/* Key-value fields */}
-      <div className="grid grid-cols-[1fr_1fr] border-x border-b border-black text-xs">
-        <div className="p-1.5 border-r border-b border-black">Sr. No. 🡪 {val(d, "serial") || (ph ? "{{SERIAL}}" : "—")}</div>
-        <div className="p-1.5 border-b border-black">Date 🡪 {inp("date", "Date", "w-28")}</div>
+      <div className="grid grid-cols-[1fr_1fr] border-x border-b border-border text-xs">
+        <div className="p-1.5 border-r border-b border-border">Sr. No. 🡪 {val(d, "serial") || (ph ? "{{SERIAL}}" : "—")}</div>
+        <div className="p-1.5 border-b border-border">Date 🡪 {inp("date", "Date", "w-28")}</div>
       </div>
-      <div className="grid grid-cols-[1fr_1fr] border-x border-b border-black text-xs">
-        <div className="p-1.5 border-r border-black">Product 🡪 {inp("product", "Product Name")}</div>
+      <div className="grid grid-cols-[1fr_1fr] border-x border-b border-border text-xs">
+        <div className="p-1.5 border-r border-border">Product 🡪 {inp("product", "Product Name")}</div>
         <div className="p-1.5">Experiment No. 🡪 {inp("experiment_no", "Exp No.")}</div>
       </div>
-      <div className="border-x border-b border-black text-xs p-1.5">
+      <div className="border-x border-b border-border text-xs p-1.5">
         Incharge 🡪 {inp("incharge", "Incharge Name")}
       </div>
 
       {/* Object and Variables */}
-      <div className="border-x border-b border-black text-xs">
-        <div className="p-1.5 bg-gray-50 font-semibold">Object And Variables</div>
+      <div className="border-x border-b border-border text-xs">
+        <div className="p-1.5 bg-muted/50 font-semibold">Object And Variables</div>
         <div className="p-2 min-h-[40px]">
           {editMode ? (
             <textarea className="w-full bg-transparent text-xs border-none outline-none min-h-[40px]" value={val(d, "object_variables") || ""} onChange={e => onChange?.("object_variables", e.target.value)} placeholder="Object and variables..." />
@@ -99,16 +99,16 @@ export function F37Template({ data, isTemplate = true, editMode = false, onChang
       </div>
 
       {/* Data table */}
-      <div className="grid grid-cols-[80px_1fr_1fr] border-x border-b border-black text-[10px] font-semibold bg-gray-100">
-        <div className="p-1 border-r border-black">Quantities</div>
-        <div className="p-1 border-r border-black">Description</div>
+      <div className="grid grid-cols-[80px_1fr_1fr] border-x border-b border-border text-[10px] font-semibold bg-muted">
+        <div className="p-1 border-r border-border">Quantities</div>
+        <div className="p-1 border-r border-border">Description</div>
         <div className="p-1">Observation / Results</div>
       </div>
 
       {rows.map((row, idx) => (
-        <div key={idx} className="grid grid-cols-[80px_1fr_1fr] border-x border-b border-black text-xs relative group min-h-[26px]">
-          <div className="p-1 border-r border-black">{cellInp(idx, "quantities", "Qty")}</div>
-          <div className="p-1 border-r border-black">{cellInp(idx, "description", "Description")}</div>
+        <div key={idx} className="grid grid-cols-[80px_1fr_1fr] border-x border-b border-border text-xs relative group min-h-[26px]">
+          <div className="p-1 border-r border-border">{cellInp(idx, "quantities", "Qty")}</div>
+          <div className="p-1 border-r border-border">{cellInp(idx, "description", "Description")}</div>
           <div className="p-1">{cellInp(idx, "observation", "Results")}</div>
           {editMode && rows.length > 1 && (
             <button onClick={() => removeRow(idx)} className="absolute -right-6 top-1/2 -translate-y-1/2 text-destructive opacity-0 group-hover:opacity-100 transition-opacity">
@@ -125,9 +125,9 @@ export function F37Template({ data, isTemplate = true, editMode = false, onChang
       )}
 
       {/* Signatures */}
-      <div className="grid grid-cols-[1fr_1fr] border border-t-2 border-black text-xs mt-2">
+      <div className="grid grid-cols-[1fr_1fr] border border-t-2 border-border text-xs mt-2">
         <div className="p-1.5">Done By Chemists: {inp("done_by", "Name")}</div>
-        <div className="p-1.5 border-l border-black">Reviewed By R&amp;D Head: {inp("reviewed_by", "Name")}</div>
+        <div className="p-1.5 border-l border-border">Reviewed By R&amp;D Head: {inp("reviewed_by", "Name")}</div>
       </div>
     </div>
   );

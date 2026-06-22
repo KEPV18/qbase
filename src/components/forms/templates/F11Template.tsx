@@ -66,63 +66,63 @@ export function F11Template({ data, isTemplate = true, editMode = false, onChang
     );
 
   return (
-    <div className={cn("bg-white text-black text-sm", className)}>
+    <div className={cn("bg-background dark:bg-[#1e1d1a] text-foreground text-sm print:bg-white print:text-black print:border-black", className)}>
       {/* Title row */}
-      <div className="grid grid-cols-[4fr_1fr] border border-black">
+      <div className="grid grid-cols-[4fr_1fr] border border-border">
         <div className="p-2 font-bold bg-primary/5 text-base">Production Plan</div>
-        <div className="p-2 border-l border-black bg-primary/5 text-right text-xs">
+        <div className="p-2 border-l border-border bg-primary/5 text-right text-xs">
           F/11 Rev No. {val(d, "serial") || (ph ? "{{SERIAL}}" : "—")}
         </div>
       </div>
 
       {/* Sr No + Date row */}
-      <div className="grid grid-cols-[2fr_1fr] border-x border-b border-black text-xs">
-        <div className="p-1.5 border-r border-black">Sr. No. 🡪 {val(d, "serial") || (ph ? "{{SERIAL}}" : "—")}</div>
+      <div className="grid grid-cols-[2fr_1fr] border-x border-b border-border text-xs">
+        <div className="p-1.5 border-r border-border">Sr. No. 🡪 {val(d, "serial") || (ph ? "{{SERIAL}}" : "—")}</div>
         <div className="p-1.5">Date 🡪 {inp("date", "Date", "w-28")}</div>
       </div>
 
       {/* Month row */}
-      <div className="border-x border-b border-black text-xs p-1.5">
+      <div className="border-x border-b border-border text-xs p-1.5">
         Month 🡪 {inp("month", "Month", "w-40")}
       </div>
 
       {/* Section header */}
-      <div className="border-x border-b border-black text-xs p-1.5 bg-gray-50 font-semibold">
+      <div className="border-x border-b border-border text-xs p-1.5 bg-muted/50 font-semibold">
         Planning For Products
       </div>
 
       {/* Table header - two-level */}
-      <div className="grid grid-cols-[35px_100px_60px_60px_60px_60px_60px_60px_50px] border-x border-b border-black text-[9px] font-semibold bg-gray-100">
-        <div className="p-1 border-r border-black">Sr.</div>
-        <div className="p-1 border-r border-black">Product</div>
-        <div className="p-1 border-r border-black">Batch No.</div>
-        <div className="p-1 border-r border-black col-span={3} text-center bg-blue-50">Plan For Completion</div>
-        <div className="p-1 col-span={2} text-center bg-green-50">Actual Completion</div>
-        <div className="p-1 border-l border-r border-black">% Yield</div>
+      <div className="grid grid-cols-[35px_100px_60px_60px_60px_60px_60px_60px_50px] border-x border-b border-border text-[9px] font-semibold bg-muted">
+        <div className="p-1 border-r border-border">Sr.</div>
+        <div className="p-1 border-r border-border">Product</div>
+        <div className="p-1 border-r border-border">Batch No.</div>
+        <div className="p-1 border-r border-border col-span={3} text-center bg-blue-50 dark:bg-blue-950/30">Plan For Completion</div>
+        <div className="p-1 col-span={2} text-center bg-green-50 dark:bg-green-950/30">Actual Completion</div>
+        <div className="p-1 border-l border-r border-border">% Yield</div>
       </div>
-      <div className="grid grid-cols-[35px_100px_60px_60px_60px_60px_60px_60px_50px] border-x border-b border-black text-[9px] font-semibold bg-gray-100">
-        <div className="p-1 border-r border-black"></div>
-        <div className="p-1 border-r border-black"></div>
-        <div className="p-1 border-r border-black"></div>
-        <div className="p-1 border-r border-black text-center bg-blue-50">Date</div>
-        <div className="p-1 border-r border-black text-center bg-blue-50">Qty</div>
-        <div className="p-1 border-r border-black text-center bg-blue-50"># Size</div>
-        <div className="p-1 border-r border-black text-center bg-green-50">Date</div>
-        <div className="p-1 text-center bg-green-50">Qty</div>
+      <div className="grid grid-cols-[35px_100px_60px_60px_60px_60px_60px_60px_50px] border-x border-b border-border text-[9px] font-semibold bg-muted">
+        <div className="p-1 border-r border-border"></div>
+        <div className="p-1 border-r border-border"></div>
+        <div className="p-1 border-r border-border"></div>
+        <div className="p-1 border-r border-border text-center bg-blue-50 dark:bg-blue-950/30">Date</div>
+        <div className="p-1 border-r border-border text-center bg-blue-50 dark:bg-blue-950/30">Qty</div>
+        <div className="p-1 border-r border-border text-center bg-blue-50 dark:bg-blue-950/30"># Size</div>
+        <div className="p-1 border-r border-border text-center bg-green-50 dark:bg-green-950/30">Date</div>
+        <div className="p-1 text-center bg-green-50 dark:bg-green-950/30">Qty</div>
         <div className="p-1"></div>
       </div>
 
       {/* Data rows */}
       {rows.map((row, idx) => (
-        <div key={idx} className="grid grid-cols-[35px_100px_60px_60px_60px_60px_60px_60px_50px] border-x border-b border-black text-xs relative group min-h-[26px]">
-          <div className="p-1 border-r border-black text-center">{idx + 1}</div>
-          <div className="p-1 border-r border-black">{cellInp(idx, "product", "Product")}</div>
-          <div className="p-1 border-r border-black">{cellInp(idx, "batchNo", "Batch")}</div>
-          <div className="p-1 border-r border-black">{cellInp(idx, "planDate", "Date")}</div>
-          <div className="p-1 border-r border-black">{cellInp(idx, "planCompletion", "Qty")}</div>
-          <div className="p-1 border-r border-black">{cellInp(idx, "planSize", "Size")}</div>
-          <div className="p-1 border-r border-black">{cellInp(idx, "actualDate", "Date")}</div>
-          <div className="p-1 border-r border-black">{cellInp(idx, "actualQty", "Qty")}</div>
+        <div key={idx} className="grid grid-cols-[35px_100px_60px_60px_60px_60px_60px_60px_50px] border-x border-b border-border text-xs relative group min-h-[26px]">
+          <div className="p-1 border-r border-border text-center">{idx + 1}</div>
+          <div className="p-1 border-r border-border">{cellInp(idx, "product", "Product")}</div>
+          <div className="p-1 border-r border-border">{cellInp(idx, "batchNo", "Batch")}</div>
+          <div className="p-1 border-r border-border">{cellInp(idx, "planDate", "Date")}</div>
+          <div className="p-1 border-r border-border">{cellInp(idx, "planCompletion", "Qty")}</div>
+          <div className="p-1 border-r border-border">{cellInp(idx, "planSize", "Size")}</div>
+          <div className="p-1 border-r border-border">{cellInp(idx, "actualDate", "Date")}</div>
+          <div className="p-1 border-r border-border">{cellInp(idx, "actualQty", "Qty")}</div>
           <div className="p-1">{cellInp(idx, "yieldPercent", "%")}</div>
           {editMode && rows.length > 1 && (
             <button onClick={() => removeRow(idx)} className="absolute -right-6 top-1/2 -translate-y-1/2 text-destructive opacity-0 group-hover:opacity-100 transition-opacity">
@@ -139,8 +139,8 @@ export function F11Template({ data, isTemplate = true, editMode = false, onChang
       )}
 
       {/* Remarks */}
-      <div className="border-x border-b border-black text-xs mt-0">
-        <div className="p-1.5 bg-gray-50 font-semibold">Remarks</div>
+      <div className="border-x border-b border-border text-xs mt-0">
+        <div className="p-1.5 bg-muted/50 font-semibold">Remarks</div>
         <div className="p-2 min-h-[40px]">
           {editMode ? (
             <textarea className="w-full bg-transparent text-xs border-none outline-none min-h-[40px]" value={val(d, "remarks") || ""} onChange={e => onChange?.("remarks", e.target.value)} placeholder="Remarks..." />
@@ -151,8 +151,8 @@ export function F11Template({ data, isTemplate = true, editMode = false, onChang
       </div>
 
       {/* Signatures */}
-      <div className="grid grid-cols-[1fr_2fr] border border-t-2 border-black text-xs">
-        <div className="p-1.5 border-r border-black">Prepared By:</div>
+      <div className="grid grid-cols-[1fr_2fr] border border-t-2 border-border text-xs">
+        <div className="p-1.5 border-r border-border">Prepared By:</div>
         <div className="p-1.5">Updated Based On Progress: {inp("updated_by", "Name")}</div>
       </div>
     </div>

@@ -84,47 +84,47 @@ export function F23Template({ data, isTemplate = true, editMode = false, onChang
     );
 
   return (
-    <div className={cn("bg-white text-black text-sm", className)}>
+    <div className={cn("bg-background dark:bg-[#1e1d1a] text-foreground text-sm print:bg-white print:text-black print:border-black", className)}>
       {/* Header */}
-      <div className="grid grid-cols-[1fr_auto] border border-black">
+      <div className="grid grid-cols-[1fr_auto] border border-border">
         <div className="col-span-1 p-2 font-bold bg-primary/5 text-base">Master List of Records</div>
-        <div className="p-2 border-l border-black bg-primary/5 text-right text-xs">
+        <div className="p-2 border-l border-border bg-primary/5 text-right text-xs">
           F/23 Rev No. {val(d, "serial") || (ph ? "{{SERIAL}}" : "—")}
         </div>
       </div>
 
       {/* Department / Date row */}
-      <div className="grid grid-cols-[3fr_2fr] border-x border-b border-black text-xs">
-        <div className="p-1.5 border-r border-black">Department 🡪 {inp("department", "Department")}</div>
+      <div className="grid grid-cols-[3fr_2fr] border-x border-b border-border text-xs">
+        <div className="p-1.5 border-r border-border">Department 🡪 {inp("department", "Department")}</div>
         <div className="p-1.5">Date 🡪 {inp("date", "Date")}</div>
       </div>
 
       {/* Column headers */}
-      <div className="grid grid-cols-[50px_1.5fr_70px_80px_80px_60px_70px_60px_60px_80px] border-x border-b border-black text-[9px] font-semibold bg-gray-100">
-        <div className="p-1 border-r border-black text-center">Record No.</div>
-        <div className="p-1 border-r border-black">Title Of Record</div>
-        <div className="p-1 border-r border-black">Format No.</div>
-        <div className="p-1 border-r border-black">Frequency</div>
-        <div className="p-1 border-r border-black">Method Of Filing</div>
-        <div className="p-1 border-r border-black">Access</div>
-        <div className="p-1 border-r border-black">Storage Place</div>
-        <div className="p-1 border-r border-black text-center">Retention<br/>Period</div>
-        <div className="p-1 border-r border-black text-center">Retention<br/>Years</div>
+      <div className="grid grid-cols-[50px_1.5fr_70px_80px_80px_60px_70px_60px_60px_80px] border-x border-b border-border text-[9px] font-semibold bg-muted">
+        <div className="p-1 border-r border-border text-center">Record No.</div>
+        <div className="p-1 border-r border-border">Title Of Record</div>
+        <div className="p-1 border-r border-border">Format No.</div>
+        <div className="p-1 border-r border-border">Frequency</div>
+        <div className="p-1 border-r border-border">Method Of Filing</div>
+        <div className="p-1 border-r border-border">Access</div>
+        <div className="p-1 border-r border-border">Storage Place</div>
+        <div className="p-1 border-r border-border text-center">Retention<br/>Period</div>
+        <div className="p-1 border-r border-border text-center">Retention<br/>Years</div>
         <div className="p-1">Person Responsible</div>
       </div>
 
       {/* Data rows */}
       {rows.map((row, idx) => (
-        <div key={idx} className="grid grid-cols-[50px_1.5fr_70px_80px_80px_60px_70px_60px_60px_80px] border-x border-b border-black text-xs relative group min-h-[28px]">
-          <div className="p-1 border-r border-black text-center">{cellInp(idx, "recordNo", "F/XX")}</div>
-          <div className="p-1 border-r border-black">{cellInp(idx, "title", "Title")}</div>
-          <div className="p-1 border-r border-black">{cellInp(idx, "formatNo", "F/XX")}</div>
-          <div className="p-1 border-r border-black">{cellInp(idx, "frequency", "Monthly")}</div>
-          <div className="p-1 border-r border-black">{cellInp(idx, "methodOfFiling", "File")}</div>
-          <div className="p-1 border-r border-black">{cellInp(idx, "access", "All")}</div>
-          <div className="p-1 border-r border-black">{cellInp(idx, "storagePlace", "Cabinet")}</div>
-          <div className="p-1 border-r border-black text-center">{cellInp(idx, "retentionPeriod", "2Y")}</div>
-          <div className="p-1 border-r border-black text-center">{cellInp(idx, "retentionYears", "")}</div>
+        <div key={idx} className="grid grid-cols-[50px_1.5fr_70px_80px_80px_60px_70px_60px_60px_80px] border-x border-b border-border text-xs relative group min-h-[28px]">
+          <div className="p-1 border-r border-border text-center">{cellInp(idx, "recordNo", "F/XX")}</div>
+          <div className="p-1 border-r border-border">{cellInp(idx, "title", "Title")}</div>
+          <div className="p-1 border-r border-border">{cellInp(idx, "formatNo", "F/XX")}</div>
+          <div className="p-1 border-r border-border">{cellInp(idx, "frequency", "Monthly")}</div>
+          <div className="p-1 border-r border-border">{cellInp(idx, "methodOfFiling", "File")}</div>
+          <div className="p-1 border-r border-border">{cellInp(idx, "access", "All")}</div>
+          <div className="p-1 border-r border-border">{cellInp(idx, "storagePlace", "Cabinet")}</div>
+          <div className="p-1 border-r border-border text-center">{cellInp(idx, "retentionPeriod", "2Y")}</div>
+          <div className="p-1 border-r border-border text-center">{cellInp(idx, "retentionYears", "")}</div>
           <div className="p-1">{cellInp(idx, "personResponsible", "Name")}</div>
           {editMode && rows.length > 1 && (
             <button onClick={() => removeRow(idx)} className="absolute -right-6 top-1/2 -translate-y-1/2 text-destructive opacity-0 group-hover:opacity-100 transition-opacity">

@@ -63,21 +63,21 @@ export function F32Template({ data, isTemplate = true, editMode = false, onChang
     );
 
   return (
-    <div className={cn("bg-white text-black text-sm", className)}>
+    <div className={cn("bg-background dark:bg-[#1e1d1a] text-foreground text-sm print:bg-white print:text-black print:border-black", className)}>
       {/* Ref No + Date */}
-      <div className="grid grid-cols-[1fr_1fr] border border-black text-xs">
-        <div className="p-1.5 border-r border-black">Ref. No. 🡪 {val(d, "serial") || (ph ? "{{SERIAL}}" : "—")}</div>
+      <div className="grid grid-cols-[1fr_1fr] border border-border text-xs">
+        <div className="p-1.5 border-r border-border">Ref. No. 🡪 {val(d, "serial") || (ph ? "{{SERIAL}}" : "—")}</div>
         <div className="p-1.5">Date 🡪 {inp("date", "Date", "w-28")}</div>
       </div>
 
       {/* From/To */}
-      <div className="grid grid-cols-[1fr_1fr] border-x border-b border-black text-xs">
-        <div className="p-1.5 border-r border-black">From 🡪 {inp("from_dept", "Department")}</div>
+      <div className="grid grid-cols-[1fr_1fr] border-x border-b border-border text-xs">
+        <div className="p-1.5 border-r border-border">From 🡪 {inp("from_dept", "Department")}</div>
         <div className="p-1.5">To 🡪 R&amp;D Head</div>
       </div>
 
       {/* Request type */}
-      <div className="border-x border-b border-black text-xs p-1.5">
+      <div className="border-x border-b border-border text-xs p-1.5">
         <div className="font-semibold mb-1">Request for:</div>
         <div className="flex gap-6">
           {radio("request_type", "new", "New product development")}
@@ -86,17 +86,17 @@ export function F32Template({ data, isTemplate = true, editMode = false, onChang
       </div>
 
       {/* Product details */}
-      <table className="w-full border-collapse border-x border-b border-black text-xs">
+      <table className="w-full border-collapse border-x border-b border-border text-xs">
         <tbody>
-          <tr><td className="border border-black p-1.5 bg-gray-50 w-[45%]">Name of customer</td><td className="border border-black p-1.5">{inp("customer_name", "Customer Name")}</td></tr>
-          <tr><td className="border border-black p-1.5 bg-gray-50">Name of product</td><td className="border border-black p-1.5">{inp("product_name", "Product Name")}</td></tr>
-          <tr><td className="border border-black p-1.5 bg-gray-50">Specification / standard</td><td className="border border-black p-1.5">{inp("specification", "Spec / Standard")}</td></tr>
-          <tr><td className="border border-black p-1.5 bg-gray-50">Product code no. (existing product)</td><td className="border border-black p-1.5">{inp("product_code", "Code No.")}</td></tr>
+          <tr><td className="border border-border p-1.5 bg-muted/50 w-[45%]">Name of customer</td><td className="border border-border p-1.5">{inp("customer_name", "Customer Name")}</td></tr>
+          <tr><td className="border border-border p-1.5 bg-muted/50">Name of product</td><td className="border border-border p-1.5">{inp("product_name", "Product Name")}</td></tr>
+          <tr><td className="border border-border p-1.5 bg-muted/50">Specification / standard</td><td className="border border-border p-1.5">{inp("specification", "Spec / Standard")}</td></tr>
+          <tr><td className="border border-border p-1.5 bg-muted/50">Product code no. (existing product)</td><td className="border border-border p-1.5">{inp("product_code", "Code No.")}</td></tr>
         </tbody>
       </table>
 
       {/* Sample enclosed checkboxes */}
-      <div className="border-x border-b border-black text-xs p-1.5">
+      <div className="border-x border-b border-border text-xs p-1.5">
         <div className="font-semibold mb-1">Sample / standard enclosed / name of manufacturer:</div>
         <div className="flex gap-6">
           {chk("sample_yes", "Yes")}
@@ -105,57 +105,57 @@ export function F32Template({ data, isTemplate = true, editMode = false, onChang
         <div className="mt-1">Name of present manufacturer: {inp("manufacturer", "Manufacturer Name")}</div>
       </div>
 
-      <div className="border-x border-b border-black text-xs p-1.5">
+      <div className="border-x border-b border-border text-xs p-1.5">
         Present market: {inp("present_market", "Market")}
       </div>
 
       {/* Reason & Details */}
-      <div className="border-x border-b border-black text-xs">
-        <div className="p-1.5 bg-gray-50 font-semibold">Reason for development</div>
+      <div className="border-x border-b border-border text-xs">
+        <div className="p-1.5 bg-muted/50 font-semibold">Reason for development</div>
         <div className="p-2 min-h-[40px]">{textArea("reason", "Reason...", "min-h-[40px]")}</div>
       </div>
-      <div className="border-x border-b border-black text-xs">
-        <div className="p-1.5 bg-gray-50 font-semibold">Design Input details</div>
+      <div className="border-x border-b border-border text-xs">
+        <div className="p-1.5 bg-muted/50 font-semibold">Design Input details</div>
         <div className="p-2 min-h-[40px]">{textArea("design_input", "Details...", "min-h-[40px]")}</div>
       </div>
-      <div className="border-x border-b border-black text-xs">
-        <div className="p-1.5 bg-gray-50 font-semibold">Target completion</div>
+      <div className="border-x border-b border-border text-xs">
+        <div className="p-1.5 bg-muted/50 font-semibold">Target completion</div>
         <div className="p-2 min-h-[30px]">{inp("target_completion", "Target date")}</div>
       </div>
-      <div className="border-x border-b border-black text-xs">
-        <div className="p-1.5 bg-gray-50 font-semibold">Remarks</div>
+      <div className="border-x border-b border-border text-xs">
+        <div className="p-1.5 bg-muted/50 font-semibold">Remarks</div>
         <div className="p-2 min-h-[30px]">{textArea("remarks", "Remarks...", "min-h-[30px]")}</div>
       </div>
 
       {/* Requested by */}
-      <div className="grid grid-cols-[1fr_1fr] border-x border-b border-black text-xs">
-        <div className="p-1.5 border-r border-black">Requested by:</div>
+      <div className="grid grid-cols-[1fr_1fr] border-x border-b border-border text-xs">
+        <div className="p-1.5 border-r border-border">Requested by:</div>
         <div className="p-1.5">Designation &amp; Signature: {inp("requested_designation", "Designation")}</div>
       </div>
 
       {/* Feasibility review */}
-      <div className="border-x border-b border-black text-xs p-1.5 bg-gray-50 font-semibold">
+      <div className="border-x border-b border-border text-xs p-1.5 bg-muted/50 font-semibold">
         Feasibility review by Research &amp; Development Head
       </div>
 
-      <div className="border-x border-b border-black text-xs p-1.5">
+      <div className="border-x border-b border-border text-xs p-1.5">
         <div className="flex gap-6 mb-1">
           {radio("feasibility", "approved", "Approved to process further")}
           {radio("feasibility", "rejected", "Rejected and verbally intimated to requestor")}
         </div>
       </div>
 
-      <div className="border-x border-b border-black text-xs">
-        <div className="p-1.5 bg-gray-50 font-semibold">Reason for rejection, if any</div>
+      <div className="border-x border-b border-border text-xs">
+        <div className="p-1.5 bg-muted/50 font-semibold">Reason for rejection, if any</div>
         <div className="p-2 min-h-[30px]">{textArea("rejection_reason", "Reason...", "min-h-[30px]")}</div>
       </div>
 
-      <div className="border-x border-b border-black text-xs p-1.5">
+      <div className="border-x border-b border-border text-xs p-1.5">
         Project no. allotted: {inp("project_no", "Project No.")}
       </div>
 
       {/* Priority */}
-      <div className="border-x border-b border-black text-xs p-1.5">
+      <div className="border-x border-b border-border text-xs p-1.5">
         <div className="font-semibold mb-1">Priority:</div>
         <div className="flex gap-6">
           {radio("priority", "high", "High")}
@@ -164,18 +164,18 @@ export function F32Template({ data, isTemplate = true, editMode = false, onChang
         </div>
       </div>
 
-      <div className="border-x border-b border-black text-xs p-1.5">
+      <div className="border-x border-b border-border text-xs p-1.5">
         Target completion by R&amp;D: {inp("rd_target", "Target date")}
       </div>
-      <div className="border-x border-b border-black text-xs p-1.5">
+      <div className="border-x border-b border-border text-xs p-1.5">
         Job assigned to: {inp("assigned_to", "Assigned person")}
       </div>
-      <div className="border-x border-b border-black text-xs p-1.5">
+      <div className="border-x border-b border-border text-xs p-1.5">
         Remarks: {inp("rd_remarks", "Remarks")}
       </div>
 
       {/* Approval */}
-      <div className="border border-t-2 border-black text-xs p-1.5">
+      <div className="border border-t-2 border-border text-xs p-1.5">
         Approved by: Research &amp; Development Head — {inp("approved_by", "Name")}
       </div>
     </div>

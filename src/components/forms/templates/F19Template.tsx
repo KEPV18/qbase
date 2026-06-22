@@ -44,9 +44,9 @@ export function F19Template({ data, isTemplate = true, editMode = false, onChang
   const ph = isTemplate && !editMode;
 
   return (
-    <div className={cn("bg-white text-black text-sm", className)}>
+    <div className={cn("bg-background dark:bg-[#1e1d1a] text-foreground text-sm print:bg-white print:text-black print:border-black", className)}>
       {/* Header */}
-      <div className="text-center font-bold text-base border-b border-black pb-2 mb-4 flex justify-between items-end">
+      <div className="text-center font-bold text-base border-b border-border pb-2 mb-4 flex justify-between items-end">
         <div className="text-left text-xs text-muted-foreground">F/19</div>
         <div>Product Description Form</div>
         <div className="text-right text-xs">
@@ -54,20 +54,20 @@ export function F19Template({ data, isTemplate = true, editMode = false, onChang
         </div>
       </div>
 
-      <table className="w-full border-collapse border border-black text-xs">
+      <table className="w-full border-collapse border border-border text-xs">
         <thead>
-          <tr className="bg-gray-100">
-            <th className="border border-black p-1.5 text-center w-12">Sr. No.</th>
-            <th className="border border-black p-1.5 text-left w-1/3">Parameters</th>
-            <th className="border border-black p-1.5 text-left">Description</th>
+          <tr className="bg-muted">
+            <th className="border border-border p-1.5 text-center w-12">Sr. No.</th>
+            <th className="border border-border p-1.5 text-left w-1/3">Parameters</th>
+            <th className="border border-border p-1.5 text-left">Description</th>
           </tr>
         </thead>
         <tbody>
           {FIELDS.map((field, idx) => (
-            <tr key={field.key} className={idx % 2 === 0 ? "bg-white" : "bg-gray-50/50"}>
-              <td className="border border-black p-1.5 text-center">{idx + 1}</td>
-              <td className="border border-black p-1.5 font-medium">{field.label}</td>
-              <td className="border border-black p-1.5">
+            <tr key={field.key} className={idx % 2 === 0 ? "bg-background dark:bg-[#1e1d1a]" : "bg-muted/50/50"}>
+              <td className="border border-border p-1.5 text-center">{idx + 1}</td>
+              <td className="border border-border p-1.5 font-medium">{field.label}</td>
+              <td className="border border-border p-1.5">
                 {editMode ? (
                   <input
                     className="w-full bg-transparent text-xs px-1 border-none outline-none"

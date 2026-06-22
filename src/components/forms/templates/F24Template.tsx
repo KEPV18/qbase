@@ -75,37 +75,37 @@ export function F24Template({ data, isTemplate = true, editMode = false, onChang
     );
 
   return (
-    <div className={cn("bg-white text-black text-sm", className)}>
+    <div className={cn("bg-background dark:bg-[#1e1d1a] text-foreground text-sm print:bg-white print:text-black print:border-black", className)}>
       {/* Header */}
-      <div className="grid grid-cols-[2fr_1fr] border border-black">
+      <div className="grid grid-cols-[2fr_1fr] border border-border">
         <div className="p-2 font-bold bg-primary/5 text-base">Objectives & Targets</div>
-        <div className="p-2 border-l border-black bg-primary/5 text-right text-xs">
+        <div className="p-2 border-l border-border bg-primary/5 text-right text-xs">
           F/24 Rev No. {val(d, "serial") || (ph ? "{{SERIAL}}" : "—")}
         </div>
       </div>
 
       {/* Department / Year */}
-      <div className="grid grid-cols-[2fr_5fr] border-x border-b border-black text-xs">
-        <div className="p-1.5 border-r border-black">Department 🡪 {inp("department", "Department")}</div>
+      <div className="grid grid-cols-[2fr_5fr] border-x border-b border-border text-xs">
+        <div className="p-1.5 border-r border-border">Department 🡪 {inp("department", "Department")}</div>
         <div className="p-1.5">Year 🡪 {inp("year", "Year", "w-24")}</div>
       </div>
 
       {/* Column headers */}
-      <div className="grid grid-cols-[1.5fr_1fr_1fr_1.5fr_2fr] border-x border-b border-black text-[10px] font-semibold bg-gray-100">
-        <div className="p-1 border-r border-black">Quantifiable Criteria / Control Parameters</div>
-        <div className="p-1 border-r border-black text-center">Present<br/>Target</div>
-        <div className="p-1 border-r border-black text-center">Future<br/>Target</div>
-        <div className="p-1 border-r border-black">Program to Achieve Objective</div>
+      <div className="grid grid-cols-[1.5fr_1fr_1fr_1.5fr_2fr] border-x border-b border-border text-[10px] font-semibold bg-muted">
+        <div className="p-1 border-r border-border">Quantifiable Criteria / Control Parameters</div>
+        <div className="p-1 border-r border-border text-center">Present<br/>Target</div>
+        <div className="p-1 border-r border-border text-center">Future<br/>Target</div>
+        <div className="p-1 border-r border-border">Program to Achieve Objective</div>
         <div className="p-1">Results</div>
       </div>
 
       {/* Data rows */}
       {rows.map((row, idx) => (
-        <div key={idx} className="grid grid-cols-[1.5fr_1fr_1fr_1.5fr_2fr] border-x border-b border-black text-xs relative group min-h-[28px]">
-          <div className="p-1 border-r border-black">{cellInp(idx, "criteria", "Criteria")}</div>
-          <div className="p-1 border-r border-black text-center">{cellInp(idx, "presentTarget", "Target")}</div>
-          <div className="p-1 border-r border-black text-center">{cellInp(idx, "futureTarget", "Future")}</div>
-          <div className="p-1 border-r border-black">{cellInp(idx, "program", "Program")}</div>
+        <div key={idx} className="grid grid-cols-[1.5fr_1fr_1fr_1.5fr_2fr] border-x border-b border-border text-xs relative group min-h-[28px]">
+          <div className="p-1 border-r border-border">{cellInp(idx, "criteria", "Criteria")}</div>
+          <div className="p-1 border-r border-border text-center">{cellInp(idx, "presentTarget", "Target")}</div>
+          <div className="p-1 border-r border-border text-center">{cellInp(idx, "futureTarget", "Future")}</div>
+          <div className="p-1 border-r border-border">{cellInp(idx, "program", "Program")}</div>
           <div className="p-1">{cellInp(idx, "results", "Results")}</div>
           {editMode && rows.length > 1 && (
             <button onClick={() => removeRow(idx)} className="absolute -right-6 top-1/2 -translate-y-1/2 text-destructive opacity-0 group-hover:opacity-100 transition-opacity">

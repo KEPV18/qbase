@@ -40,9 +40,9 @@ export function F21Template({ data, isTemplate = true, editMode = false, onChang
     );
 
   return (
-    <div className={cn("bg-white text-black text-sm leading-relaxed", className)}>
+    <div className={cn("bg-background dark:bg-[#1e1d1a] text-foreground text-sm leading-relaxed print:bg-white print:text-black print:border-black", className)}>
       {/* Header */}
-      <div className="text-center font-bold text-base border-b border-black pb-2 mb-4 flex justify-between items-end">
+      <div className="text-center font-bold text-base border-b border-border pb-2 mb-4 flex justify-between items-end">
         <div className="text-left text-xs text-muted-foreground">F/21</div>
         <div>Management Review Meeting Minutes</div>
         <div className="text-right text-xs">

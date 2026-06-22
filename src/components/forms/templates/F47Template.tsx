@@ -322,20 +322,20 @@ export function F47Template({ data, isTemplate = true, editMode = false, onChang
     acc + s.subclauses.reduce((a, sc) => a + sc.questions.length, 0), 0);
 
   return (
-    <div className={cn("bg-white text-black text-sm", className)}>
+    <div className={cn("bg-background dark:bg-[#1e1d1a] text-foreground text-sm print:bg-white print:text-black print:border-black", className)}>
       {/* Header */}
-      <div className="grid grid-cols-[4fr_2fr_1fr] border border-black">
+      <div className="grid grid-cols-[4fr_2fr_1fr] border border-border">
         <div className="p-2 font-bold bg-primary/5 text-base">Internal Audit Checklist</div>
-        <div className="p-2 border-l border-black bg-primary/5 text-xs flex flex-col justify-center">
+        <div className="p-2 border-l border-border bg-primary/5 text-xs flex flex-col justify-center">
           <div>Audit Date: {val(d, "audit_date") || (ph ? "___" : "")}</div>
           <div>Auditor: {val(d, "auditor") || (ph ? "___" : "")}</div>
         </div>
-        <div className="p-2 border-l border-black bg-primary/5 text-right text-xs">
+        <div className="p-2 border-l border-border bg-primary/5 text-right text-xs">
           F/47 Rev No. {val(d, "serial") || (ph ? "{{SERIAL}}" : "—")}
         </div>
       </div>
 
-      <div className="text-xs text-muted-foreground px-2 py-1 bg-gray-50 border-x border-b border-black">
+      <div className="text-xs text-muted-foreground px-2 py-1 bg-muted/50 border-x border-b border-border">
         ISO 9001:2015 Compliance Checklist — {totalQuestions} questions across {AUDIT_SECTIONS.length} clauses
       </div>
 
@@ -353,7 +353,7 @@ export function F47Template({ data, isTemplate = true, editMode = false, onChang
         });
 
         return (
-          <div key={section.clause} className="border-x border-b border-black">
+          <div key={section.clause} className="border-x border-b border-border">
             {/* Section header - clickable */}
             <button
               className="w-full flex items-center justify-between px-2 py-1.5 bg-primary/10 hover:bg-primary/15 transition-colors text-xs font-semibold"
@@ -369,7 +369,7 @@ export function F47Template({ data, isTemplate = true, editMode = false, onChang
             {isOpen && section.subclauses.map(subclause => (
               <div key={subclause.ref} className="border-t border-foreground/10">
                 {/* Subclause header */}
-                <div className="px-3 py-1 bg-gray-50 text-xs font-medium">
+                <div className="px-3 py-1 bg-muted/50 text-xs font-medium">
                   {subclause.ref} {subclause.title}
                 </div>
 
@@ -377,7 +377,7 @@ export function F47Template({ data, isTemplate = true, editMode = false, onChang
                 {subclause.questions.map((question, qi) => {
                   const key = `s${section.clause}_${subclause.ref}_${qi}`;
                   return (
-                    <div key={key} className="grid grid-cols-[1fr_120px_1fr] gap-0 border-t border-foreground/5 px-3 py-1 text-[11px] even:bg-gray-50/30">
+                    <div key={key} className="grid grid-cols-[1fr_120px_1fr] gap-0 border-t border-foreground/5 px-3 py-1 text-[11px] even:bg-muted/50/30">
                       <div className="py-0.5 pr-2">{question}</div>
                       <div className="py-0.5 pr-2">{statusRadio(key)}</div>
                       <div className="py-0.5">{evidenceInp(`${key}_evidence`)}</div>
@@ -391,9 +391,9 @@ export function F47Template({ data, isTemplate = true, editMode = false, onChang
       })}
 
       {/* Sign-off */}
-      <div className="grid grid-cols-[1fr_1fr_1fr] border border-t-2 border-black text-xs">
-        <div className="p-1.5 border-r border-black">Auditor: {val(d, "auditor") || (ph ? "___" : "")}</div>
-        <div className="p-1.5 border-r border-black">Date: {val(d, "audit_date") || (ph ? "___" : "")}</div>
+      <div className="grid grid-cols-[1fr_1fr_1fr] border border-t-2 border-border text-xs">
+        <div className="p-1.5 border-r border-border">Auditor: {val(d, "auditor") || (ph ? "___" : "")}</div>
+        <div className="p-1.5 border-r border-border">Date: {val(d, "audit_date") || (ph ? "___" : "")}</div>
         <div className="p-1.5">Approved: {val(d, "approved_by") || (ph ? "___" : "")}</div>
       </div>
     </div>

@@ -67,31 +67,31 @@ export function F15Template({ data, isTemplate = true, editMode = false, onChang
     );
 
   return (
-    <div className={cn("bg-white text-black text-sm", className)}>
+    <div className={cn("bg-background dark:bg-[#1e1d1a] text-foreground text-sm print:bg-white print:text-black print:border-black", className)}>
       {/* Header */}
-      <div className="grid grid-cols-[4fr_2fr] border border-black">
+      <div className="grid grid-cols-[4fr_2fr] border border-border">
         <div className="p-2 font-bold bg-primary/5 text-base">Approved Vendor List</div>
-        <div className="p-2 border-l border-black bg-primary/5 text-right text-xs">
+        <div className="p-2 border-l border-border bg-primary/5 text-right text-xs">
           F/15, Rev No. {val(d, "serial") || (ph ? "{{SERIAL}}" : "—")}
         </div>
       </div>
 
       {/* Column headers */}
-      <div className="grid grid-cols-[100px_1.5fr_1.5fr_1.2fr_1fr] border-x border-b border-black text-[10px] font-semibold bg-gray-100">
-        <div className="p-1 border-r border-black text-center">Date of Approval</div>
-        <div className="p-1 border-r border-black">Name of Supplier</div>
-        <div className="p-1 border-r border-black">Scope of Supply</div>
-        <div className="p-1 border-r border-black">Approval Criteria</div>
+      <div className="grid grid-cols-[100px_1.5fr_1.5fr_1.2fr_1fr] border-x border-b border-border text-[10px] font-semibold bg-muted">
+        <div className="p-1 border-r border-border text-center">Date of Approval</div>
+        <div className="p-1 border-r border-border">Name of Supplier</div>
+        <div className="p-1 border-r border-border">Scope of Supply</div>
+        <div className="p-1 border-r border-border">Approval Criteria</div>
         <div className="p-1">Remarks</div>
       </div>
 
       {/* Data rows */}
       {rows.map((row, idx) => (
-        <div key={idx} className="grid grid-cols-[100px_1.5fr_1.5fr_1.2fr_1fr] border-x border-b border-black text-xs relative group min-h-[28px]">
-          <div className="p-1 border-r border-black">{cellInp(idx, "dateApproval", "Date")}</div>
-          <div className="p-1 border-r border-black">{cellInp(idx, "supplierName", "Supplier")}</div>
-          <div className="p-1 border-r border-black">{cellInp(idx, "scopeOfSupply", "Scope")}</div>
-          <div className="p-1 border-r border-black">{cellInp(idx, "approvalCriteria", "Criteria")}</div>
+        <div key={idx} className="grid grid-cols-[100px_1.5fr_1.5fr_1.2fr_1fr] border-x border-b border-border text-xs relative group min-h-[28px]">
+          <div className="p-1 border-r border-border">{cellInp(idx, "dateApproval", "Date")}</div>
+          <div className="p-1 border-r border-border">{cellInp(idx, "supplierName", "Supplier")}</div>
+          <div className="p-1 border-r border-border">{cellInp(idx, "scopeOfSupply", "Scope")}</div>
+          <div className="p-1 border-r border-border">{cellInp(idx, "approvalCriteria", "Criteria")}</div>
           <div className="p-1">{cellInp(idx, "remarks", "Remarks")}</div>
           {editMode && rows.length > 1 && (
             <button onClick={() => removeRow(idx)} className="absolute -right-6 top-1/2 -translate-y-1/2 text-destructive opacity-0 group-hover:opacity-100 transition-opacity">

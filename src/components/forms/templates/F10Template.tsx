@@ -40,24 +40,24 @@ export function F10Template({ data, isTemplate = true, editMode = false, onChang
   const projectName = val(d, "project_name") || "";
 
   // ── Render helpers ──────────────────────────────────────────────────
-  const labelCls = "border border-gray-400 dark:border-gray-600 px-2 py-1.5 text-sm font-semibold text-gray-900 dark:text-gray-100 bg-gray-50 dark:bg-gray-800";
-  const cellCls = "border border-gray-400 dark:border-gray-600 px-2 py-1.5 text-sm text-gray-900 dark:text-gray-100";
+  const labelCls = "border border-border dark:border-gray-600 px-2 py-1.5 text-sm font-semibold text-gray-900 dark:text-gray-100 bg-muted/50 dark:bg-gray-800";
+  const cellCls = "border border-border dark:border-gray-600 px-2 py-1.5 text-sm text-gray-900 dark:text-gray-100";
 
   const inp = (key: string, placeholder?: string) => {
     if (ph) return <span>{val(d, key) || ""}</span>;
-    return <input className="w-full bg-transparent text-sm outline-none border-0 border-b border-gray-300 dark:border-gray-600 px-1"
+    return <input className="w-full bg-transparent text-sm outline-none border-0 border-b border-border dark:border-gray-600 px-1"
       value={val(d, key)} onChange={e => onChange?.(key, e.target.value)} placeholder={placeholder} />;
   };
 
   const textarea = (key: string, placeholder?: string, rows = 3) => {
     if (ph) return <div className="whitespace-pre-wrap text-sm text-gray-900 dark:text-gray-100 min-h-[2rem]">{val(d, key) || ""}</div>;
-    return <textarea className="w-full bg-transparent text-sm outline-none border border-gray-300 dark:border-gray-600 rounded-sm px-1 py-0.5 resize-y"
+    return <textarea className="w-full bg-transparent text-sm outline-none border border-border dark:border-gray-600 rounded-sm px-1 py-0.5 resize-y"
       value={val(d, key)} onChange={e => onChange?.(key, e.target.value)} placeholder={placeholder} rows={rows} />;
   };
 
   return (
     <div className={cn("overflow-x-auto", className)}>
-      <table className="w-full border-collapse border border-gray-400 dark:border-gray-600">
+      <table className="w-full border-collapse border border-border dark:border-gray-600">
         <colgroup>
           <col className="w-[15%]" /><col className="w-[10%]" /><col className="w-[10%]" />
           <col className="w-[10%]" /><col className="w-[10%]" /><col className="w-[10%]" />
@@ -66,47 +66,47 @@ export function F10Template({ data, isTemplate = true, editMode = false, onChang
         <tbody>
           {/* ROW 0: Title + Form Code */}
           <tr>
-            <td colSpan={8} className="border border-gray-400 dark:border-gray-600 px-3 py-2 text-center font-bold text-sm text-gray-900 dark:text-gray-100">
+            <td colSpan={8} className="border border-border dark:border-gray-600 px-3 py-2 text-center font-bold text-sm text-gray-900 dark:text-gray-100">
               Customers Feedback Form{projectName ? ` : Project: ${projectName}` : ""}
             </td>
-            <td className="border border-gray-400 dark:border-gray-600 px-2 py-1 text-[10px] text-gray-500 text-center leading-tight">
+            <td className="border border-border dark:border-gray-600 px-2 py-1 text-[10px] text-muted-foreground text-center leading-tight">
               F/10<br />No.{serialValue}
             </td>
           </tr>
 
           {/* ROW 1: Date + Year */}
           <tr>
-            <td colSpan={5} className="border border-gray-400 dark:border-gray-600 px-3 py-1.5 text-sm text-gray-900 dark:text-gray-100">
+            <td colSpan={5} className="border border-border dark:border-gray-600 px-3 py-1.5 text-sm text-gray-900 dark:text-gray-100">
               <strong>Date</strong> 🡪 {inp("date", "DD/MM/YYYY")}
             </td>
-            <td colSpan={4} className="border border-gray-400 dark:border-gray-600 px-3 py-1.5 text-sm text-gray-900 dark:text-gray-100">
+            <td colSpan={4} className="border border-border dark:border-gray-600 px-3 py-1.5 text-sm text-gray-900 dark:text-gray-100">
               <strong>Year</strong> 🡪 {inp("year", "2026")}
             </td>
           </tr>
 
           {/* ROW 2: Name */}
           <tr>
-            <td colSpan={2} className="border border-gray-400 dark:border-gray-600 px-3 py-1.5 text-sm font-semibold text-gray-900 dark:text-gray-100">
+            <td colSpan={2} className="border border-border dark:border-gray-600 px-3 py-1.5 text-sm font-semibold text-gray-900 dark:text-gray-100">
               Name
             </td>
-            <td colSpan={7} className="border border-gray-400 dark:border-gray-600 px-3 py-1.5 text-sm text-gray-900 dark:text-gray-100">
+            <td colSpan={7} className="border border-border dark:border-gray-600 px-3 py-1.5 text-sm text-gray-900 dark:text-gray-100">
               {inp("client_name", "Customer / Distributor name")}
             </td>
           </tr>
 
           {/* ROW 3: Address */}
           <tr>
-            <td colSpan={2} className="border border-gray-400 dark:border-gray-600 px-3 py-1.5 text-sm font-semibold text-gray-900 dark:text-gray-100">
+            <td colSpan={2} className="border border-border dark:border-gray-600 px-3 py-1.5 text-sm font-semibold text-gray-900 dark:text-gray-100">
               Address
             </td>
-            <td colSpan={7} className="border border-gray-400 dark:border-gray-600 px-3 py-1.5 text-sm">
+            <td colSpan={7} className="border border-border dark:border-gray-600 px-3 py-1.5 text-sm">
               {inp("address", "Full address")}
             </td>
           </tr>
 
           {/* ROW 4: Self Rating header */}
           <tr>
-            <td colSpan={9} className="border border-gray-400 dark:border-gray-600 px-3 py-1.5 text-sm font-bold text-gray-900 dark:text-gray-100 text-center bg-gray-50 dark:bg-gray-800">
+            <td colSpan={9} className="border border-border dark:border-gray-600 px-3 py-1.5 text-sm font-bold text-gray-900 dark:text-gray-100 text-center bg-muted/50 dark:bg-gray-800">
               Self Rating
             </td>
           </tr>
@@ -147,12 +147,12 @@ export function F10Template({ data, isTemplate = true, editMode = false, onChang
                 })}
                 <td className={cellCls}>
                   {editMode && !isTemplate ? (
-                    <input className="w-full bg-transparent text-xs outline-none border-0 border-b border-gray-300 px-1"
+                    <input className="w-full bg-transparent text-xs outline-none border-0 border-b border-border px-1"
                       value={currentVal}
                       onChange={e => onChange?.(field.key, e.target.value)}
                       placeholder="Notes" />
                   ) : (
-                    <span className="text-xs text-gray-500">{currentVal || ""}</span>
+                    <span className="text-xs text-muted-foreground">{currentVal || ""}</span>
                   )}
                 </td>
               </tr>
@@ -161,60 +161,60 @@ export function F10Template({ data, isTemplate = true, editMode = false, onChang
 
           {/* ROW: Comment text (full width) */}
           <tr>
-            <td colSpan={9} className="border border-gray-400 dark:border-gray-600 px-2 py-1">
-              <div className="text-xs font-semibold text-gray-500 mb-1">Comment:</div>
+            <td colSpan={9} className="border border-border dark:border-gray-600 px-2 py-1">
+              <div className="text-xs font-semibold text-muted-foreground mb-1">Comment:</div>
               {textarea("comment_text", "Customer comment...", 3)}
             </td>
           </tr>
 
           {/* Suggestions */}
           <tr>
-            <td colSpan={9} className="border border-gray-400 dark:border-gray-600 px-2 py-1">
-              <div className="text-xs font-semibold text-gray-500 mb-1">Any other suggestions for improvement:</div>
+            <td colSpan={9} className="border border-border dark:border-gray-600 px-2 py-1">
+              <div className="text-xs font-semibold text-muted-foreground mb-1">Any other suggestions for improvement:</div>
               {textarea("suggestions", "", 2)}
             </td>
           </tr>
 
           {/* Signature + Reviewed By */}
           <tr>
-            <td colSpan={5} className="border border-gray-400 dark:border-gray-600 px-2 py-1">
-              <div className="text-xs font-semibold text-gray-500 mb-1">Signature of Distributors with rubber stamp:</div>
+            <td colSpan={5} className="border border-border dark:border-gray-600 px-2 py-1">
+              <div className="text-xs font-semibold text-muted-foreground mb-1">Signature of Distributors with rubber stamp:</div>
               {inp("distributor_signature", "Signature & stamp")}
             </td>
-            <td colSpan={4} className="border border-gray-400 dark:border-gray-600 px-2 py-1">
-              <div className="text-xs font-semibold text-gray-500 mb-1">Reviewed by — Sales Person / Authorised person:</div>
+            <td colSpan={4} className="border border-border dark:border-gray-600 px-2 py-1">
+              <div className="text-xs font-semibold text-muted-foreground mb-1">Reviewed by — Sales Person / Authorised person:</div>
               {inp("reviewed_by", "Name & signature")}
             </td>
           </tr>
 
           {/* For Office Use Only */}
           <tr>
-            <td colSpan={9} className="border border-gray-400 dark:border-gray-600 px-2 py-1.5 text-sm font-bold text-gray-900 dark:text-gray-100 text-center bg-gray-50 dark:bg-gray-800">
+            <td colSpan={9} className="border border-border dark:border-gray-600 px-2 py-1.5 text-sm font-bold text-gray-900 dark:text-gray-100 text-center bg-muted/50 dark:bg-gray-800">
               For Office Use Only
             </td>
           </tr>
           <tr>
-            <td colSpan={9} className="border border-gray-400 dark:border-gray-600 px-2 py-1">
-              <div className="text-xs font-semibold text-gray-500 mb-1">Action proposed for future</div>
+            <td colSpan={9} className="border border-border dark:border-gray-600 px-2 py-1">
+              <div className="text-xs font-semibold text-muted-foreground mb-1">Action proposed for future</div>
               {textarea("action_proposed", "", 2)}
             </td>
           </tr>
           <tr>
-            <td colSpan={9} className="border border-gray-400 dark:border-gray-600 px-2 py-1">
-              <div className="text-xs font-semibold text-gray-500 mb-1">Corrective action reference</div>
+            <td colSpan={9} className="border border-border dark:border-gray-600 px-2 py-1">
+              <div className="text-xs font-semibold text-muted-foreground mb-1">Corrective action reference</div>
               {inp("corrective_action_ref", "Reference number")}
             </td>
           </tr>
           <tr>
-            <td colSpan={9} className="border border-gray-400 dark:border-gray-600 px-2 py-1">
-              <div className="text-xs font-semibold text-gray-500 mb-1">Remarks</div>
+            <td colSpan={9} className="border border-border dark:border-gray-600 px-2 py-1">
+              <div className="text-xs font-semibold text-muted-foreground mb-1">Remarks</div>
               {textarea("remarks", "", 2)}
             </td>
           </tr>
 
           {/* VEZLOO footer */}
           <tr>
-            <td colSpan={9} className="text-center text-[10px] font-bold text-gray-400 py-1 border border-gray-400 dark:border-gray-600">
+            <td colSpan={9} className="text-center text-[10px] font-bold text-gray-400 py-1 border border-border dark:border-gray-600">
               VEZLOO
             </td>
           </tr>

@@ -55,45 +55,45 @@ export function F46Template({ data, isTemplate = true, editMode = false, onChang
     );
 
   return (
-    <div className={cn("bg-white text-black text-sm space-y-4", className)}>
+    <div className={cn("bg-background dark:bg-[#1e1d1a] text-foreground text-sm space-y-4", className)}>
       {/* Header */}
-      <div className="flex justify-between items-end border-b border-black pb-2">
+      <div className="flex justify-between items-end border-b border-border pb-2">
         <div className="text-left text-xs text-muted-foreground">F/46</div>
         <div className="text-center font-bold text-base">Management of Change Plan</div>
         <div className="text-right text-xs">Rev No. {val(d, "serial") || (ph ? "{{SERIAL}}" : "—")}</div>
       </div>
 
       {/* Table 1: Description */}
-      <div className="border border-black">
-        <div className="p-2 font-semibold bg-gray-50 text-sm">Description of the Proposed Change:</div>
-        <div className="p-2 border-t border-black">{textArea("change_description", "Describe the proposed change...")}</div>
+      <div className="border border-border">
+        <div className="p-2 font-semibold bg-muted/50 text-sm">Description of the Proposed Change:</div>
+        <div className="p-2 border-t border-border">{textArea("change_description", "Describe the proposed change...")}</div>
       </div>
 
       {/* Table 2: Reason + Signature */}
-      <div className="border border-black">
-        <div className="p-2 font-semibold bg-gray-50 text-sm">Reason for the Proposed Change:</div>
-        <div className="p-2 border-t border-black min-h-[60px]">{textArea("change_reason", "Enter reason...", "min-h-[60px]")}</div>
-        <div className="p-2 border-t border-black text-xs">
+      <div className="border border-border">
+        <div className="p-2 font-semibold bg-muted/50 text-sm">Reason for the Proposed Change:</div>
+        <div className="p-2 border-t border-border min-h-[60px]">{textArea("change_reason", "Enter reason...", "min-h-[60px]")}</div>
+        <div className="p-2 border-t border-border text-xs">
           Requestor Signature: {inp("requestor_signature", "Name", "w-40")}
         </div>
       </div>
 
       {/* Table 2: Initial Approval */}
-      <div className="border border-black">
-        <div className="p-2 font-semibold bg-gray-50 text-sm">Initial Approval</div>
-        <div className="p-2 border-t border-black flex gap-6">
+      <div className="border border-border">
+        <div className="p-2 font-semibold bg-muted/50 text-sm">Initial Approval</div>
+        <div className="p-2 border-t border-border flex gap-6">
           {chk("change_accepted", "Proposed Change is Accepted")}
           {chk("change_rejected", "Proposed Change is Rejected")}
         </div>
-        <div className="p-2 border-t border-black text-xs">
+        <div className="p-2 border-t border-border text-xs">
           Remarks: {inp("approval_remarks", "Remarks", "w-full")}
         </div>
       </div>
 
       {/* Table 3: Type of Change */}
-      <div className="border border-black">
-        <div className="p-2 font-semibold bg-gray-50 text-sm">Type of Proposed Change:</div>
-        <div className="p-2 border-t border-black text-xs space-y-1">
+      <div className="border border-border">
+        <div className="p-2 font-semibold bg-muted/50 text-sm">Type of Proposed Change:</div>
+        <div className="p-2 border-t border-border text-xs space-y-1">
           <div className="flex flex-wrap gap-4">
             {chk("type_organizational", "Organizational Structural Change")}
             {chk("type_process", "Process Change")}
@@ -108,16 +108,16 @@ export function F46Template({ data, isTemplate = true, editMode = false, onChang
       </div>
 
       {/* Table 4: Priority + Impact */}
-      <div className="border border-black">
-        <div className="p-2 font-semibold bg-gray-50 text-sm">Change Priority:</div>
-        <div className="p-2 border-t border-black flex gap-4 text-xs">
+      <div className="border border-border">
+        <div className="p-2 font-semibold bg-muted/50 text-sm">Change Priority:</div>
+        <div className="p-2 border-t border-border flex gap-4 text-xs">
           {chk("priority_urgent", "Urgent")}
           {chk("priority_high", "High")}
           {chk("priority_medium", "Medium")}
           {chk("priority_low", "Low")}
         </div>
-        <div className="p-2 border-t border-black font-semibold bg-gray-50 text-sm">Change Impact:</div>
-        <div className="p-2 border-t border-black flex gap-4 text-xs">
+        <div className="p-2 border-t border-border font-semibold bg-muted/50 text-sm">Change Impact:</div>
+        <div className="p-2 border-t border-border flex gap-4 text-xs">
           {chk("impact_extreme", "Extreme")}
           {chk("impact_high", "High")}
           {chk("impact_moderate", "Moderate")}
@@ -126,16 +126,16 @@ export function F46Template({ data, isTemplate = true, editMode = false, onChang
       </div>
 
       {/* Table 5: Resources + Top Management */}
-      <div className="border border-black">
-        <div className="p-2 font-semibold bg-gray-50 text-sm">Resources Required:</div>
-        <div className="p-2 border-t border-black min-h-[60px]">{textArea("resources_required", "List resources...", "min-h-[60px]")}</div>
-        <div className="p-2 border-t border-black font-semibold bg-gray-50 text-sm">Top Management Decision:</div>
-        <div className="p-2 border-t border-black flex gap-6 text-xs">
+      <div className="border border-border">
+        <div className="p-2 font-semibold bg-muted/50 text-sm">Resources Required:</div>
+        <div className="p-2 border-t border-border min-h-[60px]">{textArea("resources_required", "List resources...", "min-h-[60px]")}</div>
+        <div className="p-2 border-t border-border font-semibold bg-muted/50 text-sm">Top Management Decision:</div>
+        <div className="p-2 border-t border-border flex gap-6 text-xs">
           {chk("management_approved", "Approved")}
           {chk("management_rejected", "Rejected")}
         </div>
-        <div className="p-2 border-t border-black text-sm">Responsibility:</div>
-        <div className="p-2 border-b border-black text-xs grid grid-cols-3 gap-4">
+        <div className="p-2 border-t border-border text-sm">Responsibility:</div>
+        <div className="p-2 border-b border-border text-xs grid grid-cols-3 gap-4">
           <div>Name: {inp("responsible_name", "Name", "w-32")}</div>
           <div>Designation: {inp("responsible_designation", "Designation", "w-32")}</div>
           <div>Target Date: {inp("target_date", "Date", "w-28")}</div>
@@ -143,9 +143,9 @@ export function F46Template({ data, isTemplate = true, editMode = false, onChang
       </div>
 
       {/* Table 6: Implementation */}
-      <div className="border border-black">
-        <div className="p-2 font-semibold bg-gray-50 text-sm">Implementation and Follow-Up:</div>
-        <div className="p-2 border-t border-black text-xs space-y-2">
+      <div className="border border-border">
+        <div className="p-2 font-semibold bg-muted/50 text-sm">Implementation and Follow-Up:</div>
+        <div className="p-2 border-t border-border text-xs space-y-2">
           <div>1st Follow up on: {inp("followup_date_1", "Date", "w-28")}</div>
           <div>2nd Follow up on: {inp("followup_date_2", "Date", "w-28")}</div>
           <div>Actual Completion Date: {inp("completion_date", "Date", "w-28")}</div>

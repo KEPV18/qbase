@@ -68,42 +68,42 @@ export function F13Template({ data, isTemplate = true, editMode = false, onChang
     );
 
   return (
-    <div className={cn("bg-white text-black text-sm", className)}>
-      <div className="grid grid-cols-[3fr_1fr] border border-black">
+    <div className={cn("bg-background dark:bg-[#1e1d1a] text-foreground text-sm print:bg-white print:text-black print:border-black", className)}>
+      <div className="grid grid-cols-[3fr_1fr] border border-border">
         <div className="p-2 font-bold bg-primary/5 text-base">Purchase Order</div>
-        <div className="p-2 border-l border-black bg-primary/5 text-right text-xs">
+        <div className="p-2 border-l border-border bg-primary/5 text-right text-xs">
           F/13 Rev No. {val(d, "serial") || (ph ? "{{SERIAL}}" : "—")}
         </div>
       </div>
 
-      <div className="grid grid-cols-[1fr_1fr] border-x border-b border-black text-xs">
-        <div className="p-1.5 border-r border-black">Purchase Order No. 🡪 {val(d, "serial") || (ph ? "{{SERIAL}}" : "—")}</div>
+      <div className="grid grid-cols-[1fr_1fr] border-x border-b border-border text-xs">
+        <div className="p-1.5 border-r border-border">Purchase Order No. 🡪 {val(d, "serial") || (ph ? "{{SERIAL}}" : "—")}</div>
         <div className="p-1.5">Date 🡪 {inp("date", "Date", "w-28")}</div>
       </div>
 
-      <div className="border-x border-b border-black text-xs p-1.5">
+      <div className="border-x border-b border-border text-xs p-1.5">
         To, {inp("to", "Supplier Name / Address")}
       </div>
 
-      <div className="border-x border-b border-black text-xs p-1.5 bg-gray-50 font-semibold">
+      <div className="border-x border-b border-border text-xs p-1.5 bg-muted/50 font-semibold">
         We are pleased to place an order for the following items subject to the terms and conditions as mentioned below:
       </div>
 
       {/* Items table */}
-      <div className="grid grid-cols-[40px_2fr_80px_80px_80px] border-x border-b border-black text-[10px] font-semibold bg-gray-100">
-        <div className="p-1 border-r border-black text-center">Sr.</div>
-        <div className="p-1 border-r border-black">Description</div>
-        <div className="p-1 border-r border-black text-center">Qty</div>
-        <div className="p-1 border-r border-black text-center">Unit Price</div>
+      <div className="grid grid-cols-[40px_2fr_80px_80px_80px] border-x border-b border-border text-[10px] font-semibold bg-muted">
+        <div className="p-1 border-r border-border text-center">Sr.</div>
+        <div className="p-1 border-r border-border">Description</div>
+        <div className="p-1 border-r border-border text-center">Qty</div>
+        <div className="p-1 border-r border-border text-center">Unit Price</div>
         <div className="p-1 text-center">Amount</div>
       </div>
 
       {items.map((item, idx) => (
-        <div key={idx} className="grid grid-cols-[40px_2fr_80px_80px_80px] border-x border-b border-black text-xs relative group min-h-[24px]">
-          <div className="p-1 border-r border-black text-center">{idx + 1}</div>
-          <div className="p-1 border-r border-black">{cellInp(idx, "description", "Item")}</div>
-          <div className="p-1 border-r border-black text-center">{cellInp(idx, "quantity", "Qty")}</div>
-          <div className="p-1 border-r border-black text-center">{cellInp(idx, "unitPrice", "Price")}</div>
+        <div key={idx} className="grid grid-cols-[40px_2fr_80px_80px_80px] border-x border-b border-border text-xs relative group min-h-[24px]">
+          <div className="p-1 border-r border-border text-center">{idx + 1}</div>
+          <div className="p-1 border-r border-border">{cellInp(idx, "description", "Item")}</div>
+          <div className="p-1 border-r border-border text-center">{cellInp(idx, "quantity", "Qty")}</div>
+          <div className="p-1 border-r border-border text-center">{cellInp(idx, "unitPrice", "Price")}</div>
           <div className="p-1 text-center">{cellInp(idx, "amount", "Amt")}</div>
           {editMode && items.length > 1 && (
             <button onClick={() => removeItem(idx)} className="absolute -right-6 top-1/2 -translate-y-1/2 text-destructive opacity-0 group-hover:opacity-100 transition-opacity">
@@ -120,17 +120,17 @@ export function F13Template({ data, isTemplate = true, editMode = false, onChang
       )}
 
       {/* Total */}
-      <div className="grid grid-cols-[40px_2fr_80px_80px_80px] border-x border-b border-black text-xs font-semibold">
-        <div className="p-1 border-r border-black"></div>
-        <div className="p-1 border-r border-black text-right">Total:</div>
-        <div className="p-1 border-r border-black"></div>
-        <div className="p-1 border-r border-black"></div>
+      <div className="grid grid-cols-[40px_2fr_80px_80px_80px] border-x border-b border-border text-xs font-semibold">
+        <div className="p-1 border-r border-border"></div>
+        <div className="p-1 border-r border-border text-right">Total:</div>
+        <div className="p-1 border-r border-border"></div>
+        <div className="p-1 border-r border-border"></div>
         <div className="p-1 text-center">{inp("total_amount", "Total", "w-20")}</div>
       </div>
 
       {/* Terms */}
-      <div className="border-x border-b border-black text-xs">
-        <div className="p-1.5 font-semibold bg-gray-50">Terms & Conditions:</div>
+      <div className="border-x border-b border-border text-xs">
+        <div className="p-1.5 font-semibold bg-muted/50">Terms & Conditions:</div>
         <div className="p-1.5 min-h-[40px]">
           {editMode ? (
             <textarea className="w-full min-h-[40px] bg-transparent text-xs" value={val(d, "terms") || ""} onChange={e => onChange?.("terms", e.target.value)} placeholder="Terms and conditions..." />

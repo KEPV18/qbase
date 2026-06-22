@@ -62,15 +62,15 @@ export function F41Template({ data, isTemplate = true, editMode = false, onChang
     );
 
   return (
-    <div className={cn("bg-white text-black text-sm", className)}>
+    <div className={cn("bg-background dark:bg-[#1e1d1a] text-foreground text-sm print:bg-white print:text-black print:border-black", className)}>
       {/* Header */}
-      <div className="grid grid-cols-[3fr_2fr_1fr] border border-black">
+      <div className="grid grid-cols-[3fr_2fr_1fr] border border-border">
         <div className="p-2 font-bold bg-primary/5 text-base">Competence Gap Analyses Form</div>
-        <div className="p-2 border-l border-black bg-primary/5 text-xs">
+        <div className="p-2 border-l border-border bg-primary/5 text-xs">
           <div>Reviewed By: {val(d, "reviewed_by") || (ph ? "___" : "")}</div>
           <div className="mt-1">Reviewed On: {val(d, "reviewed_on") || (ph ? "___" : "")}</div>
         </div>
-        <div className="p-2 border-l border-black bg-primary/5 text-right text-xs">
+        <div className="p-2 border-l border-border bg-primary/5 text-right text-xs">
           F/41 Rev No. {val(d, "serial") || (ph ? "{{SERIAL}}" : "—")}
         </div>
       </div>
@@ -79,41 +79,41 @@ export function F41Template({ data, isTemplate = true, editMode = false, onChang
       <div className="overflow-x-auto">
         <table className="w-full border-collapse text-[10px]">
           <thead>
-            <tr className="bg-gray-100">
-              <th className="border border-black p-1 w-[30px]" rowSpan={2}>Sr.</th>
-              <th className="border border-black p-1" colSpan={2}>Name &amp; Designation</th>
-              <th className="border border-black p-1" rowSpan={2}>Qualification Available</th>
-              <th className="border border-black p-1" rowSpan={2}>Experience Available</th>
-              <th className="border border-black p-1" rowSpan={2}>Skill Available</th>
-              <th className="border border-black p-1" colSpan={5}>Type of Training Got</th>
-              {editMode && <th className="border border-black p-1 w-[24px]" rowSpan={2}></th>}
+            <tr className="bg-muted">
+              <th className="border border-border p-1 w-[30px]" rowSpan={2}>Sr.</th>
+              <th className="border border-border p-1" colSpan={2}>Name &amp; Designation</th>
+              <th className="border border-border p-1" rowSpan={2}>Qualification Available</th>
+              <th className="border border-border p-1" rowSpan={2}>Experience Available</th>
+              <th className="border border-border p-1" rowSpan={2}>Skill Available</th>
+              <th className="border border-border p-1" colSpan={5}>Type of Training Got</th>
+              {editMode && <th className="border border-border p-1 w-[24px]" rowSpan={2}></th>}
             </tr>
-            <tr className="bg-gray-100">
-              <th className="border border-black p-1">Name</th>
-              <th className="border border-black p-1">Designation</th>
-              <th className="border border-black p-1">1</th>
-              <th className="border border-black p-1">2</th>
-              <th className="border border-black p-1">3</th>
-              <th className="border border-black p-1">4</th>
-              <th className="border border-black p-1">5</th>
+            <tr className="bg-muted">
+              <th className="border border-border p-1">Name</th>
+              <th className="border border-border p-1">Designation</th>
+              <th className="border border-border p-1">1</th>
+              <th className="border border-border p-1">2</th>
+              <th className="border border-border p-1">3</th>
+              <th className="border border-border p-1">4</th>
+              <th className="border border-border p-1">5</th>
             </tr>
           </thead>
           <tbody>
             {rows.map((row, idx) => (
-              <tr key={idx} className="group hover:bg-gray-50/50">
-                <td className="border border-black p-0.5 text-center">{idx + 1}</td>
-                <td className="border border-black p-0.5">{cellInp(idx, "name", "Name")}</td>
-                <td className="border border-black p-0.5">{cellInp(idx, "designation", "Desig")}</td>
-                <td className="border border-black p-0.5 text-center">{cellInp(idx, "qualAvail", "Qual")}</td>
-                <td className="border border-black p-0.5 text-center">{cellInp(idx, "expAvail", "Exp")}</td>
-                <td className="border border-black p-0.5 text-center">{cellInp(idx, "skillAvail", "•")}</td>
-                <td className="border border-black p-0.5 text-center">{cellInp(idx, "training1", "•")}</td>
-                <td className="border border-black p-0.5 text-center">{cellInp(idx, "training2", "•")}</td>
-                <td className="border border-black p-0.5 text-center">{cellInp(idx, "training3", "•")}</td>
-                <td className="border border-black p-0.5 text-center">{cellInp(idx, "training4", "•")}</td>
-                <td className="border border-black p-0.5 text-center">{cellInp(idx, "training5", "•")}</td>
+              <tr key={idx} className="group hover:bg-muted/50/50">
+                <td className="border border-border p-0.5 text-center">{idx + 1}</td>
+                <td className="border border-border p-0.5">{cellInp(idx, "name", "Name")}</td>
+                <td className="border border-border p-0.5">{cellInp(idx, "designation", "Desig")}</td>
+                <td className="border border-border p-0.5 text-center">{cellInp(idx, "qualAvail", "Qual")}</td>
+                <td className="border border-border p-0.5 text-center">{cellInp(idx, "expAvail", "Exp")}</td>
+                <td className="border border-border p-0.5 text-center">{cellInp(idx, "skillAvail", "•")}</td>
+                <td className="border border-border p-0.5 text-center">{cellInp(idx, "training1", "•")}</td>
+                <td className="border border-border p-0.5 text-center">{cellInp(idx, "training2", "•")}</td>
+                <td className="border border-border p-0.5 text-center">{cellInp(idx, "training3", "•")}</td>
+                <td className="border border-border p-0.5 text-center">{cellInp(idx, "training4", "•")}</td>
+                <td className="border border-border p-0.5 text-center">{cellInp(idx, "training5", "•")}</td>
                 {editMode && rows.length > 1 && (
-                  <td className="border border-black p-0.5 text-center">
+                  <td className="border border-border p-0.5 text-center">
                     <button onClick={() => removeRow(idx)} className="text-destructive hover:text-red-600"><Trash2 className="w-3 h-3" /></button>
                   </td>
                 )}
@@ -130,7 +130,7 @@ export function F41Template({ data, isTemplate = true, editMode = false, onChang
       )}
 
       {/* Signature */}
-      <div className="border border-t-2 border-black text-xs mt-1 p-1.5">
+      <div className="border border-t-2 border-border text-xs mt-1 p-1.5">
         Authorised Person: {val(d, "authorised_by") || (ph ? "___" : "")}
       </div>
     </div>

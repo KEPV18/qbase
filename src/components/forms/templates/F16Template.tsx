@@ -56,55 +56,55 @@ export function F16Template({ data, isTemplate = true, editMode = false, onChang
     );
 
   return (
-    <div className={cn("bg-white text-black text-sm", className)}>
+    <div className={cn("bg-background dark:bg-[#1e1d1a] text-foreground text-sm print:bg-white print:text-black print:border-black", className)}>
       {/* Header */}
-      <div className="grid grid-cols-[3fr_1fr] border border-black">
+      <div className="grid grid-cols-[3fr_1fr] border border-border">
         <div className="p-2 font-bold bg-primary/5 text-base">Supplier Registration Form</div>
-        <div className="p-2 border-l border-black bg-primary/5 text-right text-xs">
+        <div className="p-2 border-l border-border bg-primary/5 text-right text-xs">
           F/16 Rev No. {val(d, "serial") || (ph ? "{{SERIAL}}" : "—")}
         </div>
       </div>
 
       {/* Basic Info */}
-      <table className="w-full border-collapse border-x border-black text-xs">
+      <table className="w-full border-collapse border-x border-border text-xs">
         <tbody>
-          <tr><td className="border border-black p-1.5 bg-gray-50 w-1/4 font-semibold">Name</td><td className="border border-black p-1.5" colSpan={3}>{inp("name", "Supplier Name")}</td></tr>
-          <tr><td className="border border-black p-1.5 bg-gray-50 font-semibold">Address</td><td className="border border-black p-1.5" colSpan={3}>{inp("address", "Full Address")}</td></tr>
-          <tr><td className="border border-black p-1.5 bg-gray-50 font-semibold">Tel / Fax No.</td><td className="border border-black p-1.5" colSpan={3}>{inp("tel_fax", "Phone / Fax")}</td></tr>
-          <tr><td className="border border-black p-1.5 bg-gray-50 font-semibold">Contact Person</td><td className="border border-black p-1.5" colSpan={3}>{inp("contact_person", "Contact Name")}</td></tr>
+          <tr><td className="border border-border p-1.5 bg-muted/50 w-1/4 font-semibold">Name</td><td className="border border-border p-1.5" colSpan={3}>{inp("name", "Supplier Name")}</td></tr>
+          <tr><td className="border border-border p-1.5 bg-muted/50 font-semibold">Address</td><td className="border border-border p-1.5" colSpan={3}>{inp("address", "Full Address")}</td></tr>
+          <tr><td className="border border-border p-1.5 bg-muted/50 font-semibold">Tel / Fax No.</td><td className="border border-border p-1.5" colSpan={3}>{inp("tel_fax", "Phone / Fax")}</td></tr>
+          <tr><td className="border border-border p-1.5 bg-muted/50 font-semibold">Contact Person</td><td className="border border-border p-1.5" colSpan={3}>{inp("contact_person", "Contact Name")}</td></tr>
           <tr>
-            <td className="border border-black p-1.5 bg-gray-50 font-semibold">Mobile No.</td>
-            <td className="border border-black p-1.5">{inp("mobile_no", "Mobile")}</td>
-            <td className="border border-black p-1.5 bg-gray-50 font-semibold w-1/4">Residence No.</td>
-            <td className="border border-black p-1.5">{inp("residence_no", "Residence Phone")}</td>
+            <td className="border border-border p-1.5 bg-muted/50 font-semibold">Mobile No.</td>
+            <td className="border border-border p-1.5">{inp("mobile_no", "Mobile")}</td>
+            <td className="border border-border p-1.5 bg-muted/50 font-semibold w-1/4">Residence No.</td>
+            <td className="border border-border p-1.5">{inp("residence_no", "Residence Phone")}</td>
           </tr>
           <tr>
-            <td className="border border-black p-1.5 bg-gray-50 font-semibold">Sister Concerns, If Any</td>
-            <td className="border border-black p-1.5" colSpan={1}>{inp("sister_concerns", "Details")}</td>
-            <td className="border border-black p-1.5 bg-gray-50 font-semibold">Reference (If Any)</td>
-            <td className="border border-black p-1.5">{inp("reference", "Reference")}</td>
+            <td className="border border-border p-1.5 bg-muted/50 font-semibold">Sister Concerns, If Any</td>
+            <td className="border border-border p-1.5" colSpan={1}>{inp("sister_concerns", "Details")}</td>
+            <td className="border border-border p-1.5 bg-muted/50 font-semibold">Reference (If Any)</td>
+            <td className="border border-border p-1.5">{inp("reference", "Reference")}</td>
           </tr>
         </tbody>
       </table>
 
       {/* Products/Services */}
-      <div className="border-x border-b border-black text-xs">
-        <div className="p-1.5 bg-gray-50 font-semibold">Briefly explain about your products, services and experience:</div>
+      <div className="border-x border-b border-border text-xs">
+        <div className="p-1.5 bg-muted/50 font-semibold">Briefly explain about your products, services and experience:</div>
         <div className="p-1.5 min-h-[60px]">{textArea("products_services", "Products, services, experience...")}</div>
       </div>
 
       {/* Employee Strength */}
-      <table className="w-full border-collapse border-x border-black text-xs">
+      <table className="w-full border-collapse border-x border-border text-xs">
         <tbody>
           <tr>
-            <td className="border border-black p-1.5 bg-gray-50 font-semibold">Employee Strength</td>
-            <td className="border border-black p-1.5">{inp("employee_strength", "Number")}</td>
-            <td className="border border-black p-1.5 bg-gray-50 font-semibold">Nos. Of Site / Branch</td>
-            <td className="border border-black p-1.5">{inp("sites_branches", "Number")}</td>
+            <td className="border border-border p-1.5 bg-muted/50 font-semibold">Employee Strength</td>
+            <td className="border border-border p-1.5">{inp("employee_strength", "Number")}</td>
+            <td className="border border-border p-1.5 bg-muted/50 font-semibold">Nos. Of Site / Branch</td>
+            <td className="border border-border p-1.5">{inp("sites_branches", "Number")}</td>
           </tr>
           <tr>
-            <td className="border border-black p-1.5 bg-gray-50 font-semibold" colSpan={2}>Are you associated with our firm? Since How Long?</td>
-            <td className="border border-black p-1.5" colSpan={2}>
+            <td className="border border-border p-1.5 bg-muted/50 font-semibold" colSpan={2}>Are you associated with our firm? Since How Long?</td>
+            <td className="border border-border p-1.5" colSpan={2}>
               <div className="flex gap-4 items-center">
                 {chk("associated_yes", "Yes")} {chk("associated_no", "No")}
                 <span className="ml-4">{inp("association_years", "Years", "w-16")}</span>
@@ -115,54 +115,54 @@ export function F16Template({ data, isTemplate = true, editMode = false, onChang
       </table>
 
       {/* Speciality */}
-      <div className="border-x border-b border-black text-xs">
-        <div className="p-1.5 bg-gray-50 font-semibold">Give Details of your Speciality:</div>
+      <div className="border-x border-b border-border text-xs">
+        <div className="p-1.5 bg-muted/50 font-semibold">Give Details of your Speciality:</div>
         <div className="p-1.5 min-h-[40px]">{textArea("speciality", "Speciality details...", "min-h-[40px]")}</div>
       </div>
 
       {/* Objections */}
-      <div className="border-x border-b border-black text-xs">
-        <div className="p-1.5 bg-gray-50 font-semibold">Do you have any objections to our representative or our client visiting your premises?</div>
+      <div className="border-x border-b border-border text-xs">
+        <div className="p-1.5 bg-muted/50 font-semibold">Do you have any objections to our representative or our client visiting your premises?</div>
         <div className="p-1.5 flex gap-4 items-center">
           {chk("objections_no", "No")} {chk("objections_yes", "Yes")}
         </div>
       </div>
 
       {/* Vendor Authorised Person */}
-      <table className="w-full border-collapse border-x border-black text-xs">
+      <table className="w-full border-collapse border-x border-border text-xs">
         <tbody>
-          <tr><td className="border border-black p-1.5 bg-gray-50 font-semibold">Name of authorised person of vendor</td><td className="border border-black p-1.5">{inp("vendor_auth_name", "Name")}</td></tr>
-          <tr><td className="border border-black p-1.5 bg-gray-50 font-semibold">Designation</td><td className="border border-black p-1.5">{inp("vendor_auth_designation", "Designation")}</td></tr>
-          <tr><td className="border border-black p-1.5 bg-gray-50 font-semibold">Date</td><td className="border border-black p-1.5">{inp("vendor_date", "Date")}</td></tr>
+          <tr><td className="border border-border p-1.5 bg-muted/50 font-semibold">Name of authorised person of vendor</td><td className="border border-border p-1.5">{inp("vendor_auth_name", "Name")}</td></tr>
+          <tr><td className="border border-border p-1.5 bg-muted/50 font-semibold">Designation</td><td className="border border-border p-1.5">{inp("vendor_auth_designation", "Designation")}</td></tr>
+          <tr><td className="border border-border p-1.5 bg-muted/50 font-semibold">Date</td><td className="border border-border p-1.5">{inp("vendor_date", "Date")}</td></tr>
         </tbody>
       </table>
 
       {/* Company Section */}
-      <div className="border-x border-b border-black text-xs">
-        <div className="p-1.5 bg-gray-100 font-bold text-center">To Be Filled By Company</div>
+      <div className="border-x border-b border-border text-xs">
+        <div className="p-1.5 bg-muted font-bold text-center">To Be Filled By Company</div>
       </div>
 
-      <table className="w-full border-collapse border-x border-b border-black text-xs">
+      <table className="w-full border-collapse border-x border-b border-border text-xs">
         <tbody>
           <tr>
-            <td className="border border-black p-1.5 bg-gray-50 font-semibold">
+            <td className="border border-border p-1.5 bg-muted/50 font-semibold">
               {chk("recommended", "Recommended As Approved Supplier")}
             </td>
-            <td className="border border-black p-1.5 bg-gray-50 font-semibold">
+            <td className="border border-border p-1.5 bg-muted/50 font-semibold">
               {chk("not_recommended", "Not Recommended As Approved Supplier")}
             </td>
           </tr>
           <tr>
-            <td className="border border-black p-1.5 bg-gray-50 font-semibold">Reason For Approval / Rejection</td>
-            <td className="border border-black p-1.5">{inp("approval_reason", "Reason")}</td>
+            <td className="border border-border p-1.5 bg-muted/50 font-semibold">Reason For Approval / Rejection</td>
+            <td className="border border-border p-1.5">{inp("approval_reason", "Reason")}</td>
           </tr>
           <tr>
-            <td className="border border-black p-1.5 bg-gray-50 font-semibold">Past Experience / Market Reputation / Trial Order / Sample Approval</td>
-            <td className="border border-black p-1.5">{inp("past_experience", "Details")}</td>
+            <td className="border border-border p-1.5 bg-muted/50 font-semibold">Past Experience / Market Reputation / Trial Order / Sample Approval</td>
+            <td className="border border-border p-1.5">{inp("past_experience", "Details")}</td>
           </tr>
           <tr>
-            <td className="border border-black p-1.5">Authorised By: {inp("authorised_by", "Name")}</td>
-            <td className="border border-black p-1.5">Date: {inp("authorised_date", "Date")}</td>
+            <td className="border border-border p-1.5">Authorised By: {inp("authorised_by", "Name")}</td>
+            <td className="border border-border p-1.5">Date: {inp("authorised_date", "Date")}</td>
           </tr>
         </tbody>
       </table>

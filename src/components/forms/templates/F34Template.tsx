@@ -38,38 +38,38 @@ export function F34Template({ data, isTemplate = true, editMode = false, onChang
     );
 
   return (
-    <div className={cn("bg-white text-black text-sm", className)}>
-      <div className="flex justify-between items-end border-b border-black pb-2">
+    <div className={cn("bg-background dark:bg-[#1e1d1a] text-foreground text-sm print:bg-white print:text-black print:border-black", className)}>
+      <div className="flex justify-between items-end border-b border-border pb-2">
         <div className="text-left text-xs text-muted-foreground">F/34</div>
         <div className="text-center font-bold text-base">Design Verification Report</div>
         <div className="text-right text-xs">Rev No. {val(d, "serial") || (ph ? "{{SERIAL}}" : "—")}</div>
       </div>
 
-      <div className="grid grid-cols-[1fr_1fr] border border-black text-xs mt-2">
-        <div className="p-1.5 border-r border-b border-black">Project Number 🡪 {val(d, "serial") || (ph ? "{{SERIAL}}" : "—")}</div>
-        <div className="p-1.5 border-b border-black">Date 🡪 {inp("date", "Date", "w-28")}</div>
+      <div className="grid grid-cols-[1fr_1fr] border border-border text-xs mt-2">
+        <div className="p-1.5 border-r border-b border-border">Project Number 🡪 {val(d, "serial") || (ph ? "{{SERIAL}}" : "—")}</div>
+        <div className="p-1.5 border-b border-border">Date 🡪 {inp("date", "Date", "w-28")}</div>
       </div>
 
-      <table className="w-full border-collapse border-x border-black text-xs">
+      <table className="w-full border-collapse border-x border-border text-xs">
         <tbody>
-          <tr><td className="border border-black p-1.5 bg-gray-50 font-semibold w-1/3">Name Of Product</td><td className="border border-black p-1.5">{inp("product_name", "Product Name")}</td></tr>
-          <tr><td className="border border-black p-1.5 bg-gray-50 font-semibold">Input Requirements</td><td className="border border-black p-1.5">{inp("input_requirements", "Requirements")}</td></tr>
-          <tr><td className="border border-black p-1.5 bg-gray-50 font-semibold">Output Observed</td><td className="border border-black p-1.5">{inp("output_observed", "Observations")}</td></tr>
+          <tr><td className="border border-border p-1.5 bg-muted/50 font-semibold w-1/3">Name Of Product</td><td className="border border-border p-1.5">{inp("product_name", "Product Name")}</td></tr>
+          <tr><td className="border border-border p-1.5 bg-muted/50 font-semibold">Input Requirements</td><td className="border border-border p-1.5">{inp("input_requirements", "Requirements")}</td></tr>
+          <tr><td className="border border-border p-1.5 bg-muted/50 font-semibold">Output Observed</td><td className="border border-border p-1.5">{inp("output_observed", "Observations")}</td></tr>
         </tbody>
       </table>
 
-      <div className="border-x border-b border-black mt-0">
-        <div className="p-1.5 bg-gray-50 font-semibold text-xs">Verification Details:</div>
+      <div className="border-x border-b border-border mt-0">
+        <div className="p-1.5 bg-muted/50 font-semibold text-xs">Verification Details:</div>
         <div className="p-2 min-h-[80px]">{textArea("verification_details", "Enter verification details...")}</div>
       </div>
 
-      <div className="border-x border-b border-black mt-0">
-        <div className="p-1.5 bg-gray-50 font-semibold text-xs">Verification Result:</div>
+      <div className="border-x border-b border-border mt-0">
+        <div className="p-1.5 bg-muted/50 font-semibold text-xs">Verification Result:</div>
         <div className="p-2 min-h-[60px]">{textArea("verification_result", "Pass/Fail details...", "min-h-[60px]")}</div>
       </div>
 
-      <div className="grid grid-cols-[1fr_1fr] border-x border-b border-black text-xs">
-        <div className="p-1.5 border-r border-black">Verified By: {inp("verified_by", "Name")}</div>
+      <div className="grid grid-cols-[1fr_1fr] border-x border-b border-border text-xs">
+        <div className="p-1.5 border-r border-border">Verified By: {inp("verified_by", "Name")}</div>
         <div className="p-1.5">Approved By: {inp("approved_by", "Name")}</div>
       </div>
     </div>

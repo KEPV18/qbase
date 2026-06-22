@@ -37,9 +37,9 @@ export function F44Template({ data, isTemplate = true, editMode = false, onChang
     );
 
   return (
-    <div className={cn("bg-white text-black text-sm", className)}>
+    <div className={cn("bg-background dark:bg-[#1e1d1a] text-foreground text-sm print:bg-white print:text-black print:border-black", className)}>
       {/* Header */}
-      <div className="text-center font-bold text-base border-b border-black pb-2 mb-4 flex justify-between items-end">
+      <div className="text-center font-bold text-base border-b border-border pb-2 mb-4 flex justify-between items-end">
         <div className="text-left text-xs text-muted-foreground">F/44</div>
         <div>Job Description</div>
         <div className="text-right text-xs">
@@ -47,21 +47,21 @@ export function F44Template({ data, isTemplate = true, editMode = false, onChang
         </div>
       </div>
 
-      <table className="w-full border-collapse border border-black text-xs">
+      <table className="w-full border-collapse border border-border text-xs">
         <tbody>
           <tr>
-            <td className="border border-black p-2 font-semibold bg-gray-50 w-1/2">Position 🡪</td>
-            <td className="border border-black p-2 font-semibold bg-gray-50 w-1/2">Reports To 🡪</td>
+            <td className="border border-border p-2 font-semibold bg-muted/50 w-1/2">Position 🡪</td>
+            <td className="border border-border p-2 font-semibold bg-muted/50 w-1/2">Reports To 🡪</td>
           </tr>
           <tr>
-            <td className="border border-black p-2">{inp("position", "Position")}</td>
-            <td className="border border-black p-2">{inp("reports_to", "Reports To")}</td>
+            <td className="border border-border p-2">{inp("position", "Position")}</td>
+            <td className="border border-border p-2">{inp("reports_to", "Reports To")}</td>
           </tr>
           <tr>
-            <td className="border border-black p-2 font-semibold bg-gray-50" colSpan={2}>Write here Responsibilities of Person.</td>
+            <td className="border border-border p-2 font-semibold bg-muted/50" colSpan={2}>Write here Responsibilities of Person.</td>
           </tr>
           <tr>
-            <td className="border border-black p-2 min-h-[120px]" colSpan={2}>
+            <td className="border border-border p-2 min-h-[120px]" colSpan={2}>
               {editMode ? (
                 <textarea className="w-full min-h-[120px] bg-transparent text-xs p-1" value={val(d, "responsibilities") || ""} onChange={e => onChange?.("responsibilities", e.target.value)} placeholder="Enter responsibilities..." />
               ) : (
@@ -70,10 +70,10 @@ export function F44Template({ data, isTemplate = true, editMode = false, onChang
             </td>
           </tr>
           <tr>
-            <td className="border border-black p-2 font-semibold bg-gray-50" colSpan={2}>Delegation Of Duties During Absence (Indicate Position)</td>
+            <td className="border border-border p-2 font-semibold bg-muted/50" colSpan={2}>Delegation Of Duties During Absence (Indicate Position)</td>
           </tr>
           <tr>
-            <td className="border border-black p-2 min-h-[80px]" colSpan={2}>
+            <td className="border border-border p-2 min-h-[80px]" colSpan={2}>
               {editMode ? (
                 <textarea className="w-full min-h-[80px] bg-transparent text-xs p-1" value={val(d, "delegation") || ""} onChange={e => onChange?.("delegation", e.target.value)} placeholder="Enter delegation details..." />
               ) : (

@@ -53,27 +53,27 @@ export function F22Template({ data, isTemplate = true, editMode = false, onChang
   );
 
   return (
-    <div className={cn("bg-white text-black text-sm", className)}>
+    <div className={cn("bg-background dark:bg-[#1e1d1a] text-foreground text-sm print:bg-white print:text-black print:border-black", className)}>
       {/* Header */}
-      <div className="grid grid-cols-[2fr_1fr] border border-black">
+      <div className="grid grid-cols-[2fr_1fr] border border-border">
         <div className="p-2 font-bold bg-primary/5 text-base">Corrective Action Report</div>
-        <div className="p-2 border-l border-black bg-primary/5 text-center text-xs">
+        <div className="p-2 border-l border-border bg-primary/5 text-center text-xs">
           F/22 Rev No. {val(d, "serial") || (ph ? "{{SERIAL}}" : "—")}<br />Page 1 of 1
         </div>
       </div>
 
       {/* Sr No / Date / Department */}
-      <div className="grid grid-cols-[1fr_1fr] border-x border-b border-black text-xs">
-        <div className="p-1.5 border-r border-black">Sr. No. 🡪 {val(d, "serial") || (ph ? "{{SERIAL}}" : "—")}</div>
+      <div className="grid grid-cols-[1fr_1fr] border-x border-b border-border text-xs">
+        <div className="p-1.5 border-r border-border">Sr. No. 🡪 {val(d, "serial") || (ph ? "{{SERIAL}}" : "—")}</div>
         <div className="p-1.5">Date 🡪 {inp("date", "Date", "w-36")}</div>
       </div>
-      <div className="grid grid-cols-[1fr] border-x border-b border-black text-xs">
-        <div className="p-1.5 border-r border-black">Department 🡪 {inp("department", "Department", "w-64")}</div>
+      <div className="grid grid-cols-[1fr] border-x border-b border-border text-xs">
+        <div className="p-1.5 border-r border-border">Department 🡪 {inp("department", "Department", "w-64")}</div>
       </div>
 
       {/* NC Source checkboxes */}
-      <div className="border-x border-b border-black text-xs">
-        <div className="p-1.5 font-semibold bg-gray-50">Non-conformities Identified During:</div>
+      <div className="border-x border-b border-border text-xs">
+        <div className="p-1.5 font-semibold bg-muted/50">Non-conformities Identified During:</div>
         <div className="grid grid-cols-2 gap-1 p-1.5">
           {NC_SOURCES.map((source, i) => (
             <div key={i} className="flex items-center gap-1">
@@ -87,8 +87,8 @@ export function F22Template({ data, isTemplate = true, editMode = false, onChang
       </div>
 
       {/* Non-conformity Description */}
-      <div className="border-x border-b border-black text-xs">
-        <div className="p-1.5 font-semibold bg-gray-50">Description of Non-conformity:</div>
+      <div className="border-x border-b border-border text-xs">
+        <div className="p-1.5 font-semibold bg-muted/50">Description of Non-conformity:</div>
         <div className="p-1.5 min-h-[60px]">
           {editMode ? (
             <textarea className="w-full min-h-[60px] bg-transparent text-xs p-1" value={val(d, "nc_description") || ""} onChange={e => onChange?.("nc_description", e.target.value)} placeholder="Describe the non-conformity..." />
@@ -99,8 +99,8 @@ export function F22Template({ data, isTemplate = true, editMode = false, onChang
       </div>
 
       {/* Root Cause Analysis */}
-      <div className="border-x border-b border-black text-xs">
-        <div className="p-1.5 font-semibold bg-gray-50">Root Cause Analysis:</div>
+      <div className="border-x border-b border-border text-xs">
+        <div className="p-1.5 font-semibold bg-muted/50">Root Cause Analysis:</div>
         <div className="p-1.5 min-h-[60px]">
           {editMode ? (
             <textarea className="w-full min-h-[60px] bg-transparent text-xs p-1" value={val(d, "root_cause") || ""} onChange={e => onChange?.("root_cause", e.target.value)} placeholder="Analyze root cause..." />
@@ -111,8 +111,8 @@ export function F22Template({ data, isTemplate = true, editMode = false, onChang
       </div>
 
       {/* Corrective Action */}
-      <div className="border-x border-b border-black text-xs">
-        <div className="p-1.5 font-semibold bg-gray-50">Corrective Action:</div>
+      <div className="border-x border-b border-border text-xs">
+        <div className="p-1.5 font-semibold bg-muted/50">Corrective Action:</div>
         <div className="p-1.5 min-h-[60px]">
           {editMode ? (
             <textarea className="w-full min-h-[60px] bg-transparent text-xs p-1" value={val(d, "corrective_action") || ""} onChange={e => onChange?.("corrective_action", e.target.value)} placeholder="Describe corrective action taken..." />
@@ -123,12 +123,12 @@ export function F22Template({ data, isTemplate = true, editMode = false, onChang
       </div>
 
       {/* Verification */}
-      <div className="grid grid-cols-[1fr_1fr] border-x border-b border-black text-xs">
-        <div className="p-1.5 border-r border-black">Responsible: {inp("responsible", "Person")}</div>
+      <div className="grid grid-cols-[1fr_1fr] border-x border-b border-border text-xs">
+        <div className="p-1.5 border-r border-border">Responsible: {inp("responsible", "Person")}</div>
         <div className="p-1.5">Target Date: {inp("target_date", "Date", "w-28")}</div>
       </div>
-      <div className="grid grid-cols-[1fr_1fr] border-x border-b border-black text-xs">
-        <div className="p-1.5 border-r border-black">Verification: {inp("verification", "Result")}</div>
+      <div className="grid grid-cols-[1fr_1fr] border-x border-b border-border text-xs">
+        <div className="p-1.5 border-r border-border">Verification: {inp("verification", "Result")}</div>
         <div className="p-1.5">Verification Date: {inp("verification_date", "Date", "w-28")}</div>
       </div>
 

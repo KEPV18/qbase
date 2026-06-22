@@ -405,7 +405,7 @@ function FormCard({
   return (
     <button
       className={cn(
-        "group w-full text-left bg-white dark:bg-[#232220] border border-gray-200 dark:border-gray-700 rounded-sm transition-all duration-200 hover:shadow-sm",
+        "group w-full text-left bg-card border border-border rounded-lg transition-all duration-200 hover:shadow-sm print:bg-white print:text-black print:border-black",
       )}
       onClick={() => navigate(`/form/${form.code}`)}
     >
@@ -467,7 +467,7 @@ function FormCard({
         </p>
 
         {/* Template metadata — approval & ownership */}
-        <div className="mt-3 pt-3 border-t border-gray-100 dark:border-gray-800 grid grid-cols-2 gap-x-3 gap-y-1.5">
+        <div className="mt-3 pt-3 border-t border-border grid grid-cols-2 gap-x-3 gap-y-1.5">
           <div className="flex items-center gap-1.5">
             <CalendarCheck className="w-3 h-3 text-emerald-500/70 shrink-0" />
             <span className="text-[10px] text-muted-foreground/80">

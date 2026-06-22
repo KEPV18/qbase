@@ -50,25 +50,25 @@ export function F17Template({ data, isTemplate = true, editMode = false, onChang
     );
 
   return (
-    <div className={cn("bg-white text-black text-sm", className)}>
-      <div className="grid grid-cols-[2fr_1fr] border border-black">
+    <div className={cn("bg-background dark:bg-[#1e1d1a] text-foreground text-sm print:bg-white print:text-black print:border-black", className)}>
+      <div className="grid grid-cols-[2fr_1fr] border border-border">
         <div className="p-2 font-bold bg-primary/5 text-base">QA Test Request Slip for Development / Process / Finished Product</div>
-        <div className="p-2 border-l border-black bg-primary/5 text-right text-xs">F/17 Rev No. {val(d, "serial") || (ph ? "{{SERIAL}}" : "—")}</div>
+        <div className="p-2 border-l border-border bg-primary/5 text-right text-xs">F/17 Rev No. {val(d, "serial") || (ph ? "{{SERIAL}}" : "—")}</div>
       </div>
 
-      <div className="grid grid-cols-[1fr_1fr] border-x border-b border-black text-xs">
-        <div className="p-1.5 border-r border-black">Request No: {val(d, "serial") || (ph ? "{{SERIAL}}" : "—")}</div>
+      <div className="grid grid-cols-[1fr_1fr] border-x border-b border-border text-xs">
+        <div className="p-1.5 border-r border-border">Request No: {val(d, "serial") || (ph ? "{{SERIAL}}" : "—")}</div>
         <div className="p-1.5">Date: {inp("date", "Date", "w-28")}</div>
       </div>
 
-      <div className="grid grid-cols-[1fr_1fr_1fr] border-x border-b border-black text-xs">
-        <div className="p-1.5 border-r border-black">From: {inp("request_from", "Department")}</div>
-        <div className="p-1.5 border-r border-black">To: {inp("request_to", "QA Dept")}</div>
+      <div className="grid grid-cols-[1fr_1fr_1fr] border-x border-b border-border text-xs">
+        <div className="p-1.5 border-r border-border">From: {inp("request_from", "Department")}</div>
+        <div className="p-1.5 border-r border-border">To: {inp("request_to", "QA Dept")}</div>
         <div className="p-1.5">Sample Qty: {inp("sample_qty", "Quantity")}</div>
       </div>
 
       {/* Sample type */}
-      <div className="border-x border-b border-black text-xs p-1.5">
+      <div className="border-x border-b border-border text-xs p-1.5">
         <div className="font-semibold mb-1">For:</div>
         <div className="flex gap-6">
           {chk("type_incoming", "Incoming Sample")}
@@ -76,23 +76,23 @@ export function F17Template({ data, isTemplate = true, editMode = false, onChang
         </div>
       </div>
 
-      <table className="w-full border-collapse border-x border-b border-black text-xs">
-        <thead className="bg-gray-100">
+      <table className="w-full border-collapse border-x border-b border-border text-xs">
+        <thead className="bg-muted">
           <tr>
-            <th className="border border-black p-1.5 w-1/4">Parameter</th>
-            <th className="border border-black p-1.5">Details / Specification</th>
+            <th className="border border-border p-1.5 w-1/4">Parameter</th>
+            <th className="border border-border p-1.5">Details / Specification</th>
           </tr>
         </thead>
         <tbody>
-          <tr><td className="border border-black p-1.5 font-semibold">Product Name</td><td className="border border-black p-1.5">{inp("product_name", "Product Name")}</td></tr>
-          <tr><td className="border border-black p-1.5 font-semibold">Batch No.</td><td className="border border-black p-1.5">{inp("batch_no", "Batch No.")}</td></tr>
-          <tr><td className="border border-black p-1.5 font-semibold">Sample Description</td><td className="border border-black p-1.5">{inp("sample_description", "Description")}</td></tr>
-          <tr><td className="border border-black p-1.5 font-semibold">Test Required</td><td className="border border-black p-1.5 min-h-[40px]">{textArea("test_required", "Tests required...", "min-h-[40px]")}</td></tr>
+          <tr><td className="border border-border p-1.5 font-semibold">Product Name</td><td className="border border-border p-1.5">{inp("product_name", "Product Name")}</td></tr>
+          <tr><td className="border border-border p-1.5 font-semibold">Batch No.</td><td className="border border-border p-1.5">{inp("batch_no", "Batch No.")}</td></tr>
+          <tr><td className="border border-border p-1.5 font-semibold">Sample Description</td><td className="border border-border p-1.5">{inp("sample_description", "Description")}</td></tr>
+          <tr><td className="border border-border p-1.5 font-semibold">Test Required</td><td className="border border-border p-1.5 min-h-[40px]">{textArea("test_required", "Tests required...", "min-h-[40px]")}</td></tr>
         </tbody>
       </table>
 
-      <div className="grid grid-cols-[1fr_1fr] border-x border-b border-black text-xs">
-        <div className="p-1.5 border-r border-black">Requested By: {inp("requested_by", "Name")}</div>
+      <div className="grid grid-cols-[1fr_1fr] border-x border-b border-border text-xs">
+        <div className="p-1.5 border-r border-border">Requested By: {inp("requested_by", "Name")}</div>
         <div className="p-1.5">Test Result Reference: {inp("test_result_ref", "Reference")}</div>
       </div>
 

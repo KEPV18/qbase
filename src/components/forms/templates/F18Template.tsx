@@ -66,35 +66,35 @@ export function F18Template({ data, isTemplate = true, editMode = false, onChang
     );
 
   return (
-    <div className={cn("bg-white text-black text-sm", className)}>
-      <div className="grid grid-cols-[3fr_1fr] border border-black">
+    <div className={cn("bg-background dark:bg-[#1e1d1a] text-foreground text-sm print:bg-white print:text-black print:border-black", className)}>
+      <div className="grid grid-cols-[3fr_1fr] border border-border">
         <div className="p-2 font-bold bg-primary/5 text-base">Product Re-Call Report</div>
-        <div className="p-2 border-l border-black bg-primary/5 text-right text-xs">
+        <div className="p-2 border-l border-border bg-primary/5 text-right text-xs">
           F/18 Rev No. {val(d, "serial") || (ph ? "{{SERIAL}}" : "—")}
         </div>
       </div>
 
-      <div className="grid grid-cols-[1fr_1fr] border-x border-b border-black text-xs">
-        <div className="p-1.5 border-r border-black">Date: {inp("date", "Date", "w-28")}</div>
+      <div className="grid grid-cols-[1fr_1fr] border-x border-b border-border text-xs">
+        <div className="p-1.5 border-r border-border">Date: {inp("date", "Date", "w-28")}</div>
         <div className="p-1.5">Department: {inp("department", "Department")}</div>
       </div>
 
-      <div className="grid grid-cols-[70px_1fr_80px_60px_90px_90px] border-x border-b border-black text-[10px] font-semibold bg-gray-100">
-        <div className="p-1 border-r border-black">Date</div>
-        <div className="p-1 border-r border-black">Name Of Products</div>
-        <div className="p-1 border-r border-black">Ref Inward No.</div>
-        <div className="p-1 border-r border-black text-center">Qty Taken</div>
-        <div className="p-1 border-r border-black">Products Identified By</div>
+      <div className="grid grid-cols-[70px_1fr_80px_60px_90px_90px] border-x border-b border-border text-[10px] font-semibold bg-muted">
+        <div className="p-1 border-r border-border">Date</div>
+        <div className="p-1 border-r border-border">Name Of Products</div>
+        <div className="p-1 border-r border-border">Ref Inward No.</div>
+        <div className="p-1 border-r border-border text-center">Qty Taken</div>
+        <div className="p-1 border-r border-border">Products Identified By</div>
         <div className="p-1">Released By</div>
       </div>
 
       {rows.map((row, idx) => (
-        <div key={idx} className="grid grid-cols-[70px_1fr_80px_60px_90px_90px] border-x border-b border-black text-xs relative group min-h-[28px]">
-          <div className="p-1 border-r border-black">{cellInp(idx, "date", "Date")}</div>
-          <div className="p-1 border-r border-black">{cellInp(idx, "productName", "Product")}</div>
-          <div className="p-1 border-r border-black">{cellInp(idx, "refInwardNo", "Ref No")}</div>
-          <div className="p-1 border-r border-black text-center">{cellInp(idx, "qtyTaken", "Qty")}</div>
-          <div className="p-1 border-r border-black">{cellInp(idx, "identifiedBy", "By")}</div>
+        <div key={idx} className="grid grid-cols-[70px_1fr_80px_60px_90px_90px] border-x border-b border-border text-xs relative group min-h-[28px]">
+          <div className="p-1 border-r border-border">{cellInp(idx, "date", "Date")}</div>
+          <div className="p-1 border-r border-border">{cellInp(idx, "productName", "Product")}</div>
+          <div className="p-1 border-r border-border">{cellInp(idx, "refInwardNo", "Ref No")}</div>
+          <div className="p-1 border-r border-border text-center">{cellInp(idx, "qtyTaken", "Qty")}</div>
+          <div className="p-1 border-r border-border">{cellInp(idx, "identifiedBy", "By")}</div>
           <div className="p-1">{cellInp(idx, "releasedBy", "By")}</div>
           {editMode && rows.length > 1 && (
             <button onClick={() => removeRow(idx)} className="absolute -right-6 top-1/2 -translate-y-1/2 text-destructive opacity-0 group-hover:opacity-100 transition-opacity">

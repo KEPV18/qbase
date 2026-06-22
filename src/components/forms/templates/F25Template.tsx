@@ -68,51 +68,51 @@ export function F25Template({ data, isTemplate = true, editMode = false, onChang
     );
 
   return (
-    <div className={cn("bg-white text-black text-sm", className)}>
+    <div className={cn("bg-background dark:bg-[#1e1d1a] text-foreground text-sm print:bg-white print:text-black print:border-black", className)}>
       {/* Header */}
-      <div className="grid grid-cols-[8fr_1fr] border border-black">
+      <div className="grid grid-cols-[8fr_1fr] border border-border">
         <div className="p-2 font-bold bg-primary/5 text-base">Audit Plan</div>
-        <div className="p-2 border-l border-black bg-primary/5 text-right text-xs whitespace-nowrap">
+        <div className="p-2 border-l border-border bg-primary/5 text-right text-xs whitespace-nowrap">
           F/25 Rev No. {val(d, "serial") || (ph ? "{{SERIAL}}" : "—")}
         </div>
       </div>
 
       {/* Sr No / Date */}
-      <div className="grid grid-cols-[3fr_2fr] border-x border-b border-black text-xs">
-        <div className="p-1.5 border-r border-black">Audit Plan No. 🡪 {val(d, "serial") || (ph ? "{{SERIAL}}" : "—")}</div>
+      <div className="grid grid-cols-[3fr_2fr] border-x border-b border-border text-xs">
+        <div className="p-1.5 border-r border-border">Audit Plan No. 🡪 {val(d, "serial") || (ph ? "{{SERIAL}}" : "—")}</div>
         <div className="p-1.5">Date 🡪 {inp("date", "Date", "w-28")}</div>
       </div>
 
       {/* From / To */}
-      <div className="grid grid-cols-[3fr_2fr] border-x border-b border-black text-xs">
-        <div className="p-1.5 border-r border-black">From 🡪 {inp("from", "Management Representative", "w-64")}</div>
+      <div className="grid grid-cols-[3fr_2fr] border-x border-b border-border text-xs">
+        <div className="p-1.5 border-r border-border">From 🡪 {inp("from", "Management Representative", "w-64")}</div>
         <div className="p-1.5">To 🡪 {inp("to", "Auditors / Auditee", "w-48")}</div>
       </div>
 
       {/* Last audit info */}
-      <div className="grid grid-cols-[2fr_2fr_2fr] border-x border-b border-black text-xs">
-        <div className="p-1.5 border-r border-black">Last Audit Done In: {inp("last_audit_month", "Month", "w-20")}</div>
-        <div className="p-1.5 border-r border-black">Last Audit Plan No.: {inp("last_audit_plan_no", "Plan No", "w-20")}</div>
+      <div className="grid grid-cols-[2fr_2fr_2fr] border-x border-b border-border text-xs">
+        <div className="p-1.5 border-r border-border">Last Audit Done In: {inp("last_audit_month", "Month", "w-20")}</div>
+        <div className="p-1.5 border-r border-border">Last Audit Plan No.: {inp("last_audit_plan_no", "Plan No", "w-20")}</div>
         <div className="p-1.5">Last Audit Plan Date: {inp("last_audit_plan_date", "Date", "w-20")}</div>
       </div>
 
       {/* Audit Schedule Table */}
-      <div className="border-x border-b border-black text-[10px] font-semibold bg-gray-100 grid grid-cols-[60px_1fr_1fr_70px_60px_1.5fr]">
-        <div className="p-1 border-r border-black">Clause</div>
-        <div className="p-1 border-r border-black">Department</div>
-        <div className="p-1 border-r border-black">Auditor</div>
-        <div className="p-1 border-r border-black">Date</div>
-        <div className="p-1 border-r border-black">Time</div>
+      <div className="border-x border-b border-border text-[10px] font-semibold bg-muted grid grid-cols-[60px_1fr_1fr_70px_60px_1.5fr]">
+        <div className="p-1 border-r border-border">Clause</div>
+        <div className="p-1 border-r border-border">Department</div>
+        <div className="p-1 border-r border-border">Auditor</div>
+        <div className="p-1 border-r border-border">Date</div>
+        <div className="p-1 border-r border-border">Time</div>
         <div className="p-1">Scope</div>
       </div>
 
       {rows.map((row, idx) => (
-        <div key={idx} className="grid grid-cols-[60px_1fr_1fr_70px_60px_1.5fr] border-x border-b border-black text-xs relative group min-h-[28px]">
-          <div className="p-1 border-r border-black text-center">{cellInp(idx, "clause", "7.x")}</div>
-          <div className="p-1 border-r border-black">{cellInp(idx, "department", "Dept")}</div>
-          <div className="p-1 border-r border-black">{cellInp(idx, "auditor", "Name")}</div>
-          <div className="p-1 border-r border-black">{cellInp(idx, "date", "Date")}</div>
-          <div className="p-1 border-r border-black">{cellInp(idx, "time", "09:00")}</div>
+        <div key={idx} className="grid grid-cols-[60px_1fr_1fr_70px_60px_1.5fr] border-x border-b border-border text-xs relative group min-h-[28px]">
+          <div className="p-1 border-r border-border text-center">{cellInp(idx, "clause", "7.x")}</div>
+          <div className="p-1 border-r border-border">{cellInp(idx, "department", "Dept")}</div>
+          <div className="p-1 border-r border-border">{cellInp(idx, "auditor", "Name")}</div>
+          <div className="p-1 border-r border-border">{cellInp(idx, "date", "Date")}</div>
+          <div className="p-1 border-r border-border">{cellInp(idx, "time", "09:00")}</div>
           <div className="p-1">{cellInp(idx, "scope", "Scope")}</div>
           {editMode && rows.length > 1 && (
             <button onClick={() => removeRow(idx)} className="absolute -right-6 top-1/2 -translate-y-1/2 text-destructive opacity-0 group-hover:opacity-100 transition-opacity">

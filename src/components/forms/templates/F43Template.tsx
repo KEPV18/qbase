@@ -58,52 +58,52 @@ export function F43Template({ data, isTemplate = true, editMode = false, onChang
   const topics = Array.isArray(d.topics) ? d.topics : defaultTopics;
 
   return (
-    <div className={cn("bg-white text-black text-sm", className)}>
+    <div className={cn("bg-background dark:bg-[#1e1d1a] text-foreground text-sm print:bg-white print:text-black print:border-black", className)}>
       {/* Header */}
-      <div className="grid grid-cols-[4fr_1fr] border border-black">
+      <div className="grid grid-cols-[4fr_1fr] border border-border">
         <div className="p-2 font-bold bg-primary/5 text-base">Induction Training Form</div>
-        <div className="p-2 border-l border-black bg-primary/5 text-right text-xs">
+        <div className="p-2 border-l border-border bg-primary/5 text-right text-xs">
           F/43 Rev No. {val(d, "serial") || (ph ? "{{SERIAL}}" : "—")}
         </div>
       </div>
 
       {/* Employee info fields */}
-      <div className="grid grid-cols-[1fr_1fr] border-x border-b border-black text-xs">
-        <div className="p-1.5 border-r border-black">Sr. No. 🡪 {val(d, "serial") || (ph ? "{{SERIAL}}" : "—")}</div>
+      <div className="grid grid-cols-[1fr_1fr] border-x border-b border-border text-xs">
+        <div className="p-1.5 border-r border-border">Sr. No. 🡪 {val(d, "serial") || (ph ? "{{SERIAL}}" : "—")}</div>
         <div className="p-1.5">Date 🡪 {inp("date", "Date", "w-28")}</div>
       </div>
-      <div className="border-x border-b border-black text-xs p-1.5">
+      <div className="border-x border-b border-border text-xs p-1.5">
         Name Of Employee 🡪 {inp("employee_name", "Employee Name")}
       </div>
-      <div className="grid grid-cols-[1fr_1fr] border-x border-b border-black text-xs">
-        <div className="p-1.5 border-r border-black">Date Of Joining 🡪 {inp("date_of_joining", "Date")}</div>
+      <div className="grid grid-cols-[1fr_1fr] border-x border-b border-border text-xs">
+        <div className="p-1.5 border-r border-border">Date Of Joining 🡪 {inp("date_of_joining", "Date")}</div>
         <div className="p-1.5">Department 🡪 {inp("department", "Department")}</div>
       </div>
-      <div className="border-x border-b border-black text-xs p-1.5">
+      <div className="border-x border-b border-border text-xs p-1.5">
         Qualification And Experience 🡪 {inp("qualification", "Qualification")}
       </div>
-      <div className="grid grid-cols-[1fr_1fr] border-x border-b border-black text-xs">
-        <div className="p-1.5 border-r border-black">Designation 🡪 {inp("designation", "Designation")}</div>
+      <div className="grid grid-cols-[1fr_1fr] border-x border-b border-border text-xs">
+        <div className="p-1.5 border-r border-border">Designation 🡪 {inp("designation", "Designation")}</div>
         <div className="p-1.5">Induction Report Issued By 🡪 {inp("issued_by", "Authorised Person")}</div>
       </div>
 
       {/* Training type */}
-      <div className="border-x border-b border-black text-xs p-1.5 bg-gray-50 font-semibold">
+      <div className="border-x border-b border-border text-xs p-1.5 bg-muted/50 font-semibold">
         Type Of Training Imparted
       </div>
 
       {/* Training topics table */}
-      <div className="grid grid-cols-[35px_1fr_100px_120px] border-x border-b border-black text-[10px] font-semibold bg-gray-100">
-        <div className="p-1 border-r border-black">Sr.</div>
-        <div className="p-1 border-r border-black">Topics Of Training</div>
-        <div className="p-1 border-r border-black">Trainer</div>
+      <div className="grid grid-cols-[35px_1fr_100px_120px] border-x border-b border-border text-[10px] font-semibold bg-muted">
+        <div className="p-1 border-r border-border">Sr.</div>
+        <div className="p-1 border-r border-border">Topics Of Training</div>
+        <div className="p-1 border-r border-border">Trainer</div>
         <div className="p-1">Training Completed On &amp; Signature</div>
       </div>
 
       {topics.map((topic: Record<string, unknown>, idx: number) => (
-        <div key={idx} className="grid grid-cols-[35px_1fr_100px_120px] border-x border-b border-black text-xs min-h-[26px]">
-          <div className="p-1 border-r border-black text-center">{typeof topic === "object" && "num" in topic ? String(topic.num) : String(idx + 1)}</div>
-          <div className="p-1 border-r border-black">
+        <div key={idx} className="grid grid-cols-[35px_1fr_100px_120px] border-x border-b border-border text-xs min-h-[26px]">
+          <div className="p-1 border-r border-border text-center">{typeof topic === "object" && "num" in topic ? String(topic.num) : String(idx + 1)}</div>
+          <div className="p-1 border-r border-border">
             {editMode ? (
               <input className="w-full bg-transparent text-xs border-none outline-none" value={typeof topic === "object" && "topic" in topic ? String(topic.topic) : ""} onChange={e => {
                 const newTopics = [...topics];
@@ -114,7 +114,7 @@ export function F43Template({ data, isTemplate = true, editMode = false, onChang
               <span>{typeof topic === "object" && "topic" in topic ? String(topic.topic) : ""}</span>
             )}
           </div>
-          <div className="p-1 border-r border-black">
+          <div className="p-1 border-r border-border">
             {editMode ? (
               <input className="w-full bg-transparent text-xs border-none outline-none" value={typeof topic === "object" && "trainer" in topic ? String(topic.trainer) : ""} onChange={e => {
                 const newTopics = [...topics];
@@ -140,13 +140,13 @@ export function F43Template({ data, isTemplate = true, editMode = false, onChang
       ))}
 
       {/* Signatures */}
-      <div className="grid grid-cols-[1fr_1fr_1fr] border border-t-2 border-black text-xs mt-1">
-        <div className="p-1.5 border-r border-black">Sign. Inductee: {inp("inductee_sign", "Name")}</div>
-        <div className="p-1.5 border-r border-black">Date: {inp("sign_date", "Date", "w-28")}</div>
+      <div className="grid grid-cols-[1fr_1fr_1fr] border border-t-2 border-border text-xs mt-1">
+        <div className="p-1.5 border-r border-border">Sign. Inductee: {inp("inductee_sign", "Name")}</div>
+        <div className="p-1.5 border-r border-border">Date: {inp("sign_date", "Date", "w-28")}</div>
         <div className="p-1.5">Authorised Person: {inp("authorised_sign", "Name")}</div>
       </div>
-      <div className="grid grid-cols-[1fr_1fr] border border-t border-black text-xs">
-        <div className="p-1.5 border-r border-black">Effectiveness On Training 🡪 {inp("effectiveness", "By Trainer/HOD")}</div>
+      <div className="grid grid-cols-[1fr_1fr] border border-t border-border text-xs">
+        <div className="p-1.5 border-r border-border">Effectiveness On Training 🡪 {inp("effectiveness", "By Trainer/HOD")}</div>
         <div className="p-1.5">Signature – Trainer / HOD: {inp("trainer_sign", "Name")}</div>
       </div>
     </div>
