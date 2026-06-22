@@ -104,6 +104,8 @@ export const FORM_SCHEMAS: FormSchema[] = [
       { key: "result_of_action", label: "Result Of Action Taken", type: "textarea", width: "full" },
       { key: "actions_proposed", label: "Actions Proposed For Future", type: "textarea", width: "full" },
       { key: "customer_informed_date", label: "Customer Informed Date", type: "text", width: "half" },
+      { key: "clientplatform_confirmation", label: "ClientPlatform Confirmation", type: "text", width: "half" },
+      { key: "clientplatform_confirmation_date", label: "Confirmation Date", type: "text", width: "half" },
       { key: "analysed_by", label: "Analysed By", type: "text", width: "half" },
       { key: "closed_by", label: "Closed By", type: "text", width: "half" },
     ],

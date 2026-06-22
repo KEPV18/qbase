@@ -149,6 +149,20 @@ const RecordViewPage: React.FC = () => {
     }
   }, [originalRecord, schema, refetch]);
 
+  // ─── Prev/Next navigation ─────────────────────────────────────────────
+  const recordNav = useMemo(() => {
+    if (!originalRecord || !allRecords) return { prevSerial: null, nextSerial: null };
+    const sameForm = allRecords
+      .filter(r => String(r.formCode) === String(originalRecord.formCode))
+      .sort((a, b) => String(a.serial).localeCompare(String(b.serial)));
+    const idx = sameForm.findIndex(r => r.id === originalRecord.id);
+    if (idx === -1) return { prevSerial: null, nextSerial: null };
+    return {
+      prevSerial: idx > 0 ? sameForm[idx - 1].serial : null,
+      nextSerial: idx < sameForm.length - 1 ? sameForm[idx + 1].serial : null,
+    };
+  }, [originalRecord, allRecords]);
+
   // ─── Loading state ─────────────────────────────────────────────────────
   if (isLoading) {
     return (
@@ -295,19 +309,10 @@ const RecordViewPage: React.FC = () => {
     }
   };
 
-  // ─── Prev/Next navigation ─────────────────────────────────────────────
-  const recordNav = useMemo(() => {
-    if (!originalRecord || !allRecords) return { prevSerial: null, nextSerial: null };
-    const sameForm = allRecords
-      .filter(r => String(r.formCode) === String(originalRecord.formCode))
-      .sort((a, b) => String(a.serial).localeCompare(String(b.serial)));
-    const idx = sameForm.findIndex(r => r.id === originalRecord.id);
-    if (idx === -1) return { prevSerial: null, nextSerial: null };
-    return {
-      prevSerial: idx > 0 ? sameForm[idx - 1].serial : null,
-      nextSerial: idx < sameForm.length - 1 ? sameForm[idx + 1].serial : null,
-    };
-  }, [originalRecord, allRecords]);
+  // ─── Department theme vars ─────────────────────────────────────────────
+  const deptName = schema?.sectionName || "Management & Documentation";
+  const cardBorder = deptBorderStyle(deptName);
+  const deptAccent = deptAccentStyle(deptName);
 
   // ─── Render ────────────────────────────────────────────────────────────
 
@@ -432,11 +437,6 @@ const RecordViewPage: React.FC = () => {
       </div>
 
       {/* ─── Department Chromatic Identity ── */}
-      {(() => {
-        const deptName = schema?.sectionName || "Management & Documentation";
-        const cardBorder = deptBorderStyle(deptName);
-        const deptAccent = deptAccentStyle(deptName);
-        return (
       <div className="ds-card p-5 mb-6" style={cardBorder}>
         <div className="flex items-center gap-2 mb-4">
           <Lock className="w-4 h-4 text-muted-foreground" />
@@ -566,7 +566,7 @@ const RecordViewPage: React.FC = () => {
             View History ({originalRecord._editCount as number} edits)
           </button>
         )}
-      </div>); })()}
+      </div>
 
       {/* ─── Content ──────────────────────────────────────────────────── */}
 

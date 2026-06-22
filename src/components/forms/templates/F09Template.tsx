@@ -261,6 +261,17 @@ export function F09Template({ data, isTemplate = true, editMode = false, onChang
             </td>
           </tr>
 
+          {/* ROW 14b: Confirmation Date */}
+          <tr>
+            <td colSpan={5} className="border border-border dark:border-gray-600"></td>
+            <td colSpan={2} className="border border-border dark:border-gray-600 px-2 py-1.5 text-sm font-semibold text-gray-900 dark:text-gray-100">
+              Confirmation Date
+            </td>
+            <td colSpan={5} className="border border-border dark:border-gray-600 px-2 py-1.5 text-sm">
+              {inp("clientplatform_confirmation_date", "DD/MM/YYYY")}
+            </td>
+          </tr>
+
           {/* ROW 15: Analysed By + Closed By */}
           <tr>
             <td colSpan={5} className="border border-border dark:border-gray-600 px-3 py-1.5 text-sm font-semibold text-gray-900 dark:text-gray-100">
