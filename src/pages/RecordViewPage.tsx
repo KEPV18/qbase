@@ -571,7 +571,7 @@ const RecordViewPage: React.FC = () => {
       {/* ─── Content ──────────────────────────────────────────────────── */}
 
       {mode === 'view' ? (
-        <DocumentView subtitle={`${originalRecord.formCode as string} · ${(originalRecord as RecordData)._sectionName || ''}`}>
+        <DocumentView subtitle={`${originalRecord.formCode as string} · ${(originalRecord as RecordData)._sectionName || ''}`} maxWidth={originalRecord.formCode === 'F/50' ? 'max-w-[95%]' : undefined}>
           {/* ── Print header (visible only when printing) ── */}
           <div className="print-only print-header">
             <h2 className="company-name">QBase — Quality Management System</h2>
