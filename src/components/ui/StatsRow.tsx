@@ -49,14 +49,14 @@ export function StatsRow({ stats, columns, className }: StatsRowProps) {
           <div
             key={i}
             className={cn(
-              "bg-card border border-border/50 rounded-sm p-4 flex items-center gap-3 transition-colors duration-150 group",
+              "bg-card border border-border/50 rounded-md p-4 flex items-center gap-3 transition-colors duration-150 group",
               stat.onClick && "cursor-pointer"
             )}
             onClick={stat.onClick}
           >
             
             <div className="flex items-center gap-3 w-full">
-              <div className={cn("w-10 h-10 rounded-sm flex items-center justify-center shrink-0 border", styles.bg, styles.border)}>
+              <div className={cn("w-10 h-10 rounded-md flex items-center justify-center shrink-0 border", styles.bg, styles.border)}>
                 <Icon className={cn("w-5 h-5", styles.icon)} />
               </div>
               <div className="min-w-0">

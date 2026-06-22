@@ -87,14 +87,14 @@
     --input: 40 15% 88%;
     --ring: 226 100% 60%;
 
-    /* ── Module Palette (soft enterprise) ── */
-    --module-sales: 263 70% 58%;
-    --module-operations: 199 89% 48%;
+    /* Module colors */
+    --module-operations: 263 70% 58%;
     --module-quality: 160 84% 39%;
     --module-procurement: 25 95% 53%;
     --module-hr: 330 65% 58%;
     --module-rnd: 17 88% 55%;
     --module-management: 226 100% 60%;
+    --module-sales: 186 100% 50%;
   }
 
   /* ── Dark Mode: Warm Dark ── */
@@ -113,7 +113,7 @@
     --primary: 226 100% 63%;
     --primary-foreground: 30 10% 10%;
 
-    --secondary: 30 8% 18%;          /* #302e2a */
+    --secondary: 30 8% 22%;          /* #3a3834 */
     --secondary-foreground: 40 15% 90%;
 
     --muted: 30 8% 18%;

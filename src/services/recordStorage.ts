@@ -14,7 +14,7 @@ import { appendAuditLog, computeDiff } from './auditLog';
 import { log } from './logger';
 import { emitEvent, Events } from './eventBus';
 import { restGet } from './userService';
-import { normalizeFormData } from '@/lib/formDataNormalizer';
+
 import type { RecordData } from '../components/forms/DynamicFormRenderer';
 
 // ============================================================================
@@ -234,12 +234,10 @@ function parseRowToRecord(row: DbRecord): RecordData | null {
   if (!row.form_code) return null;
 
   // form_data is the single source of truth for all form field data
-  const rawFormData = row.form_data && typeof row.form_data === 'object'
+  // Post-Phase 11: canonical JSONB backfilled from DOCX source files
+  const formData = row.form_data && typeof row.form_data === 'object'
     ? { ...(row.form_data as Record<string, unknown>) }
     : {};
-
-  // Normalize legacy DB keys → template-expected keys (Phase 11 data retrofitting)
-  const formData = normalizeFormData(row.form_code, rawFormData);
 
   // Inject system metadata into the record data structure
   // (FormData contains business fields; metadata is on the row itself)

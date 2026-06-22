@@ -24,7 +24,7 @@ const MAIN_NAV: NavSection = {
   title: "MAIN",
   items: [
     { label: "Dashboard", icon: LayoutDashboard, path: "/" },
-    { label: "Modules", icon: Layers, path: "/module/sales" },
+    { label: "Modules", icon: Layers, path: "/module/operations" },
     { label: "Forms", icon: FileText, path: "/forms" },
     { label: "Records", icon: Database, path: "/records" },
     { label: "Projects Workspace", icon: Briefcase, path: "/projects" },
@@ -67,11 +67,11 @@ function SidebarNavItem({
       className={cn(
         "w-full flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-medium transition-all duration-200",
         isActive
-          ? "bg-[#2d2d2d] text-white"
-          : "text-[#7a756a] hover:text-[#2d2d2d] hover:bg-[#ece8df]"
+          ? "bg-foreground text-white"
+          : "text-muted-foreground hover:text-foreground hover:bg-muted"
       )}
     >
-      <item.icon className={cn("w-[18px] h-[18px]", isActive ? "text-white" : "text-[#9f9a8f]")} />
+      <item.icon className={cn("w-[18px] h-[18px]", isActive ? "text-white" : "text-muted-foreground/70")} />
       <span className="flex-1 text-left">{item.label}</span>
       {item.badge ? (
         <span className="text-[10px] font-semibold bg-white/20 text-white px-1.5 py-0.5 rounded-full">
@@ -128,7 +128,7 @@ export function Sidebar({ mobileOpen, onClose }: { mobileOpen: boolean; onClose:
 
       <aside
         className={cn(
-          "fixed lg:static inset-y-0 left-0 z-50 w-64 bg-white dark:bg-[#1a1a18] border-r border-[#e8e3db] dark:border-[#3a3834]",
+          "fixed lg:static inset-y-0 left-0 z-50 w-64 bg-white dark:bg-[#1a1a18] border-r border-border dark:border-[#3a3834]",
           "flex flex-col transition-transform duration-300 ease-in-out",
           mobileOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"
         )}
@@ -136,10 +136,10 @@ export function Sidebar({ mobileOpen, onClose }: { mobileOpen: boolean; onClose:
         {/* Logo */}
         <div className="px-6 pt-8 pb-6">
           <button onClick={() => handleNav("/")} className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-lg bg-[#2d2d2d] flex items-center justify-center">
+            <div className="w-9 h-9 rounded-lg bg-foreground flex items-center justify-center">
               <img src={brandLogo} alt="logo" className="w-5 h-5 object-contain invert" />
             </div>
-            <span className="text-lg font-heading font-bold text-[#2d2d2d] dark:text-[#e8e3db] tracking-tight">
+            <span className="text-lg font-heading font-bold text-foreground dark:text-[#e8e3db] tracking-tight">
               {displayName || "QBase"}
             </span>
           </button>
@@ -148,7 +148,7 @@ export function Sidebar({ mobileOpen, onClose }: { mobileOpen: boolean; onClose:
         {/* Navigation */}
         <div className="flex-1 px-4 space-y-6 overflow-y-auto">
           <div className="space-y-1">
-            <p className="px-3 mb-2 text-[11px] font-heading font-semibold text-[#9f9a8f] uppercase tracking-wider">
+            <p className="px-3 mb-2 text-[11px] font-heading font-semibold text-muted-foreground/70 uppercase tracking-wider">
               {MAIN_NAV.title}
             </p>
             {MAIN_NAV.items.map((item) => (
@@ -162,7 +162,7 @@ export function Sidebar({ mobileOpen, onClose }: { mobileOpen: boolean; onClose:
           </div>
 
           <div className="space-y-1">
-            <p className="px-3 mb-2 text-[11px] font-heading font-semibold text-[#9f9a8f] uppercase tracking-wider">
+            <p className="px-3 mb-2 text-[11px] font-heading font-semibold text-muted-foreground/70 uppercase tracking-wider">
               {TOOLS_NAV.title}
             </p>
             {TOOLS_NAV.items.map((item) =>
@@ -184,7 +184,7 @@ export function Sidebar({ mobileOpen, onClose }: { mobileOpen: boolean; onClose:
           </div>
 
           <div className="space-y-1">
-            <p className="px-3 mb-2 text-[11px] font-heading font-semibold text-[#9f9a8f] uppercase tracking-wider">
+            <p className="px-3 mb-2 text-[11px] font-heading font-semibold text-muted-foreground/70 uppercase tracking-wider">
               {SETTINGS_NAV.title}
             </p>
             {SETTINGS_NAV.items.map((item) => (
@@ -200,12 +200,12 @@ export function Sidebar({ mobileOpen, onClose }: { mobileOpen: boolean; onClose:
 
         {/* User Profile */}
         <div className="px-4 pb-6 pt-4">
-          <div className="flex items-center gap-3 px-3 py-3 rounded-lg border border-[#e8e3db] dark:border-[#3a3834] bg-[#f8f6f1] dark:bg-[#1a1a18]">
-            <div className="w-9 h-9 rounded-full bg-[#2d2d2d] flex items-center justify-center">
+          <div className="flex items-center gap-3 px-3 py-3 rounded-lg border border-border dark:border-[#3a3834] bg-background dark:bg-[#1a1a18]">
+            <div className="w-9 h-9 rounded-full bg-foreground flex items-center justify-center">
               <span className="text-xs font-bold text-white">{userInitials}</span>
             </div>
             <div className="flex-1 min-w-0">
-              <p className="text-sm font-semibold text-[#2d2d2d] dark:text-[#e8e3db] truncate">{firstName}</p>
+              <p className="text-sm font-semibold text-foreground dark:text-[#e8e3db] truncate">{firstName}</p>
               <p className="text-[11px] text-[#7a756a] truncate">{user?.role || "User"}</p>
             </div>
             <button

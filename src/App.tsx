@@ -75,10 +75,6 @@ function PageBoundary({ children }: { children: React.ReactNode }) {
 }
 
 const App = () => {
-  // Apply saved accent color on boot
-  const savedAccent = localStorage.getItem('accentColor') || 'cyan';
-  document.documentElement.setAttribute('data-accent', savedAccent);
-
   return (
     <QueryClientProvider client={queryClient}>
       <ErrorBoundary fallback={<ErrorFallback />}>
@@ -124,7 +120,7 @@ const App = () => {
                       <Route path="/admin/data-sanitizer" element={<RequireRole roles={["admin"]}><PageBoundary><DataSanitizer /></PageBoundary></RequireRole>} />
                       <Route path="/admin/approvals" element={<PageBoundary><ApprovalQueuePage /></PageBoundary>} />
                       {/* Redirects for sidebar links */}
-                      <Route path="/modules" element={<Navigate to="/module/sales" replace />} />
+                      <Route path="/modules" element={<Navigate to="/module/operations" replace />} />
                       <Route path="/approvals" element={<Navigate to="/admin/approvals" replace />} />
                       <Route path="/admin" element={<Navigate to="/admin/accounts" replace />} />
                     </Route>

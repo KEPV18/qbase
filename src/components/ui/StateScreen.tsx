@@ -37,7 +37,7 @@ export function StateScreen({ state, icon: customIcon, title, message, action, c
       className
     )}>
       <div className={cn(
-        "w-16 h-16 rounded-sm flex items-center justify-center mb-4",
+        "w-16 h-16 rounded-md flex items-center justify-center mb-4",
         state === "critical" && "bg-destructive/10",
         state === "error" && "bg-destructive/10",
         state === "success" && "bg-success/10",

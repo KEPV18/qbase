@@ -27,12 +27,12 @@ export function StatCard({
   className,
 }: StatCardProps) {
   return (
-    <div className={cn("bg-card/40 backdrop-blur-xl border border-border/40 hover:border-primary/40 rounded-sm p-5 md:p-6 transition-all duration-500 shadow-sm hover:shadow-2xl hover:-translate-y-1 overflow-hidden group", className)}>
+    <div className={cn("bg-card/40 backdrop-blur-xl border border-border/40 hover:border-primary/40 rounded-md p-5 md:p-6 transition-all duration-500 shadow-sm hover:shadow-2xl hover:-translate-y-1 overflow-hidden group", className)}>
       {/* Subtle Background Glow */}
       <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none" />
 
       <div className="relative z-10">
-        <div className={cn("w-12 h-12 rounded-sm flex items-center justify-center shrink-0 shadow-inner border border-border/50 group-hover:scale-105 transition-transform duration-500", variantStyles[variant])}>
+        <div className={cn("w-12 h-12 rounded-md flex items-center justify-center shrink-0 shadow-inner border border-border/50 group-hover:scale-105 transition-transform duration-500", variantStyles[variant])}>
           <Icon className="w-6 h-6" />
         </div>
         <div className="mt-3">

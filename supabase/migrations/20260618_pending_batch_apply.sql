@@ -79,6 +79,8 @@ DROP POLICY IF EXISTS "profiles_update_all" ON public.profiles;
 DROP POLICY IF EXISTS "profiles_insert_own" ON public.profiles;
 DROP POLICY IF EXISTS "profiles_update_own" ON public.profiles;
 
+DROP POLICY IF EXISTS "profiles_insert_own_or_admin" ON public.profiles;
+
 CREATE POLICY "profiles_insert_own_or_admin"
   ON public.profiles FOR INSERT
   TO authenticated
@@ -86,6 +88,8 @@ CREATE POLICY "profiles_insert_own_or_admin"
     user_id = auth.uid()
     OR public.is_admin()
   );
+
+DROP POLICY IF EXISTS "profiles_update_own_or_admin" ON public.profiles;
 
 CREATE POLICY "profiles_update_own_or_admin"
   ON public.profiles FOR UPDATE
@@ -103,6 +107,7 @@ CREATE POLICY "profiles_update_own_or_admin"
 
 DROP POLICY IF EXISTS "profiles_delete_all" ON public.profiles;
 DROP POLICY IF EXISTS "profiles_delete_own" ON public.profiles;
+DROP POLICY IF EXISTS "profiles_delete_own_or_admin" ON public.profiles;
 
 CREATE POLICY "profiles_delete_own_or_admin"
   ON public.profiles FOR DELETE

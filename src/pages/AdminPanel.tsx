@@ -19,7 +19,7 @@ import { Badge } from "@/components/ui/badge";
 import {
   Shield, UserPlus, Loader2, Save, Mail, User, Trash2,
   CheckCircle, XCircle, Clock, Users, KeyRound, RefreshCw, Search,
-  Building2, Image, Palette, Activity, Paintbrush, Eye
+  Building2, Image, Palette, Activity, Paintbrush, Eye, Upload
 } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
@@ -550,14 +550,53 @@ function BrandingTab() {
             </div>
           </div>
           <div className="flex items-start gap-4">
-            <div className="flex-1 space-y-2">
+            <div className="flex-1 space-y-3">
+              {/* File Upload */}
+              <div className="relative">
+                <input
+                  type="file"
+                  id="logo-upload"
+                  accept="image/*"
+                  className="hidden"
+                  onChange={(e) => {
+                    const file = e.target.files?.[0];
+                    if (!file) return;
+                    if (file.size > 2 * 1024 * 1024) {
+                      setError("Image must be ≤ 2MB");
+                      return;
+                    }
+                    const reader = new FileReader();
+                    reader.onload = (ev) => {
+                      setLogoUrl(ev.target?.result as string);
+                      setError(null);
+                    };
+                    reader.readAsDataURL(file);
+                  }}
+                />
+                <label
+                  htmlFor="logo-upload"
+                  className="flex items-center justify-center gap-2 w-full h-10 px-4 rounded-md border border-dashed border-border/60 bg-muted/20 text-sm text-muted-foreground hover:bg-muted/30 hover:text-foreground cursor-pointer transition-colors"
+                >
+                  <Upload className="w-4 h-4" />
+                  {logoUrl ? "Change Logo" : "Upload Logo"}
+                </label>
+              </div>
+              {/* Or paste URL */}
+              <div className="relative">
+                <div className="absolute inset-0 flex items-center">
+                  <span className="w-full border-t" />
+                </div>
+                <div className="relative flex justify-center text-xs">
+                  <span className="bg-card px-2 text-muted-foreground">or paste URL</span>
+                </div>
+              </div>
               <Input
-                value={logoUrl}
+                value={logoUrl.startsWith("data:") ? "" : logoUrl}
                 onChange={(e) => setLogoUrl(e.target.value)}
                 placeholder="https://example.com/logo.png"
               />
               <p className="text-[11px] text-muted-foreground">
-                Paste a URL to your logo image (PNG, SVG, or JPG recommended). Transparent backgrounds work best.
+                Supports PNG, JPG, SVG. Max 2MB. Transparent backgrounds work best.
               </p>
             </div>
             {/* Logo Preview */}

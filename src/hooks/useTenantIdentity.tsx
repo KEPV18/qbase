@@ -5,7 +5,7 @@
 // No prop drilling. No hardcoded branding.
 // ============================================================================
 
-import React, { createContext, useContext, useMemo } from 'react';
+import React, { createContext, useContext, useMemo, useEffect } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { restGet } from '@/services/userService';
@@ -117,6 +117,15 @@ export function TenantIdentityProvider({ children }: { children: React.ReactNode
   });
 
   const identity = useMemo(() => data || DEFAULT_IDENTITY, [data]);
+
+  // Apply theme_color as CSS custom property for --primary accent globally
+  useEffect(() => {
+    const tc = identity.themeColor;
+    if (tc) {
+      document.documentElement.style.setProperty('--primary', tc);
+      document.documentElement.style.setProperty('--ring', tc);
+    }
+  }, [identity.themeColor]);
 
   return (
     <TenantIdentityContext.Provider value={identity}>
