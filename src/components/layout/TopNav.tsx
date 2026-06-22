@@ -126,12 +126,12 @@ export function TopNav() {
       <div className="bg-background/80 backdrop-blur-xl border border-border rounded-xl px-5 py-3 flex items-center justify-between shrink-0">
         {/* Left — Active Page */}
         <div className="flex items-center gap-3">
-          <div className="w-8 h-8 rounded-lg bg-foreground flex items-center justify-center">
+          <div className="w-8 h-8 rounded-lg bg-foreground dark:bg-card flex items-center justify-center">
             <img src={brandLogo} alt="" className="w-4 h-4 object-contain invert" />
           </div>
           <div>
             <p className="text-[11px] font-heading font-semibold text-muted-foreground/70 uppercase tracking-wider">Active Page</p>
-            <p className="text-sm font-semibold text-foreground dark:text-foreground">{pageLabel}</p>
+            <p className="text-sm font-semibold text-foreground">{pageLabel}</p>
           </div>
         </div>
 

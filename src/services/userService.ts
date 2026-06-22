@@ -91,16 +91,17 @@ export async function restRpc<T>(
   if (!token && !opts?.allowAnon) return { data: null, error: "no_session_token" };
   try {
     const bearer = token || SUPABASE_ANON_KEY;
-    const res = await fetch(`${SUPABASE_URL}/rest/v1/rpc/${fnName}`, {
-      method: "POST",
-      headers: {
-        apikey: SUPABASE_ANON_KEY,
-        Authorization: `Bearer ${bearer}`,
-        "Content-Type": "application/json",
-        Accept: "application/json",
-      },
-      body: params ? JSON.stringify(params) : "{}",
-    });
+    const headers: Record<string, string> = {
+      apikey: SUPABASE_ANON_KEY,
+      Authorization: `Bearer ${bearer}`,
+      Accept: "application/json",
+    };
+    const options: RequestInit = { method: "POST", headers };
+    if (params) {
+      headers["Content-Type"] = "application/json";
+      options.body = JSON.stringify(params);
+    }
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/rpc/${fnName}`, options);
     if (!res.ok) {
       const txt = await res.text().catch(() => "");
       return { data: null, error: `HTTP ${res.status}: ${txt.substring(0, 200)}` };

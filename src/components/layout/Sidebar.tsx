@@ -65,11 +65,11 @@ function SidebarNavItem({
       className={cn(
         "w-full flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-medium transition-all duration-200",
         isActive
-          ? "bg-foreground text-white"
+          ? "bg-foreground text-white dark:bg-muted dark:text-foreground"
           : "text-muted-foreground hover:text-foreground hover:bg-muted"
       )}
     >
-      <item.icon className={cn("w-[18px] h-[18px]", isActive ? "text-white" : "text-muted-foreground/70")} />
+      <item.icon className={cn("w-[18px] h-[18px]", isActive ? "text-white dark:text-foreground" : "text-muted-foreground/70")} />
       <span className="flex-1 text-left">{item.label}</span>
       {item.badge ? (
         <span className="text-[10px] font-semibold bg-white/20 text-white px-1.5 py-0.5 rounded-full">
@@ -134,10 +134,10 @@ export function Sidebar({ mobileOpen, onClose }: { mobileOpen: boolean; onClose:
         {/* Logo */}
         <div className="px-6 pt-8 pb-6">
           <button onClick={() => handleNav("/")} className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-lg bg-foreground flex items-center justify-center">
+            <div className="w-9 h-9 rounded-lg bg-foreground dark:bg-card flex items-center justify-center">
               <img src={brandLogo} alt="logo" className="w-5 h-5 object-contain invert" />
             </div>
-            <span className="text-lg font-heading font-bold text-foreground dark:text-foreground tracking-tight">
+            <span className="text-lg font-heading font-bold text-foreground tracking-tight">
               {displayName || "QBase"}
             </span>
           </button>
@@ -199,11 +199,11 @@ export function Sidebar({ mobileOpen, onClose }: { mobileOpen: boolean; onClose:
         {/* User Profile */}
         <div className="px-4 pb-6 pt-4">
           <div className="flex items-center gap-3 px-3 py-3 rounded-lg border border-border bg-card">
-            <div className="w-9 h-9 rounded-full bg-foreground flex items-center justify-center">
-              <span className="text-xs font-bold text-white">{userInitials}</span>
+            <div className="w-9 h-9 rounded-full bg-foreground dark:bg-card flex items-center justify-center">
+              <span className="text-xs font-bold text-white dark:text-foreground">{userInitials}</span>
             </div>
             <div className="flex-1 min-w-0">
-              <p className="text-sm font-semibold text-foreground dark:text-[#e8e3db] truncate">{firstName}</p>
+              <p className="text-sm font-semibold text-foreground truncate">{firstName}</p>
               <p className="text-[11px] text-muted-foreground truncate">{user?.role || "User"}</p>
             </div>
             <button

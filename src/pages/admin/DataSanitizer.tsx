@@ -5,15 +5,27 @@
 // ISO compliance (sequential serial integrity).
 // ============================================================================
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { AppShell } from "@/components/layout/AppShell";
+import { PageHeader } from "@/components/ui/PageHeader";
+import { StatsRow } from "@/components/ui/StatsRow";
+import { StateScreen } from "@/components/ui/StateScreen";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import {
+  Table,
+  TableHeader,
+  TableBody,
+  TableHead,
+  TableRow,
+  TableCell,
+} from "@/components/ui/table";
 import {
   ShieldCheck, RefreshCw, Loader2, AlertTriangle,
   Database, Ghost, CheckCircle, FileEdit, Archive,
+  Search, X,
 } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
@@ -54,6 +66,8 @@ export default function DataSanitizer() {
   const [ghosts, setGhosts] = useState<GhostRecord[]>([]);
   const [summary, setSummary] = useState<ScanSummary>({ totalRecords: 0, ghostCount: 0 });
   const [error, setError] = useState<string | null>(null);
+  const [search, setSearch] = useState("");
+  const [departmentFilter, setDepartmentFilter] = useState<string | null>(null);
 
   // ── Scan: fetch ghost records + total count via raw fetch RPC ────────────
   const scan = useCallback(async () => {
@@ -84,63 +98,89 @@ export default function DataSanitizer() {
   }, []);
 
   // ── Initial scan on mount ────────────────────────────────────────────────
-  useEffect(() => {
-    scan();
-  }, [scan]);
+  useEffect(() => { scan(); }, [scan]);
 
   // ── Navigate to record edit page ────────────────────────────────────────
   const populateRecord = (ghost: GhostRecord) => {
     navigate(`/records/${encodeURIComponent(ghost.serial)}?edit=true`);
   };
 
-  // ── Render ───────────────────────────────────────────────────────────────
-  if (loading) {
-    return (
-      <AppShell breadcrumbs={[{ label: "Admin", path: "/admin/accounts" }, { label: "Data Retrofitting" }]}>
-        <div className="flex items-center justify-center min-h-[400px]">
-          <Loader2 className="w-8 h-8 text-primary animate-spin" />
-        </div>
-      </AppShell>
-    );
-  }
+  // ── Derived ──────────────────────────────────────────────────────────────
+  const departments = useMemo(() => {
+    const deps = [...new Set(ghosts.map(g => g.section_name).filter(Boolean))] as string[];
+    return deps.sort();
+  }, [ghosts]);
+
+  const filteredGhosts = useMemo(() => {
+    let result = ghosts;
+    if (search) {
+      const q = search.toLowerCase();
+      result = result.filter(g =>
+        g.serial.toLowerCase().includes(q) ||
+        g.form_code.toLowerCase().includes(q) ||
+        (g.form_name || "").toLowerCase().includes(q) ||
+        (g.section_name || "").toLowerCase().includes(q) ||
+        (g.created_by || "").toLowerCase().includes(q)
+      );
+    }
+    if (departmentFilter) {
+      result = result.filter(g => g.section_name === departmentFilter);
+    }
+    return result;
+  }, [ghosts, search, departmentFilter]);
 
   const healthScore = summary.totalRecords > 0
     ? Math.round(((summary.totalRecords - summary.ghostCount) / summary.totalRecords) * 100)
     : 100;
 
+  // ── Loading state (initial mount) ───────────────────────────────────────
+  if (loading && !error) {
+    return (
+      <AppShell breadcrumbs={[{ label: "Admin", path: "/admin/accounts" }, { label: "Data Retrofitting" }]}>
+        <StateScreen state="loading" title="Scanning records…" />
+      </AppShell>
+    );
+  }
+
+  // ── Error state (initial load failed, no data) ──────────────────────────
+  if (error && ghosts.length === 0) {
+    return (
+      <AppShell breadcrumbs={[{ label: "Admin", path: "/admin/accounts" }, { label: "Data Retrofitting" }]}>
+        <StateScreen
+          state="error"
+          title="Scan failed"
+          message={error}
+          action={{ label: "Retry", onClick: scan }}
+        />
+      </AppShell>
+    );
+  }
+
+  // ── Render ───────────────────────────────────────────────────────────────
   return (
     <AppShell breadcrumbs={[{ label: "Admin", path: "/admin/accounts" }, { label: "Data Retrofitting" }]}>
-      <div className="space-y-6 max-w-[1200px]">
-        {/* ── Header ── */}
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-2xl font-bold text-foreground flex items-center gap-2">
-              <Archive className="w-7 h-7 text-primary" />
-              Data Retrofitting & Completion Hub
-              <span className="text-base font-normal text-muted-foreground">(Data Retrofitting Hub)</span>
-            </h1>
-            <p className="text-sm text-muted-foreground mt-1">
-              Populate empty records from offline Word documents. Serial integrity preserved for ISO compliance.
-            </p>
-          </div>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={scan}
-            disabled={scanning}
-          >
-            {scanning ? (
-              <Loader2 className="w-4 h-4 animate-spin mr-2" />
-            ) : (
-              <RefreshCw className="w-4 h-4 mr-2" />
-            )}
-            {scanning ? "Scanning..." : "Rescan"}
-          </Button>
-        </div>
+      <div className="space-y-6 animate-fade-in">
 
-        {/* ── Error Banner ── */}
+        {/* ── Header ── */}
+        <PageHeader
+          icon={Archive}
+          title="Data Retrofitting & Completion Hub"
+          description="Populate empty records from offline Word documents. Serial integrity preserved for ISO compliance."
+          action={
+            <Button variant="outline" size="sm" onClick={scan} disabled={scanning}>
+              {scanning ? (
+                <Loader2 className="w-4 h-4 animate-spin mr-2" />
+              ) : (
+                <RefreshCw className="w-4 h-4 mr-2" />
+              )}
+              {scanning ? "Scanning..." : "Rescan"}
+            </Button>
+          }
+        />
+
+        {/* ── Error Banner (post-initial-load) ── */}
         {error && (
-          <div className="flex items-start gap-3 p-4 bg-destructive/10 border border-destructive/20 rounded-lg">
+          <div className="flex items-start gap-3 p-4 bg-destructive/10 border border-destructive/20 rounded-md">
             <AlertTriangle className="w-5 h-5 text-destructive shrink-0 mt-0.5" />
             <div>
               <p className="text-sm font-medium text-destructive">Scan Error</p>
@@ -152,141 +192,123 @@ export default function DataSanitizer() {
           </div>
         )}
 
-        {/* ── Summary Cards ── */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          {/* Total Records */}
-          <Card className="border-border">
-            <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardDescription>Total System Records</CardDescription>
-              <Database className="w-5 h-5 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-3xl font-bold text-foreground">
-                {summary.totalRecords.toLocaleString()}
-              </div>
-              <p className="text-xs text-muted-foreground mt-1">Active records in database</p>
-            </CardContent>
-          </Card>
-
-          {/* Records Awaiting Completion */}
-          <Card className={cn(
-            "border-border",
-            summary.ghostCount > 0 && "border-warning/30 bg-warning/5"
-          )}>
-            <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardDescription>Awaiting Population</CardDescription>
-              {summary.ghostCount > 0 ? (
-                <Ghost className="w-5 h-5 text-warning" />
-              ) : (
-                <CheckCircle className="w-5 h-5 text-success" />
-              )}
-            </CardHeader>
-            <CardContent>
-              <div className={cn(
-                "text-3xl font-bold",
-                summary.ghostCount > 0 ? "text-warning" : "text-success"
-              )}>
-                {summary.ghostCount.toLocaleString()}
-              </div>
-              <p className="text-xs text-muted-foreground mt-1">
-                {summary.ghostCount > 0 ? "Empty records to populate" : "All records complete"}
-              </p>
-            </CardContent>
-          </Card>
-
-          {/* Completion Score */}
-          <Card className="border-border">
-            <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardDescription>Completion Score</CardDescription>
-              <ShieldCheck className={cn(
-                "w-5 h-5",
-                healthScore >= 95 ? "text-success" : healthScore >= 80 ? "text-warning" : "text-destructive"
-              )} />
-            </CardHeader>
-            <CardContent>
-              <div className={cn(
-                "text-3xl font-bold",
-                healthScore >= 95 ? "text-success" : healthScore >= 80 ? "text-warning" : "text-destructive"
-              )}>
-                {healthScore}%
-              </div>
-              <p className="text-xs text-muted-foreground mt-1">
-                {healthScore >= 95 ? "Excellent" : healthScore >= 80 ? "Good" : "Needs attention"}
-              </p>
-            </CardContent>
-          </Card>
-        </div>
+        {/* ── Summary Stats ── */}
+        <StatsRow
+          stats={[
+            { icon: Database, value: summary.totalRecords.toLocaleString(), label: "Total System Records" },
+            { icon: Ghost, value: summary.ghostCount.toLocaleString(), label: "Awaiting Population", variant: summary.ghostCount > 0 ? "warning" : "success" },
+            { icon: ShieldCheck, value: `${healthScore}%`, label: "Completion Score", variant: healthScore >= 95 ? "success" : healthScore >= 80 ? "warning" : "destructive" },
+          ]}
+          columns={3}
+        />
 
         {/* ── All Complete State ── */}
         {!error && ghosts.length === 0 && (
-          <Card className="border-success/20 bg-success/5">
-            <CardContent className="flex flex-col items-center justify-center py-12">
-              <CheckCircle className="w-12 h-12 text-success mb-3" />
-              <h3 className="text-lg font-semibold text-foreground">All Records Populated</h3>
-              <p className="text-sm text-muted-foreground mt-1 text-center max-w-md">
-                All {summary.totalRecords.toLocaleString()} active records have valid form data payloads. No retrofitting needed.
-              </p>
-            </CardContent>
-          </Card>
+          <StateScreen
+            state="success"
+            icon={CheckCircle}
+            title="All Records Populated"
+            message={`All ${summary.totalRecords.toLocaleString()} active records have valid form data payloads. No retrofitting needed.`}
+          />
         )}
 
-        {/* ── Records Awaiting Completion Grid ── */}
+        {/* ── Records Awaiting Completion ── */}
         {!error && ghosts.length > 0 && (
-          <Card className="border-border">
-            <CardHeader>
-              <div className="flex items-center justify-between">
-                <div>
-                  <CardTitle className="flex items-center gap-2">
-                    <FileEdit className="w-5 h-5 text-warning" />
-                    Records Awaiting Data Population
-                  </CardTitle>
-                  <CardDescription className="mt-1">
-                    {ghosts.length} record{ghosts.length !== 1 ? "s" : ""} with empty form data — click "Complete Data" to populate from your offline Word document.
-                  </CardDescription>
-                </div>
+          <>
+            {/* Department Filter Pills */}
+            {departments.length > 1 && (
+              <div className="flex flex-wrap items-center gap-2">
+                <button
+                  onClick={() => setDepartmentFilter(null)}
+                  className={cn(
+                    "px-3 py-1.5 rounded-md text-xs font-semibold transition-colors",
+                    !departmentFilter
+                      ? "bg-foreground text-background"
+                      : "bg-muted text-muted-foreground hover:text-foreground"
+                  )}
+                >
+                  All Departments
+                </button>
+                {departments.map(dept => (
+                  <button
+                    key={dept}
+                    onClick={() => setDepartmentFilter(departmentFilter === dept ? null : dept)}
+                    className={cn(
+                      "px-3 py-1.5 rounded-md text-xs font-semibold transition-colors",
+                      departmentFilter === dept
+                        ? "bg-foreground text-background"
+                        : "bg-muted text-muted-foreground hover:text-foreground"
+                    )}
+                  >
+                    {dept}
+                  </button>
+                ))}
               </div>
-            </CardHeader>
-            <CardContent>
-              <div className="overflow-x-auto -mx-6 px-6">
-                <table className="w-full text-sm">
-                  <thead>
-                    <tr className="border-b border-border text-left">
-                      <th className="py-2 px-3 font-medium text-muted-foreground">Serial</th>
-                      <th className="py-2 px-3 font-medium text-muted-foreground">Form Code</th>
-                      <th className="py-2 px-3 font-medium text-muted-foreground">Form Name</th>
-                      <th className="py-2 px-3 font-medium text-muted-foreground">Created By</th>
-                      <th className="py-2 px-3 font-medium text-muted-foreground">Department</th>
-                      <th className="py-2 px-3 font-medium text-muted-foreground">Date</th>
-                      <th className="py-2 px-3 font-medium text-muted-foreground text-right">Action</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {ghosts.map((ghost) => (
-                      <tr
+            )}
+
+            {/* Search + Table */}
+            <div className="space-y-3">
+              {/* Search Bar */}
+              <div className="relative max-w-sm">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground" />
+                <Input
+                  placeholder="Search by serial, form code, or name…"
+                  value={search}
+                  onChange={e => setSearch(e.target.value)}
+                  className="pl-9 h-9 text-sm bg-background border-border/50"
+                />
+                {search && (
+                  <button
+                    onClick={() => setSearch("")}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                  >
+                    <X className="w-3.5 h-3.5" />
+                  </button>
+                )}
+              </div>
+
+              {/* Results Table */}
+              <div className="rounded-md border border-border/50 bg-card overflow-hidden">
+                <Table>
+                  <TableHeader>
+                    <TableRow className="bg-muted/30 border-b border-border/50">
+                      <TableHead className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground py-3">Serial</TableHead>
+                      <TableHead className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground py-3">Form Code</TableHead>
+                      <TableHead className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground py-3">Form Name</TableHead>
+                      <TableHead className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground py-3">Created By</TableHead>
+                      <TableHead className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground py-3">Department</TableHead>
+                      <TableHead className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground py-3">Date</TableHead>
+                      <TableHead className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground py-3 text-right">Action</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {filteredGhosts.length === 0 ? (
+                      <TableRow>
+                        <TableCell colSpan={7} className="text-center py-12 text-muted-foreground text-sm">
+                          No records match your search.
+                        </TableCell>
+                      </TableRow>
+                    ) : filteredGhosts.map((ghost, i) => (
+                      <TableRow
                         key={ghost.id}
-                        className="border-b border-border/50 hover:bg-muted/30 transition-colors"
+                        className="border-b border-border/30 hover:bg-muted/20 transition-colors animate-fade-in"
+                        style={{ animationDelay: `${i * 50}ms` }}
                       >
-                        <td className="py-3 px-3">
-                          <span className="font-mono text-xs font-semibold text-foreground">
-                            {ghost.serial}
-                          </span>
-                        </td>
-                        <td className="py-3 px-3">
+                        <TableCell className="font-mono text-xs font-semibold text-foreground py-3">
+                          {ghost.serial}
+                        </TableCell>
+                        <TableCell className="py-3">
                           <Badge variant="outline" className="font-mono text-xs">
                             {ghost.form_code}
                           </Badge>
-                        </td>
-                        <td className="py-3 px-3">
-                          <span className="text-foreground">
-                            {ghost.form_name || <span className="text-muted-foreground italic">—</span>}
-                          </span>
-                        </td>
-                        <td className="py-3 px-3">
-                          <span className="text-xs text-muted-foreground">
-                            {ghost.created_by || <span className="italic">Unknown</span>}
-                          </span>
-                        </td>
-                        <td className="py-3 px-3">
+                        </TableCell>
+                        <TableCell className="text-sm text-foreground py-3">
+                          {ghost.form_name || <span className="text-muted-foreground italic">—</span>}
+                        </TableCell>
+                        <TableCell className="text-xs text-muted-foreground py-3">
+                          {ghost.created_by || <span className="italic">Unknown</span>}
+                        </TableCell>
+                        <TableCell className="py-3">
                           {ghost.section_name ? (
                             <Badge variant="secondary" className="text-xs">
                               {ghost.section_name}
@@ -294,13 +316,11 @@ export default function DataSanitizer() {
                           ) : (
                             <span className="text-muted-foreground text-xs italic">—</span>
                           )}
-                        </td>
-                        <td className="py-3 px-3">
-                          <span className="text-xs text-muted-foreground">
-                            {ghost.created_at ? isoToDisplay(ghost.created_at) : "—"}
-                          </span>
-                        </td>
-                        <td className="py-3 px-3 text-right">
+                        </TableCell>
+                        <TableCell className="text-xs text-muted-foreground py-3">
+                          {ghost.created_at ? isoToDisplay(ghost.created_at) : "—"}
+                        </TableCell>
+                        <TableCell className="py-3 text-right">
                           <Button
                             variant="default"
                             size="sm"
@@ -309,30 +329,35 @@ export default function DataSanitizer() {
                             <FileEdit className="w-4 h-4 mr-1.5" />
                             Complete Data
                           </Button>
-                        </td>
-                      </tr>
+                        </TableCell>
+                      </TableRow>
                     ))}
-                  </tbody>
-                </table>
+                  </TableBody>
+                </Table>
+                {/* Footer count */}
+                <div className="px-4 py-2 border-t border-border bg-muted/20 text-[10px] text-muted-foreground">
+                  {search || departmentFilter
+                    ? `${filteredGhosts.length} of ${ghosts.length} records`
+                    : `${ghosts.length} record${ghosts.length !== 1 ? "s" : ""} awaiting population`
+                  }
+                </div>
               </div>
-            </CardContent>
-          </Card>
-        )}
-
-        {/* ── Info Banner ── */}
-        {!error && ghosts.length > 0 && (
-          <div className="flex items-start gap-3 p-4 bg-muted/30 border border-border rounded-lg">
-            <Archive className="w-5 h-5 text-muted-foreground shrink-0 mt-0.5" />
-            <div className="text-xs text-muted-foreground">
-              <p className="font-medium text-foreground mb-1">Retrofitting Workflow</p>
-              <ol className="list-decimal list-inside space-y-0.5">
-                <li>Click "Complete Data" next to any flagged record.</li>
-                <li>The record opens in edit mode — Form Code, Serial, Created By, and Department remain locked.</li>
-                <li>Copy the data from your offline Word document and paste into the empty form fields.</li>
-                <li>Save — the record is now fully populated and the CHECK constraint will protect it going forward.</li>
-              </ol>
             </div>
-          </div>
+
+            {/* ── Info Banner ── */}
+            <div className="flex items-start gap-3 p-4 bg-card/40 backdrop-blur-xl border border-border/50 rounded-md">
+              <Archive className="w-5 h-5 text-muted-foreground shrink-0 mt-0.5" />
+              <div className="text-xs text-muted-foreground">
+                <p className="font-medium text-foreground mb-1">Retrofitting Workflow</p>
+                <ol className="list-decimal list-inside space-y-0.5">
+                  <li>Click "Complete Data" next to any flagged record.</li>
+                  <li>The record opens in edit mode — Form Code, Serial, Created By, and Department remain locked.</li>
+                  <li>Copy the data from your offline Word document and paste into the empty form fields.</li>
+                  <li>Save — the record is now fully populated and the CHECK constraint will protect it going forward.</li>
+                </ol>
+              </div>
+            </div>
+          </>
         )}
       </div>
     </AppShell>
