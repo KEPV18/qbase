@@ -29,8 +29,8 @@ interface GhostRecord {
   form_code: string;
   serial: string;
   form_name: string;
-  department: string | null;
   section: number | null;
+  section_name: string | null;
   created_by: string;
   created_at: string;
   updated_at: string;
@@ -287,9 +287,9 @@ export default function DataSanitizer() {
                           </span>
                         </td>
                         <td className="py-3 px-3">
-                          {ghost.department ? (
+                          {ghost.section_name ? (
                             <Badge variant="secondary" className="text-xs">
-                              {ghost.department}
+                              {ghost.section_name}
                             </Badge>
                           ) : (
                             <span className="text-muted-foreground text-xs italic">—</span>

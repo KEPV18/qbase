@@ -193,7 +193,7 @@ const RecordCreationPage: React.FC = () => {
     return (
       <AppShell breadcrumbs={[
         { label: "Dashboard", path: "/" },
-        ...(currentSectionName ? [{ label: currentSectionName, path: `/module/${SECTION_META[activeSection!]?.id || ''}` }] : []),
+        ...(currentSectionName ? [{ label: currentSectionName }] : []),
         { label: "Create Record" },
       ]}>
         <div className="max-w-4xl mx-auto page-transition">
@@ -240,7 +240,7 @@ const RecordCreationPage: React.FC = () => {
   return (
     <AppShell breadcrumbs={[
       { label: "Dashboard", path: "/" },
-      ...(currentSectionName ? [{ label: currentSectionName, path: `/module/${SECTION_META[activeSection!]?.id || ''}` }] : []),
+      ...(currentSectionName ? [{ label: currentSectionName }] : []),
       { label: "Create Record" },
     ]}>
     <div className="max-w-6xl mx-auto page-transition">

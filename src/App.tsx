@@ -34,7 +34,6 @@ const RecordListPage = lazy(() => import("./pages/RecordListPage"));
 const RecordViewPage = lazy(() => import("./pages/RecordViewPage"));
 const DataIntegrityPage = lazy(() => import("./pages/DataIntegrityPage"));
 const NotificationsPage = lazy(() => import("./pages/NotificationsPage"));
-const ModulePage = lazy(() => import("./pages/ModulePage"));
 const KPIDashboardPage = lazy(() => import("./pages/KPIDashboardPage"));
 const KPIReportsPage = lazy(() => import("./pages/KPIReportsPage"));
 const SWOTAnalysisPage = lazy(() => import("./pages/SWOTAnalysisPage"));
@@ -104,7 +103,6 @@ const App = () => {
                       <Route path="/forms" element={<PageBoundary><FormsRegistryPage /></PageBoundary>} />
                       <Route path="/form/*" element={<PageBoundary><FormTemplatePreview /></PageBoundary>} />
                       <Route path="/notifications" element={<PageBoundary><NotificationsPage /></PageBoundary>} />
-                      <Route path="/module/:moduleId" element={<PageBoundary><ModulePage /></PageBoundary>} />
                       <Route path="/kpi" element={<PageBoundary><KPIDashboardPage /></PageBoundary>} />
                       <Route path="/kpi/reports" element={<PageBoundary><KPIReportsPage /></PageBoundary>} />
                       <Route path="/swot-analysis" element={<PageBoundary><SWOTAnalysisPage /></PageBoundary>} />
@@ -120,7 +118,7 @@ const App = () => {
                       <Route path="/admin/data-sanitizer" element={<RequireRole roles={["admin"]}><PageBoundary><DataSanitizer /></PageBoundary></RequireRole>} />
                       <Route path="/admin/approvals" element={<PageBoundary><ApprovalQueuePage /></PageBoundary>} />
                       {/* Redirects for sidebar links */}
-                      <Route path="/modules" element={<Navigate to="/module/operations" replace />} />
+                      <Route path="/modules" element={<Navigate to="/" replace />} />
                       <Route path="/approvals" element={<Navigate to="/admin/approvals" replace />} />
                       <Route path="/admin" element={<Navigate to="/admin/accounts" replace />} />
                     </Route>

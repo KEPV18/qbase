@@ -44,7 +44,6 @@ function getPageLabel(path: string): string {
   if (PAGE_LABELS[path]) return PAGE_LABELS[path];
   if (path.startsWith("/records/")) return "Record View";
   if (path.startsWith("/project/")) return "Project";
-  if (path.startsWith("/module/")) return "Module";
   if (path.startsWith("/traceability/")) return "Traceability";
   return "QBase";
 }

@@ -24,7 +24,6 @@ const MAIN_NAV: NavSection = {
   title: "MAIN",
   items: [
     { label: "Dashboard", icon: LayoutDashboard, path: "/" },
-    { label: "Modules", icon: Layers, path: "/module/operations" },
     { label: "Forms", icon: FileText, path: "/forms" },
     { label: "Projects Workspace", icon: Briefcase, path: "/projects" },
     { label: "Analytics", icon: BarChart3, path: "/audit" },

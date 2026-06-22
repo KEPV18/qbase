@@ -5,13 +5,12 @@
 
 import { useNavigate, useLocation } from "react-router-dom";
 import {
-  LayoutDashboard, Layers, FileText, Briefcase, Menu,
+  LayoutDashboard, FileText, Briefcase, Menu,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const NAV_ITEMS = [
   { label: "Dashboard", icon: LayoutDashboard, path: "/" },
-  { label: "Modules", icon: Layers, path: "/module/operations" },
   { label: "Forms", icon: FileText, path: "/forms" },
   { label: "Projects", icon: Briefcase, path: "/projects" },
 ];
