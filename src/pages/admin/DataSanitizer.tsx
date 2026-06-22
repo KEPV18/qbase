@@ -17,7 +17,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
-import { supabase } from "@/integrations/supabase/client";
+import { restRpc } from "@/services/userService";
 import { isoToDisplay } from "@/schemas";
 
 // ============================================================================
@@ -55,21 +55,21 @@ export default function DataSanitizer() {
   const [summary, setSummary] = useState<ScanSummary>({ totalRecords: 0, ghostCount: 0 });
   const [error, setError] = useState<string | null>(null);
 
-  // ── Scan: fetch ghost records + total count ──────────────────────────────
+  // ── Scan: fetch ghost records + total count via raw fetch RPC ────────────
   const scan = useCallback(async () => {
     setScanning(true);
     setError(null);
     try {
       const [ghostResult, countResult] = await Promise.all([
-        supabase.rpc("get_empty_records"),
-        supabase.rpc("get_record_count"),
+        restRpc<GhostRecord[]>("get_empty_records"),
+        restRpc<number>("get_record_count"),
       ]);
 
-      if (ghostResult.error) throw ghostResult.error;
-      if (countResult.error) throw countResult.error;
+      if (ghostResult.error) throw new Error(ghostResult.error);
+      if (countResult.error) throw new Error(countResult.error);
 
-      const ghostData = (ghostResult.data || []) as GhostRecord[];
-      const total = (countResult.data as number) || 0;
+      const ghostData = ghostResult.data || [];
+      const total = countResult.data || 0;
 
       setGhosts(ghostData);
       setSummary({ totalRecords: total, ghostCount: ghostData.length });

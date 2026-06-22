@@ -76,6 +76,42 @@ export async function restGet<T>(path: string, opts?: { allowAnon?: boolean }): 
   }
 }
 
+/**
+ * Call a Supabase RPC via raw fetch (bypasses JS client hang on edge/CDN).
+ * @param fnName - RPC function name (e.g. "get_empty_records")
+ * @param params - optional params object sent as JSON body
+ * @param opts.allowAnon - fall back to anon key if no session token
+ */
+export async function restRpc<T>(
+  fnName: string,
+  params?: Record<string, unknown>,
+  opts?: { allowAnon?: boolean },
+): Promise<{ data: T | null; error: string | null }> {
+  const token = getStoredAccessToken();
+  if (!token && !opts?.allowAnon) return { data: null, error: "no_session_token" };
+  try {
+    const bearer = token || SUPABASE_ANON_KEY;
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/rpc/${fnName}`, {
+      method: "POST",
+      headers: {
+        apikey: SUPABASE_ANON_KEY,
+        Authorization: `Bearer ${bearer}`,
+        "Content-Type": "application/json",
+        Accept: "application/json",
+      },
+      body: params ? JSON.stringify(params) : "{}",
+    });
+    if (!res.ok) {
+      const txt = await res.text().catch(() => "");
+      return { data: null, error: `HTTP ${res.status}: ${txt.substring(0, 200)}` };
+    }
+    const data = await res.json();
+    return { data: data as T, error: null };
+  } catch (err: unknown) {
+    return { data: null, error: (err as Error)?.message || String(err) };
+  }
+}
+
 /* ─────────────────────────────────────────────────────────────────────────── */
 
 export async function fetchAllUserProfiles(): Promise<{ profiles: ProfileRow[]; roles: RoleRow[]; error?: string }> {
