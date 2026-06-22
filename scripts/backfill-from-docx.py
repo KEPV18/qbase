@@ -1844,11 +1844,16 @@ def json_to_sql_safe(obj: dict) -> str:
     return json.dumps(obj, ensure_ascii=False, indent=None, separators=(',', ':'))
 
 def generate_update_sql(serial: str, form_data: dict) -> str:
-    """Generate a single UPDATE statement."""
-    # Escape single quotes in the JSON string
+    """Generate a single UPDATE statement using dollar-quoting for JSON.
+    Uses $json$ tag to avoid any single-quote escaping issues.
+    If $json$ appears inside the JSON data (very unlikely), falls back to $j$ tag.
+    """
     json_str = json_to_sql_safe(form_data)
-    escaped = json_str.replace("'", "''")
-    return f"UPDATE public.records SET form_data = '{escaped}'::jsonb WHERE serial = '{serial}';"
+    # Dollar-quote: pick a tag that doesn't appear in the data
+    tag = "json"
+    while f"${tag}$" in json_str:
+        tag += "j"
+    return f"UPDATE public.records SET form_data = ${tag}${json_str}${tag}$::jsonb WHERE serial = '{serial}';"
 
 # ── Main ETL pipeline ────────────────────────────────────────────
 def main():
