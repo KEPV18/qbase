@@ -19,6 +19,7 @@ import {
   parseFrequency, applyFrequency, getUrgencyText, getLastFiledText,
   computeDeptHealth, type FormCompliance, type DeptHealth,
 } from "@/lib/compliance";
+import { deptBorderStyle, deptAccentStyle } from "@/lib/departmentTheme";
 
 const DEPT_ORDER = [
   "Sales & Customer Service",
@@ -41,10 +42,11 @@ function StatusText({ status }: { status: string }) {
 }
 
 /* ─── SLA Health Pill ─────────────────────────────────────────────── */
-function HealthPill({ health }: { health: DeptHealth }) {
+function HealthPill({ health, dept }: { health: DeptHealth; dept: string }) {
+  const accent = deptAccentStyle(dept);
   if (health.status === 'healthy') {
     return (
-      <span className="inline-flex items-center gap-1 text-xs font-medium text-emerald-600 dark:text-emerald-400">
+      <span className="inline-flex items-center gap-1 text-xs font-medium text-emerald-600 dark:text-emerald-400" style={{ ...accent, backgroundColor: undefined, border: 'none', padding: 0 }}>
         <CheckCircle className="w-3 h-3" /> Up to date
       </span>
     );
@@ -75,11 +77,13 @@ function DeptMetricCard({
   isActive: boolean;
   onClick: () => void;
 }) {
+  const borderStyle = deptBorderStyle(dept);
   return (
     <button
       onClick={onClick}
+      style={borderStyle}
       className={cn(
-        "text-left rounded-xl border p-4 transition-all w-full",
+        "text-left rounded-r-xl border border-l-0 p-4 transition-all w-full",
         isActive
           ? "bg-card border-foreground/20 shadow-sm"
           : "bg-card border-border dark:border-border hover:border-foreground/20"
@@ -87,7 +91,7 @@ function DeptMetricCard({
     >
       <div className="flex items-center justify-between mb-2">
         <p className="text-sm font-semibold text-foreground dark:text-foreground">{dept}</p>
-        <HealthPill health={health} />
+        <HealthPill health={health} dept={dept} />
       </div>
       <div className="flex items-center gap-4">
         <div>
@@ -252,7 +256,7 @@ export default function Index() {
         </div>
         <button
           onClick={() => navigate("/create")}
-          className="flex items-center gap-2 px-4 py-2.5 rounded-lg bg-foreground text-white text-sm font-medium hover:bg-foreground/90 transition-colors"
+          className="flex items-center gap-2 px-4 py-2.5 rounded-lg bg-foreground text-primary-foreground dark:bg-primary dark:text-primary-foreground text-sm font-medium hover:bg-foreground/90 dark:hover:bg-primary/90 transition-colors"
         >
           <Plus className="w-4 h-4" />
           New Record

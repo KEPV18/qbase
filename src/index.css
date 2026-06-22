@@ -95,6 +95,15 @@
     --module-rnd: 17 88% 55%;
     --module-management: 226 100% 60%;
     --module-sales: 186 100% 50%;
+
+    /* ── Department Chromatic Identity ── */
+    --dept-sales: 217 71% 53%;        /* #3b82f6 — Blue */
+    --dept-operations: 25 95% 53%;    /* #f97316 — Orange */
+    --dept-quality: 226 100% 60%;     /* #2563eb — Sapphire */
+    --dept-procurement: 173 80% 40%;  /* #14b8a6 — Teal */
+    --dept-hr: 271 91% 65%;           /* #a855f7 — Violet */
+    --dept-rnd: 187 85% 53%;          /* #06b6d4 — Cyan */
+    --dept-management: 239 84% 64%;   /* #6366f1 — Indigo */
   }
 
   /* ── Dark Mode: Obsidian ── */
@@ -137,6 +146,15 @@
     --border: 240 4% 15%;            /* #27272a */
     --input: 240 4% 15%;
     --ring: 239 84% 64%;
+
+    /* ── Department Chromatic Identity (dark) ── */
+    --dept-sales: 217 71% 58%;
+    --dept-operations: 25 95% 58%;
+    --dept-quality: 226 100% 65%;
+    --dept-procurement: 173 80% 45%;
+    --dept-hr: 271 91% 70%;
+    --dept-rnd: 187 85% 58%;
+    --dept-management: 239 84% 69%;
   }
 
   /* ── Accent Color Overrides ── */
@@ -437,6 +455,20 @@
 
   .text-glow-cyan { text-shadow: none; }
   .text-glow-violet { text-shadow: none; }
+
+  /* ── Semantic Status Glows (immutable — unaffected by primary picker) ── */
+  .glow-success {
+    box-shadow: 0 0 12px hsl(var(--success) / 0.25), 0 0 4px hsl(var(--success) / 0.1);
+  }
+  .glow-destructive {
+    box-shadow: 0 0 12px hsl(var(--destructive) / 0.25), 0 0 4px hsl(var(--destructive) / 0.1);
+  }
+  .glow-warning {
+    box-shadow: 0 0 12px hsl(var(--warning) / 0.25), 0 0 4px hsl(var(--warning) / 0.1);
+  }
+  .glow-info {
+    box-shadow: 0 0 12px hsl(var(--info) / 0.25), 0 0 4px hsl(var(--info) / 0.1);
+  }
 }
 
 /* ══════════════════════════════════════════════════

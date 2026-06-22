@@ -31,6 +31,7 @@ import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { restRpc } from "@/services/userService";
 import { isoToDisplay } from "@/schemas";
+import { getDeptTheme, deptBorderStyle, deptAccentStyle } from "@/lib/departmentTheme";
 
 // ============================================================================
 // Types
@@ -288,11 +289,15 @@ export default function DataSanitizer() {
                           No records match your search.
                         </TableCell>
                       </TableRow>
-                    ) : filteredGhosts.map((ghost, i) => (
+                    ) : filteredGhosts.map((ghost, i) => {
+                      const deptName = ghost.section_name || "Management & Documentation";
+                      const rowStyle = deptBorderStyle(deptName);
+                      const deptBadge = deptAccentStyle(deptName);
+                      return (
                       <TableRow
                         key={ghost.id}
                         className="border-b border-border/30 hover:bg-muted/20 transition-colors animate-fade-in"
-                        style={{ animationDelay: `${i * 50}ms` }}
+                        style={{ ...rowStyle, animationDelay: `${i * 50}ms` }}
                       >
                         <TableCell className="font-mono text-xs font-semibold text-foreground py-3">
                           {ghost.serial}
@@ -310,9 +315,12 @@ export default function DataSanitizer() {
                         </TableCell>
                         <TableCell className="py-3">
                           {ghost.section_name ? (
-                            <Badge variant="secondary" className="text-xs">
+                            <span
+                              className="backdrop-blur-sm border rounded-md px-2 py-0.5 text-xs font-medium"
+                              style={deptBadge}
+                            >
                               {ghost.section_name}
-                            </Badge>
+                            </span>
                           ) : (
                             <span className="text-muted-foreground text-xs italic">—</span>
                           )}
@@ -331,8 +339,8 @@ export default function DataSanitizer() {
                           </Button>
                         </TableCell>
                       </TableRow>
-                    ))}
-                  </TableBody>
+                      )})}
+                    </TableBody>
                 </Table>
                 {/* Footer count */}
                 <div className="px-4 py-2 border-t border-border bg-muted/20 text-[10px] text-muted-foreground">

@@ -26,6 +26,7 @@ import { exportRecordToDocx } from '../services/docxExport';
 import { exportRecordToJson, exportRecordToCsv } from '../services/fileExport';
 import { toast } from 'sonner';
 import { AppShell } from '@/components/layout/AppShell';
+import { deptBorderStyle, deptAccentStyle } from '@/lib/departmentTheme';
 
 // ============================================================================
 // Constants
@@ -394,11 +395,19 @@ const RecordViewPage: React.FC = () => {
         </div>
       </div>
 
-      {/* ─── Metadata Card ─────────────────────────────────────────────── */}
-      <div className="ds-card p-5 mb-6">
+      {/* ─── Department Chromatic Identity ── */}
+      {(() => {
+        const deptName = schema?.sectionName || "Management & Documentation";
+        const cardBorder = deptBorderStyle(deptName);
+        const deptAccent = deptAccentStyle(deptName);
+        return (
+      <div className="ds-card p-5 mb-6" style={cardBorder}>
         <div className="flex items-center gap-2 mb-4">
           <Lock className="w-4 h-4 text-muted-foreground" />
           <h3 className="text-sm font-semibold text-foreground">System Metadata</h3>
+          <span className="backdrop-blur-sm border rounded-md px-2 py-0.5 text-[10px] font-semibold ml-2" style={deptAccent}>
+            {deptName}
+          </span>
           {integritySeverity !== 'clean' && mode === 'view' && (
             <span className={`ml-auto px-2 py-0.5 text-xs font-medium rounded-full border ${
               integritySeverity === 'critical'
@@ -521,7 +530,7 @@ const RecordViewPage: React.FC = () => {
             View History ({originalRecord._editCount as number} edits)
           </button>
         )}
-      </div>
+      </div>); })()}
 
       {/* ─── Content ──────────────────────────────────────────────────── */}
 

@@ -10,6 +10,7 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { restGet } from '@/services/userService';
 import { emitEvent, Events } from '@/services/eventBus';
+import { hexToHsl } from '@/lib/utils';
 
 // ============================================================================
 // Types
@@ -118,12 +119,13 @@ export function TenantIdentityProvider({ children }: { children: React.ReactNode
 
   const identity = useMemo(() => data || DEFAULT_IDENTITY, [data]);
 
-  // Apply theme_color as CSS custom property for --primary accent globally
+  // Apply theme_color as HSL CSS custom properties for --primary/--ring
   useEffect(() => {
     const tc = identity.themeColor;
     if (tc) {
-      document.documentElement.style.setProperty('--primary', tc);
-      document.documentElement.style.setProperty('--ring', tc);
+      const hsl = hexToHsl(tc);
+      document.documentElement.style.setProperty('--primary', hsl);
+      document.documentElement.style.setProperty('--ring', hsl);
     }
   }, [identity.themeColor]);
 
