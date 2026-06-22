@@ -10,7 +10,7 @@ import {
   ArrowLeft, Edit3, Save, X, AlertTriangle, Shield, Clock, User,
   FileText, CheckCircle, Lock, Loader2, RefreshCw, History,
   Download, FileJson, FileSpreadsheet, FileText as FileTextIcon,
-  Trash2, Printer,
+  Trash2, Printer, ChevronLeft, ChevronRightIcon,
 } from 'lucide-react';
 import { getFormSchema } from '../data/formSchemas';
 import { isoToDisplay } from '../schemas';
@@ -295,16 +295,52 @@ const RecordViewPage: React.FC = () => {
     }
   };
 
+  // ─── Prev/Next navigation ─────────────────────────────────────────────
+  const recordNav = useMemo(() => {
+    if (!originalRecord || !allRecords) return { prevSerial: null, nextSerial: null };
+    const sameForm = allRecords
+      .filter(r => String(r.formCode) === String(originalRecord.formCode))
+      .sort((a, b) => String(a.serial).localeCompare(String(b.serial)));
+    const idx = sameForm.findIndex(r => r.id === originalRecord.id);
+    if (idx === -1) return { prevSerial: null, nextSerial: null };
+    return {
+      prevSerial: idx > 0 ? sameForm[idx - 1].serial : null,
+      nextSerial: idx < sameForm.length - 1 ? sameForm[idx + 1].serial : null,
+    };
+  }, [originalRecord, allRecords]);
+
   // ─── Render ────────────────────────────────────────────────────────────
 
   return (
     <AppShell breadcrumbs={getBreadcrumbs()}>
     <div className="max-w-5xl mx-auto page-transition px-4 py-6">
       {/* Top bar */}
-      <div className="flex items-center justify-between mb-6">
-        <button onClick={() => navigate(`/records?formCode=${encodeURIComponent(originalRecord.formCode as string)}`)} className="flex items-center gap-2 text-muted-foreground hover:text-primary transition-colors ds-press rounded-lg px-2 py-1">
-          <ArrowLeft className="w-4 h-4" /> <span className="text-sm">{schema?.sectionName || 'Records'}</span>
-        </button>
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-6">
+        <div className="flex items-center gap-2">
+          <button onClick={() => navigate(`/records?formCode=${encodeURIComponent(originalRecord.formCode as string)}`)} className="flex items-center gap-2 text-muted-foreground hover:text-primary transition-colors ds-press rounded-lg px-2 py-1">
+            <ArrowLeft className="w-4 h-4" /> <span className="text-sm">{schema?.sectionName || 'Records'}</span>
+          </button>
+          {mode === 'view' && (
+            <div className="flex items-center gap-1 ml-2 pl-2 border-l border-border">
+              <button
+                onClick={() => recordNav.prevSerial && navigate(`/records/${encodeURIComponent(String(recordNav.prevSerial))}`)}
+                disabled={!recordNav.prevSerial}
+                className="p-1.5 rounded-md text-muted-foreground hover:text-foreground hover:bg-muted transition-colors disabled:opacity-30 disabled:pointer-events-none"
+                title="Previous record"
+              >
+                <ChevronLeft className="w-4 h-4" />
+              </button>
+              <button
+                onClick={() => recordNav.nextSerial && navigate(`/records/${encodeURIComponent(String(recordNav.nextSerial))}`)}
+                disabled={!recordNav.nextSerial}
+                className="p-1.5 rounded-md text-muted-foreground hover:text-foreground hover:bg-muted transition-colors disabled:opacity-30 disabled:pointer-events-none"
+                title="Next record"
+              >
+                <ChevronRightIcon className="w-4 h-4" />
+              </button>
+            </div>
+          )}
+        </div>
 
         <div className="flex items-center gap-2">
           {/* Export */}
