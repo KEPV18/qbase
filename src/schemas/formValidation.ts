@@ -652,13 +652,22 @@ export type F34Data = z.infer<typeof F34Schema>;
 
 export const F35Schema = z.object({
   serial: AUTO_SERIAL,
+  date: ISO_DATE,
   month: MONTH,
   year: YEAR,
-  project: REQUIRED_TEXT,
-  progress: REQUIRED_TEXT,
-  issues: OPTIONAL_TEXT,
-  next_steps: OPTIONAL_TEXT,
-  monitored_by: SIGNATURE,
+  items: z.array(z.object({
+    product_name: REQUIRED_TEXT,
+    specification: REQUIRED_TEXT,
+    new_specification: REQUIRED_TEXT,
+    customer: REQUIRED_TEXT,
+    reason: REQUIRED_TEXT,
+    dev_completion_date: REQUIRED_TEXT,
+    actual_completion_date: REQUIRED_TEXT,
+    rejection_reason: OPTIONAL_TEXT,
+    action_taken: REQUIRED_TEXT,
+    status: REQUIRED_TEXT,
+    design_head_sign: REQUIRED_TEXT,
+  })).min(1, 'At least one monitoring item required'),
 });
 export type F35Data = z.infer<typeof F35Schema>;
 

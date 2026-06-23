@@ -1,16 +1,24 @@
 // ============================================================================
-// F/35 — Design and Development Monitoring Register
+// F/35 — Design & Development Monitoring Register
+// Canonical rewrite matching DOCX structure exactly.
+// DOCX: 11C x 16R — Header (title + Rev No.), 11-column monitoring table
+//   (Product Name | Specification | New Specification | Name of the customer |
+//    Reason of Development | Development Completion Date | Actual Completion
+//    Date | Reason for Rejection | Action Taken | Status | Design Head Sign)
+// Pillar 1: Horizontal Matrix — 11-column table rendered as HTML table
+// Pillar 2: Deep DOCX Ingestion — full lifecycle text extraction
+// Pillar 4: Continuous Validation — schema keys match template exactly
 // ============================================================================
 
-import React, { useState, useCallback } from "react";
+import React from "react";
 import { cn } from "@/lib/utils";
-import { Plus, Trash2 } from "lucide-react";
+import { ClipboardList } from "lucide-react";
 
 export interface F35Props {
   data?: Record<string, unknown>;
   isTemplate?: boolean;
   editMode?: boolean;
-  onChange?: (field: string, value: string) => void;
+  onChange?: (field: string, value: string | Record<string, unknown>) => void;
   className?: string;
 }
 
@@ -21,98 +29,114 @@ function val(data: Record<string, unknown> | undefined, key: string): string {
   return typeof v === "string" ? v : String(v);
 }
 
-interface RowData {
-  productName: string; specification: string; newSpecification: string; customerName: string; reasonOfDevelopment: string; startDate: string; targetDate: string; progress: string; remarks: string;
+interface MonitorItem {
+  product_name: string;
+  specification: string;
+  new_specification: string;
+  customer: string;
+  reason: string;
+  dev_completion_date: string;
+  actual_completion_date: string;
+  rejection_reason: string;
+  action_taken: string;
+  status: string;
+  design_head_sign: string;
 }
 
-function parseRows(d: Record<string, unknown>, count: number = 5): RowData[] {
-  const raw = d.items || d.rows || [];
-  if (Array.isArray(raw) && raw.length > 0 && typeof raw[0] === "object") return raw as RowData[];
-  return Array.from({ length: count }, () => ({
-    productName: "", specification: "", newSpecification: "", customerName: "", reasonOfDevelopment: "", startDate: "", targetDate: "", progress: "", remarks: "",
-  }));
+function parseItems(d: Record<string, unknown>): MonitorItem[] {
+  const raw = d.items;
+  if (Array.isArray(raw) && raw.length > 0 && typeof raw[0] === "object") return raw as MonitorItem[];
+  return [];
 }
 
 export function F35Template({ data, isTemplate = true, editMode = false, onChange, className }: F35Props) {
   const d = data ?? {};
   const ph = isTemplate && !editMode;
-  const [rows, setRows] = useState<RowData[]>(() => parseRows(d));
+  const items = parseItems(d);
 
-  const updateRow = useCallback((idx: number, key: keyof RowData, value: string) => {
-    setRows(prev => { const next = [...prev]; next[idx] = { ...next[idx], [key]: value }; return next; });
-    const updated = [...rows]; updated[idx] = { ...updated[idx], [key]: value };
-    onChange?.("items", JSON.stringify(updated));
-  }, [rows, onChange]);
-
-  const addRow = useCallback(() => {
-    setRows(prev => [...prev, { productName: "", specification: "", newSpecification: "", customerName: "", reasonOfDevelopment: "", startDate: "", targetDate: "", progress: "", remarks: "" }]);
-  }, []);
-
-  const removeRow = useCallback((idx: number) => { setRows(prev => prev.filter((_, i) => i !== idx)); }, []);
-
-  const inp = (key: string, label: string, width: string = "w-48") =>
+  const inp = (key: string, label: string, width: string = "w-full") =>
     editMode ? (
-      <input className={cn("border-b border-dashed border-foreground/40 bg-transparent text-xs px-1", width)} value={val(d, key)} onChange={e => onChange?.(key, e.target.value)} placeholder={label} />
+      <input className={cn("border-b border-dashed border-foreground/40 bg-transparent text-sm px-1", width)} value={val(d, key)} onChange={e => onChange?.(key, e.target.value)} placeholder={label} />
     ) : (
-      <span className={cn("border-b border-dashed border-foreground/30 px-1 inline-block", width)}>{val(d, key) || (ph ? "___" : "")}</span>
+      <span className={cn("border-b border-dashed border-foreground/30 px-1 inline-block min-w-[4rem]", width)}>{val(d, key) || (ph ? "___" : "")}</span>
     );
 
-  const cellInp = (idx: number, key: keyof RowData, label: string) =>
-    editMode ? (
-      <input className="w-full bg-transparent text-xs px-1 border-none outline-none" value={rows[idx]?.[key] || ""} onChange={e => updateRow(idx, key, e.target.value)} placeholder={label} />
+  const cellInp = (idx: number, subKey: string, label: string) => {
+    const item = items[idx] || {} as MonitorItem;
+    return editMode ? (
+      <input className="w-full bg-transparent text-[10px] px-0.5 border-none outline-none" value={(item as any)[subKey] || ""} onChange={e => {
+        const updated = [...items];
+        updated[idx] = { ...updated[idx], [subKey]: e.target.value };
+        onChange?.("items", updated);
+      }} placeholder={label} />
     ) : (
-      <span className="text-xs">{rows[idx]?.[key] || ""}</span>
+      <span className="text-[10px] leading-tight block">{(item as any)[subKey] || ""}</span>
     );
+  };
 
   return (
     <div className={cn("bg-background dark:bg-[#1e1d1a] text-foreground text-sm print:bg-white print:text-black print:border-black", className)}>
-      <div className="grid grid-cols-[3fr_1fr] border border-border">
-        <div className="p-2 font-bold bg-primary/5 text-base">Design and Development Monitoring Register</div>
+      {/* ── Header ── */}
+      <div className="grid grid-cols-[5fr_1fr] border border-border">
+        <div className="p-2 font-bold bg-primary/5 text-base flex items-center gap-2">
+          <ClipboardList className="w-5 h-5 text-primary" />
+          Design & Development Monitoring Register
+        </div>
         <div className="p-2 border-l border-border bg-primary/5 text-right text-xs">
           F/35 Rev No. {val(d, "serial") || (ph ? "{{SERIAL}}" : "—")}
         </div>
       </div>
 
-      {/* Column headers */}
-      <div className="grid grid-cols-[1fr_1fr_1fr_1fr_1fr_70px_70px_60px_80px] border-x border-b border-border text-[9px] font-semibold bg-muted">
-        <div className="p-1 border-r border-border">Product Name</div>
-        <div className="p-1 border-r border-border">Specification</div>
-        <div className="p-1 border-r border-border">New Specification</div>
-        <div className="p-1 border-r border-border">Customer</div>
-        <div className="p-1 border-r border-border">Reason for Development</div>
-        <div className="p-1 border-r border-border">Start Date</div>
-        <div className="p-1 border-r border-border">Target Date</div>
-        <div className="p-1 border-r border-border">Progress</div>
-        <div className="p-1">Remarks</div>
+      {/* ── Month + Year ── */}
+      <div className="grid grid-cols-[1fr_1fr] border-x border-b border-border text-xs">
+        <div className="p-1.5 border-r border-border">
+          <span className="font-semibold">Month 🡪</span> {inp("month", "Month", "w-32")}
+        </div>
+        <div className="p-1.5">
+          <span className="font-semibold">Year 🡪</span> {inp("year", "2026", "w-20")}
+        </div>
       </div>
 
-      {rows.map((row, idx) => (
-        <div key={idx} className="grid grid-cols-[1fr_1fr_1fr_1fr_1fr_70px_70px_60px_80px] border-x border-b border-border text-xs relative group min-h-[28px]">
-          <div className="p-1 border-r border-border">{cellInp(idx, "productName", "Product")}</div>
-          <div className="p-1 border-r border-border">{cellInp(idx, "specification", "Spec")}</div>
-          <div className="p-1 border-r border-border">{cellInp(idx, "newSpecification", "New Spec")}</div>
-          <div className="p-1 border-r border-border">{cellInp(idx, "customerName", "Customer")}</div>
-          <div className="p-1 border-r border-border">{cellInp(idx, "reasonOfDevelopment", "Reason")}</div>
-          <div className="p-1 border-r border-border">{cellInp(idx, "startDate", "Date")}</div>
-          <div className="p-1 border-r border-border">{cellInp(idx, "targetDate", "Date")}</div>
-          <div className="p-1 border-r border-border text-center">{cellInp(idx, "progress", "%")}</div>
-          <div className="p-1">{cellInp(idx, "remarks", "Notes")}</div>
-          {editMode && rows.length > 1 && (
-            <button onClick={() => removeRow(idx)} className="absolute -right-6 top-1/2 -translate-y-1/2 text-destructive opacity-0 group-hover:opacity-100 transition-opacity">
-              <Trash2 className="w-3 h-3" />
-            </button>
-          )}
-        </div>
-      ))}
-
-      {editMode && (
-        <button onClick={addRow} className="mt-1 flex items-center gap-1 text-xs text-primary hover:underline mx-auto">
-          <Plus className="w-3 h-3" /> Add Row
-        </button>
-      )}
-
-      <div className="mt-3 pt-2 border-t border-foreground/20 flex justify-end text-xs">
-        <div>Authorised By: {inp("authorised_by", "Name")}</div>
+      {/* ── 11-Column Monitoring Table ── */}
+      <div className="border-x border-b border-border overflow-x-auto">
+        <table className="w-full border-collapse text-[10px]">
+          <thead>
+            <tr className="bg-muted/70">
+              <th className="border border-border p-1 font-semibold whitespace-nowrap min-w-[100px]">Product Name</th>
+              <th className="border border-border p-1 font-semibold whitespace-nowrap min-w-[90px]">Specification</th>
+              <th className="border border-border p-1 font-semibold whitespace-nowrap min-w-[110px]">New Specification</th>
+              <th className="border border-border p-1 font-semibold whitespace-nowrap min-w-[100px]">Name of the Customer</th>
+              <th className="border border-border p-1 font-semibold whitespace-nowrap min-w-[100px]">Reason of Development</th>
+              <th className="border border-border p-1 font-semibold whitespace-nowrap min-w-[80px]">Dev Completion Date</th>
+              <th className="border border-border p-1 font-semibold whitespace-nowrap min-w-[80px]">Actual Completion Date</th>
+              <th className="border border-border p-1 font-semibold whitespace-nowrap min-w-[90px]">Reason for Rejection</th>
+              <th className="border border-border p-1 font-semibold whitespace-nowrap min-w-[100px]">Action Taken</th>
+              <th className="border border-border p-1 font-semibold whitespace-nowrap min-w-[70px]">Status</th>
+              <th className="border border-border p-1 font-semibold whitespace-nowrap min-w-[80px]">Design Head Sign</th>
+            </tr>
+          </thead>
+          <tbody>
+            {items.length > 0 ? items.map((item, idx) => (
+              <tr key={idx} className="even:bg-muted/20">
+                <td className="border border-border p-1">{cellInp(idx, "product_name", "Product")}</td>
+                <td className="border border-border p-1">{cellInp(idx, "specification", "Spec")}</td>
+                <td className="border border-border p-1">{cellInp(idx, "new_specification", "New Spec")}</td>
+                <td className="border border-border p-1">{cellInp(idx, "customer", "Customer")}</td>
+                <td className="border border-border p-1">{cellInp(idx, "reason", "Reason")}</td>
+                <td className="border border-border p-1">{cellInp(idx, "dev_completion_date", "Date")}</td>
+                <td className="border border-border p-1">{cellInp(idx, "actual_completion_date", "Date")}</td>
+                <td className="border border-border p-1">{cellInp(idx, "rejection_reason", "Reason")}</td>
+                <td className="border border-border p-1">{cellInp(idx, "action_taken", "Action")}</td>
+                <td className="border border-border p-1">{cellInp(idx, "status", "Status")}</td>
+                <td className="border border-border p-1">{cellInp(idx, "design_head_sign", "Sign")}</td>
+              </tr>
+            )) : (
+              <tr>
+                <td colSpan={11} className="p-2 text-xs text-muted-foreground italic text-center">No monitoring items recorded</td>
+              </tr>
+            )}
+          </tbody>
+        </table>
       </div>
     </div>
   );
