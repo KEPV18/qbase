@@ -1,13 +1,8 @@
 // ============================================================================
 // F/12 — Disposal of Non-Conforming Products
-// DOCX: 1 table, 13 cells per row (some merged).
-// Column layout (13 cells, 0-indexed):
-//   0=Sr.No | 1=Date | 2=Stage | 3=Product | 4=Id.No |
-//   5-6=Reason(merged, colspan=2) | 7=Qty | 8=DisposalAction |
-//   9-10=Re-Inspection(merged, colspan=2) | 11=Qty.OK | 12=Signature
-//
-// Renders as a proper HTML <table> with colspan for merged cells.
-// NO "Department" field — the DOCX has no such field.
+// 11 canonical keys per row (deduplicated from 13-cell DOCX):
+//   sr_no | date | stage | product_name | id_no | nonconformity_reason
+//   | qty | disposal_action | re_inspection | qty_ok | signature
 // ============================================================================
 
 import React, { useState, useCallback } from "react";
@@ -30,9 +25,9 @@ function val(data: Record<string, unknown> | undefined, key: string): string {
 }
 
 interface RowData {
-  srNo: string; date: string; stage: string; productName: string;
-  idNo: string; reason: string; qty: string; disposalAction: string;
-  reInspection: string; qtyOk: string; signature: string;
+  sr_no: string; date: string; stage: string; product_name: string;
+  id_no: string; nonconformity_reason: string; qty: string;
+  disposal_action: string; re_inspection: string; qty_ok: string; signature: string;
 }
 
 function parseRows(d: Record<string, unknown>): RowData[] {
@@ -40,7 +35,7 @@ function parseRows(d: Record<string, unknown>): RowData[] {
   if (Array.isArray(raw) && raw.length > 0 && typeof raw[0] === "object") {
     return raw as RowData[];
   }
-  return [{ srNo: "1", date: "", stage: "", productName: "", idNo: "", reason: "", qty: "", disposalAction: "", reInspection: "", qtyOk: "", signature: "" }];
+  return [{ sr_no: "1", date: "", stage: "", product_name: "", id_no: "", nonconformity_reason: "", qty: "", disposal_action: "", re_inspection: "", qty_ok: "", signature: "" }];
 }
 
 export function F12Template({ data, isTemplate = true, editMode = false, onChange, className }: F12Props) {
@@ -60,11 +55,11 @@ export function F12Template({ data, isTemplate = true, editMode = false, onChang
   }, [rows, onChange]);
 
   const addRow = useCallback(() => {
-    setRows(prev => [...prev, { srNo: String(prev.length + 1), date: "", stage: "", productName: "", idNo: "", reason: "", qty: "", disposalAction: "", reInspection: "", qtyOk: "", signature: "" }]);
+    setRows(prev => [...prev, { sr_no: String(prev.length + 1), date: "", stage: "", product_name: "", id_no: "", nonconformity_reason: "", qty: "", disposal_action: "", re_inspection: "", qty_ok: "", signature: "" }]);
   }, []);
 
   const removeRow = useCallback((idx: number) => {
-    setRows(prev => prev.filter((_, i) => i !== idx).map((r, i) => ({ ...r, srNo: String(i + 1) })));
+    setRows(prev => prev.filter((_, i) => i !== idx).map((r, i) => ({ ...r, sr_no: String(i + 1) })));
   }, []);
 
   const inp = (key: string, label: string, width: string = "w-36") =>
@@ -94,23 +89,18 @@ export function F12Template({ data, isTemplate = true, editMode = false, onChang
         </div>
       </div>
 
-      {/* Top info row — NO "Department" field (DOCX has no such field) */}
+      {/* Top info row — Month only (no Department field) */}
       <div className="border-x border-b border-border text-xs p-1.5">
         Month 🡪 {inp("month", "Month")}
       </div>
 
       {/* ==================================================================
-          PROPER HTML <table> WITH colspan FOR MERGED CELLS
-          Matches DOCX 13-cell layout exactly:
-          
+          PROPER HTML <table> — 11 columns matching canonical keys
           Header: Sr.No | Date | Stage | Name of Product | Id. No.
                   | Reason for Nonconformity(colspan=2) | Qty.
                   | Disposal Action Taken
                   | Re-Inspection, If Any(colspan=2) | Qty. OK
                   | Sign. Of Authorised Person
-          
-          Data rows: same 13-cell layout with reason(colspan=2)
-                     and reInspection(colspan=2)
           ================================================================== */}
       <table className="w-full border-collapse border-x border-b border-border text-xs">
         <thead>
@@ -134,13 +124,13 @@ export function F12Template({ data, isTemplate = true, editMode = false, onChang
               <td className="border-r border-b border-border p-1 text-center text-muted-foreground">{idx + 1}</td>
               <td className="border-r border-b border-border p-1">{cellInp(idx, "date", "Date")}</td>
               <td className="border-r border-b border-border p-1">{cellInp(idx, "stage", "Stage")}</td>
-              <td className="border-r border-b border-border p-1">{cellInp(idx, "productName", "Product")}</td>
-              <td className="border-r border-b border-border p-1 text-center">{cellInp(idx, "idNo", "ID No")}</td>
-              <td colSpan={2} className="border-r border-b border-border p-1">{cellInp(idx, "reason", "Reason")}</td>
+              <td className="border-r border-b border-border p-1">{cellInp(idx, "product_name", "Product")}</td>
+              <td className="border-r border-b border-border p-1 text-center">{cellInp(idx, "id_no", "ID No")}</td>
+              <td colSpan={2} className="border-r border-b border-border p-1">{cellInp(idx, "nonconformity_reason", "Reason")}</td>
               <td className="border-r border-b border-border p-1 text-center">{cellInp(idx, "qty", "Qty")}</td>
-              <td className="border-r border-b border-border p-1">{cellInp(idx, "disposalAction", "Action")}</td>
-              <td colSpan={2} className="border-r border-b border-border p-1 text-center">{cellInp(idx, "reInspection", "Re-Insp")}</td>
-              <td className="border-r border-b border-border p-1 text-center">{cellInp(idx, "qtyOk", "OK")}</td>
+              <td className="border-r border-b border-border p-1">{cellInp(idx, "disposal_action", "Action")}</td>
+              <td colSpan={2} className="border-r border-b border-border p-1 text-center">{cellInp(idx, "re_inspection", "Re-Insp")}</td>
+              <td className="border-r border-b border-border p-1 text-center">{cellInp(idx, "qty_ok", "OK")}</td>
               <td className="border-b border-border p-1 text-center">{cellInp(idx, "signature", "Sign")}</td>
               {editMode && rows.length > 1 && (
                 <td className="border-b border-border p-1 text-center">
@@ -160,7 +150,7 @@ export function F12Template({ data, isTemplate = true, editMode = false, onChang
         </button>
       )}
 
-      {/* Authorised Signature footer — NOT a data column, just a footer */}
+      {/* Authorised Signature footer */}
       <div className="border-x border-b border-border p-2 text-xs flex justify-end">
         <span className="font-semibold mr-2">Authorised Signature - Functional Head:</span>
         <span className="border-b border-dashed border-foreground/30 px-2">

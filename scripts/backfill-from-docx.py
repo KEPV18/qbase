@@ -365,9 +365,13 @@ def extract_F11(doc: Document) -> dict:
     return data
 
 def extract_F12(doc: Document) -> dict:
-    """F/12 Disposal of Non-Conforming Products — header + table with 13 cols.
-    Column layout (13 cells, some merged):
-    0=Sr.No, 1=Date, 2=Stage, 3=Product, 4=Id.No, 5-6=Reason(merged), 7=Qty, 8=DisposalAction, 9-10=Re-Inspection(merged), 11=Qty.OK, 12=Signature
+    """F/12 Disposal of Non-Conforming Products — 11 canonical keys.
+    
+    DOCX has 13 cells per row (some merged). Deduplicate to 11 keys:
+      0=sr_no | 1=date | 2=stage | 3=product_name | 4=id_no |
+      5=nonconformity_reason (cells[5-6] merged) | 7=qty |
+      8=disposal_action | 9=re_inspection (cells[9-10] merged) |
+      11=qty_ok | 12=signature
     """
     data = {}
     if not doc.tables:
@@ -389,53 +393,41 @@ def extract_F12(doc: Document) -> dict:
     header_row_idx = -1
     for ri, row in enumerate(t.rows):
         cells_text = [c.text.strip().lower() for c in row.cells]
-        if cells_text[0].startswith("sr. no") and "date" in cells_text and "stage" in cells_text:
+        if len(cells_text) >= 3 and cells_text[0].startswith("sr. no") and "date" in cells_text and "stage" in cells_text:
             header_row_idx = ri
             break
     
     if header_row_idx < 0:
         return data
     
-    # Build column map from header row positions
-    # Use the 13-cell layout: position → field name
-    COL_MAP = {
-        0: "srNo",
-        1: "date", 
-        2: "stage",
-        3: "productName",
-        4: "idNo",
-        5: "reason",     # merged with 6
-        6: "reason",     # duplicate (merged cell)
-        7: "qty",
-        8: "disposalAction",
-        9: "reInspection",  # merged with 10
-        10: "reInspection", # duplicate (merged cell)
-        11: "qtyOk",
-        12: "signature",
-    }
-    
+    # 13-cell DOCX → 11 canonical keys (deduplicate merged cells 5-6 and 9-10)
     items = []
     for row in t.rows[header_row_idx + 1:]:
         cells = all_cells(row.cells)
         if not any(c.strip() for c in cells):
-            continue  # skip empty rows
+            continue
         
-        item = {}
-        for ci in range(min(len(cells), 13)):
-            field = COL_MAP.get(ci)
-            if field and cells[ci].strip():
-                # Don't overwrite with duplicate merged cell value
-                if field not in item:
-                    item[field] = cells[ci].strip()
+        sr = cells[0].strip() if len(cells) > 0 else ''
+        if not sr:
+            continue
         
-        if item.get("srNo") or item.get("date") or item.get("productName"):
-            items.append(item)
+        item = {
+            'sr_no': sr,
+            'date': cells[1].strip() if len(cells) > 1 else '',
+            'stage': cells[2].strip() if len(cells) > 2 else '',
+            'product_name': cells[3].strip() if len(cells) > 3 else '',
+            'id_no': cells[4].strip() if len(cells) > 4 else '',
+            'nonconformity_reason': cells[5].strip() if len(cells) > 5 else '',
+            'qty': cells[7].strip() if len(cells) > 7 else '',
+            'disposal_action': cells[8].strip() if len(cells) > 8 else '',
+            're_inspection': cells[9].strip() if len(cells) > 9 else '',
+            'qty_ok': cells[11].strip() if len(cells) > 11 else '',
+            'signature': cells[12].strip() if len(cells) > 12 else '',
+        }
+        items.append(item)
     
     if items:
         data["items"] = items
-    
-    # authorised_signature is a footer field, not a data column
-    data.setdefault("authorised_signature", "")
     
     return data
 
