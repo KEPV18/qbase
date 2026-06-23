@@ -434,8 +434,7 @@ def extract_F12(doc: Document) -> dict:
     if items:
         data["items"] = items
     
-    # Department and authorised_signature not in DOCX table — leave empty
-    data.setdefault("department", "")
+    # authorised_signature is a footer field, not a data column
     data.setdefault("authorised_signature", "")
     
     return data
