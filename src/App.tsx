@@ -117,6 +117,7 @@ const App = () => {
                       <Route path="/admin/accounts" element={<RequireRole roles={["admin"]}><PageBoundary><AdminPanel /></PageBoundary></RequireRole>} />
                       <Route path="/admin/database" element={<RequireRole roles={["admin"]}><PageBoundary><DatabaseManagementPage /></PageBoundary></RequireRole>} />
                       <Route path="/admin/data-sanitizer" element={<RequireRole roles={["admin"]}><PageBoundary><DataSanitizer /></PageBoundary></RequireRole>} />
+                      <Route path="/archive" element={<PageBoundary><ArchivePage /></PageBoundary>} />
                       <Route path="/admin/approvals" element={<PageBoundary><ApprovalQueuePage /></PageBoundary>} />
                       {/* Redirects for sidebar links */}
                       <Route path="/modules" element={<Navigate to="/" replace />} />
@@ -126,7 +127,6 @@ const App = () => {
 
                     {/* Legacy redirects */}
                     <Route path="/record/*" element={<Navigate to="/records" replace />} />
-                    <Route path="/archive" element={<PageBoundary><ArchivePage /></PageBoundary>} />
 
                     {/* 404 */}
                     <Route path="*" element={<NotFound />} />
