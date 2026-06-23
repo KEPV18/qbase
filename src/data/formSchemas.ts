@@ -315,6 +315,7 @@ export const FORM_SCHEMAS: FormSchema[] = [
     description: "Corrective action request — tracks CA from identification to closure.",
     fields: [
       { key: "sr_no", label: "Serial Number", type: "text", required: true, width: "half", defaultValue: "auto" },
+      { key: "date", label: "Date", type: "date", width: "half" },
       { key: "department", label: "Department", type: "text", width: "half" },
       { key: "non_conformity_source", label: "Non-Conformity Source", type: "object", width: "full" },
       { key: "description_of_non_conformity", label: "Description of Non-Conformity", type: "textarea", required: true, width: "full" },
@@ -329,6 +330,9 @@ export const FORM_SCHEMAS: FormSchema[] = [
       { key: "document_change_summary", label: "Document Change Summary", type: "textarea", width: "full" },
       { key: "planned_review_date", label: "Planned Review Date", type: "date", width: "half" },
       { key: "verification_status", label: "Verification Status", type: "textarea", width: "full" },
+      { key: "verified_date", label: "Verified Date", type: "date", width: "third" },
+      { key: "verified_by", label: "Verified By", type: "text", width: "third" },
+      { key: "verified_role", label: "Verified Role", type: "text", width: "third" },
     ],
   },
   {

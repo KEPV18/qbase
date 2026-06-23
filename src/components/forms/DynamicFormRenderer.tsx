@@ -549,7 +549,7 @@ const DynamicFormRenderer: React.FC<DynamicFormRendererProps> = ({
     setShowGate(false);
   };
 
-  const handleFieldChange = useCallback((key: string, value: string | number | boolean | RecordData[]) => {
+  const handleFieldChange = useCallback((key: string, value: string | number | boolean | Record<string, unknown> | RecordData[]) => {
     setFormData(prev => ({ ...prev, [key]: value }));
     if (submitted) {
       setErrors(prev => {

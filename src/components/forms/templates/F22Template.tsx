@@ -14,7 +14,7 @@ export interface F22Props {
   data?: Record<string, unknown>;
   isTemplate?: boolean;
   editMode?: boolean;
-  onChange?: (field: string, value: string) => void;
+  onChange?: (field: string, value: string | Record<string, unknown>) => void;
   className?: string;
 }
 
@@ -94,7 +94,7 @@ export function F22Template({ data, isTemplate = true, editMode = false, onChang
         onChange={e => {
           const current = (d[parent] as Record<string, unknown>) || {};
           const updated = { ...current, [child]: e.target.checked };
-          onChange?.(parent, JSON.stringify(updated));
+          onChange?.(parent, updated);
         }}
       />
     ) : (
@@ -289,12 +289,29 @@ export function F22Template({ data, isTemplate = true, editMode = false, onChang
           <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2">
             Verification of Effectiveness
           </h3>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-2">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-2">
             <div>
               <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground block mb-0.5">
                 Planned Review Date
               </span>
               <span className="text-sm">{val(d, "planned_review_date") || (ph ? "___" : "—")}</span>
+            </div>
+            <div>
+              <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground block mb-0.5">
+                Verified Date
+              </span>
+              <span className="text-sm">{val(d, "verified_date") || (ph ? "___" : "—")}</span>
+            </div>
+            <div>
+              <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground block mb-0.5">
+                Verified By
+              </span>
+              <span className="text-sm font-medium">{val(d, "verified_by") || (ph ? "___" : "—")}</span>
+              {val(d, "verified_role") && (
+                <span className="text-[10px] text-muted-foreground block">
+                  ({val(d, "verified_role")})
+                </span>
+              )}
             </div>
           </div>
           <div className="bg-muted/10 border border-border/50 rounded-md p-3">

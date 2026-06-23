@@ -80,7 +80,7 @@ const RecordCreationPage: React.FC = () => {
     }
   }, [gateStep, selectedCode]);
 
-  const handleTemplateFieldChange = useCallback((field: string, value: string) => {
+  const handleTemplateFieldChange = useCallback((field: string, value: string | Record<string, unknown>) => {
     setFormData(prev => ({ ...prev, [field]: value }));
   }, []);
 

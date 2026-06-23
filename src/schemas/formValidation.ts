@@ -307,6 +307,7 @@ export type F18Data = z.infer<typeof F18Schema>;
 
 export const F22Schema = z.object({
   sr_no: AUTO_SERIAL,
+  date: OPTIONAL_DATE,
   department: OPTIONAL_TEXT,
   non_conformity_source: z.object({
     raw_material_inspection: z.boolean().default(false),
@@ -329,6 +330,9 @@ export const F22Schema = z.object({
   document_change_summary: OPTIONAL_TEXT,
   planned_review_date: OPTIONAL_DATE,
   verification_status: OPTIONAL_TEXT,
+  verified_date: OPTIONAL_DATE,
+  verified_by: OPTIONAL_TEXT,
+  verified_role: OPTIONAL_TEXT,
 });
 export type F22Data = z.infer<typeof F22Schema>;
 
