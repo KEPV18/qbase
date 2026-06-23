@@ -392,15 +392,27 @@ export type F48Data = z.infer<typeof F48Schema>;
 export const F13Schema = z.object({
   serial: AUTO_SERIAL,
   date: ISO_DATE,
-  supplier: REQUIRED_TEXT,
+  purchase_order_no: OPTIONAL_TEXT,
+  to: REQUIRED_TEXT,
   items: z.array(z.object({
+    sr_no: OPTIONAL_TEXT,
     description: REQUIRED_TEXT,
-    quantity: z.number().min(0),
-    unit: OPTIONAL_TEXT,
-    specifications: OPTIONAL_TEXT,
+    quantity: OPTIONAL_TEXT,
   })).min(1, 'At least one item required'),
-  requested_by: SIGNATURE,
-  approved_by: SIGNATURE,
+  total_amount: OPTIONAL_TEXT,
+  specifications: OPTIONAL_TEXT,
+  note: OPTIONAL_TEXT,
+  delivery_period: OPTIONAL_TEXT,
+  payment_terms: OPTIONAL_TEXT,
+  mode_of_despatch: OPTIONAL_TEXT,
+  despatch_arrangement: OPTIONAL_TEXT,
+  method_of_product_approval: OPTIONAL_TEXT,
+  requirement_of_test_certificate: OPTIONAL_TEXT,
+  insurance: OPTIONAL_TEXT,
+  despatch_destination: OPTIONAL_TEXT,
+  terms_and_conditions: OPTIONAL_TEXT,
+  prepared_by: REQUIRED_TEXT,
+  approved_by: REQUIRED_TEXT,
 });
 export type F13Data = z.infer<typeof F13Schema>;
 
