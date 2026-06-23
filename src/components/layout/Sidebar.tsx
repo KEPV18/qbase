@@ -3,17 +3,20 @@
 // Warm cream sidebar with serif section headers and soft active states
 // ============================================================================
 
+import { useMemo } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { useTenantIdentity } from "@/hooks/useTenantIdentity";
+import { useRecords } from "@/hooks/useRecordStorage";
 import {
   LayoutDashboard, Layers, FileText, Settings, Bell,
   Database, Shield, Users, BarChart3, Briefcase,
   CheckCircle, LogOut, BookOpen, FileCheck, ShieldCheck, Archive,
-  AlertTriangle, Target, X,
+  AlertTriangle, Target, X, Calendar,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useNotifications } from "@/hooks/useNotifications";
+import { getMonthsFromRecords, monthLabel } from "@/lib/temporalUtils";
 import defaultLogo from "@/assets/qms-logo.png";
 
 interface NavSection {
@@ -127,6 +130,46 @@ function NotificationNavItem({
       isActive={isActive}
       onClick={onClick}
     />
+  );
+}
+
+/** Month filter dropdown for the sidebar */
+function MonthFilterDropdown() {
+  const navigate = useNavigate();
+  const location = useLocation();
+  const { records } = useRecords();
+  const availableMonths = useMemo(() => getMonthsFromRecords(records || []), [records]);
+
+  // Read current month from URL query param
+  const params = new URLSearchParams(location.search);
+  const currentMonth = params.get("month") || "";
+
+  const handleChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const val = e.target.value;
+    const newParams = new URLSearchParams(location.search);
+    if (val) {
+      newParams.set("month", val);
+    } else {
+      newParams.delete("month");
+    }
+    const search = newParams.toString();
+    navigate(`${location.pathname}${search ? `?${search}` : ""}`, { replace: true });
+  };
+
+  return (
+    <div className="relative">
+      <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
+      <select
+        value={currentMonth}
+        onChange={handleChange}
+        className="w-full pl-9 pr-4 py-2.5 rounded-lg bg-background dark:bg-[#1a1a18] border border-border dark:border-border text-sm text-foreground dark:text-foreground appearance-none cursor-pointer focus:outline-none focus:ring-2 focus:ring-foreground/10"
+      >
+        <option value="">All Months</option>
+        {availableMonths.map(m => (
+          <option key={m} value={m}>{monthLabel(m)}</option>
+        ))}
+      </select>
+    </div>
   );
 }
 
@@ -274,6 +317,16 @@ export function Sidebar({ mobileOpen, onClose, sidebarOpen, onToggle }: { mobile
             ))}
           </div>
         </div>
+
+        {/* Month Filter */}
+        {sidebarOpen && (
+          <div className="px-4 pb-2">
+            <p className="px-3 mb-2 text-[11px] font-heading font-semibold text-muted-foreground/70 uppercase tracking-wider">
+              FILTER
+            </p>
+            <MonthFilterDropdown />
+          </div>
+        )}
 
         {/* User Profile */}
         <div className={cn("pb-6 pt-4", sidebarOpen ? "px-4" : "px-2")}>

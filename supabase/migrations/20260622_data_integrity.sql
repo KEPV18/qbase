@@ -246,7 +246,53 @@ GRANT EXECUTE ON FUNCTION public.get_record_count() TO authenticated;
 GRANT EXECUTE ON FUNCTION public.get_record_count() TO service_role;
 
 -- ============================================================================
--- 5. CHECK CONSTRAINT: records_form_data_has_text (NOT VALID)
+-- 5. RPC: get_all_records()
+--    Returns ALL active records (non-deleted) for client-side schema validation.
+-- ============================================================================
+
+DROP FUNCTION IF EXISTS public.get_all_records() CASCADE;
+
+CREATE OR REPLACE FUNCTION public.get_all_records()
+RETURNS TABLE (
+  id uuid,
+  form_code text,
+  serial text,
+  form_name text,
+  section integer,
+  section_name text,
+  created_by text,
+  created_at timestamptz,
+  updated_at timestamptz,
+  form_data jsonb
+)
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+BEGIN
+  RETURN QUERY
+  SELECT
+    r.id,
+    r.form_code,
+    r.serial,
+    r.form_name,
+    r.section,
+    r.section_name,
+    r.created_by,
+    r.created_at,
+    r.updated_at,
+    r.form_data
+  FROM public.records r
+  WHERE r.deleted_at IS NULL
+  ORDER BY r.form_code, r.serial;
+END;
+$$;
+
+GRANT EXECUTE ON FUNCTION public.get_all_records() TO authenticated;
+GRANT EXECUTE ON FUNCTION public.get_all_records() TO service_role;
+
+-- ============================================================================
+-- 6. CHECK CONSTRAINT: records_form_data_has_text (NOT VALID)
 --    Uses jsonb_has_any_text (no serial param — constraint-level).
 --    Blocks future inserts/updates where form_data has no genuine text.
 --    NOT VALID = existing records can be updated freely.

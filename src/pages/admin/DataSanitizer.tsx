@@ -1,8 +1,9 @@
 // ============================================================================
 // QBase — Data Retrofitting & Completion Hub
-// Admin-only page for detecting empty/ghost records and populating them
-// from offline Word documents. NO deletion — records are preserved for
-// ISO compliance (sequential serial integrity).
+// Admin-only page for detecting:
+//   1. Ghost records (empty form_data) — from RPC
+//   2. Incomplete records (missing required fields) — client-side schema check
+// NO deletion — records are preserved for ISO compliance (sequential serial integrity).
 // ============================================================================
 
 import { useState, useEffect, useCallback, useMemo } from "react";
@@ -25,13 +26,15 @@ import {
 import {
   ShieldCheck, RefreshCw, Loader2, AlertTriangle,
   Database, Ghost, CheckCircle, FileEdit, Archive,
-  Search, X,
+  Search, X, AlertCircle,
 } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { restRpc } from "@/services/userService";
 import { isoToDisplay } from "@/schemas";
 import { getDeptTheme, deptBorderStyle, deptAccentStyle } from "@/lib/departmentTheme";
+import { FORM_SCHEMAS } from "@/data/formSchemas";
+import { useRecords } from "@/hooks/useRecordStorage";
 
 // ============================================================================
 // Types
@@ -51,9 +54,24 @@ interface GhostRecord {
   is_empty: boolean;
 }
 
+interface IncompleteRecord {
+  id: string;
+  form_code: string;
+  serial: string;
+  form_name: string;
+  section: number | null;
+  section_name: string | null;
+  created_by: string;
+  created_at: string;
+  updated_at: string;
+  form_data: Record<string, unknown> | null;
+  empty_fields: string[];
+}
+
 interface ScanSummary {
   totalRecords: number;
   ghostCount: number;
+  incompleteCount: number;
 }
 
 // ============================================================================
@@ -65,12 +83,17 @@ export default function DataSanitizer() {
   const [loading, setLoading] = useState(true);
   const [scanning, setScanning] = useState(false);
   const [ghosts, setGhosts] = useState<GhostRecord[]>([]);
-  const [summary, setSummary] = useState<ScanSummary>({ totalRecords: 0, ghostCount: 0 });
+  const [incomplete, setIncomplete] = useState<IncompleteRecord[]>([]);
+  const [summary, setSummary] = useState<ScanSummary>({ totalRecords: 0, ghostCount: 0, incompleteCount: 0 });
   const [error, setError] = useState<string | null>(null);
   const [search, setSearch] = useState("");
   const [departmentFilter, setDepartmentFilter] = useState<string | null>(null);
+  const [activeTab, setActiveTab] = useState<'ghosts' | 'incomplete'>('incomplete');
 
-  // ── Scan: fetch ghost records + total count via raw fetch RPC ────────────
+  // ── Use the existing useRecords hook for all records ──
+  const { data: allRecords, isLoading: recordsLoading } = useRecords();
+
+  // ── Scan: fetch ghost records + total count via RPC, validate client-side ──
   const scan = useCallback(async () => {
     setScanning(true);
     setError(null);
@@ -86,8 +109,50 @@ export default function DataSanitizer() {
       const ghostData = ghostResult.data || [];
       const total = countResult.data || 0;
 
+      // Client-side: check ALL records for empty required fields using schema
+      // Note: parseRowToRecord() spreads form_data into top-level keys,
+      // so business fields are at rec.nc_description, not rec.form_data.nc_description
+      const incompleteRecords: IncompleteRecord[] = [];
+      if (allRecords) {
+        for (const rec of allRecords) {
+          const schema = FORM_SCHEMAS.find(s => s.code === rec.formCode);
+          if (!schema) continue;
+
+          const emptyFields: string[] = [];
+
+          for (const field of schema.fields) {
+            if (!field.required) continue;
+            const val = rec[field.key];
+            if (val === null || val === undefined || val === '') {
+              emptyFields.push(field.key);
+            }
+          }
+
+          if (emptyFields.length > 0) {
+            incompleteRecords.push({
+              id: rec.id || '',
+              form_code: rec.formCode || '',
+              serial: rec.serial || '',
+              form_name: rec.formName || '',
+              section: rec._section || null,
+              section_name: rec._sectionName || null,
+              created_by: rec._createdBy || '',
+              created_at: rec._createdAt || '',
+              updated_at: rec._lastModifiedAt || '',
+              form_data: rec.form_data || {},
+              empty_fields: emptyFields,
+            });
+          }
+        }
+      }
+
       setGhosts(ghostData);
-      setSummary({ totalRecords: total, ghostCount: ghostData.length });
+      setIncomplete(incompleteRecords);
+      setSummary({
+        totalRecords: total,
+        ghostCount: ghostData.length,
+        incompleteCount: incompleteRecords.length,
+      });
     } catch (err) {
       const msg = err instanceof Error ? err.message : "Scan failed";
       setError(msg);
@@ -96,24 +161,26 @@ export default function DataSanitizer() {
       setScanning(false);
       setLoading(false);
     }
-  }, []);
+  }, [allRecords]);
 
   // ── Initial scan on mount ────────────────────────────────────────────────
   useEffect(() => { scan(); }, [scan]);
 
   // ── Navigate to record edit page ────────────────────────────────────────
-  const populateRecord = (ghost: GhostRecord) => {
-    navigate(`/records/${encodeURIComponent(ghost.serial)}?edit=true`);
+  const populateRecord = (record: GhostRecord | IncompleteRecord) => {
+    navigate(`/records/${encodeURIComponent(record.serial)}?edit=true`);
   };
 
   // ── Derived ──────────────────────────────────────────────────────────────
-  const departments = useMemo(() => {
-    const deps = [...new Set(ghosts.map(g => g.section_name).filter(Boolean))] as string[];
-    return deps.sort();
-  }, [ghosts]);
+  const currentList = activeTab === 'ghosts' ? ghosts : incomplete;
 
-  const filteredGhosts = useMemo(() => {
-    let result = ghosts;
+  const departments = useMemo(() => {
+    const deps = [...new Set(currentList.map(g => g.section_name).filter(Boolean))] as string[];
+    return deps.sort();
+  }, [currentList]);
+
+  const filteredList = useMemo(() => {
+    let result = currentList;
     if (search) {
       const q = search.toLowerCase();
       result = result.filter(g =>
@@ -128,10 +195,10 @@ export default function DataSanitizer() {
       result = result.filter(g => g.section_name === departmentFilter);
     }
     return result;
-  }, [ghosts, search, departmentFilter]);
+  }, [currentList, search, departmentFilter]);
 
   const healthScore = summary.totalRecords > 0
-    ? Math.round(((summary.totalRecords - summary.ghostCount) / summary.totalRecords) * 100)
+    ? Math.round(((summary.totalRecords - summary.ghostCount - summary.incompleteCount) / summary.totalRecords) * 100)
     : 100;
 
   // ── Loading state (initial mount) ───────────────────────────────────────
@@ -144,7 +211,7 @@ export default function DataSanitizer() {
   }
 
   // ── Error state (initial load failed, no data) ──────────────────────────
-  if (error && ghosts.length === 0) {
+  if (error && ghosts.length === 0 && incomplete.length === 0) {
     return (
       <AppShell breadcrumbs={[{ label: "Admin", path: "/admin/accounts" }, { label: "Data Retrofitting" }]}>
         <StateScreen
@@ -166,7 +233,7 @@ export default function DataSanitizer() {
         <PageHeader
           icon={Archive}
           title="Data Retrofitting & Completion Hub"
-          description="Populate empty records from offline Word documents. Serial integrity preserved for ISO compliance."
+          description="Detect ghost records and incomplete records. Serial integrity preserved for ISO compliance."
           action={
             <Button variant="outline" size="sm" onClick={scan} disabled={scanning}>
               {scanning ? (
@@ -181,14 +248,11 @@ export default function DataSanitizer() {
 
         {/* ── Error Banner (post-initial-load) ── */}
         {error && (
-          <div className="flex items-start gap-3 p-4 bg-destructive/10 border border-destructive/20 rounded-md">
+          <div className="flex items-start gap-3 p-4 bg-destructive/10 border border-destructive/30 rounded-md">
             <AlertTriangle className="w-5 h-5 text-destructive shrink-0 mt-0.5" />
-            <div>
-              <p className="text-sm font-medium text-destructive">Scan Error</p>
-              <p className="text-xs text-muted-foreground mt-1">{error}</p>
-              <p className="text-xs text-muted-foreground mt-2">
-                Ensure the SQL migration <code className="font-mono text-foreground">20260622_data_integrity.sql</code> has been applied in Supabase Dashboard.
-              </p>
+            <div className="text-xs text-destructive">
+              <p className="font-medium mb-0.5">Scan error</p>
+              <p>{error}</p>
             </div>
           </div>
         )}
@@ -197,24 +261,65 @@ export default function DataSanitizer() {
         <StatsRow
           stats={[
             { icon: Database, value: summary.totalRecords.toLocaleString(), label: "Total System Records" },
-            { icon: Ghost, value: summary.ghostCount.toLocaleString(), label: "Awaiting Population", variant: summary.ghostCount > 0 ? "warning" : "success" },
-            { icon: ShieldCheck, value: `${healthScore}%`, label: "Completion Score", variant: healthScore >= 95 ? "success" : healthScore >= 80 ? "warning" : "destructive" },
+            { icon: Ghost, value: summary.ghostCount.toLocaleString(), label: "Ghost Records", variant: summary.ghostCount > 0 ? "warning" : "success" },
+            { icon: AlertCircle, value: summary.incompleteCount.toLocaleString(), label: "Incomplete Records", variant: summary.incompleteCount > 0 ? "destructive" : "success" },
+            { icon: ShieldCheck, value: `${healthScore}%`, label: "Integrity Score", variant: healthScore >= 95 ? "success" : healthScore >= 80 ? "warning" : "destructive" },
           ]}
-          columns={3}
+          columns={4}
         />
 
+        {/* ── Tab Switcher ── */}
+        {summary.ghostCount > 0 || summary.incompleteCount > 0 ? (
+          <div className="flex items-center gap-2 border-b border-border/50 pb-2">
+            <button
+              onClick={() => setActiveTab('incomplete')}
+              className={cn(
+                "px-4 py-2 text-sm font-semibold rounded-t-md transition-colors",
+                activeTab === 'incomplete'
+                  ? "bg-foreground text-background"
+                  : "text-muted-foreground hover:text-foreground bg-muted/30"
+              )}
+            >
+              <AlertCircle className="w-4 h-4 inline mr-1.5" />
+              Incomplete Records
+              {summary.incompleteCount > 0 && (
+                <Badge variant="destructive" className="ml-2 text-[10px] px-1.5 py-0">
+                  {summary.incompleteCount}
+                </Badge>
+              )}
+            </button>
+            <button
+              onClick={() => setActiveTab('ghosts')}
+              className={cn(
+                "px-4 py-2 text-sm font-semibold rounded-t-md transition-colors",
+                activeTab === 'ghosts'
+                  ? "bg-foreground text-background"
+                  : "text-muted-foreground hover:text-foreground bg-muted/30"
+              )}
+            >
+              <Ghost className="w-4 h-4 inline mr-1.5" />
+              Ghost Records
+              {summary.ghostCount > 0 && (
+                <Badge variant="secondary" className="ml-2 text-[10px] px-1.5 py-0">
+                  {summary.ghostCount}
+                </Badge>
+              )}
+            </button>
+          </div>
+        ) : null}
+
         {/* ── All Complete State ── */}
-        {!error && ghosts.length === 0 && (
+        {!error && ghosts.length === 0 && incomplete.length === 0 && (
           <StateScreen
             state="success"
             icon={CheckCircle}
-            title="All Records Populated"
-            message={`All ${summary.totalRecords.toLocaleString()} active records have valid form data payloads. No retrofitting needed.`}
+            title="All Records Clean"
+            message={`All ${summary.totalRecords.toLocaleString()} active records have valid form data and all required fields are populated. No retrofitting needed.`}
           />
         )}
 
-        {/* ── Records Awaiting Completion ── */}
-        {!error && ghosts.length > 0 && (
+        {/* ── Records List ── */}
+        {currentList.length > 0 && (
           <>
             {/* Department Filter Pills */}
             {departments.length > 1 && (
@@ -268,74 +373,108 @@ export default function DataSanitizer() {
                 )}
               </div>
 
-              {/* Results Table */}
-              <div className="rounded-md border border-border/50 bg-card overflow-hidden">
+              {/* Table */}
+              <div className="border border-border/50 rounded-md overflow-hidden bg-card/40 backdrop-blur-xl">
                 <Table>
                   <TableHeader>
-                    <TableRow className="bg-muted/30 border-b border-border/50">
-                      <TableHead className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground py-3">Serial</TableHead>
-                      <TableHead className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground py-3">Form Code</TableHead>
-                      <TableHead className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground py-3">Form Name</TableHead>
-                      <TableHead className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground py-3">Created By</TableHead>
-                      <TableHead className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground py-3">Department</TableHead>
-                      <TableHead className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground py-3">Date</TableHead>
-                      <TableHead className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground py-3 text-right">Action</TableHead>
+                    <TableRow className="border-b border-border/30 bg-muted/20">
+                      <TableHead className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground w-[140px]">
+                        Serial
+                      </TableHead>
+                      <TableHead className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground w-[70px]">
+                        Form
+                      </TableHead>
+                      <TableHead className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+                        Name
+                      </TableHead>
+                      <TableHead className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground w-[120px]">
+                        Created By
+                      </TableHead>
+                      <TableHead className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground w-[140px]">
+                        Department
+                      </TableHead>
+                      {activeTab === 'incomplete' && (
+                        <TableHead className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground w-[200px]">
+                          Missing Fields
+                        </TableHead>
+                      )}
+                      <TableHead className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground w-[100px]">
+                        Created
+                      </TableHead>
+                      <TableHead className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground w-[130px] text-right">
+                        Action
+                      </TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {filteredGhosts.length === 0 ? (
+                    {filteredList.length === 0 ? (
                       <TableRow>
-                        <TableCell colSpan={7} className="text-center py-12 text-muted-foreground text-sm">
+                        <TableCell
+                          colSpan={activeTab === 'incomplete' ? 8 : 7}
+                          className="text-center text-muted-foreground text-sm py-8"
+                        >
                           No records match your search.
                         </TableCell>
                       </TableRow>
-                    ) : filteredGhosts.map((ghost, i) => {
-                      const deptName = ghost.section_name || "Management & Documentation";
+                    ) : filteredList.map((record, i) => {
+                      const deptName = record.section_name || "Management & Documentation";
                       const rowStyle = deptBorderStyle(deptName);
                       const deptBadge = deptAccentStyle(deptName);
+                      const isIncomplete = 'empty_fields' in record;
                       return (
                       <TableRow
-                        key={ghost.id}
+                        key={record.id}
                         className="border-b border-border/30 hover:bg-muted/20 transition-colors animate-fade-in"
                         style={{ ...rowStyle, animationDelay: `${i * 50}ms` }}
                       >
                         <TableCell className="font-mono text-xs font-semibold text-foreground py-3">
-                          {ghost.serial}
+                          {record.serial}
                         </TableCell>
                         <TableCell className="py-3">
                           <Badge variant="outline" className="font-mono text-xs">
-                            {ghost.form_code}
+                            {record.form_code}
                           </Badge>
                         </TableCell>
                         <TableCell className="text-sm text-foreground py-3">
-                          {ghost.form_name || <span className="text-muted-foreground italic">—</span>}
+                          {record.form_name || <span className="text-muted-foreground italic">—</span>}
                         </TableCell>
                         <TableCell className="text-xs text-muted-foreground py-3">
-                          {ghost.created_by || <span className="italic">Unknown</span>}
+                          {record.created_by || <span className="italic">Unknown</span>}
                         </TableCell>
                         <TableCell className="py-3">
-                          {ghost.section_name ? (
+                          {record.section_name ? (
                             <span
                               className="backdrop-blur-sm border rounded-md px-2 py-0.5 text-xs font-medium"
                               style={deptBadge}
                             >
-                              {ghost.section_name}
+                              {record.section_name}
                             </span>
                           ) : (
                             <span className="text-muted-foreground text-xs italic">—</span>
                           )}
                         </TableCell>
+                        {isIncomplete && (
+                          <TableCell className="py-3">
+                            <div className="flex flex-wrap gap-1">
+                              {(record as IncompleteRecord).empty_fields.map(f => (
+                                <Badge key={f} variant="destructive" className="text-[10px] px-1.5 py-0">
+                                  {f}
+                                </Badge>
+                              ))}
+                            </div>
+                          </TableCell>
+                        )}
                         <TableCell className="text-xs text-muted-foreground py-3">
-                          {ghost.created_at ? isoToDisplay(ghost.created_at) : "—"}
+                          {record.created_at ? isoToDisplay(record.created_at) : "—"}
                         </TableCell>
                         <TableCell className="py-3 text-right">
                           <Button
                             variant="default"
                             size="sm"
-                            onClick={() => populateRecord(ghost)}
+                            onClick={() => populateRecord(record)}
                           >
                             <FileEdit className="w-4 h-4 mr-1.5" />
-                            Complete Data
+                            {isIncomplete ? "Fix Fields" : "Complete Data"}
                           </Button>
                         </TableCell>
                       </TableRow>
@@ -345,8 +484,8 @@ export default function DataSanitizer() {
                 {/* Footer count */}
                 <div className="px-4 py-2 border-t border-border bg-muted/20 text-[10px] text-muted-foreground">
                   {search || departmentFilter
-                    ? `${filteredGhosts.length} of ${ghosts.length} records`
-                    : `${ghosts.length} record${ghosts.length !== 1 ? "s" : ""} awaiting population`
+                    ? `${filteredList.length} of ${currentList.length} records`
+                    : `${currentList.length} record${currentList.length !== 1 ? "s" : ""} found`
                   }
                 </div>
               </div>
@@ -358,10 +497,10 @@ export default function DataSanitizer() {
               <div className="text-xs text-muted-foreground">
                 <p className="font-medium text-foreground mb-1">Retrofitting Workflow</p>
                 <ol className="list-decimal list-inside space-y-0.5">
-                  <li>Click "Complete Data" next to any flagged record.</li>
+                  <li>Click "Fix Fields" or "Complete Data" next to any flagged record.</li>
                   <li>The record opens in edit mode — Form Code, Serial, Created By, and Department remain locked.</li>
-                  <li>Copy the data from your offline Word document and paste into the empty form fields.</li>
-                  <li>Save — the record is now fully populated and the CHECK constraint will protect it going forward.</li>
+                  <li>Fill in the missing fields from your offline Word document or source data.</li>
+                  <li>Save — the record is now fully populated and the Integrity Score will improve.</li>
                 </ol>
               </div>
             </div>

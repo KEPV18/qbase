@@ -409,7 +409,7 @@ const RecordListPage: React.FC = () => {
       ) : (
         <>
           {/* Select All + Page info */}
-          <div className="flex items-center gap-3 mb-2 px-4 py-2 bg-secondary/30 border border-border/50 rounded-t-sm">
+          <div className="flex items-center gap-3 mb-2 px-4 py-2 bg-secondary/30 border border-border rounded-t-sm">
             <button onClick={toggleSelectAll} className="text-muted-foreground hover:text-primary transition-colors" title={selectedSerials.size === pagedRecords.length ? 'Deselect all' : 'Select all'}>
               {selectedSerials.size === pagedRecords.length && pagedRecords.length > 0
                 ? <CheckSquare className="w-4 h-4" />
@@ -434,7 +434,7 @@ const RecordListPage: React.FC = () => {
                   className={`w-full flex items-center gap-4 p-3 rounded-sm transition-all text-left group ds-press ${
                     isSelected
                       ? 'ds-card border-primary/40 bg-primary/5'
-                      : 'hover:bg-card border border-transparent hover:border-border/50'
+                      : 'bg-card border border-border hover:border-foreground/20'
                   }`}
                   style={{ animationDelay: `${idx * 30}ms` }}
                 >
