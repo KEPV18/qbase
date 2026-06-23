@@ -478,11 +478,12 @@ export const FORM_SCHEMAS: FormSchema[] = [
     fields: [
       { key: "serial", label: "Serial Number", type: "text", required: true, width: "half", defaultValue: "auto" },
       { key: "year", label: "Year", type: "number", required: true, width: "half" },
-      { key: "vendors", label: "Approved Vendors", type: "table", columns: [
-        { key: "name", label: "Vendor Name", type: "text", required: true },
-        { key: "service", label: "Service/Product", type: "text", required: true },
-        { key: "rating", label: "Rating", type: "select", options: ["A", "B", "C"] },
-        { key: "status", label: "Status", type: "select", options: ["Approved", "Pending", "Suspended"] },
+      { key: "items", label: "Approved Vendors", type: "table", columns: [
+        { key: "dateApproval", label: "Date of Approval", type: "text" },
+        { key: "supplierName", label: "Name of Supplier", type: "text", required: true },
+        { key: "scopeOfSupply", label: "Scope of Supply", type: "text", required: true },
+        { key: "approvalCriteria", label: "Approval Criteria", type: "text" },
+        { key: "remarks", label: "Remarks", type: "text" },
       ]},
       { key: "prepared_by", label: "Prepared By", type: "signature", required: true, width: "half" },
       { key: "approved_by", label: "Approved By", type: "signature", required: false, width: "half" },

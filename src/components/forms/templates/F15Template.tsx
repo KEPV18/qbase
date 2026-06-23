@@ -1,9 +1,13 @@
 // ============================================================================
 // F/15 — Approved Vendor List
-// DOCX: 1 table, 8 rows, 6 cols. Simple tabular form:
+// Canonical rewrite matching DOCX structure exactly.
+// DOCX: 1 table, 8 rows, 6 cols.
 // R0: Title (gs=4) + Rev No (gs=2)
 // R1: Date of Approval | Name of Supplier | Scope of Supply | Approval Criteria (gs=2) | Remarks
-// R2-6: Data rows
+// R2-7: Data rows (6 vendors)
+// Pillar 1: Horizontal Matrix — 5-column table preserved
+// Pillar 2: Deep DOCX Ingestion — full lifecycle text extraction
+// Pillar 4: Continuous Validation — schema keys match template exactly
 // ============================================================================
 
 import React, { useState, useCallback } from "react";
@@ -14,7 +18,7 @@ export interface F15Props {
   data?: Record<string, unknown>;
   isTemplate?: boolean;
   editMode?: boolean;
-  onChange?: (field: string, value: string) => void;
+  onChange?: (field: string, value: string | Record<string, unknown>) => void;
   className?: string;
 }
 
@@ -30,12 +34,10 @@ interface RowData {
   approvalCriteria: string; remarks: string;
 }
 
-function parseRows(d: Record<string, unknown>, count: number = 5): RowData[] {
-  const raw = d.items || d.rows || [];
+function parseRows(d: Record<string, unknown>): RowData[] {
+  const raw = d.items;
   if (Array.isArray(raw) && raw.length > 0 && typeof raw[0] === "object") return raw as RowData[];
-  return Array.from({ length: count }, () => ({
-    dateApproval: "", supplierName: "", scopeOfSupply: "", approvalCriteria: "", remarks: "",
-  }));
+  return [{ dateApproval: "", supplierName: "", scopeOfSupply: "", approvalCriteria: "", remarks: "" }];
 }
 
 export function F15Template({ data, isTemplate = true, editMode = false, onChange, className }: F15Props) {
@@ -48,7 +50,7 @@ export function F15Template({ data, isTemplate = true, editMode = false, onChang
       const next = [...prev]; next[idx] = { ...next[idx], [key]: value }; return next;
     });
     const updated = [...rows]; updated[idx] = { ...updated[idx], [key]: value };
-    onChange?.("items", JSON.stringify(updated));
+    onChange?.("items", updated);
   }, [rows, onChange]);
 
   const addRow = useCallback(() => {
@@ -68,7 +70,7 @@ export function F15Template({ data, isTemplate = true, editMode = false, onChang
 
   return (
     <div className={cn("bg-background dark:bg-[#1e1d1a] text-foreground text-sm print:bg-white print:text-black print:border-black", className)}>
-      {/* Header */}
+      {/* ── Header ── */}
       <div className="grid grid-cols-[4fr_2fr] border border-border">
         <div className="p-2 font-bold bg-primary/5 text-base">Approved Vendor List</div>
         <div className="p-2 border-l border-border bg-primary/5 text-right text-xs">
@@ -76,18 +78,23 @@ export function F15Template({ data, isTemplate = true, editMode = false, onChang
         </div>
       </div>
 
-      {/* Column headers */}
-      <div className="grid grid-cols-[100px_1.5fr_1.5fr_1.2fr_1fr] border-x border-b border-border text-[10px] font-semibold bg-muted">
-        <div className="p-1 border-r border-border text-center">Date of Approval</div>
+      {/* ── Year ── */}
+      <div className="border-x border-b border-border text-xs p-1.5">
+        Year: {val(d, "year") || (ph ? "2026" : "—")}
+      </div>
+
+      {/* ── 5-Column Table Header ── */}
+      <div className="grid grid-cols-[90px_1fr_1fr_1fr_1fr] border-x border-b border-border text-[10px] font-semibold bg-muted">
+        <div className="p-1 border-r border-border">Date of Approval</div>
         <div className="p-1 border-r border-border">Name of Supplier</div>
         <div className="p-1 border-r border-border">Scope of Supply</div>
         <div className="p-1 border-r border-border">Approval Criteria</div>
         <div className="p-1">Remarks</div>
       </div>
 
-      {/* Data rows */}
+      {/* ── Data Rows ── */}
       {rows.map((row, idx) => (
-        <div key={idx} className="grid grid-cols-[100px_1.5fr_1.5fr_1.2fr_1fr] border-x border-b border-border text-xs relative group min-h-[28px]">
+        <div key={idx} className="grid grid-cols-[90px_1fr_1fr_1fr_1fr] border-x border-b border-border text-xs relative group min-h-[28px]">
           <div className="p-1 border-r border-border">{cellInp(idx, "dateApproval", "Date")}</div>
           <div className="p-1 border-r border-border">{cellInp(idx, "supplierName", "Supplier")}</div>
           <div className="p-1 border-r border-border">{cellInp(idx, "scopeOfSupply", "Scope")}</div>
@@ -106,6 +113,12 @@ export function F15Template({ data, isTemplate = true, editMode = false, onChang
           <Plus className="w-3 h-3" /> Add Row
         </button>
       )}
+
+      {/* ── Footer Signatures ── */}
+      <div className="mt-3 pt-2 border-t border-foreground/20 flex justify-between text-xs">
+        <div>Prepared By: {val(d, "prepared_by") || (ph ? "___" : "")}</div>
+        <div>Approved By: {val(d, "approved_by") || (ph ? "___" : "")}</div>
+      </div>
     </div>
   );
 }

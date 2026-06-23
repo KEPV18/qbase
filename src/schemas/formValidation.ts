@@ -443,11 +443,12 @@ export type F14Data = z.infer<typeof F14Schema>;
 export const F15Schema = z.object({
   serial: AUTO_SERIAL,
   year: YEAR,
-  vendors: z.array(z.object({
-    name: REQUIRED_TEXT,
-    service: REQUIRED_TEXT,
-    rating: VENDOR_RATING,
-    status: VENDOR_STATUS,
+  items: z.array(z.object({
+    dateApproval: OPTIONAL_TEXT,
+    supplierName: REQUIRED_TEXT,
+    scopeOfSupply: REQUIRED_TEXT,
+    approvalCriteria: OPTIONAL_TEXT,
+    remarks: OPTIONAL_TEXT,
   })).min(1, 'At least one vendor required'),
   prepared_by: SIGNATURE,
   approved_by: SIGNATURE,
