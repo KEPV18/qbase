@@ -10,6 +10,7 @@ import {
   LayoutDashboard, Layers, FileText, Settings, Bell,
   Database, Shield, Users, BarChart3, Briefcase,
   CheckCircle, LogOut, BookOpen, FileCheck, ShieldCheck, Archive,
+  AlertTriangle,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useNotifications } from "@/hooks/useNotifications";
@@ -29,6 +30,7 @@ const MAIN_NAV: NavSection = {
     { label: "Analytics", icon: BarChart3, path: "/audit" },
     { label: "Procedures", icon: BookOpen, path: "/procedures" },
     { label: "ISO Manual", icon: FileCheck, path: "/iso-manual" },
+    { label: "Risk Management", icon: AlertTriangle, path: "/risk-management" },
   ],
 };
 

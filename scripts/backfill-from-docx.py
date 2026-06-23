@@ -267,13 +267,21 @@ def extract_F10(doc: Document) -> dict:
     return data
 
 def extract_F11(doc: Document) -> dict:
-    """F/11 Production Plan — header fields + line items table."""
+    """F/11 Production Plan — canonical 7-column schema.
+    
+    DOCX layout: 10 columns (F/11-001..006) or 8 columns (F/11-007..009).
+    Both map to the same 7-column schema:
+      product | batch_no | plan_date | plan_size | actual_date | actual_qty | yield_percent
+    
+    Footer fields: prepared_by, updated_based_on_progress.
+    """
+    import re
     data = {}
     if not doc.tables:
         return data
     t = doc.tables[0]
     
-    # Extract header fields
+    # ── Extract header fields ──
     for row in t.rows:
         cells = all_cells(row.cells)
         for cell in cells:
@@ -285,50 +293,71 @@ def extract_F11(doc: Document) -> dict:
                 data["date"] = value
             elif "month" in label.lower() and value:
                 data["month"] = value
-            elif "updated" in label.lower() and "by" in label.lower():
-                data["updated_by"] = value
             elif "remarks" in label.lower() and value:
                 data["remarks"] = value
     
-    # Extract items array from data rows
-    items = []
-    # Find header row with product/batch columns
+    # ── Extract items from data rows ──
+    # Find the header row (contains "Product" and "Batch")
     header_row_idx = -1
     for ri, row in enumerate(t.rows):
         cells_text = [c.text.strip().lower() for c in row.cells]
         joined = " ".join(cells_text)
-        if "product" in joined and ("batch" in joined or "plan" in joined or "qty" in joined):
+        if "product" in joined and ("batch" in joined or "plan" in joined):
             header_row_idx = ri
             break
     
+    items = []
     if header_row_idx >= 0:
-        # Map header columns
-        headers = [c.text.strip().lower() for c in t.rows[header_row_idx].cells]
+        # Determine column count to detect layout (10-col vs 8-col)
+        col_count = len(t.rows[header_row_idx].cells)
+        
         for row in t.rows[header_row_idx + 1:]:
             cells = all_cells(row.cells)
             if not any(c.strip() for c in cells):
-                continue  # skip empty rows
+                continue
+            
+            # Skip footer rows (contain "Remarks", "Prepared By", "Updated Based On Progress")
+            joined_text = " ".join(cells).lower()
+            if any(kw in joined_text for kw in ["remarks", "prepared by", "updated based", "prepared_by"]):
+                # Extract footer fields
+                for cell in cells:
+                    ct = cell.strip()
+                    m = re.search(r'Prepared\s*By\s*[:\-]?\s*(.+)', ct, re.IGNORECASE)
+                    if m and not data.get("prepared_by"):
+                        data["prepared_by"] = m.group(1).strip()
+                    m2 = re.search(r'Updated\s*Based\s*On\s*Progress\s*[:\-]?\s*(yes|no)', ct, re.IGNORECASE)
+                    if m2 and not data.get("updated_based_on_progress"):
+                        data["updated_based_on_progress"] = m2.group(1).lower()
+                continue
+            
+            # Map cells to canonical 7-column schema
+            # 10-col layout: [Sr, Product, Batch, PlanDate, PlanSize, PlanQty, ActualDate, ActualQty, Yield, Yield%]
+            # 8-col layout:  [Sr, Product, Batch, PlanDate, PlanSize, ActualDate, ActualQty, Yield]
+            # Both map to:    product | batch_no | plan_date | plan_size | actual_date | actual_qty | yield_percent
             item = {}
-            for ci, h in enumerate(headers):
-                if ci < len(cells) and cells[ci].strip():
-                    h_clean = h.strip()
-                    if "product" in h_clean:
-                        item["product"] = cells[ci].strip()
-                    elif "batch" in h_clean:
-                        item["batchNo"] = cells[ci].strip()
-                    elif "plan" in h_clean and "date" in h_clean:
-                        item["planDate"] = cells[ci].strip()
-                    elif "plan" in h_clean and "completion" in h_clean:
-                        item["planCompletion"] = cells[ci].strip()
-                    elif "plan" in h_clean and "size" in h_clean:
-                        item["planSize"] = cells[ci].strip()
-                    elif "actual" in h_clean and "date" in h_clean:
-                        item["actualDate"] = cells[ci].strip()
-                    elif "actual" in h_clean and "qty" in h_clean:
-                        item["actualQty"] = cells[ci].strip()
-                    elif "yield" in h_clean:
-                        item["yieldPercent"] = cells[ci].strip()
-            if item:
+            
+            if col_count >= 10:
+                # 10-col layout: skip Sr(0), map Product(1), Batch(2), PlanDate(3), PlanSize(4),
+                # skip PlanQty(5), ActualDate(6), ActualQty(7), Yield(8), skip Yield%(9)
+                item["product"] = cells[1].strip() if len(cells) > 1 else ""
+                item["batch_no"] = cells[2].strip() if len(cells) > 2 else ""
+                item["plan_date"] = cells[3].strip() if len(cells) > 3 else ""
+                item["plan_size"] = cells[4].strip() if len(cells) > 4 else ""
+                item["actual_date"] = cells[6].strip() if len(cells) > 6 else ""
+                item["actual_qty"] = cells[7].strip() if len(cells) > 7 else ""
+                item["yield_percent"] = cells[8].strip() if len(cells) > 8 else ""
+            else:
+                # 8-col layout: skip Sr(0), map Product(1), Batch(2), PlanDate(3), PlanSize(4),
+                # ActualDate(5), ActualQty(6), Yield(7)
+                item["product"] = cells[1].strip() if len(cells) > 1 else ""
+                item["batch_no"] = cells[2].strip() if len(cells) > 2 else ""
+                item["plan_date"] = cells[3].strip() if len(cells) > 3 else ""
+                item["plan_size"] = cells[4].strip() if len(cells) > 4 else ""
+                item["actual_date"] = cells[5].strip() if len(cells) > 5 else ""
+                item["actual_qty"] = cells[6].strip() if len(cells) > 6 else ""
+                item["yield_percent"] = cells[7].strip() if len(cells) > 7 else ""
+            
+            if item.get("product") or item.get("batch_no"):
                 items.append(item)
     
     if items:
@@ -670,19 +699,68 @@ def extract_F18(doc: Document) -> dict:
     return data
 
 def extract_F19(doc: Document) -> dict:
-    """F/19 Product Description Form — key-value rows."""
+    """F/19 Product Description Form — 14 canonical parameter fields.
+    
+    DOCX table has 3 columns: [Sr.No., Parameters, Description].
+    For data rows, cells[0] is empty (Sr. No. column).
+    Use cells[1] as label, cells[2] as value.
+    
+    Canonical key mapping (14 fields):
+      product_name, process_name, composition, end_product_characteristics,
+      method_of_prevention, storage_condition, distribution_method,
+      support_update_period, licensing_legal, customer_use_guide,
+      where_sold, sensitive_consumer, intended_use, regulatory_requirements
+    """
     data = {}
     if not doc.tables:
         return data
     t = doc.tables[0]
     
+    # Canonical label → key mapping
+    LABEL_TO_KEY = {
+        "name of product": "product_name",
+        "product name": "product_name",
+        "process name": "process_name",
+        "name of process": "process_name",
+        "composition": "composition",
+        "end product characteristics": "end_product_characteristics",
+        "method of prevention": "method_of_prevention",
+        "storage condition": "storage_condition",
+        "distribution method": "distribution_method",
+        "support / update period": "support_update_period",
+        "support/update period": "support_update_period",
+        "support update period": "support_update_period",
+        "licensing / legal": "licensing_legal",
+        "licensing/legal": "licensing_legal",
+        "licensing legal": "licensing_legal",
+        "customer use guide": "customer_use_guide",
+        "where sold": "where_sold",
+        "sensitive consumer": "sensitive_consumer",
+        "intended use": "intended_use",
+        "regulatory requirements": "regulatory_requirements",
+    }
+    
     for row in t.rows:
         cells = all_cells(row.cells)
-        if len(cells) >= 2:
-            label = cells[0].strip()
-            value = cells[1].strip()
-            if label and value:
-                data[label] = value
+        # Skip rows with fewer than 3 cells (header rows, empty rows)
+        if len(cells) < 3:
+            continue
+        
+        label = cells[1].strip()
+        value = cells[2].strip()
+        
+        if not label or not value:
+            continue
+        
+        # Map label to canonical key
+        label_lower = label.lower().strip()
+        canonical_key = LABEL_TO_KEY.get(label_lower)
+        if canonical_key:
+            data[canonical_key] = value
+        else:
+            # Fallback: store as-is (snake_case the label)
+            key = label_lower.replace(" ", "_").replace("/", "_").replace("-", "_")
+            data[key] = value
     
     return data
 
