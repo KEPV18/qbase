@@ -81,9 +81,6 @@ export const VENDOR_RATING = z.enum(['A', 'B', 'C']);
 /** Vendor status */
 export const VENDOR_STATUS = z.enum(['Approved', 'Pending', 'Suspended']);
 
-/** Vendor evaluation */
-export const VENDOR_EVAL = z.enum(['Approved', 'Conditionally Approved', 'Not Approved']);
-
 /** Training result */
 export const TRAINING_RESULT = z.enum(['Pass', 'Fail', 'Incomplete']);
 
@@ -414,13 +411,34 @@ export type F15Data = z.infer<typeof F15Schema>;
 
 export const F16Schema = z.object({
   serial: AUTO_SERIAL,
-  date: ISO_DATE,
-  supplier_name: REQUIRED_TEXT,
-  supplier_contact: OPTIONAL_TEXT,
-  service_type: REQUIRED_TEXT,
-  qualifications: OPTIONAL_TEXT,
-  evaluation_result: VENDOR_EVAL,
-  evaluated_by: SIGNATURE,
+  name: REQUIRED_TEXT,
+  address: REQUIRED_TEXT,
+  tel_fax: OPTIONAL_TEXT,
+  contact_person: REQUIRED_TEXT,
+  mobile_no: OPTIONAL_TEXT,
+  residence_no: OPTIONAL_TEXT,
+  sister_concerns: OPTIONAL_TEXT,
+  reference: OPTIONAL_TEXT,
+  products_services: REQUIRED_TEXT,
+  employee_strength: OPTIONAL_TEXT,
+  sites_branches: OPTIONAL_TEXT,
+  associated_yes: OPTIONAL_TEXT,
+  associated_no: OPTIONAL_TEXT,
+  association_years: OPTIONAL_TEXT,
+  speciality: OPTIONAL_TEXT,
+  objections_no: OPTIONAL_TEXT,
+  objections_yes: OPTIONAL_TEXT,
+  vendor_auth_name: REQUIRED_TEXT,
+  vendor_auth_designation: OPTIONAL_TEXT,
+  vendor_date: REQUIRED_TEXT,
+  recommended: OPTIONAL_TEXT,
+  not_recommended: OPTIONAL_TEXT,
+  approval_reason: OPTIONAL_TEXT,
+  past_experience: OPTIONAL_TEXT,
+  authorised_by: REQUIRED_TEXT,
+  authorised_date: REQUIRED_TEXT,
+  status: REQUIRED_TEXT,
+  registered_by: REQUIRED_TEXT,
 });
 export type F16Data = z.infer<typeof F16Schema>;
 
