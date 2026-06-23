@@ -306,18 +306,29 @@ export const F18Schema = z.object({
 export type F18Data = z.infer<typeof F18Schema>;
 
 export const F22Schema = z.object({
-  serial: AUTO_SERIAL,
-  date: ISO_DATE,
-  project_name: OPTIONAL_TEXT,
-  source: NC_SOURCE,
-  problem_description: REQUIRED_TEXT,
-  root_cause: REQUIRED_TEXT,
-  corrective_action: REQUIRED_TEXT,
-  responsible: REQUIRED_TEXT,
-  due_date: OPTIONAL_DATE,
-  status: CA_STATUS,
-  verification: OPTIONAL_TEXT,
-  initiated_by: SIGNATURE,
+  sr_no: AUTO_SERIAL,
+  department: OPTIONAL_TEXT,
+  non_conformity_source: z.object({
+    raw_material_inspection: z.boolean().default(false),
+    inprocess_inspection: z.boolean().default(false),
+    manufacturing: z.boolean().default(false),
+    final_inspection: z.boolean().default(false),
+    customer_complaints: z.boolean().default(false),
+    internal_quality_audit: z.boolean().default(false),
+    others: z.boolean().default(false),
+  }).default({}),
+  description_of_non_conformity: REQUIRED_TEXT,
+  root_cause_analysis: REQUIRED_TEXT,
+  identified_date: DDMMYYYY,
+  identified_by: REQUIRED_TEXT,
+  actions_recommended: z.union([z.string().min(1), z.array(z.string()).min(1)]),
+  responsibility: REQUIRED_TEXT,
+  actions_taken: z.union([z.string(), z.array(z.string())]).default(''),
+  action_taken_date: OPTIONAL_DATE,
+  action_taken_by: OPTIONAL_TEXT,
+  document_change_summary: OPTIONAL_TEXT,
+  planned_review_date: OPTIONAL_DATE,
+  verification_status: OPTIONAL_TEXT,
 });
 export type F22Data = z.infer<typeof F22Schema>;
 

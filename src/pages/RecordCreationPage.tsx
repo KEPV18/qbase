@@ -443,7 +443,7 @@ const RecordCreationPage: React.FC = () => {
                       key={sec.number}
                       onClick={() => setActiveSection(sec.number)}
                       className={cn(
-                        "flex items-start gap-3 p-4 rounded-sm border border-border bg-card hover:border-primary/30 hover:bg-primary/[0.02] transition-all text-left group"
+                        "flex items-start gap-3 p-4 rounded-sm border border-[#f9fcff] bg-card hover:border-primary/30 hover:bg-primary/[0.02] transition-all text-left group"
                       )}
                     >
                       <div className="w-8 h-8 rounded-sm bg-primary/10 flex items-center justify-center shrink-0">
@@ -499,7 +499,7 @@ const RecordCreationPage: React.FC = () => {
                     key={f.code}
                     onClick={() => handleFormSelect(f.code)}
                     className={cn(
-                      "w-full flex items-center gap-3 p-3.5 rounded-sm border border-border bg-card",
+                      "w-full flex items-center gap-3 p-3.5 rounded-sm border border-[#f9fcff] bg-card",
                       "hover:border-primary/30 hover:bg-primary/[0.02] transition-all text-left group"
                     )}
                   >
