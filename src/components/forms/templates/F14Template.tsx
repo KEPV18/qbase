@@ -1,17 +1,20 @@
 // ============================================================================
 // F/14 — Indent and Incoming Inspection Record
-// Simple logistics/inspection form with item tracking.
+// Canonical rewrite matching DOCX structure exactly.
+// Pillar 1: Horizontal Matrix — 6-column items table preserved
+// Pillar 2: Deep DOCX Ingestion — full lifecycle text extraction
+// Pillar 4: Continuous Validation — schema keys match template exactly
 // ============================================================================
 
 import React, { useState, useCallback } from "react";
 import { cn } from "@/lib/utils";
-import { Plus, Trash2 } from "lucide-react";
+import { Plus, Trash2, Info } from "lucide-react";
 
 export interface F14Props {
   data?: Record<string, unknown>;
   isTemplate?: boolean;
   editMode?: boolean;
-  onChange?: (field: string, value: string) => void;
+  onChange?: (field: string, value: string | Record<string, unknown>) => void;
   className?: string;
 }
 
@@ -26,12 +29,10 @@ interface RowData {
   date: string; itemDescription: string; qty: string; supplier: string; inspectionStatus: string; inspectedBy: string;
 }
 
-function parseRows(d: Record<string, unknown>, count: number = 5): RowData[] {
-  const raw = d.items || d.rows || [];
+function parseRows(d: Record<string, unknown>): RowData[] {
+  const raw = d.items;
   if (Array.isArray(raw) && raw.length > 0 && typeof raw[0] === "object") return raw as RowData[];
-  return Array.from({ length: count }, () => ({
-    date: "", itemDescription: "", qty: "", supplier: "", inspectionStatus: "", inspectedBy: "",
-  }));
+  return [{ date: "", itemDescription: "", qty: "", supplier: "", inspectionStatus: "", inspectedBy: "" }];
 }
 
 export function F14Template({ data, isTemplate = true, editMode = false, onChange, className }: F14Props) {
@@ -42,7 +43,7 @@ export function F14Template({ data, isTemplate = true, editMode = false, onChang
   const updateRow = useCallback((idx: number, key: keyof RowData, value: string) => {
     setRows(prev => { const next = [...prev]; next[idx] = { ...next[idx], [key]: value }; return next; });
     const updated = [...rows]; updated[idx] = { ...updated[idx], [key]: value };
-    onChange?.("items", JSON.stringify(updated));
+    onChange?.("items", updated);
   }, [rows, onChange]);
 
   const addRow = useCallback(() => {
@@ -67,6 +68,7 @@ export function F14Template({ data, isTemplate = true, editMode = false, onChang
 
   return (
     <div className={cn("bg-background dark:bg-[#1e1d1a] text-foreground text-sm print:bg-white print:text-black print:border-black", className)}>
+      {/* ── Header ── */}
       <div className="grid grid-cols-[3fr_1fr] border border-border">
         <div className="p-2 font-bold bg-primary/5 text-base">Indent and Incoming Inspection Record</div>
         <div className="p-2 border-l border-border bg-primary/5 text-right text-xs">
@@ -74,11 +76,13 @@ export function F14Template({ data, isTemplate = true, editMode = false, onChang
         </div>
       </div>
 
+      {/* ── Indent No. + Date ── */}
       <div className="grid grid-cols-[1fr_1fr] border-x border-b border-border text-xs">
-        <div className="p-1.5 border-r border-border">Indent No.: {val(d, "serial") || (ph ? "{{SERIAL}}" : "—")}</div>
+        <div className="p-1.5 border-r border-border">Indent No.: {val(d, "indent_no") || val(d, "serial") || (ph ? "{{SERIAL}}" : "—")}</div>
         <div className="p-1.5">Date: {inp("date", "Date", "w-28")}</div>
       </div>
 
+      {/* ── 6-Column Items Table (Horizontal Matrix) ── */}
       <div className="grid grid-cols-[70px_1fr_60px_1fr_1fr_1fr] border-x border-b border-border text-[10px] font-semibold bg-muted">
         <div className="p-1 border-r border-border">Date</div>
         <div className="p-1 border-r border-border">Item Description</div>
@@ -110,6 +114,17 @@ export function F14Template({ data, isTemplate = true, editMode = false, onChang
         </button>
       )}
 
+      {/* ── Disclaimer Callout ── */}
+      {val(d, "disclaimer") && (
+        <div className="mx-0 mt-2 p-2 bg-blue-50 dark:bg-blue-950/20 border-l-4 border-l-blue-500 border-x border-b border-border text-xs">
+          <div className="flex items-start gap-2">
+            <Info className="w-4 h-4 text-blue-600 dark:text-blue-400 mt-0.5 shrink-0" />
+            <span className="text-blue-800 dark:text-blue-300">{val(d, "disclaimer")}</span>
+          </div>
+        </div>
+      )}
+
+      {/* ── Footer Signatures ── */}
       <div className="mt-3 pt-2 border-t border-foreground/20 flex justify-between text-xs">
         <div>Prepared By: {inp("prepared_by", "Name", "w-36")}</div>
         <div>Checked By: {inp("checked_by", "Name", "w-36")}</div>

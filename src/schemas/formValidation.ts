@@ -425,12 +425,18 @@ export type F13Data = z.infer<typeof F13Schema>;
 export const F14Schema = z.object({
   serial: AUTO_SERIAL,
   date: ISO_DATE,
-  po_ref: OPTIONAL_TEXT,
-  supplier: REQUIRED_TEXT,
-  items_inspected: REQUIRED_TEXT,
-  result: INSPECTION_RESULT,
-  defects: OPTIONAL_TEXT,
-  inspector: SIGNATURE,
+  indent_no: OPTIONAL_TEXT,
+  items: z.array(z.object({
+    date: OPTIONAL_TEXT,
+    itemDescription: REQUIRED_TEXT,
+    qty: OPTIONAL_TEXT,
+    supplier: REQUIRED_TEXT,
+    inspectionStatus: OPTIONAL_TEXT,
+    inspectedBy: OPTIONAL_TEXT,
+  })).min(1, 'At least one item required'),
+  disclaimer: OPTIONAL_TEXT,
+  prepared_by: REQUIRED_TEXT,
+  checked_by: REQUIRED_TEXT,
 });
 export type F14Data = z.infer<typeof F14Schema>;
 
