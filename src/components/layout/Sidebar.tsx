@@ -10,7 +10,7 @@ import {
   LayoutDashboard, Layers, FileText, Settings, Bell,
   Database, Shield, Users, BarChart3, Briefcase,
   CheckCircle, LogOut, BookOpen, FileCheck, ShieldCheck, Archive,
-  AlertTriangle,
+  AlertTriangle, Target,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useNotifications } from "@/hooks/useNotifications";
@@ -40,6 +40,7 @@ const TOOLS_NAV: NavSection = {
     { label: "Approvals", icon: CheckCircle, path: "/admin/approvals" },
     { label: "Audit Trail", icon: Shield, path: "/activity" },
     { label: "Notifications", icon: Bell, path: "/notifications" },
+    { label: "KPI Dashboard", icon: Target, path: "/kpi" },
     { label: "SWOT Analysis", icon: BarChart3, path: "/swot-analysis" },
   ],
 };
