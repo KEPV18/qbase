@@ -10,6 +10,7 @@ import {
   RefreshCw, Shield, CheckCircle, Download, FileJson, FileSpreadsheet,
   FileText as FileTextIcon, ChevronLeft, ChevronRightIcon,
   CheckSquare, Square, XCircle, XCircle as DeselectAll, ListFilter,
+  Calendar, LayoutGrid, List,
 } from 'lucide-react';
 import { FORM_SCHEMAS } from '../data/formSchemas';
 import { isoToDisplay } from '../schemas';
@@ -20,6 +21,10 @@ import { exportRecordsToDocx } from '../services/docxExport';
 import { exportRecordsToJson, exportRecordsToCsv } from '../services/fileExport';
 import { toast } from 'sonner';
 import { AppShell } from '@/components/layout/AppShell';
+import {
+  getMonthsFromRecords, monthLabel, monthShortLabel,
+  getRecordMonth, getAllBusinessMonths,
+} from '../lib/temporalUtils';
 
 // ============================================================================
 // Constants
@@ -62,16 +67,44 @@ const RecordListPage: React.FC = () => {
 
   const [search, setSearch] = useState('');
   const [formFilter, setFormFilter] = useState<string>(urlFormCode || 'all');
+  const [monthFilter, setMonthFilter] = useState<string>('');
   const [sortBy, setSortBy] = useState<'serial' | 'date' | 'edited'>('serial');
   const [page, setPage] = useState(1);
   const [selectedSerials, setSelectedSerials] = useState<Set<string>>(new Set());
   const [exportMenuOpen, setExportMenuOpen] = useState(false);
   const [isExporting, setIsExporting] = useState(false);
+  const [viewMode, setViewMode] = useState<'list' | 'timeline'>('list');
 
   const { data: records, isLoading, error, refetch } = useRecords();
   const activeFormCodes = [...new Set(records?.map(r => r.formCode as string) || [])].sort();
   const formNames: Record<string, string> = {};
   FORM_SCHEMAS.forEach(f => { formNames[f.code] = f.name; });
+
+  const availableMonths = useMemo(() => getMonthsFromRecords(records || []), [records]);
+
+  // ── Timeline: records grouped by month × formCode ──────────────────
+  const timelineData = useMemo(() => {
+    if (!records) return [];
+    const businessMonths = getAllBusinessMonths();
+    const monthMap = new Map<string, Set<string>>();
+    for (const r of records) {
+      const m = getRecordMonth(r);
+      if (m) {
+        if (!monthMap.has(m)) monthMap.set(m, new Set());
+        monthMap.get(m)!.add(String(r.formCode));
+      }
+    }
+    // Get all form codes that appear in records for current section/form filter
+    let codes = [...new Set(records.map(r => r.formCode as string))].sort();
+    if (sectionFormCodes) codes = codes.filter(c => sectionFormCodes.has(c));
+    if (formFilter !== 'all') codes = codes.filter(c => c === formFilter);
+    return businessMonths.map(m => ({
+      month: m,
+      label: monthLabel(m),
+      activeCodes: codes.filter(c => monthMap.get(m)?.has(c)),
+      count: codes.length,
+    }));
+  }, [records, sectionFormCodes, formFilter]);
 
   const sectionFormCodes = useMemo(() => {
     if (!urlSection) return null;
@@ -103,6 +136,7 @@ const RecordListPage: React.FC = () => {
     let list = [...records];
     if (sectionFormCodes) list = list.filter(r => sectionFormCodes.has(r.formCode as string));
     if (formFilter !== 'all') list = list.filter(r => r.formCode === formFilter);
+    if (monthFilter) list = list.filter(r => getRecordMonth(r) === monthFilter);
     if (search.trim()) {
       const q = search.toLowerCase();
       list = list.filter(r =>
@@ -120,14 +154,15 @@ const RecordListPage: React.FC = () => {
       }
     });
     return list;
-  }, [records, formFilter, search, sortBy]);
+  }, [records, formFilter, monthFilter, search, sortBy]);
 
   const totalPages = Math.max(1, Math.ceil(filteredRecords.length / PAGE_SIZE));
   const safePage = Math.min(page, totalPages);
   const pagedRecords = filteredRecords.slice((safePage - 1) * PAGE_SIZE, safePage * PAGE_SIZE);
 
   const handleSearchChange = (val: string) => { setSearch(val); setPage(1); setSelectedSerials(new Set()); };
-  const handleFilterChange = (val: string) => { setFormFilter(val); setPage(1); setSelectedSerials(new Set()); };
+  const handleFilterChange = (val: string) => { setFormFilter(val); setPage(1); setSelectedSerials(new Set()); setMonthFilter(''); setViewMode('list'); };
+  const handleMonthChange = (val: string) => { setMonthFilter(val); setPage(1); setSelectedSerials(new Set()); }; 
 
   const toggleSelect = (serial: string) => {
     setSelectedSerials(prev => {
@@ -236,7 +271,9 @@ const RecordListPage: React.FC = () => {
                   <div className="px-3 py-2 text-xs text-muted-foreground border-b border-border bg-secondary/50">
                     {selectedSerials.size > 0
                       ? `Export ${selectedSerials.size} selected record(s)`
-                      : `Export all ${filteredRecords.length} visible record(s)`}
+                      : monthFilter
+                        ? `Export all ${filteredRecords.length} records for ${monthLabel(monthFilter)}`
+                        : `Export all ${filteredRecords.length} visible record(s)`}
                   </div>
                   <button onClick={() => handleBatchExport('docx')} className="w-full px-4 py-3 text-sm text-popover-foreground hover:bg-accent flex items-center gap-3 transition-colors">
                     <FileTextIcon className="w-5 h-5 text-blue-400" />
@@ -295,6 +332,28 @@ const RecordListPage: React.FC = () => {
           <option value="edited">Sort by Edits</option>
         </select>
 
+        {/* Month filter */}
+        <select
+          value={monthFilter}
+          onChange={e => handleMonthChange(e.target.value)}
+          className="input-modern px-4 py-2 text-sm min-w-[130px]"
+        >
+          <option value="">All Months</option>
+          {availableMonths.map(m => (
+            <option key={m} value={m}>{monthShortLabel(m)}</option>
+          ))}
+        </select>
+
+        {/* View toggle */}
+        <button
+          onClick={() => setViewMode(v => v === 'list' ? 'timeline' : 'list')}
+          className="ds-press ds-focus-ring px-3 py-2 text-sm bg-secondary text-secondary-foreground rounded-sm flex items-center gap-2 hover:bg-accent transition-colors"
+          title={viewMode === 'list' ? 'Timeline view' : 'List view'}
+        >
+          {viewMode === 'list' ? <LayoutGrid className="w-4 h-4" /> : <List className="w-4 h-4" />}
+          {viewMode === 'list' ? 'Timeline' : 'List'}
+        </button>
+
         {selectedSerials.size > 0 && (
           <button onClick={() => setSelectedSerials(new Set())} className="ds-press px-3 py-2 text-sm bg-destructive/15 text-destructive rounded-sm flex items-center gap-1 hover:bg-destructive/25 transition-colors">
             <XCircle className="w-4 h-4" /> Clear
@@ -302,8 +361,44 @@ const RecordListPage: React.FC = () => {
         )}
       </div>
 
-      {/* Record List */}
-      {filteredRecords.length === 0 ? (
+      {/* Record List — Timeline View */}
+      {viewMode === 'timeline' && (
+        <div className="mb-6 ds-card p-4 overflow-x-auto">
+          <h3 className="text-sm font-semibold text-foreground mb-3 flex items-center gap-2">
+            <LayoutGrid className="w-4 h-4 text-muted-foreground" />
+            Record Timeline — Forms per Month
+          </h3>
+          <div className="grid gap-3" style={{ gridTemplateColumns: `140px repeat(${timelineData.length}, 1fr)` }}>
+            {/* Header row */}
+            <div className="text-xs text-muted-foreground font-semibold self-end pb-2" />
+            {timelineData.map(col => (
+              <div key={col.month} className="text-center pb-2">
+                <div className="text-[10px] font-mono font-bold text-muted-foreground">{col.label}</div>
+                <div className="text-lg font-bold text-foreground">{col.activeCodes.length}</div>
+                <div className="text-[9px] text-muted-foreground">forms</div>
+              </div>
+            ))}
+            {/* Form rows */}
+            {[...new Set(records?.map(r => r.formCode as string) || [])].sort().map(code => (
+              <React.Fragment key={code}>
+                <div className="text-xs text-muted-foreground font-mono truncate self-center">{code}</div>
+                {timelineData.map(col => (
+                  <div key={`${code}-${col.month}`} className="flex justify-center py-1.5">
+                    {col.activeCodes.includes(code) ? (
+                      <div className="w-2.5 h-2.5 rounded-full bg-primary/70" title={`${code} — ${col.label}`} />
+                    ) : (
+                      <div className="w-2.5 h-2.5 rounded-full bg-muted-foreground/15" title={`${code} — missing ${col.label}`} />
+                    )}
+                  </div>
+                ))}
+              </React.Fragment>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Record List — List View */}
+      {viewMode === 'list' && (filteredRecords.length === 0 ? (
         <div className="flex flex-col items-center py-16 ds-fade-enter">
           <FileText className="w-12 h-12 text-muted-foreground/40 mb-4" />
           <h3 className="text-lg text-foreground mb-2">No Records Found</h3>
@@ -450,7 +545,7 @@ const RecordListPage: React.FC = () => {
             </div>
           )}
         </>
-      )}
+      ))}
     </div>
     </AppShell>
   );

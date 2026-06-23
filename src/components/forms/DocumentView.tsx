@@ -61,9 +61,11 @@ interface DocHeaderProps {
   formName: string;
   formCode: string;
   sectionName?: string;
+  projectScope?: string;
+  coveragePeriod?: string;
 }
 
-export function DocHeader({ serial, formName, formCode, sectionName }: DocHeaderProps) {
+export function DocHeader({ serial, formName, formCode, sectionName, projectScope, coveragePeriod }: DocHeaderProps) {
   return (
     <div className="mb-8 print:text-black">
       <p className="text-[11px] text-muted-foreground font-medium tracking-wider uppercase mb-1">
@@ -76,6 +78,15 @@ export function DocHeader({ serial, formName, formCode, sectionName }: DocHeader
         <span className="font-mono text-[13px]">{serial}</span>
         <span className="text-border">·</span>
         <span className="text-[13px]">{formCode}</span>
+      </div>
+      {/* Project Scope & Coverage Period badges */}
+      <div className="flex items-center gap-2 mt-2">
+        <span className="px-2 py-0.5 rounded-sm bg-primary/5 text-primary border border-primary/10 text-[10px] font-semibold tracking-wider">
+          📋 {projectScope || 'Company-Wide'}
+        </span>
+        <span className="px-2 py-0.5 rounded-sm bg-secondary/50 text-secondary-foreground border border-border/50 text-[10px] font-semibold tracking-wider">
+          🗓 {coveragePeriod || 'Continuous / Open-Ended'}
+        </span>
       </div>
     </div>
   );

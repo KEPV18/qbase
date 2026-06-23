@@ -478,6 +478,16 @@ const RecordViewPage: React.FC = () => {
             <span className="text-xs text-muted-foreground uppercase tracking-wider">By</span>
             <p className="text-foreground truncate mt-0.5">{originalRecord._createdBy as string}</p>
           </div>
+          {/* Project Scope & Coverage Period — always visible */}
+          <div>
+            <span className="text-xs text-muted-foreground uppercase tracking-wider">Project Scope</span>
+            <p className="text-foreground mt-0.5 font-medium">{(originalRecord.project_scope as string) || 'Company-Wide'}</p>
+          </div>
+          <div>
+            <span className="text-xs text-muted-foreground uppercase tracking-wider">Coverage Period</span>
+            <p className="text-foreground mt-0.5 font-medium">{(originalRecord.coverage_period as string) || 'Continuous / Open-Ended'}</p>
+          </div>
+
           {(originalRecord._lastModifiedAt || (originalRecord._editCount ?? 0) > 0) && (
             <>
               <div>
@@ -588,6 +598,8 @@ const RecordViewPage: React.FC = () => {
             formName={(originalRecord.formName as string) || ''}
             formCode={originalRecord.formCode as string}
             sectionName={(originalRecord as RecordData)._sectionName as string}
+            projectScope={(originalRecord.project_scope as string) || 'Company-Wide'}
+            coveragePeriod={(originalRecord.coverage_period as string) || 'Continuous / Open-Ended'}
           />
 
           {(() => {

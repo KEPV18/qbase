@@ -33,6 +33,11 @@ import {
   Edit3,
 } from "lucide-react";
 import { getFormSchema } from "@/data/formSchemas";
+import { useRecords } from "@/hooks/useRecordStorage";
+import {
+  getMissingMonths, isMonthlyForm, monthLabel,
+} from "@/lib/temporalUtils";
+import type { RecordData } from "@/components/forms/DynamicFormRenderer";
 
 // Format ISO date to readable format
 function formatTemplateDate(iso: string | null | undefined): string | null {
@@ -71,6 +76,20 @@ function computeStats(forms: FormEntry[]) {
 
 export default function FormsRegistryPage() {
   const navigate = useNavigate();
+  const { data: records } = useRecords();
+
+  // Missing months per form (computed from records)
+  const missingMonthsMap = useMemo(() => {
+    const map = new Map<string, string[]>();
+    if (!records) return map;
+    for (const code of [...new Set(records.map(r => String(r.formCode)))]) {
+      if (isMonthlyForm(code)) {
+        const missing = getMissingMonths(records as RecordData[], code);
+        if (missing.length > 0) map.set(code, missing);
+      }
+    }
+    return map;
+  }, [records]);
 
   // Filters
   const [searchTerm, setSearchTerm] = useState("");
@@ -336,6 +355,7 @@ export default function FormsRegistryPage() {
                 <FormCard
                   key={form.code}
                   form={form}
+                  missingMonths={missingMonthsMap.get(form.code)}
                 />
               ))}
             </div>
@@ -389,8 +409,10 @@ function StatCard({
 
 function FormCard({
   form,
+  missingMonths,
 }: {
   form: FormEntry;
+  missingMonths?: string[];
 }) {
   const navigate = useNavigate();
   const hasRecords = form.lastRecordCount !== undefined && form.lastRecordCount > 0;
@@ -461,6 +483,16 @@ function FormCard({
             style={{ width: hasRecords ? `${Math.min(100, (form.lastRecordCount! / 64) * 100)}%` : "0%" }}
           />
         </div>
+
+        {/* Missing months badge */}
+        {missingMonths && missingMonths.length > 0 && (
+          <div className="flex items-center gap-1.5 mt-1.5 mb-1">
+            <AlertTriangle className="w-3 h-3 text-amber-500 shrink-0" />
+            <span className="text-[10px] font-medium text-amber-600 dark:text-amber-400">
+              Missing: {missingMonths.map(monthLabel).join(', ')}
+            </span>
+          </div>
+        )}
 
         <p className="text-[11px] text-muted-foreground/70 line-clamp-1 leading-relaxed text-left">
           {form.notes}
