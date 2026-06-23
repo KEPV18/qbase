@@ -83,8 +83,8 @@
     --info-foreground: 0 0% 100%;
 
     /* ── Interactive ── */
-    --border: 214 32% 91%;          /* #e2e8f0 */
-    --input: 214 32% 91%;           /* #e2e8f0 */
+    --border: 210 100% 98.8%;       /* #f9fcff */
+    --input: 210 100% 98.8%;        /* #f9fcff */
     --ring: 239 84% 59%;            /* #4f46e5 */
 
     /* Module colors */
