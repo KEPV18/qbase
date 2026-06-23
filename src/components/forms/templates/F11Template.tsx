@@ -1,6 +1,7 @@
 // ============================================================================
 // F/11 — Production Plan
-// DOCX: 10C x 29R — Header + date/month + product planning table + remarks + signatures
+// DOCX: 8-10 columns → canonical 7-column schema
+//   product | batch_no | plan_date | plan_size | actual_date | actual_qty | yield_percent
 // ============================================================================
 
 import React, { useState, useCallback } from "react";
@@ -23,14 +24,20 @@ function val(data: Record<string, unknown> | undefined, key: string): string {
 }
 
 interface RowData {
-  product: string; batchNo: string; planDate: string; planCompletion: string; planSize: string; actualDate: string; actualQty: string; yieldPercent: string;
+  product: string;
+  batch_no: string;
+  plan_date: string;
+  plan_size: string;
+  actual_date: string;
+  actual_qty: string;
+  yield_percent: string;
 }
 
 function parseRows(d: Record<string, unknown>, count: number = 12): RowData[] {
   const raw = d.items || d.rows || [];
   if (Array.isArray(raw) && raw.length > 0 && typeof raw[0] === "object") return raw as RowData[];
   return Array.from({ length: count }, () => ({
-    product: "", batchNo: "", planDate: "", planCompletion: "", planSize: "", actualDate: "", actualQty: "", yieldPercent: "",
+    product: "", batch_no: "", plan_date: "", plan_size: "", actual_date: "", actual_qty: "", yield_percent: "",
   }));
 }
 
@@ -46,7 +53,7 @@ export function F11Template({ data, isTemplate = true, editMode = false, onChang
   }, [rows, onChange]);
 
   const addRow = useCallback(() => {
-    setRows(prev => [...prev, { product: "", batchNo: "", planDate: "", planCompletion: "", planSize: "", actualDate: "", actualQty: "", yieldPercent: "" }]);
+    setRows(prev => [...prev, { product: "", batch_no: "", plan_date: "", plan_size: "", actual_date: "", actual_qty: "", yield_percent: "" }]);
   }, []);
 
   const removeRow = useCallback((idx: number) => { setRows(prev => prev.filter((_, i) => i !== idx)); }, []);
@@ -91,70 +98,80 @@ export function F11Template({ data, isTemplate = true, editMode = false, onChang
         Planning For Products
       </div>
 
-      {/* Table header - two-level */}
-      <div className="grid grid-cols-[35px_100px_60px_60px_60px_60px_60px_60px_50px] border-x border-b border-border text-[9px] font-semibold bg-muted">
-        <div className="p-1 border-r border-border">Sr.</div>
+      {/* ====== CORRECTED 7-COLUMN TABLE HEADER ======
+          Original DOCX: Sr.No | Product | Batch No. | Plan For Completion (Date + #Size) | Actual Completion (Date + Qty) | % Yield
+      */}
+      <div className="grid grid-cols-[30px_1fr_0.8fr_0.8fr_0.8fr_0.8fr_0.5fr] border-x border-b border-border text-[10px] font-semibold bg-muted">
+        <div className="p-1 border-r border-border text-center">Sr.</div>
         <div className="p-1 border-r border-border">Product</div>
         <div className="p-1 border-r border-border">Batch No.</div>
-        <div className="p-1 border-r border-border col-span={3} text-center bg-blue-50 dark:bg-blue-950/30">Plan For Completion</div>
-        <div className="p-1 col-span={2} text-center bg-green-50 dark:bg-green-950/30">Actual Completion</div>
-        <div className="p-1 border-l border-r border-border">% Yield</div>
-      </div>
-      <div className="grid grid-cols-[35px_100px_60px_60px_60px_60px_60px_60px_50px] border-x border-b border-border text-[9px] font-semibold bg-muted">
-        <div className="p-1 border-r border-border"></div>
-        <div className="p-1 border-r border-border"></div>
-        <div className="p-1 border-r border-border"></div>
-        <div className="p-1 border-r border-border text-center bg-blue-50 dark:bg-blue-950/30">Date</div>
-        <div className="p-1 border-r border-border text-center bg-blue-50 dark:bg-blue-950/30">Qty</div>
-        <div className="p-1 border-r border-border text-center bg-blue-50 dark:bg-blue-950/30"># Size</div>
-        <div className="p-1 border-r border-border text-center bg-green-50 dark:bg-green-950/30">Date</div>
-        <div className="p-1 text-center bg-green-50 dark:bg-green-950/30">Qty</div>
-        <div className="p-1"></div>
+        <div className="p-1 border-r border-border text-center bg-blue-50 dark:bg-blue-950/30">Plan Date</div>
+        <div className="p-1 border-r border-border text-center bg-blue-50 dark:bg-blue-950/30">Plan Size</div>
+        <div className="p-1 border-r border-border text-center bg-green-50 dark:bg-green-950/30">Actual Date</div>
+        <div className="p-1 border-r border-border text-center bg-green-50 dark:bg-green-950/30">Actual Qty</div>
+        <div className="p-1 text-center ml-[-1px]">% Yield</div>
       </div>
 
-      {/* Data rows */}
+      {/* ====== DATA ROWS ====== */}
       {rows.map((row, idx) => (
-        <div key={idx} className="grid grid-cols-[35px_100px_60px_60px_60px_60px_60px_60px_50px] border-x border-b border-border text-xs relative group min-h-[26px]">
-          <div className="p-1 border-r border-border text-center">{idx + 1}</div>
+        <div key={idx} className={cn(
+          "grid grid-cols-[30px_1fr_0.8fr_0.8fr_0.8fr_0.8fr_0.5fr] border-x border-b border-border text-xs",
+          idx % 2 === 0 ? "bg-background dark:bg-[#1e1d1a]" : "bg-muted/30"
+        )}>
+          <div className="p-1 border-r border-border text-center text-muted-foreground">{idx + 1}</div>
           <div className="p-1 border-r border-border">{cellInp(idx, "product", "Product")}</div>
-          <div className="p-1 border-r border-border">{cellInp(idx, "batchNo", "Batch")}</div>
-          <div className="p-1 border-r border-border">{cellInp(idx, "planDate", "Date")}</div>
-          <div className="p-1 border-r border-border">{cellInp(idx, "planCompletion", "Qty")}</div>
-          <div className="p-1 border-r border-border">{cellInp(idx, "planSize", "Size")}</div>
-          <div className="p-1 border-r border-border">{cellInp(idx, "actualDate", "Date")}</div>
-          <div className="p-1 border-r border-border">{cellInp(idx, "actualQty", "Qty")}</div>
-          <div className="p-1">{cellInp(idx, "yieldPercent", "%")}</div>
-          {editMode && rows.length > 1 && (
-            <button onClick={() => removeRow(idx)} className="absolute -right-6 top-1/2 -translate-y-1/2 text-destructive opacity-0 group-hover:opacity-100 transition-opacity">
-              <Trash2 className="w-3 h-3" />
-            </button>
+          <div className="p-1 border-r border-border">{cellInp(idx, "batch_no", "Batch No.")}</div>
+          <div className="p-1 border-r border-border">{cellInp(idx, "plan_date", "Date")}</div>
+          <div className="p-1 border-r border-border">{cellInp(idx, "plan_size", "# Size")}</div>
+          <div className="p-1 border-r border-border">{cellInp(idx, "actual_date", "Date")}</div>
+          <div className="p-1 border-r border-border">{cellInp(idx, "actual_qty", "Qty")}</div>
+          <div className="p-1 text-center">{cellInp(idx, "yield_percent", "%")}</div>
+          {editMode && (
+            <div className="p-1 flex items-center">
+              <button onClick={() => removeRow(idx)} className="text-destructive hover:text-destructive/80">
+                <Trash2 className="w-3 h-3" />
+              </button>
+            </div>
           )}
         </div>
       ))}
 
+      {/* Add row button (edit mode only) */}
       {editMode && (
-        <button onClick={addRow} className="mt-1 flex items-center gap-1 text-xs text-primary hover:underline mx-auto">
+        <button onClick={addRow} className="w-full border-x border-b border-border py-1.5 text-xs text-muted-foreground hover:text-primary hover:bg-primary/5 transition-colors flex items-center justify-center gap-1">
           <Plus className="w-3 h-3" /> Add Row
         </button>
       )}
 
-      {/* Remarks */}
-      <div className="border-x border-b border-border text-xs mt-0">
-        <div className="p-1.5 bg-muted/50 font-semibold">Remarks</div>
-        <div className="p-2 min-h-[40px]">
-          {editMode ? (
-            <textarea className="w-full bg-transparent text-xs border-none outline-none min-h-[40px]" value={val(d, "remarks") || ""} onChange={e => onChange?.("remarks", e.target.value)} placeholder="Remarks..." />
-          ) : (
-            <span className="whitespace-pre-wrap">{val(d, "remarks") || (ph ? "___" : "")}</span>
-          )}
+      {/* ====== REMARKS ====== */}
+      {editMode ? (
+        <div className="border-x border-b border-border p-2 text-xs">
+          <span className="font-semibold mr-2">Remarks:</span>
+          <input className="border-b border-dashed border-foreground/40 bg-transparent text-sm w-3/4"
+            value={val(d, "remarks")} onChange={e => onChange?.("remarks", e.target.value)} placeholder="Remarks" />
         </div>
-      </div>
+      ) : (
+        <div className="border-x border-b border-border p-2 text-xs">
+          <span className="font-semibold mr-2">Remarks:</span>
+          <span>{val(d, "remarks") || (ph ? "___" : "")}</span>
+        </div>
+      )}
 
-      {/* Signatures */}
-      <div className="grid grid-cols-[1fr_2fr] border border-t-2 border-border text-xs">
-        <div className="p-1.5 border-r border-border">Prepared By:</div>
-        <div className="p-1.5">Updated Based On Progress: {inp("updated_by", "Name")}</div>
-      </div>
+      {/* ====== PREPARED BY ====== */}
+      {editMode ? (
+        <div className="border-x border-b border-border p-2 text-xs">
+          <span className="font-semibold mr-2">Prepared By:</span>
+          <input className="border-b border-dashed border-foreground/40 bg-transparent text-sm w-48"
+            value={val(d, "prepared_by")} onChange={e => onChange?.("prepared_by", e.target.value)} placeholder="Name" />
+        </div>
+      ) : (
+        <div className="border-x border-b border-border p-2 text-xs">
+          <span className="font-semibold mr-2">Prepared By:</span>
+          <span className="border-b border-dashed border-foreground/30 px-2">
+            {val(d, "prepared_by") || (ph ? "_____________" : "")}
+          </span>
+        </div>
+      )}
     </div>
   );
 }

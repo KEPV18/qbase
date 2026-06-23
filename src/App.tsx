@@ -38,6 +38,7 @@ const KPIDashboardPage = lazy(() => import("./pages/KPIDashboardPage"));
 const KPIReportsPage = lazy(() => import("./pages/KPIReportsPage"));
 const SWOTAnalysisPage = lazy(() => import("./pages/SWOTAnalysisPage"));
 const TraceabilityPage = lazy(() => import("./pages/TraceabilityPage"));
+const ArchivePage = lazy(() => import("./pages/ArchivePage"));
 const SettingsPage = lazy(() => import("./pages/Settings"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 
@@ -125,7 +126,7 @@ const App = () => {
 
                     {/* Legacy redirects */}
                     <Route path="/record/*" element={<Navigate to="/records" replace />} />
-                    <Route path="/archive" element={<Navigate to="/records" replace />} />
+                    <Route path="/archive" element={<PageBoundary><ArchivePage /></PageBoundary>} />
 
                     {/* 404 */}
                     <Route path="*" element={<NotFound />} />

@@ -251,6 +251,7 @@ function parseRowToRecord(row: DbRecord): RecordData | null {
     _createdBy: row.created_by || '',
     _lastModifiedAt: row.updated_at || '',
     _lastModifiedBy: row.last_modified_by || '',
+    _deletedAt: row.deleted_at || '',
     _editCount: row.edit_count || 0,
     _modificationReason: row.modification_reason || '',
     _status: row.status || 'draft',
@@ -913,6 +914,79 @@ export async function approveRecords(
   }
 
   return results;
+}
+
+// ============================================================================
+// Archive — fetch, restore, purge
+// ============================================================================
+
+export async function getArchivedRecords(): Promise<RecordData[]> {
+  const user = await getCurrentUser();
+  const isAdmin = user?.role === 'admin';
+
+  // Before fetching, purge records deleted >30 days ago
+  await purgeOldArchives();
+
+  const query = supabase
+    .from('records')
+    .select('*')
+    .not('deleted_at', 'is', null)
+    .order('deleted_at', { ascending: false });
+
+  if (!isAdmin && user?.department) {
+    query.eq('department', user.department);
+  }
+
+  const { data, error } = await query;
+  if (error) {
+    throw new RecordStorageError(`Failed to fetch archived records: ${error.message}`, 'NETWORK', error);
+  }
+
+  return (data as DbRecord[])
+    .map(row => parseRowToRecord(row))
+    .filter(Boolean) as RecordData[];
+}
+
+export async function restoreRecord(id: string): Promise<StorageResult> {
+  const startTime = performance.now();
+  try {
+    const { error } = await supabase
+      .from('records')
+      .update({ deleted_at: null })
+      .eq('id', id);
+
+    if (error) {
+      throw new RecordStorageError(`Failed to restore record: ${error.message}`, 'NETWORK', error);
+    }
+
+    logOperation({ timestamp: new Date().toISOString(), operation: 'update', serial: id, formCode: '?', success: true, durationMs: Math.round(performance.now() - startTime) });
+    emitEvent({
+      action: 'restore', category: 'records', priority: 'important',
+      eventType: 'record.restored', title: 'Record Restored',
+      message: `A record was restored from archive (id: ${id.substring(0, 8)}...).`,
+      targetId: id, metadata: { recordId: id },
+    }).catch(() => {});
+
+    return { success: true };
+  } catch (err) {
+    const errorMsg = err instanceof RecordStorageError ? err.message : `Unexpected error: ${(err as Error).message}`;
+    logOperation({ timestamp: new Date().toISOString(), operation: 'update', serial: id, formCode: '?', success: false, error: errorMsg, durationMs: Math.round(performance.now() - startTime) });
+    return { success: false, error: errorMsg };
+  }
+}
+
+async function purgeOldArchives(): Promise<void> {
+  const thirtyDaysAgo = new Date();
+  thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+
+  const { error } = await supabase
+    .from('records')
+    .delete()
+    .lt('deleted_at', thirtyDaysAgo.toISOString());
+
+  if (error) {
+    console.error('Failed to purge old archived records:', error.message);
+  }
 }
 
 // invalidateRowCache was a legacy React Query cache helper.

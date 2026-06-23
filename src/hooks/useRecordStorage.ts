@@ -12,6 +12,8 @@ import {
   createRecord,
   updateRecord,
   softDeleteRecord,
+  getArchivedRecords,
+  restoreRecord,
   invalidateRowCache,
   type StorageResult,
 } from '../services/recordStorage';
@@ -252,6 +254,42 @@ export function useDeleteRecord() {
         queryClient.setQueryData(RECORD_KEYS.all, context.previousRecords);
       }
       toast.error(`Delete failed: ${error.message}`);
+    },
+  });
+}
+
+// ============================================================================
+// useArchivedRecords — fetch soft-deleted records
+// ============================================================================
+
+export function useArchivedRecords() {
+  return useQuery({
+    queryKey: [...RECORD_KEYS.all, 'archived'],
+    queryFn: getArchivedRecords,
+    staleTime: 30_000,
+    gcTime: 120_000,
+  });
+}
+
+// ============================================================================
+// useRestoreRecord — restore a record from archive
+// ============================================================================
+
+export function useRestoreRecord() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (id: string) => restoreRecord(id),
+    onSuccess: (result: StorageResult) => {
+      if (result.success) {
+        toast.success('Record restored successfully');
+      } else {
+        toast.error(`Restore failed: ${result.error || 'Unknown error'}`);
+      }
+      queryClient.invalidateQueries({ queryKey: RECORD_KEYS.all });
+    },
+    onError: (error: Error) => {
+      toast.error(`Restore failed: ${error.message}`);
     },
   });
 }
