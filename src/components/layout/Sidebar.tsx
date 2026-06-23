@@ -103,7 +103,7 @@ function NotificationNavItem({
   );
 }
 
-export function Sidebar({ mobileOpen, onClose }: { mobileOpen: boolean; onClose: () => void }) {
+export function Sidebar({ mobileOpen, onClose, sidebarOpen, onToggle }: { mobileOpen: boolean; onClose: () => void; sidebarOpen: boolean; onToggle: () => void }) {
   const navigate = useNavigate();
   const location = useLocation();
   const { user, logout } = useAuth();
@@ -131,52 +131,88 @@ export function Sidebar({ mobileOpen, onClose }: { mobileOpen: boolean; onClose:
 
       <aside
         className={cn(
-          "fixed lg:static inset-y-0 left-0 z-50 w-64 bg-background/80 backdrop-blur-xl border-r border-border",
-          "flex flex-col transition-transform duration-300 ease-in-out",
-          mobileOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"
+          "fixed lg:static inset-y-0 left-0 z-50 bg-background/80 backdrop-blur-xl border-r border-border",
+          "flex flex-col transition-all duration-300 ease-in-out",
+          mobileOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0",
+          sidebarOpen ? "w-64" : "w-0 lg:w-16 overflow-hidden lg:overflow-visible"
         )}
       >
-        {/* Logo */}
-        <div className="px-6 pt-8 pb-6">
-          <button onClick={() => handleNav("/")} className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-lg bg-foreground dark:bg-card flex items-center justify-center">
+        {/* Logo + Toggle */}
+        <div className={cn("px-6 pt-8 pb-6 flex items-center", sidebarOpen ? "justify-between" : "justify-center")}>
+          {sidebarOpen ? (
+            <button onClick={() => handleNav("/")} className="flex items-center gap-3">
+              <div className="w-9 h-9 rounded-lg bg-foreground dark:bg-card flex items-center justify-center">
+                <img src={brandLogo} alt="logo" className="w-5 h-5 object-contain invert" />
+              </div>
+              <span className="text-lg font-heading font-bold text-foreground tracking-tight">
+                {displayName || "QBase"}
+              </span>
+            </button>
+          ) : (
+            <button onClick={() => handleNav("/")} className="w-9 h-9 rounded-lg bg-foreground dark:bg-card flex items-center justify-center shrink-0">
               <img src={brandLogo} alt="logo" className="w-5 h-5 object-contain invert" />
-            </div>
-            <span className="text-lg font-heading font-bold text-foreground tracking-tight">
-              {displayName || "QBase"}
-            </span>
+            </button>
+          )}
+          <button
+            onClick={onToggle}
+            className="hidden lg:flex p-1.5 rounded-lg text-muted-foreground/70 hover:text-foreground hover:bg-muted transition-colors shrink-0"
+            title={sidebarOpen ? "Collapse sidebar" : "Expand sidebar"}
+          >
+            <PanelLeftClose className="w-4 h-4" />
           </button>
         </div>
 
         {/* Navigation */}
-        <div className="flex-1 px-4 space-y-6 overflow-y-auto">
+        <div className={cn("flex-1 space-y-6 overflow-y-auto", sidebarOpen ? "px-4" : "px-2")}>
           <div className="space-y-1">
-            <p className="px-3 mb-2 text-[11px] font-heading font-semibold text-muted-foreground/70 uppercase tracking-wider">
-              {MAIN_NAV.title}
-            </p>
+            {sidebarOpen && (
+              <p className="px-3 mb-2 text-[11px] font-heading font-semibold text-muted-foreground/70 uppercase tracking-wider">
+                {MAIN_NAV.title}
+              </p>
+            )}
             {MAIN_NAV.items.map((item) => (
-              <SidebarNavItem
-                key={item.path}
-                item={item}
-                isActive={isActive(item.path)}
-                onClick={() => handleNav(item.path)}
-              />
-            ))}
-          </div>
-
-          <div className="space-y-1">
-            <p className="px-3 mb-2 text-[11px] font-heading font-semibold text-muted-foreground/70 uppercase tracking-wider">
-              {TOOLS_NAV.title}
-            </p>
-            {TOOLS_NAV.items.map((item) =>
-              item.label === "Notifications" ? (
-                <NotificationNavItem
+              sidebarOpen ? (
+                <SidebarNavItem
                   key={item.path}
+                  item={item}
                   isActive={isActive(item.path)}
                   onClick={() => handleNav(item.path)}
                 />
               ) : (
-                <SidebarNavItem
+                <SidebarIconItem
+                  key={item.path}
+                  item={item}
+                  isActive={isActive(item.path)}
+                  onClick={() => handleNav(item.path)}
+                />
+              )
+            ))}
+          </div>
+
+          <div className="space-y-1">
+            {sidebarOpen && (
+              <p className="px-3 mb-2 text-[11px] font-heading font-semibold text-muted-foreground/70 uppercase tracking-wider">
+                {TOOLS_NAV.title}
+              </p>
+            )}
+            {TOOLS_NAV.items.map((item) =>
+              sidebarOpen ? (
+                item.label === "Notifications" ? (
+                  <NotificationNavItem
+                    key={item.path}
+                    isActive={isActive(item.path)}
+                    onClick={() => handleNav(item.path)}
+                  />
+                ) : (
+                  <SidebarNavItem
+                    key={item.path}
+                    item={item}
+                    isActive={isActive(item.path)}
+                    onClick={() => handleNav(item.path)}
+                  />
+                )
+              ) : (
+                <SidebarIconItem
                   key={item.path}
                   item={item}
                   isActive={isActive(item.path)}
@@ -187,37 +223,52 @@ export function Sidebar({ mobileOpen, onClose }: { mobileOpen: boolean; onClose:
           </div>
 
           <div className="space-y-1">
-            <p className="px-3 mb-2 text-[11px] font-heading font-semibold text-muted-foreground/70 uppercase tracking-wider">
-              {SETTINGS_NAV.title}
-            </p>
+            {sidebarOpen && (
+              <p className="px-3 mb-2 text-[11px] font-heading font-semibold text-muted-foreground/70 uppercase tracking-wider">
+                {SETTINGS_NAV.title}
+              </p>
+            )}
             {SETTINGS_NAV.items.map((item) => (
-              <SidebarNavItem
-                key={item.path}
-                item={item}
-                isActive={isActive(item.path)}
-                onClick={() => handleNav(item.path)}
-              />
+              sidebarOpen ? (
+                <SidebarNavItem
+                  key={item.path}
+                  item={item}
+                  isActive={isActive(item.path)}
+                  onClick={() => handleNav(item.path)}
+                />
+              ) : (
+                <SidebarIconItem
+                  key={item.path}
+                  item={item}
+                  isActive={isActive(item.path)}
+                  onClick={() => handleNav(item.path)}
+                />
+              )
             ))}
           </div>
         </div>
 
         {/* User Profile */}
-        <div className="px-4 pb-6 pt-4">
-          <div className="flex items-center gap-3 px-3 py-3 rounded-lg border border-border bg-card">
-            <div className="w-9 h-9 rounded-full bg-foreground dark:bg-card flex items-center justify-center">
+        <div className={cn("pb-6 pt-4", sidebarOpen ? "px-4" : "px-2")}>
+          <div className={cn("flex items-center rounded-lg border border-border bg-card", sidebarOpen ? "gap-3 px-3 py-3" : "gap-2 p-2 justify-center")}>
+            <div className="w-9 h-9 rounded-full bg-foreground dark:bg-card flex items-center justify-center shrink-0">
               <span className="text-xs font-bold text-white dark:text-foreground">{userInitials}</span>
             </div>
-            <div className="flex-1 min-w-0">
-              <p className="text-sm font-semibold text-foreground truncate">{firstName}</p>
-              <p className="text-[11px] text-muted-foreground truncate">{user?.role || "User"}</p>
-            </div>
-            <button
-              onClick={logout}
-              className="p-1.5 rounded-lg text-muted-foreground/70 hover:text-foreground hover:bg-muted transition-colors"
-              title="Logout"
-            >
-              <LogOut className="w-4 h-4" />
-            </button>
+            {sidebarOpen && (
+              <>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-semibold text-foreground truncate">{firstName}</p>
+                  <p className="text-[11px] text-muted-foreground truncate">{user?.role || "User"}</p>
+                </div>
+                <button
+                  onClick={logout}
+                  className="p-1.5 rounded-lg text-muted-foreground/70 hover:text-foreground hover:bg-muted transition-colors"
+                  title="Logout"
+                >
+                  <LogOut className="w-4 h-4" />
+                </button>
+              </>
+            )}
           </div>
         </div>
       </aside>

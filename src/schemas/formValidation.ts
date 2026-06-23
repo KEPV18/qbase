@@ -293,12 +293,18 @@ export type F17Data = z.infer<typeof F17Schema>;
 
 export const F18Schema = z.object({
   serial: AUTO_SERIAL,
-  date: ISO_DATE,
-  product: REQUIRED_TEXT,
-  reason: REQUIRED_TEXT,
-  affected_items: OPTIONAL_TEXT,
-  resolution: OPTIONAL_TEXT,
-  authorized_by: SIGNATURE,
+  date: DATE_OR_TEXT,
+  product_name: REQUIRED_TEXT,
+  reference_inward_no: REQUIRED_TEXT,
+  qty_taken: REQUIRED_TEXT,
+  products_identified_by: REQUIRED_TEXT,
+  released_by: REQUIRED_TEXT,
+  requested_by: REQUIRED_TEXT,
+  verified_by: REQUIRED_TEXT,
+  verified_on: DATE_OR_TEXT,
+  status: REQUIRED_TEXT,
+  entry_closed_on: DATE_OR_TEXT,
+  entry_closed_by: REQUIRED_TEXT,
 });
 export type F18Data = z.infer<typeof F18Schema>;
 
