@@ -14,6 +14,7 @@ import {
 } from 'lucide-react';
 import { getFormSchema } from '../data/formSchemas';
 import { isoToDisplay } from '../schemas';
+import { resolveCoveragePeriod } from '@/lib/temporalUtils';
 import DynamicFormRenderer, { type RecordData } from '../components/forms/DynamicFormRenderer';
 import { getFormTemplateComponent } from '@/components/forms/templates';
 import { DocumentView, DocHeader, DocSection, DocField, DocTable } from '@/components/forms/DocumentView';
@@ -481,11 +482,11 @@ const RecordViewPage: React.FC = () => {
           {/* Project Scope & Coverage Period — always visible */}
           <div>
             <span className="text-xs text-muted-foreground uppercase tracking-wider">Project Scope</span>
-            <p className="text-foreground mt-0.5 font-medium">{(originalRecord.project_scope as string) || 'Company-Wide'}</p>
+            <p className="text-foreground mt-0.5 font-medium">{String(originalRecord.project_scope ?? 'Company-Wide')}</p>
           </div>
           <div>
             <span className="text-xs text-muted-foreground uppercase tracking-wider">Coverage Period</span>
-            <p className="text-foreground mt-0.5 font-medium">{(originalRecord.coverage_period as string) || 'Continuous / Open-Ended'}</p>
+            <p className="text-foreground mt-0.5 font-medium">{resolveCoveragePeriod(originalRecord as RecordData)}</p>
           </div>
 
           {(originalRecord._lastModifiedAt || (originalRecord._editCount ?? 0) > 0) && (
@@ -598,8 +599,8 @@ const RecordViewPage: React.FC = () => {
             formName={(originalRecord.formName as string) || ''}
             formCode={originalRecord.formCode as string}
             sectionName={(originalRecord as RecordData)._sectionName as string}
-            projectScope={(originalRecord.project_scope as string) || 'Company-Wide'}
-            coveragePeriod={(originalRecord.coverage_period as string) || 'Continuous / Open-Ended'}
+            projectScope={String(originalRecord.project_scope ?? 'Company-Wide')}
+            coveragePeriod={resolveCoveragePeriod(originalRecord as RecordData)}
           />
 
           {(() => {

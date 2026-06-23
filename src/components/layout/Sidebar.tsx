@@ -38,6 +38,7 @@ const TOOLS_NAV: NavSection = {
     { label: "Approvals", icon: CheckCircle, path: "/admin/approvals" },
     { label: "Audit Trail", icon: Shield, path: "/activity" },
     { label: "Notifications", icon: Bell, path: "/notifications" },
+    { label: "SWOT Analysis", icon: BarChart3, path: "/swot-analysis" },
   ],
 };
 

@@ -6,8 +6,131 @@
 import type { RecordData } from '@/components/forms/DynamicFormRenderer';
 
 // ---------------------------------------------------------------------------
-// Monthly form codes that require one record per calendar month
+// Dynamic coverage period resolution
+// Checks: form_data.coverage_period  →  record_month  →  date fields  →  Continuous
 // ---------------------------------------------------------------------------
+
+const MONTH_NAMES_FULL = [
+  'January', 'February', 'March', 'April', 'May', 'June',
+  'July', 'August', 'September', 'October', 'November', 'December',
+];
+
+/** Try to extract a human-readable "Month YYYY" from a date string */
+function dateToMonthLabel(dateStr: string): string | null {
+  if (!dateStr) return null;
+  const s = dateStr.trim();
+
+  // Already "Month YYYY" format?
+  for (let i = 0; i < 12; i++) {
+    if (s.startsWith(MONTH_NAMES_FULL[i])) {
+      const rest = s.substring(MONTH_NAMES_FULL[i].length).trim();
+      if (/^\d{4}$/.test(rest)) return s; // already clean
+    }
+  }
+
+  // DD/MM/YYYY
+  let m = s.match(/^(\d{2})\/(\d{2})\/(\d{4})$/);
+  if (m) {
+    const monthIdx = parseInt(m[2], 10) - 1;
+    return `${MONTH_NAMES_FULL[monthIdx]} ${m[3]}`;
+  }
+
+  // D/M/YYYY or DD/M/YYYY etc.
+  m = s.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+  if (m) {
+    const monthIdx = parseInt(m[2], 10) - 1;
+    if (monthIdx >= 0 && monthIdx < 12) return `${MONTH_NAMES_FULL[monthIdx]} ${m[3]}`;
+  }
+
+  // DD-Mon-YY (e.g. 05-Jan-26)
+  m = s.match(/^(\d{1,2})-([A-Za-z]{3})-(\d{2})$/);
+  if (m) {
+    const monthAbbr = m[2].toLowerCase();
+    const abbrMap: Record<string, number> = {
+      jan: 0, feb: 1, mar: 2, apr: 3, may: 4, jun: 5,
+      jul: 6, aug: 7, sep: 8, oct: 9, nov: 10, dec: 11,
+    };
+    const mi = abbrMap[monthAbbr];
+    if (mi !== undefined) {
+      const year = parseInt(m[3], 10);
+      return `${MONTH_NAMES_FULL[mi]} ${2000 + year}`;
+    }
+  }
+
+  // MM/YYYY
+  m = s.match(/^(\d{1,2})\/(\d{4})$/);
+  if (m) {
+    const monthIdx = parseInt(m[1], 10) - 1;
+    if (monthIdx >= 0 && monthIdx < 12) return `${MONTH_NAMES_FULL[monthIdx]} ${m[2]}`;
+  }
+
+  // YYYY-MM
+  m = s.match(/^(\d{4})-(\d{2})$/);
+  if (m) {
+    const monthIdx = parseInt(m[2], 10) - 1;
+    if (monthIdx >= 0 && monthIdx < 12) return `${MONTH_NAMES_FULL[monthIdx]} ${m[1]}`;
+  }
+
+  return null;
+}
+
+/**
+ * Resolve a human-readable coverage period from a record.
+ * Priority:
+ *   1. form_data.coverage_period (if it's already a named month)
+ *   2. form_data.record_month
+ *   3. form_data.date / training_date / registration_date etc.
+ *   4. Item-level dates (for F/11 items array)
+ *   5. Fallback: "Continuous / Open-Ended"
+ */
+export function resolveCoveragePeriod(record: RecordData): string {
+  const fd = record.form_data as Record<string, unknown> | undefined;
+  if (!fd) return 'Continuous / Open-Ended';
+
+  // 1. Already a named month in coverage_period
+  const cp = fd.coverage_period as string | undefined;
+  if (cp) {
+    const parsed = dateToMonthLabel(cp);
+    if (parsed) return parsed;
+    // Not a month format — return as-is (e.g. "Continuous / Open-Ended")
+    return cp;
+  }
+
+  // 2. Try record_month
+  const rm = fd.record_month as string | undefined;
+  if (rm) {
+    const parsed = dateToMonthLabel(rm);
+    if (parsed) return parsed;
+  }
+
+  // 3. Try date fields
+  for (const key of ['date', 'training_date', 'registration_date', 'assessed_on', 'appraisal_date', 'date_of_joining']) {
+    const dv = fd[key] as string | undefined;
+    if (dv) {
+      const parsed = dateToMonthLabel(dv);
+      if (parsed) return parsed;
+    }
+  }
+
+  // 4. For F/11, try item-level planDate
+  if (String(record.formCode) === 'F/11') {
+    const items = fd.items as Array<Record<string, unknown>> | undefined;
+    if (Array.isArray(items)) {
+      for (const item of items) {
+        for (const key of ['planDate', 'actualDate']) {
+          const dv = item[key] as string | undefined;
+          if (dv) {
+            const parsed = dateToMonthLabel(dv);
+            if (parsed) return parsed;
+          }
+        }
+      }
+    }
+  }
+
+  // 5. Fallback
+  return 'Continuous / Open-Ended';
+}
 export const MONTHLY_FORM_CODES = new Set(['F/11', 'F/35', 'F/48']);
 
 export function isMonthlyForm(code: string): boolean {
