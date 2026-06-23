@@ -72,11 +72,18 @@ export function F22Template({ data, isTemplate = true, editMode = false, onChang
 
   /** Date input: uses native browser date picker (YYYY-MM-DD) but stores as DD/MM/YYYY */
   const dateInp = (key: string, width: string = "w-full") => {
-    const displayVal = val(d, key); // stored as DD/MM/YYYY
-    // Convert DD/MM/YYYY → YYYY-MM-DD for the input element
-    const inputVal = displayVal && /^\d{2}\/\d{2}\/\d{4}$/.test(displayVal)
-      ? displayVal.split('/').reverse().join('-')
-      : '';
+    const displayVal = val(d, key); // stored as DD/MM/YYYY or YYYY-MM-DD
+    // Convert to YYYY-MM-DD for the input element (handles both formats)
+    let inputVal = '';
+    if (displayVal) {
+      if (/^\d{2}\/\d{2}\/\d{4}$/.test(displayVal)) {
+        // DD/MM/YYYY → YYYY-MM-DD
+        inputVal = displayVal.split('/').reverse().join('-');
+      } else if (/^\d{4}-\d{2}-\d{2}$/.test(displayVal)) {
+        // Already YYYY-MM-DD
+        inputVal = displayVal;
+      }
+    }
     return editMode ? (
       <input
         type="date"

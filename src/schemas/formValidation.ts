@@ -320,7 +320,7 @@ export const F22Schema = z.object({
   }).default({}),
   description_of_non_conformity: REQUIRED_TEXT,
   root_cause_analysis: REQUIRED_TEXT,
-  identified_date: DDMMYYYY,
+  identified_date: ISO_DATE,
   identified_by: REQUIRED_TEXT,
   actions_recommended: z.union([z.string().min(1), z.array(z.string()).min(1)]),
   responsibility: REQUIRED_TEXT,
