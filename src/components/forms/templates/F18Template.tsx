@@ -1,9 +1,10 @@
 // ============================================================================
 // F/18 — Product Re-Call Report
-// Canonical 12-field schema:
-//   date, product_name, reference_inward_no, qty_taken,
-//   products_identified_by, released_by, requested_by,
-//   verified_by, verified_on, status, entry_closed_on, entry_closed_by
+// HORIZONTAL 12-COLUMN TABLE (logging matrix, NOT vertical profile)
+// Columns: Date | Name Of Products | Reference Inward No. | Qty Taken
+//          | Products Identified By | Released By | Requested By
+//          | Verified By | Verified On | Status | Entry Closed On
+//          | Entry Closed By
 // ============================================================================
 
 import React from "react";
@@ -28,11 +29,16 @@ export function F18Template({ data, isTemplate = true, editMode = false, onChang
   const d = data ?? {};
   const ph = isTemplate && !editMode;
 
-  const inp = (key: string, label: string, width: string = "w-full") =>
+  const inp = (key: string, label: string) =>
     editMode ? (
-      <input className={cn("border-b border-dashed border-foreground/40 bg-transparent text-sm px-1", width)} value={val(d, key)} onChange={e => onChange?.(key, e.target.value)} placeholder={label} />
+      <input
+        className="w-full bg-transparent text-[11px] px-1 border-none outline-none"
+        value={val(d, key)}
+        onChange={e => onChange?.(key, e.target.value)}
+        placeholder={label}
+      />
     ) : (
-      <span className={cn("border-b border-dashed border-foreground/30 px-1 inline-block min-w-[4rem]", width)}>{val(d, key) || (ph ? "___" : "")}</span>
+      <span className="text-[11px] leading-tight block min-w-[4rem]">{val(d, key) || (ph ? "—" : "")}</span>
     );
 
   return (
@@ -43,67 +49,43 @@ export function F18Template({ data, isTemplate = true, editMode = false, onChang
         <div className="p-2 border-l border-border bg-primary/5 text-right text-xs">F/18 Rev No. {val(d, "serial") || (ph ? "{{SERIAL}}" : "—")}</div>
       </div>
 
-      {/* Date */}
-      <div className="grid grid-cols-[1fr_1fr] border-x border-b border-border text-xs">
-        <div className="p-1.5 border-r border-border">Date: {inp("date", "Date", "w-28")}</div>
-        <div className="p-1.5" />
+      {/* 12-Column Horizontal Table */}
+      <div className="w-full overflow-x-auto border-x border-b border-border rounded-xl">
+        <table className="w-full border-collapse text-xs">
+          <thead>
+            <tr className="bg-muted">
+              <th className="border border-border p-1.5 text-[11px] font-semibold whitespace-nowrap min-w-[80px]">Date</th>
+              <th className="border border-border p-1.5 text-[11px] font-semibold whitespace-nowrap min-w-[120px]">Name Of Products</th>
+              <th className="border border-border p-1.5 text-[11px] font-semibold whitespace-nowrap min-w-[120px]">Reference Inward No.</th>
+              <th className="border border-border p-1.5 text-[11px] font-semibold whitespace-nowrap min-w-[80px]">Qty Taken</th>
+              <th className="border border-border p-1.5 text-[11px] font-semibold whitespace-nowrap min-w-[120px]">Products Identified By</th>
+              <th className="border border-border p-1.5 text-[11px] font-semibold whitespace-nowrap min-w-[100px]">Released By</th>
+              <th className="border border-border p-1.5 text-[11px] font-semibold whitespace-nowrap min-w-[100px]">Requested By</th>
+              <th className="border border-border p-1.5 text-[11px] font-semibold whitespace-nowrap min-w-[100px]">Verified By</th>
+              <th className="border border-border p-1.5 text-[11px] font-semibold whitespace-nowrap min-w-[80px]">Verified On</th>
+              <th className="border border-border p-1.5 text-[11px] font-semibold whitespace-nowrap min-w-[120px]">Status</th>
+              <th className="border border-border p-1.5 text-[11px] font-semibold whitespace-nowrap min-w-[90px]">Entry Closed On</th>
+              <th className="border border-border p-1.5 text-[11px] font-semibold whitespace-nowrap min-w-[120px]">Entry Closed By</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td className="border border-border p-1.5">{inp("date", "Date")}</td>
+              <td className="border border-border p-1.5">{inp("product_name", "Product Name")}</td>
+              <td className="border border-border p-1.5">{inp("reference_inward_no", "Ref No.")}</td>
+              <td className="border border-border p-1.5">{inp("qty_taken", "Qty")}</td>
+              <td className="border border-border p-1.5">{inp("products_identified_by", "Identified By")}</td>
+              <td className="border border-border p-1.5">{inp("released_by", "Released By")}</td>
+              <td className="border border-border p-1.5">{inp("requested_by", "Requested By")}</td>
+              <td className="border border-border p-1.5">{inp("verified_by", "Verified By")}</td>
+              <td className="border border-border p-1.5">{inp("verified_on", "Verified On")}</td>
+              <td className="border border-border p-1.5">{inp("status", "Status")}</td>
+              <td className="border border-border p-1.5">{inp("entry_closed_on", "Closed On")}</td>
+              <td className="border border-border p-1.5">{inp("entry_closed_by", "Closed By")}</td>
+            </tr>
+          </tbody>
+        </table>
       </div>
-
-      {/* Product Details Table */}
-      <table className="w-full border-collapse border-x border-b border-border text-xs">
-        <thead className="bg-muted">
-          <tr>
-            <th className="border border-border p-1.5 w-1/3">Parameter</th>
-            <th className="border border-border p-1.5">Details</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr>
-            <td className="border border-border p-1.5 font-semibold">Name of Product</td>
-            <td className="border border-border p-1.5">{inp("product_name", "Product Name")}</td>
-          </tr>
-          <tr>
-            <td className="border border-border p-1.5 font-semibold">Reference Inward No.</td>
-            <td className="border border-border p-1.5">{inp("reference_inward_no", "Reference No.")}</td>
-          </tr>
-          <tr>
-            <td className="border border-border p-1.5 font-semibold">Qty. Taken</td>
-            <td className="border border-border p-1.5">{inp("qty_taken", "Qty")}</td>
-          </tr>
-          <tr>
-            <td className="border border-border p-1.5 font-semibold">Products Identified By</td>
-            <td className="border border-border p-1.5">{inp("products_identified_by", "Name")}</td>
-          </tr>
-          <tr>
-            <td className="border border-border p-1.5 font-semibold">Released By</td>
-            <td className="border border-border p-1.5">{inp("released_by", "Name")}</td>
-          </tr>
-          <tr>
-            <td className="border border-border p-1.5 font-semibold">Requested By</td>
-            <td className="border border-border p-1.5">{inp("requested_by", "Name")}</td>
-          </tr>
-          <tr>
-            <td className="border border-border p-1.5 font-semibold">Verified By</td>
-            <td className="border border-border p-1.5">{inp("verified_by", "Name")}</td>
-          </tr>
-          <tr>
-            <td className="border border-border p-1.5 font-semibold">Verified On</td>
-            <td className="border border-border p-1.5">{inp("verified_on", "Date")}</td>
-          </tr>
-          <tr>
-            <td className="border border-border p-1.5 font-semibold">Status</td>
-            <td className="border border-border p-1.5">{inp("status", "Status")}</td>
-          </tr>
-          <tr>
-            <td className="border border-border p-1.5 font-semibold">Entry Closed On</td>
-            <td className="border border-border p-1.5">{inp("entry_closed_on", "Date")}</td>
-          </tr>
-          <tr>
-            <td className="border border-border p-1.5 font-semibold">Entry Closed By</td>
-            <td className="border border-border p-1.5">{inp("entry_closed_by", "Name")}</td>
-          </tr>
-        </tbody>
-      </table>
     </div>
   );
 }
