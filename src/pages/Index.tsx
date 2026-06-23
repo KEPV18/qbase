@@ -325,17 +325,37 @@ export default function Index() {
       {/* Missing Months Alert */}
       {hasMissingMonths && !globalMonth && (
         <div className="mt-4 px-4 py-3 bg-amber-500/10 border border-amber-500/20 rounded-xl">
-          <div className="flex items-center gap-2 mb-2">
-            <AlertTriangle className="w-4 h-4 text-amber-500" />
-            <span className="text-sm font-semibold text-amber-600 dark:text-amber-400">Missing Monthly Records</span>
+          <div className="flex items-center justify-between mb-2">
+            <div className="flex items-center gap-2">
+              <AlertTriangle className="w-4 h-4 text-amber-500" />
+              <span className="text-sm font-semibold text-amber-600 dark:text-amber-400">Missing Monthly Records</span>
+            </div>
+            <button
+              onClick={() => {
+                Array.from(missingMonthsMap.keys()).forEach(code => handleBulkCreate(code));
+              }}
+              disabled={isCreatingBulk}
+              className="text-xs px-2.5 py-1 rounded-md bg-amber-500/20 text-amber-600 dark:text-amber-400 hover:bg-amber-500/30 transition-colors disabled:opacity-50"
+            >
+              {isCreatingBulk ? 'Creating...' : 'Create All Missing'}
+            </button>
           </div>
-          <div className="space-y-1">
+          <div className="space-y-1.5">
             {Array.from(missingMonthsMap.entries()).map(([code, missing]) => {
               const form = FORM_SCHEMAS.find(f => f.code === code);
               return (
-                <p key={code} className="text-xs text-amber-600/80 dark:text-amber-400/80 ml-6">
-                  {code} ({form?.name || code}) — Missing: {missing.map(monthLabel).join(', ')}
-                </p>
+                <div key={code} className="flex items-center justify-between ml-6">
+                  <p className="text-xs text-amber-600/80 dark:text-amber-400/80">
+                    {code} ({form?.name || code}) — Missing: {missing.map(monthLabel).join(', ')}
+                  </p>
+                  <button
+                    onClick={() => handleBulkCreate(code)}
+                    disabled={isCreatingBulk}
+                    className="text-[10px] px-2 py-0.5 rounded bg-amber-500/15 text-amber-600 dark:text-amber-400 hover:bg-amber-500/25 transition-colors disabled:opacity-50 shrink-0 ml-2"
+                  >
+                    {isCreatingBulk ? '...' : 'Create'}
+                  </button>
+                </div>
               );
             })}
           </div>
