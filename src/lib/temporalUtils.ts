@@ -104,13 +104,57 @@ export function resolveCoveragePeriod(record: RecordData): string {
 
 // ---------------------------------------------------------------------------
 // Extract effective month from a record
-// Checks: form_data.record_month  →  form_data.coverage_period  →  _createdAt
+// NOTE: parseRowToRecord() spreads form_data into the top-level RecordData.
+// So record_month and coverage_period are at the top level, NOT under form_data.
+// Returns YYYY-MM format (normalized).
 // ---------------------------------------------------------------------------
 export function getRecordMonth(record: RecordData): string | null {
-  const fd = record.form_data as Record<string, unknown> | undefined;
-  if (fd?.record_month && typeof fd.record_month === 'string') return fd.record_month;
-  if (fd?.coverage_period && typeof fd.coverage_period === 'string') return fd.coverage_period;
-  // Fallback: derive from _createdAt (YYYY-MM-DDTHH:mm:ssZ)
+  // 1. Try record_month — normalize MM/YYYY → YYYY-MM
+  const rm = record.record_month as string | undefined;
+  if (rm) {
+    const trimmed = rm.trim();
+    // Already YYYY-MM?
+    if (/^\d{4}-\d{2}$/.test(trimmed)) return trimmed;
+    // MM/YYYY → YYYY-MM
+    const mm = trimmed.match(/^(\d{1,2})\/(\d{4})$/);
+    if (mm) return `${mm[2]}-${String(parseInt(mm[1], 10)).padStart(2, '0')}`;
+    // Try dateToMonthLabel and convert back
+    const parsed = dateToMonthLabel(trimmed);
+    if (parsed) {
+      const parts = parsed.split(' ');
+      const monthIdx = MONTH_NAMES_FULL.indexOf(parts[0]);
+      if (monthIdx >= 0 && parts[1]) return `${parts[1]}-${String(monthIdx + 1).padStart(2, '0')}`;
+    }
+    return trimmed; // return as-is if we can't parse
+  }
+
+  // 2. Try coverage_period — normalize "January 2026" → "2026-01"
+  const cp = record.coverage_period as string | undefined;
+  if (cp) {
+    const trimmed = cp.trim();
+    // Already YYYY-MM?
+    if (/^\d{4}-\d{2}$/.test(trimmed)) return trimmed;
+    // "Month YYYY" → YYYY-MM
+    const parsed = dateToMonthLabel(trimmed);
+    if (parsed) {
+      const parts = parsed.split(' ');
+      const monthIdx = MONTH_NAMES_FULL.indexOf(parts[0]);
+      if (monthIdx >= 0 && parts[1]) return `${parts[1]}-${String(monthIdx + 1).padStart(2, '0')}`;
+    }
+  }
+
+  // 3. Try date field
+  const dateVal = record.date as string | undefined;
+  if (dateVal) {
+    const parsed = dateToMonthLabel(dateVal);
+    if (parsed) {
+      const parts = parsed.split(' ');
+      const monthIdx = MONTH_NAMES_FULL.indexOf(parts[0]);
+      if (monthIdx >= 0 && parts[1]) return `${parts[1]}-${String(monthIdx + 1).padStart(2, '0')}`;
+    }
+  }
+
+  // 4. Fallback: derive from _createdAt (YYYY-MM-DDTHH:mm:ssZ)
   const created = String(record._createdAt || record.createdAt || '');
   if (created) {
     const m = created.match(/^(\d{4})-(\d{2})/);
