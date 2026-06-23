@@ -267,13 +267,27 @@ export const F12Schema = z.object({
 export type F12Data = z.infer<typeof F12Schema>;
 
 export const F17Schema = z.object({
-  serial: AUTO_SERIAL,
-  date: ISO_DATE,
-  project_name: OPTIONAL_TEXT,
-  test_type: TEST_TYPE,
-  description: REQUIRED_TEXT,
-  criteria: OPTIONAL_TEXT,
-  requested_by: SIGNATURE,
+  request_no: REQUIRED_TEXT,
+  date: DATE_OR_TEXT,
+  from_department: REQUIRED_TEXT,
+  to_department: REQUIRED_TEXT,
+  sample_qty: REQUIRED_TEXT,
+  product_name: REQUIRED_TEXT,
+  stage_of_test: REQUIRED_TEXT,
+  version_build_no: OPTIONAL_TEXT,
+  qty_received: REQUIRED_TEXT,
+  batch_no_lot_no: REQUIRED_TEXT,
+  challan_no_date: OPTIONAL_TEXT,
+  batch_size: REQUIRED_TEXT,
+  test_results: z.array(z.object({
+    test_required: REQUIRED_TEXT,
+    results: REQUIRED_TEXT,
+  })).min(1, 'At least one test result required'),
+  status: REQUIRED_TEXT,
+  requested_by: REQUIRED_TEXT,
+  received_by: REQUIRED_TEXT,
+  tested_by: REQUIRED_TEXT,
+  approved_by: REQUIRED_TEXT,
 });
 export type F17Data = z.infer<typeof F17Schema>;
 
