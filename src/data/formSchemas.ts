@@ -178,7 +178,7 @@ export const FORM_SCHEMAS: FormSchema[] = [
     fields: [
       { key: "serial", label: "Serial Number", type: "text", required: true, width: "half", defaultValue: "auto" },
       { key: "month", label: "Month", type: "select", required: true, options: ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"], width: "third" },
-      { key: "year", label: "Year", type: "number", required: true, width: "third" },
+      { key: "year", label: "Year", type: "number", required: false, width: "third" },
       { key: "date", label: "Date", type: "date", required: true, width: "third" },
       { key: "heading_projects", label: "Projects", type: "heading", width: "full" },
       { key: "projects", label: "Projects", type: "table", columns: [
@@ -188,7 +188,7 @@ export const FORM_SCHEMAS: FormSchema[] = [
         { key: "notes", label: "Notes", type: "text" },
       ]},
       { key: "prepared_by", label: "Prepared By", type: "signature", required: true, width: "half" },
-      { key: "approved_by", label: "Approved By", type: "signature", required: true, width: "half" },
+      { key: "approved_by", label: "Approved By", type: "signature", required: false, width: "half" },
     ],
   },
   {
@@ -311,7 +311,7 @@ export const FORM_SCHEMAS: FormSchema[] = [
     fields: [
       { key: "serial", label: "Serial Number", type: "text", required: true, width: "half", defaultValue: "auto" },
       { key: "period", label: "Audit Period", type: "select", required: true, options: ["H1", "H2"], width: "third" },
-      { key: "year", label: "Year", type: "number", required: true, width: "third" },
+      { key: "year", label: "Year", type: "number", required: false, width: "third" },
       { key: "date", label: "Date", type: "date", required: true, width: "third" },
       { key: "scope", label: "Audit Scope", type: "textarea", required: true, width: "full" },
       { key: "audits", label: "Scheduled Audits", type: "table", columns: [
@@ -321,7 +321,7 @@ export const FORM_SCHEMAS: FormSchema[] = [
         { key: "status", label: "Status", type: "select", options: ["Planned", "Completed", "Postponed"] },
       ]},
       { key: "prepared_by", label: "Prepared By", type: "signature", required: true, width: "half" },
-      { key: "approved_by", label: "Approved By", type: "signature", required: true, width: "half" },
+      { key: "approved_by", label: "Approved By", type: "signature", required: false, width: "half" },
     ],
   },
   {
@@ -358,7 +358,7 @@ export const FORM_SCHEMAS: FormSchema[] = [
       { key: "serial", label: "Serial Number", type: "text", required: true, width: "half", defaultValue: "auto" },
       { key: "date", label: "Audit Date", type: "date", required: true, width: "half" },
       { key: "month", label: "Month", type: "select", required: true, options: ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"], width: "third" },
-      { key: "year", label: "Year", type: "number", required: true, width: "third" },
+      { key: "year", label: "Year", type: "number", required: false, width: "third" },
       { key: "scope", label: "Audit Scope", type: "textarea", required: true, width: "full" },
       { key: "findings", label: "Findings", type: "textarea", required: true, width: "full" },
       { key: "nc_count", label: "Non-Conformities Found", type: "number", width: "half" },
@@ -389,7 +389,7 @@ export const FORM_SCHEMAS: FormSchema[] = [
         { key: "specifications", label: "Specifications", type: "text" },
       ]},
       { key: "requested_by", label: "Requested By", type: "signature", required: true, width: "half" },
-      { key: "approved_by", label: "Approved By", type: "signature", required: true, width: "half" },
+      { key: "approved_by", label: "Approved By", type: "signature", required: false, width: "half" },
     ],
   },
   {
@@ -429,7 +429,7 @@ export const FORM_SCHEMAS: FormSchema[] = [
         { key: "status", label: "Status", type: "select", options: ["Approved", "Pending", "Suspended"] },
       ]},
       { key: "prepared_by", label: "Prepared By", type: "signature", required: true, width: "half" },
-      { key: "approved_by", label: "Approved By", type: "signature", required: true, width: "half" },
+      { key: "approved_by", label: "Approved By", type: "signature", required: false, width: "half" },
     ],
   },
   {
@@ -580,7 +580,7 @@ export const FORM_SCHEMAS: FormSchema[] = [
         { key: "method", label: "Method", type: "select", options: ["Internal", "External", "Online"] },
       ]},
       { key: "prepared_by", label: "Prepared By", type: "signature", required: true, width: "half" },
-      { key: "approved_by", label: "Approved By", type: "signature", required: true, width: "half" },
+      { key: "approved_by", label: "Approved By", type: "signature", required: false, width: "half" },
     ],
   },
   {
@@ -644,7 +644,7 @@ export const FORM_SCHEMAS: FormSchema[] = [
       { key: "methodology", label: "Methodology", type: "textarea", width: "full" },
       { key: "expected_outcome", label: "Expected Outcome", type: "textarea", width: "full" },
       { key: "requested_by", label: "Requested By", type: "signature", required: true, width: "half" },
-      { key: "approved_by", label: "Approved By", type: "signature", required: true, width: "half" },
+      { key: "approved_by", label: "Approved By", type: "signature", required: false, width: "half" },
     ],
   },
   {
@@ -676,7 +676,7 @@ export const FORM_SCHEMAS: FormSchema[] = [
     fields: [
       { key: "serial", label: "Serial Number", type: "text", required: true, width: "half", defaultValue: "auto" },
       { key: "month", label: "Month", type: "select", required: true, options: ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"], width: "third" },
-      { key: "year", label: "Year", type: "number", required: true, width: "third" },
+      { key: "year", label: "Year", type: "number", required: false, width: "third" },
       { key: "project", label: "Project", type: "text", required: true, width: "half" },
       { key: "progress", label: "Progress Summary", type: "textarea", required: true, width: "full" },
       { key: "issues", label: "Issues/Changes", type: "textarea", width: "full" },
@@ -748,7 +748,7 @@ export const FORM_SCHEMAS: FormSchema[] = [
         { key: "status", label: "Status", type: "select", options: ["Open", "In Progress", "Closed"] },
       ]},
       { key: "minutes_by", label: "Minutes By", type: "signature", required: true, width: "half" },
-      { key: "approved_by", label: "Approved By", type: "signature", required: true, width: "half" },
+      { key: "approved_by", label: "Approved By", type: "signature", required: false, width: "half" },
     ],
   },
   {
@@ -783,7 +783,7 @@ export const FORM_SCHEMAS: FormSchema[] = [
     fields: [
       { key: "serial", label: "Serial Number", type: "text", required: true, width: "half", defaultValue: "auto" },
       { key: "quarter", label: "Quarter", type: "select", required: true, options: ["Q1", "Q2", "Q3", "Q4"], width: "third" },
-      { key: "year", label: "Year", type: "number", required: true, width: "third" },
+      { key: "year", label: "Year", type: "number", required: false, width: "third" },
       { key: "objectives", label: "Objectives", type: "table", columns: [
         { key: "objective", label: "Objective", type: "text", required: true },
         { key: "target", label: "Target", type: "text", required: true },
@@ -831,7 +831,7 @@ export const FORM_SCHEMAS: FormSchema[] = [
       { key: "reason", label: "Reason for Change", type: "textarea", required: true, width: "full" },
       { key: "impact", label: "Impact Assessment", type: "textarea", width: "full" },
       { key: "approved", label: "Approved", type: "checkbox", width: "half" },
-      { key: "approved_by", label: "Approved By", type: "signature", required: true, width: "half" },
+      { key: "approved_by", label: "Approved By", type: "signature", required: false, width: "half" },
     ],
   },
 ];
