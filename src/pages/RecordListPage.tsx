@@ -267,8 +267,8 @@ const RecordListPage: React.FC = () => {
             {exportMenuOpen && (
               <>
                 <div className="fixed inset-0 z-40" onClick={() => setExportMenuOpen(false)} />
-                <div className="absolute right-0 mt-2 w-60 bg-popover border border-[#f9fcff] rounded-sm shadow-xl z-50 overflow-hidden ds-fade-enter">
-                  <div className="px-3 py-2 text-xs text-muted-foreground border-b border-[#f9fcff] bg-secondary/50">
+                <div className="absolute right-0 mt-2 w-60 bg-popover border border-border rounded-sm shadow-xl z-50 overflow-hidden ds-fade-enter">
+                  <div className="px-3 py-2 text-xs text-muted-foreground border-b border-border bg-secondary/50">
                     {selectedSerials.size > 0
                       ? `Export ${selectedSerials.size} selected record(s)`
                       : monthFilter
@@ -279,11 +279,11 @@ const RecordListPage: React.FC = () => {
                     <FileTextIcon className="w-5 h-5 text-blue-400" />
                     <div className="text-left"><div className="font-medium">Word Document</div><div className="text-xs text-muted-foreground">.docx — formatted report</div></div>
                   </button>
-                  <button onClick={() => handleBatchExport('json')} className="w-full px-4 py-3 text-sm text-popover-foreground hover:bg-accent flex items-center gap-3 transition-colors border-t border-[#f9fcff]">
+                  <button onClick={() => handleBatchExport('json')} className="w-full px-4 py-3 text-sm text-popover-foreground hover:bg-accent flex items-center gap-3 transition-colors border-t border-border">
                     <FileJson className="w-5 h-5 text-emerald-400" />
                     <div className="text-left"><div className="font-medium">JSON</div><div className="text-xs text-muted-foreground">.json — raw data</div></div>
                   </button>
-                  <button onClick={() => handleBatchExport('csv')} className="w-full px-4 py-3 text-sm text-popover-foreground hover:bg-accent flex items-center gap-3 transition-colors border-t border-[#f9fcff]">
+                  <button onClick={() => handleBatchExport('csv')} className="w-full px-4 py-3 text-sm text-popover-foreground hover:bg-accent flex items-center gap-3 transition-colors border-t border-border">
                     <FileSpreadsheet className="w-5 h-5 text-amber-400" />
                     <div className="text-left"><div className="font-medium">CSV</div><div className="text-xs text-muted-foreground">.csv — spreadsheet</div></div>
                   </button>
@@ -409,7 +409,7 @@ const RecordListPage: React.FC = () => {
       ) : (
         <>
           {/* Select All + Page info */}
-          <div className="flex items-center gap-3 mb-2 px-4 py-2 bg-secondary/30 border border-[#f9fcff] rounded-t-sm">
+          <div className="flex items-center gap-3 mb-2 px-4 py-2 bg-secondary/30 border border-border rounded-t-sm">
             <button onClick={toggleSelectAll} className="text-muted-foreground hover:text-primary transition-colors" title={selectedSerials.size === pagedRecords.length ? 'Deselect all' : 'Select all'}>
               {selectedSerials.size === pagedRecords.length && pagedRecords.length > 0
                 ? <CheckSquare className="w-4 h-4" />
@@ -434,7 +434,7 @@ const RecordListPage: React.FC = () => {
                   className={`w-full flex items-center gap-4 p-3 rounded-sm transition-all text-left group ds-press ${
                     isSelected
                       ? 'ds-card border-primary/40 bg-primary/5'
-                      : 'bg-card border border-[#f9fcff] hover:border-foreground/20'
+                      : 'bg-card border border-border hover:border-foreground/20'
                   }`}
                   style={{ animationDelay: `${idx * 30}ms` }}
                 >
@@ -504,7 +504,7 @@ const RecordListPage: React.FC = () => {
                 <button
                   onClick={() => setPage(p => Math.max(1, p - 1))}
                   disabled={safePage <= 1}
-                  className="ds-press ds-focus-ring px-3 py-1.5 text-sm bg-secondary border border-[#f9fcff] rounded-sm text-secondary-foreground hover:bg-accent disabled:opacity-30 disabled:cursor-not-allowed flex items-center gap-1"
+                  className="ds-press ds-focus-ring px-3 py-1.5 text-sm bg-secondary border border-border rounded-sm text-secondary-foreground hover:bg-accent disabled:opacity-30 disabled:cursor-not-allowed flex items-center gap-1"
                 >
                   <ChevronLeft className="w-4 h-4" /> Prev
                 </button>
@@ -526,7 +526,7 @@ const RecordListPage: React.FC = () => {
                           className={`ds-press w-8 h-8 text-sm rounded-sm flex items-center justify-center ${
                             p === safePage
                               ? 'bg-primary text-primary-foreground font-semibold'
-                              : 'bg-secondary border border-[#f9fcff] text-secondary-foreground hover:bg-accent'
+                              : 'bg-secondary border border-border text-secondary-foreground hover:bg-accent'
                           }`}
                         >
                           {p}
@@ -537,7 +537,7 @@ const RecordListPage: React.FC = () => {
                 <button
                   onClick={() => setPage(p => Math.min(totalPages, p + 1))}
                   disabled={safePage >= totalPages}
-                  className="ds-press ds-focus-ring px-3 py-1.5 text-sm bg-secondary border border-[#f9fcff] rounded-sm text-secondary-foreground hover:bg-accent disabled:opacity-30 disabled:cursor-not-allowed flex items-center gap-1"
+                  className="ds-press ds-focus-ring px-3 py-1.5 text-sm bg-secondary border border-border rounded-sm text-secondary-foreground hover:bg-accent disabled:opacity-30 disabled:cursor-not-allowed flex items-center gap-1"
                 >
                   Next <ChevronRightIcon className="w-4 h-4" />
                 </button>

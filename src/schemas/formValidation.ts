@@ -337,19 +337,25 @@ export const F22Schema = z.object({
 export type F22Data = z.infer<typeof F22Schema>;
 
 export const F25Schema = z.object({
-  serial: AUTO_SERIAL,
-  period: SEMESTER,
-  year: YEAR,
+  audit_plan_no: REQUIRED_TEXT,
   date: ISO_DATE,
-  scope: REQUIRED_TEXT,
-  audits: z.array(z.object({
+  from_role: REQUIRED_TEXT,
+  to_role: REQUIRED_TEXT,
+  last_audit_month: OPTIONAL_TEXT,
+  last_audit_plan_no: OPTIONAL_TEXT,
+  last_audit_plan_date: OPTIONAL_TEXT,
+  next_audit_due_month: OPTIONAL_TEXT,
+  next_audit_plan_no: OPTIONAL_TEXT,
+  intro_corporate_note: REQUIRED_TEXT,
+  audit_matrix: z.array(z.object({
     department: REQUIRED_TEXT,
-    audit_date: OPTIONAL_DATE,
-    auditor: OPTIONAL_TEXT,
-    status: AUDIT_PLAN_STATUS,
-  })).min(1, 'At least one audit entry required'),
-  prepared_by: SIGNATURE,
-  approved_by: SIGNATURE,
+    activity_scope: REQUIRED_TEXT,
+    date_time: REQUIRED_TEXT,
+    auditor: REQUIRED_TEXT,
+  })).min(1, 'At least one audit matrix entry required'),
+  status_of_actual_audit: REQUIRED_TEXT,
+  remarks: OPTIONAL_TEXT,
+  reviewed_and_approved_by: SIGNATURE,
 });
 export type F25Data = z.infer<typeof F25Schema>;
 
