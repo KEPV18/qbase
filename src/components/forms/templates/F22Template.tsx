@@ -1,6 +1,10 @@
 // ============================================================================
-// F/22 — Corrective Action Report
-// Canonical 15-field schema matching the DOCX template exactly.
+// F/22 — Corrective Action Report (CAR)
+// Professional structured layout with 4 distinct blocks:
+//   1. Header (Serial, Date, Department)
+//   2. Non-Conformity Source (7 checkboxes)
+//   3. Lifecycle Blocks: Defect → Action Plan → Execution → Documentation
+//   4. Verification
 // ============================================================================
 
 import React from "react";
@@ -26,14 +30,6 @@ function arrVal(data: Record<string, unknown> | undefined, key: string): string[
   const v = data[key];
   if (!Array.isArray(v)) return [];
   return v.map(item => String(item));
-}
-
-function boolVal(data: Record<string, unknown> | undefined, key: string): boolean {
-  if (!data) return false;
-  const v = data[key];
-  if (typeof v === "boolean") return v;
-  if (typeof v === "string") return v === "true" || v === "on";
-  return false;
 }
 
 function nestedBool(data: Record<string, unknown> | undefined, parent: string, child: string): boolean {
@@ -77,13 +73,13 @@ export function F22Template({ data, isTemplate = true, editMode = false, onChang
   const txt = (key: string, label: string) =>
     editMode ? (
       <textarea
-        className="w-full border border-border/50 bg-transparent text-sm px-2 py-1 rounded min-h-[3rem]"
+        className="w-full border border-border/50 bg-transparent text-sm px-3 py-2 rounded min-h-[4rem]"
         value={val(d, key)}
         onChange={e => onChange?.(key, e.target.value)}
         placeholder={label}
       />
     ) : (
-      <div className="whitespace-pre-wrap text-sm leading-relaxed">
+      <div className="whitespace-pre-wrap text-sm leading-relaxed px-1">
         {val(d, key) || (ph ? "___" : "")}
       </div>
     );
@@ -108,11 +104,11 @@ export function F22Template({ data, isTemplate = true, editMode = false, onChang
     );
   };
 
-  const listItems = (key: string) => {
+  const renderBulletList = (key: string) => {
     const items = arrVal(d, key);
     if (items.length > 0) {
       return (
-        <ul className="list-disc list-inside space-y-0.5 text-sm">
+        <ul className="list-disc list-inside space-y-1 text-sm">
           {items.map((item, i) => <li key={i}>{item}</li>)}
         </ul>
       );
@@ -121,98 +117,192 @@ export function F22Template({ data, isTemplate = true, editMode = false, onChang
   };
 
   return (
-    <div className={cn("bg-background dark:bg-[#1e1d1a] text-foreground text-sm print:bg-white print:text-black print:border-black", className)}>
-      {/* ── Header ── */}
-      <div className="grid grid-cols-[2fr_1fr] border border-border">
-        <div className="p-2 font-bold bg-primary/5 text-base">Corrective Action Report</div>
-        <div className="p-2 border-l border-border bg-primary/5 text-center text-xs">
-          F/22 Rev No. {val(d, "sr_no") || (ph ? "{{SERIAL}}" : "—")}<br />Page 1 of 1
+    <div className={cn("bg-background dark:bg-[#1e1d1a] text-foreground text-sm print:bg-white print:text-black", className)}>
+      {/* ═══════════════════════════════════════════════════════════════════
+          SECTION 1: HEADER — Serial, Department, Identified Date/By
+          ═══════════════════════════════════════════════════════════════════ */}
+      <div className="border border-border rounded-t-lg overflow-hidden">
+        <div className="bg-primary/10 px-4 py-2.5 border-b border-border">
+          <div className="flex items-center justify-between">
+            <h2 className="text-base font-bold tracking-tight">Corrective Action Report</h2>
+            <span className="text-[10px] text-muted-foreground font-mono">
+              F/22 Rev No. {val(d, "sr_no") || (ph ? "{{SERIAL}}" : "—")} | Page 1 of 1
+            </span>
+          </div>
         </div>
-      </div>
 
-      {/* ── Sr No / Department ── */}
-      <div className="grid grid-cols-[1fr_1fr] border-x border-b border-border text-xs">
-        <div className="p-1.5 border-r border-border">Sr. No. 🡪 {val(d, "sr_no") || (ph ? "{{SERIAL}}" : "—")}</div>
-        <div className="p-1.5">Department 🡪 {inp("department", "Department", "w-36")}</div>
-      </div>
-
-      {/* ── Non-Conformity Source (Checkboxes) ── */}
-      <div className="border-x border-b border-border p-2 text-xs">
-        <div className="font-semibold mb-1.5">Non-Conformity Source:</div>
-        <div className="grid grid-cols-2 gap-x-4 gap-y-1">
-          {NC_SOURCE_KEYS.map(src => (
-            <label key={src.key} className="flex items-center gap-1 cursor-pointer">
-              {chk("non_conformity_source", src.key)}
-              <span>{src.label}</span>
-            </label>
-          ))}
+        {/* Metadata row */}
+        <div className="grid grid-cols-[1fr_1fr_1fr] border-b border-border bg-muted/10">
+          <div className="px-4 py-2 border-r border-border">
+            <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground block mb-0.5">Serial</span>
+            <span className="font-mono text-sm">{val(d, "sr_no") || (ph ? "{{SERIAL}}" : "—")}</span>
+          </div>
+          <div className="px-4 py-2 border-r border-border">
+            <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground block mb-0.5">Department</span>
+            <span className="text-sm">{val(d, "department") || (ph ? "___" : "—")}</span>
+          </div>
+          <div className="px-4 py-2">
+            <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground block mb-0.5">Identified Date</span>
+            <span className="text-sm">{val(d, "identified_date") || (ph ? "___" : "—")}</span>
+          </div>
         </div>
-      </div>
 
-      {/* ── Description of Non-Conformity ── */}
-      <div className="border-x border-b border-border p-2">
-        <div className="text-xs font-semibold mb-1">Description of Non-Conformity:</div>
-        {txt("description_of_non_conformity", "Describe the non-conformity")}
-      </div>
-
-      {/* ── Root Cause Analysis ── */}
-      <div className="border-x border-b border-border p-2">
-        <div className="text-xs font-semibold mb-1">Root Cause Analysis:</div>
-        {txt("root_cause_analysis", "Root cause analysis")}
-      </div>
-
-      {/* ── Identified Date / Identified By ── */}
-      <div className="grid grid-cols-[1fr_1fr] border-x border-b border-border text-xs">
-        <div className="p-1.5 border-r border-border">
-          Identified Date 🡪 {inp("identified_date", "DD/MM/YYYY", "w-28")}
+        {/* ═══════════════════════════════════════════════════════════════════
+            SECTION 2: NON-CONFORMITY SOURCE — 7 Checkboxes
+            ═══════════════════════════════════════════════════════════════════ */}
+        <div className="px-4 py-3 border-b border-border">
+          <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2">
+            Non-Conformity Source
+          </h3>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-x-4 gap-y-1.5">
+            {NC_SOURCE_KEYS.map(src => (
+              <label key={src.key} className="flex items-center gap-2 cursor-pointer text-sm">
+                {chk("non_conformity_source", src.key)}
+                <span className={cn(
+                  "text-xs",
+                  nestedBool(d, "non_conformity_source", src.key)
+                    ? "text-foreground font-medium"
+                    : "text-muted-foreground"
+                )}>
+                  {src.label}
+                </span>
+              </label>
+            ))}
+          </div>
         </div>
-        <div className="p-1.5">
-          Identified By 🡪 {inp("identified_by", "Identified by", "w-36")}
+
+        {/* ═══════════════════════════════════════════════════════════════════
+            SECTION 3: LIFECYCLE BLOCKS
+            ═══════════════════════════════════════════════════════════════════ */}
+
+        {/* ── Block A: Defect Block — Description & Root Cause ── */}
+        <div className="border-b border-border">
+          <div className="bg-destructive/5 px-4 py-2 border-b border-border">
+            <h3 className="text-xs font-semibold uppercase tracking-wider text-destructive/80">
+              🔴 Defect Block — Description & Root Cause
+            </h3>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-0">
+            <div className="p-4 border-r border-border/50">
+              <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground block mb-1.5">
+                Description of Non-Conformity
+              </span>
+              <div className="text-sm leading-relaxed">
+                {val(d, "description_of_non_conformity") || (ph ? "___" : "—")}
+              </div>
+            </div>
+            <div className="p-4">
+              <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground block mb-1.5">
+                Root Cause Analysis
+              </span>
+              <div className="text-sm leading-relaxed">
+                {val(d, "root_cause_analysis") || (ph ? "___" : "—")}
+              </div>
+            </div>
+          </div>
         </div>
-      </div>
 
-      {/* ── Actions Recommended ── */}
-      <div className="border-x border-b border-border p-2">
-        <div className="text-xs font-semibold mb-1">Actions Recommended:</div>
-        {txt("actions_recommended", "Recommended corrective actions")}
-      </div>
-
-      {/* ── Responsibility ── */}
-      <div className="border-x border-b border-border p-1.5 text-xs">
-        Responsibility 🡪 {inp("responsibility", "Responsible person", "w-48")}
-      </div>
-
-      {/* ── Actions Taken ── */}
-      <div className="border-x border-b border-border p-2">
-        <div className="text-xs font-semibold mb-1">Actions Taken:</div>
-        {txt("actions_taken", "Actions taken")}
-      </div>
-
-      {/* ── Action Taken Date / Action Taken By ── */}
-      <div className="grid grid-cols-[1fr_1fr] border-x border-b border-border text-xs">
-        <div className="p-1.5 border-r border-border">
-          Action Taken Date 🡪 {inp("action_taken_date", "DD/MM/YYYY", "w-28")}
+        {/* ── Block B: Action Plan Block — Recommendations + Responsibility ── */}
+        <div className="border-b border-border">
+          <div className="bg-amber-500/5 px-4 py-2 border-b border-border">
+            <h3 className="text-xs font-semibold uppercase tracking-wider text-amber-600/80">
+              🟡 Action Plan Block — Recommendations & Responsibility
+            </h3>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-0">
+            <div className="p-4 border-r border-border/50">
+              <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground block mb-1.5">
+                Actions Recommended
+              </span>
+              {renderBulletList("actions_recommended")}
+            </div>
+            <div className="p-4">
+              <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground block mb-1.5">
+                Responsibility
+              </span>
+              <div className="text-sm font-medium">
+                {val(d, "responsibility") || (ph ? "___" : "—")}
+              </div>
+              <div className="mt-2 text-[10px] text-muted-foreground">
+                Identified By: <span className="font-medium text-foreground">{val(d, "identified_by") || (ph ? "___" : "—")}</span>
+              </div>
+            </div>
+          </div>
         </div>
-        <div className="p-1.5">
-          Action Taken By 🡪 {inp("action_taken_by", "Action taken by", "w-36")}
+
+        {/* ── Block C: Execution Block — Actions Taken + Date/By ── */}
+        <div className="border-b border-border">
+          <div className="bg-emerald-500/5 px-4 py-2 border-b border-border">
+            <h3 className="text-xs font-semibold uppercase tracking-wider text-emerald-600/80">
+              🟢 Execution Block — Actions Taken
+            </h3>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-0">
+            <div className="p-4 border-r border-border/50">
+              <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground block mb-1.5">
+                Actions Taken
+              </span>
+              {renderBulletList("actions_taken")}
+            </div>
+            <div className="p-4">
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground block mb-0.5">
+                    Action Date
+                  </span>
+                  <span className="text-sm">{val(d, "action_taken_date") || (ph ? "___" : "—")}</span>
+                </div>
+                <div>
+                  <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground block mb-0.5">
+                    Taken By
+                  </span>
+                  <span className="text-sm">{val(d, "action_taken_by") || (ph ? "___" : "—")}</span>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
-      </div>
 
-      {/* ── Document Change Summary ── */}
-      <div className="border-x border-b border-border p-2">
-        <div className="text-xs font-semibold mb-1">Document Change Summary:</div>
-        {txt("document_change_summary", "Summary of document changes")}
-      </div>
+        {/* ── Block D: Documentation Box ── */}
+        <div className="border-b border-border">
+          <div className="bg-blue-500/5 px-4 py-2 border-b border-border">
+            <h3 className="text-xs font-semibold uppercase tracking-wider text-blue-600/80">
+              🔵 Documentation — Change Summary
+            </h3>
+          </div>
+          <div className="p-4">
+            <div className="bg-muted/20 border border-border/50 rounded-md p-3">
+              <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground block mb-1">
+                Document Change Summary
+              </span>
+              <div className="text-sm leading-relaxed">
+                {val(d, "document_change_summary") || (ph ? "___" : "—")}
+              </div>
+            </div>
+          </div>
+        </div>
 
-      {/* ── Planned Review Date ── */}
-      <div className="border-x border-b border-border p-1.5 text-xs">
-        Planned Review Date 🡪 {inp("planned_review_date", "DD/MM/YYYY", "w-28")}
-      </div>
-
-      {/* ── Verification Status ── */}
-      <div className="border-x border-b border-border p-2">
-        <div className="text-xs font-semibold mb-1">Verification of Effectiveness:</div>
-        {txt("verification_status", "Verification status — to be filled after one month review")}
+        {/* ═══════════════════════════════════════════════════════════════════
+            SECTION 4: VERIFICATION
+            ═══════════════════════════════════════════════════════════════════ */}
+        <div className="px-4 py-3">
+          <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2">
+            Verification of Effectiveness
+          </h3>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-2">
+            <div>
+              <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground block mb-0.5">
+                Planned Review Date
+              </span>
+              <span className="text-sm">{val(d, "planned_review_date") || (ph ? "___" : "—")}</span>
+            </div>
+          </div>
+          <div className="bg-muted/10 border border-border/50 rounded-md p-3">
+            <div className="text-sm leading-relaxed whitespace-pre-wrap">
+              {val(d, "verification_status") || (ph ? "___" : "—")}
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   );
