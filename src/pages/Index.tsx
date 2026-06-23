@@ -1,10 +1,11 @@
 // ============================================================================
 // QBase — Dashboard (NotionWarm Workspace)
 // Warm paper-toned cards, serif headings, soft borders, felt warmth
-// NOW WITH: ISO Compliance Monitor, SLA Countdown Grid, Department Health
+// NOW WITH: ISO Compliance Monitor, SLA Countdown Grid, Department Health,
+//           Compliance Radar (gap analysis for ALL recurring forms)
 // ============================================================================
 
-import { useState, useMemo, useCallback } from "react";
+import { useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { useRecords } from "@/hooks/useRecordStorage";
@@ -13,6 +14,7 @@ import { cn } from "@/lib/utils";
 import {
   FileText, Folder, Search, ChevronRight, Plus,
   AlertTriangle, CheckCircle, Clock, ShieldAlert, Calendar,
+  Radar,
 } from "lucide-react";
 import type { RecordData } from "@/components/forms/DynamicFormRenderer";
 import {
@@ -22,11 +24,9 @@ import {
 import { deptBorderStyle, deptAccentStyle } from "@/lib/departmentTheme";
 import {
   getMonthsFromRecords, monthLabel, monthShortLabel,
-  getRecordMonth, getMissingMonths, getAllMissingMonths,
-  MONTHLY_FORM_CODES,
+  getRecordMonth, getAllMissingPeriods, RECURRING_FORMS,
+  formatPeriodLabel,
 } from "@/lib/temporalUtils";
-import { bulkCreateMissingMonths } from "@/lib/bulkCreate";
-import { toast } from "sonner";
 
 const DEPT_ORDER = [
   "Sales & Customer Service",
@@ -142,6 +142,59 @@ function ComplianceBadge({ compliance }: { compliance: FormCompliance }) {
   );
 }
 
+/* ─── Compliance Radar Card ─────────────────────────────────────── */
+function ComplianceRadarCard({
+  missingPeriodsMap,
+}: {
+  missingPeriodsMap: Map<string, { def: { code: string; name: string; frequency: string }; missing: string[] }>;
+}) {
+  if (missingPeriodsMap.size === 0) {
+    return (
+      <div className="px-4 py-3 bg-emerald-500/10 border border-emerald-500/20 rounded-xl">
+        <div className="flex items-center gap-2">
+          <CheckCircle className="w-4 h-4 text-emerald-500" />
+          <span className="text-sm font-semibold text-emerald-600 dark:text-emerald-400">
+            All Recurring Forms Are Up to Date
+          </span>
+        </div>
+        <p className="text-xs text-emerald-600/70 dark:text-emerald-400/70 ml-6 mt-1">
+          No compliance gaps detected across monthly, quarterly, semi-annual, or annual forms.
+        </p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="px-4 py-3 bg-amber-500/10 border border-amber-500/20 rounded-xl">
+      <div className="flex items-center gap-2 mb-3">
+        <Radar className="w-4 h-4 text-amber-500" />
+        <span className="text-sm font-semibold text-amber-600 dark:text-amber-400">
+          Compliance Radar — {missingPeriodsMap.size} Gap{missingPeriodsMap.size > 1 ? 's' : ''} Detected
+        </span>
+      </div>
+      <div className="space-y-2">
+        {Array.from(missingPeriodsMap.entries()).map(([code, { def, missing }]) => {
+          const freqLabel = def.frequency.charAt(0).toUpperCase() + def.frequency.slice(1);
+          return (
+            <div key={code} className="flex items-start gap-3 ml-2">
+              <AlertTriangle className="w-3.5 h-3.5 text-amber-500 mt-0.5 shrink-0" />
+              <div>
+                <p className="text-xs font-medium text-amber-700 dark:text-amber-300">
+                  ⚠️ Compliance Gap: {code} ({def.name}) — Missing for{' '}
+                  {missing.map(formatPeriodLabel).join(', ')}
+                </p>
+                <p className="text-[10px] text-amber-600/70 dark:text-amber-400/70 mt-0.5">
+                  {freqLabel} form — expected {missing.length} period{missing.length > 1 ? 's' : ''} in 2026
+                </p>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
 export default function Index() {
   const navigate = useNavigate();
   const { user } = useAuth();
@@ -149,28 +202,6 @@ export default function Index() {
   const [activeDept, setActiveDept] = useState("Sales & Customer Service");
   const [selectedForm, setSelectedForm] = useState<string | null>(null);
   const [formSearch, setFormSearch] = useState("");
-  const [isCreatingBulk, setIsCreatingBulk] = useState(false);
-
-  const handleBulkCreate = useCallback(async (formCode: string) => {
-    if (!records || !user) return;
-    setIsCreatingBulk(true);
-    try {
-      const result = await bulkCreateMissingMonths(
-        records as RecordData[], formCode,
-        user.email || user.id || 'unknown', user.name || 'unknown',
-      );
-      if (result.created > 0) {
-        toast.success(`Created ${result.created} record(s) for ${formCode}`);
-      }
-      if (result.failed.length > 0) {
-        toast.error(`Failed: ${result.failed.map(f => `${f.month} (${f.error})`).join(', ')}`);
-      }
-    } catch (err) {
-      toast.error(`Bulk create failed: ${(err as Error).message}`);
-    } finally {
-      setIsCreatingBulk(false);
-    }
-  }, [records, user]);
 
   const firstName = (user?.name || "User").split(" ")[0];
 
@@ -178,9 +209,9 @@ export default function Index() {
   const [globalMonth, setGlobalMonth] = useState("");
   const availableMonths = useMemo(() => getMonthsFromRecords(records || []), [records]);
 
-  // ── Missing months for monthly forms ─────────────────────────────
-  const missingMonthsMap = useMemo(() => getAllMissingMonths(records || []), [records]);
-  const hasMissingMonths = missingMonthsMap.size > 0;
+  // ── COMPLIANCE RADAR — Gap analysis for ALL recurring forms ──────
+  const missingPeriodsMap = useMemo(() => getAllMissingPeriods(records || []), [records]);
+  const hasMissingPeriods = missingPeriodsMap.size > 0;
 
   // ── Build compliance map ─────────────────────────────────────────
   const complianceMap = useMemo(() => {
@@ -281,7 +312,7 @@ export default function Index() {
     return r.sort((a, b) => new Date(String(b._createdAt || new Date().toISOString())).getTime() - new Date(String(a._createdAt || new Date().toISOString())).getTime());
   }, [records, globalMonth, selectedForm, activeDept]);
 
-  const handleDeptClick = useCallback((dept: string) => {
+  const handleDeptClick = useMemo(() => (dept: string) => {
     setActiveDept(dept);
     setSelectedForm(null);
   }, []);
@@ -322,45 +353,8 @@ export default function Index() {
         </div>
       </div>
 
-      {/* Missing Months Alert */}
-      {hasMissingMonths && !globalMonth && (
-        <div className="mt-4 px-4 py-3 bg-amber-500/10 border border-amber-500/20 rounded-xl">
-          <div className="flex items-center justify-between mb-2">
-            <div className="flex items-center gap-2">
-              <AlertTriangle className="w-4 h-4 text-amber-500" />
-              <span className="text-sm font-semibold text-amber-600 dark:text-amber-400">Missing Monthly Records</span>
-            </div>
-            <button
-              onClick={() => {
-                Array.from(missingMonthsMap.keys()).forEach(code => handleBulkCreate(code));
-              }}
-              disabled={isCreatingBulk}
-              className="text-xs px-2.5 py-1 rounded-md bg-amber-500/20 text-amber-600 dark:text-amber-400 hover:bg-amber-500/30 transition-colors disabled:opacity-50"
-            >
-              {isCreatingBulk ? 'Creating...' : 'Create All Missing'}
-            </button>
-          </div>
-          <div className="space-y-1.5">
-            {Array.from(missingMonthsMap.entries()).map(([code, missing]) => {
-              const form = FORM_SCHEMAS.find(f => f.code === code);
-              return (
-                <div key={code} className="flex items-center justify-between ml-6">
-                  <p className="text-xs text-amber-600/80 dark:text-amber-400/80">
-                    {code} ({form?.name || code}) — Missing: {missing.map(monthLabel).join(', ')}
-                  </p>
-                  <button
-                    onClick={() => handleBulkCreate(code)}
-                    disabled={isCreatingBulk}
-                    className="text-[10px] px-2 py-0.5 rounded bg-amber-500/15 text-amber-600 dark:text-amber-400 hover:bg-amber-500/25 transition-colors disabled:opacity-50 shrink-0 ml-2"
-                  >
-                    {isCreatingBulk ? '...' : 'Create'}
-                  </button>
-                </div>
-              );
-            })}
-          </div>
-        </div>
-      )}
+      {/* COMPLIANCE RADAR — Prominent Gap Alert Card */}
+      {!globalMonth && <ComplianceRadarCard missingPeriodsMap={missingPeriodsMap} />}
 
       {/* Department Metric Cards (Executive Row) */}
       <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-7 gap-3">

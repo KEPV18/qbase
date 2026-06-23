@@ -133,6 +133,41 @@ export function resolveCoveragePeriod(record: RecordData): string {
   // 5. Fallback
   return 'Continuous / Open-Ended';
 }
+
+// ============================================================================
+// COMPLIANCE RADAR ENGINE — Gap Analysis for ALL Recurring Forms
+// ============================================================================
+
+/**
+ * Recurring form definitions with their expected frequency and period coverage.
+ * The radar engine uses this to detect missing records.
+ */
+export interface RecurringFormDef {
+  code: string;
+  name: string;
+  frequency: 'monthly' | 'quarterly' | 'semi-annual' | 'annual';
+  /** Expected periods in YYYY-MM format (monthly) or YYYY-Q[1-4] (quarterly) or YYYY-H[1-2] (semi-annual) or YYYY (annual) */
+  expectedPeriods: string[];
+}
+
+/** All recurring forms with their expected periods up to June 2026 */
+export const RECURRING_FORMS: RecurringFormDef[] = [
+  // ── Monthly ──
+  { code: 'F/11', name: 'Production Plan', frequency: 'monthly', expectedPeriods: ['2026-01','2026-02','2026-03','2026-04','2026-05','2026-06'] },
+  { code: 'F/35', name: 'Design Monitoring', frequency: 'monthly', expectedPeriods: ['2026-01','2026-02','2026-03','2026-04','2026-05','2026-06'] },
+  { code: 'F/48', name: 'Internal Audit Report', frequency: 'monthly', expectedPeriods: ['2026-01','2026-02','2026-03','2026-04','2026-05','2026-06'] },
+  // ── Quarterly ──
+  { code: 'F/24', name: 'Objectives & Targets', frequency: 'quarterly', expectedPeriods: ['2026-Q1','2026-Q2'] },
+  // ── Semi-annual ──
+  { code: 'F/25', name: 'Audit Plan', frequency: 'semi-annual', expectedPeriods: ['2026-H1'] },
+  { code: 'F/40', name: 'Competence Matrix', frequency: 'semi-annual', expectedPeriods: ['2026-H1'] },
+  // ── Annual ──
+  { code: 'F/15', name: 'Approved Vendor List', frequency: 'annual', expectedPeriods: ['2026'] },
+  { code: 'F/16', name: 'Supplier Registration Form', frequency: 'annual', expectedPeriods: ['2026'] },
+  { code: 'F/42', name: 'Annual Training Plan', frequency: 'annual', expectedPeriods: ['2026'] },
+];
+
+/** Legacy set for backward compatibility */
 export const MONTHLY_FORM_CODES = new Set(['F/11', 'F/35', 'F/48']);
 
 export function isMonthlyForm(code: string): boolean {
@@ -205,29 +240,117 @@ export function getMonthsFromRecords(
 }
 
 // ---------------------------------------------------------------------------
-// Missing-month detection for a given form
+// COMPLIANCE RADAR — Gap Detection for ALL Recurring Forms
 // ---------------------------------------------------------------------------
+
+/**
+ * Get the period identifier from a record based on its form code and data.
+ * Returns YYYY-MM for monthly, YYYY-Q[1-4] for quarterly, YYYY-H[1-2] for semi-annual, YYYY for annual.
+ */
+function getRecordPeriod(record: RecordData, def: RecurringFormDef): string | null {
+  const month = getRecordMonth(record);
+  if (!month) return null;
+
+  const [year, mm] = month.split('-');
+  const monthNum = parseInt(mm, 10);
+
+  switch (def.frequency) {
+    case 'monthly':
+      return month; // YYYY-MM
+    case 'quarterly': {
+      const q = Math.ceil(monthNum / 3);
+      return `${year}-Q${q}`;
+    }
+    case 'semi-annual': {
+      const h = monthNum <= 6 ? 1 : 2;
+      return `${year}-H${h}`;
+    }
+    case 'annual':
+      return year;
+    default:
+      return null;
+  }
+}
+
+/**
+ * Detect missing periods for a specific recurring form.
+ * Returns an array of period labels that are missing (e.g. ["2026-05", "2026-06"]).
+ */
+export function getMissingPeriods(
+  records: RecordData[],
+  def: RecurringFormDef,
+): string[] {
+  const existing = new Set<string>();
+  for (const r of records) {
+    if (String(r.formCode) !== def.code) continue;
+    const period = getRecordPeriod(r, def);
+    if (period) existing.add(period);
+  }
+  return def.expectedPeriods.filter(p => !existing.has(p));
+}
+
+/**
+ * Get ALL missing periods across all recurring forms.
+ * Returns a Map<formCode, { def: RecurringFormDef, missing: string[] }>
+ */
+export function getAllMissingPeriods(
+  records: RecordData[],
+): Map<string, { def: RecurringFormDef; missing: string[] }> {
+  const map = new Map<string, { def: RecurringFormDef; missing: string[] }>();
+  for (const def of RECURRING_FORMS) {
+    const missing = getMissingPeriods(records, def);
+    if (missing.length > 0) {
+      map.set(def.code, { def, missing });
+    }
+  }
+  return map;
+}
+
+/**
+ * Format a period label for display.
+ * "2026-05" → "May 2026"
+ * "2026-Q1" → "Q1 2026"
+ * "2026-H1" → "H1 2026"
+ * "2026" → "2026"
+ */
+export function formatPeriodLabel(period: string): string {
+  // Monthly: YYYY-MM
+  const monthMatch = period.match(/^(\d{4})-(\d{2})$/);
+  if (monthMatch) {
+    const monthIdx = parseInt(monthMatch[2], 10) - 1;
+    return `${MONTH_NAMES_FULL[monthIdx]} ${monthMatch[1]}`;
+  }
+  // Quarterly: YYYY-Q[1-4]
+  const qMatch = period.match(/^(\d{4})-Q([1-4])$/);
+  if (qMatch) return `Q${qMatch[2]} ${qMatch[1]}`;
+  // Semi-annual: YYYY-H[1-2]
+  const hMatch = period.match(/^(\d{4})-H([1-2])$/);
+  if (hMatch) return `H${hMatch[2]} ${hMatch[1]}`;
+  // Annual: YYYY
+  if (/^\d{4}$/.test(period)) return period;
+  return period;
+}
+
+/** Legacy: get missing months for a specific monthly form */
 export function getMissingMonths(
   records: RecordData[],
   formCode: string,
 ): string[] {
   if (!isMonthlyForm(formCode)) return [];
-  const existing = new Set<string>();
-  for (const r of records) {
-    if (String(r.formCode) !== formCode) continue;
-    const m = getRecordMonth(r);
-    if (m) existing.add(m);
-  }
-  return BUSINESS_MONTHS.filter(m => !existing.has(m));
+  const def = RECURRING_FORMS.find(d => d.code === formCode);
+  if (!def) return [];
+  return getMissingPeriods(records, def);
 }
 
-/** All missing months grouped by form code for monthly forms */
+/** Legacy: missing months grouped by form code for monthly forms */
 export function getAllMissingMonths(
   records: RecordData[],
 ): Map<string, string[]> {
   const map = new Map<string, string[]>();
   for (const code of MONTHLY_FORM_CODES) {
-    const missing = getMissingMonths(records, code);
+    const def = RECURRING_FORMS.find(d => d.code === code);
+    if (!def) continue;
+    const missing = getMissingPeriods(records, def);
     if (missing.length > 0) map.set(code, missing);
   }
   return map;
