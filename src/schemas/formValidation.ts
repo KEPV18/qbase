@@ -665,12 +665,18 @@ export type F35Data = z.infer<typeof F35Schema>;
 export const F37Schema = z.object({
   serial: AUTO_SERIAL,
   date: ISO_DATE,
-  experiment_title: REQUIRED_TEXT,
-  hypothesis: OPTIONAL_TEXT,
-  method: OPTIONAL_TEXT,
-  results: OPTIONAL_TEXT,
-  conclusion: OPTIONAL_TEXT,
-  recorded_by: SIGNATURE,
+  product_name: REQUIRED_TEXT,
+  experiment_no: REQUIRED_TEXT,
+  incharge: REQUIRED_TEXT,
+  objective: REQUIRED_TEXT,
+  experiments: z.array(z.object({
+    quantity: REQUIRED_TEXT,
+    description: REQUIRED_TEXT,
+    observation: REQUIRED_TEXT,
+  })).min(1, 'At least one experiment required'),
+  conclusion: REQUIRED_TEXT,
+  done_by: SIGNATURE,
+  reviewed_by: SIGNATURE,
 });
 export type F37Data = z.infer<typeof F37Schema>;
 
