@@ -637,11 +637,16 @@ export type F32Data = z.infer<typeof F32Schema>;
 export const F34Schema = z.object({
   serial: AUTO_SERIAL,
   date: ISO_DATE,
-  project: REQUIRED_TEXT,
-  design_ref: OPTIONAL_TEXT,
-  requirements_met: DESIGN_RESULT,
-  findings: REQUIRED_TEXT,
-  verified_by: SIGNATURE,
+  project_number: REQUIRED_TEXT,
+  product_name: REQUIRED_TEXT,
+  verification_items: z.array(z.object({
+    input: REQUIRED_TEXT,
+    output: REQUIRED_TEXT,
+  })).min(1, 'At least one verification item required'),
+  remarks: OPTIONAL_TEXT,
+  conclusion: REQUIRED_TEXT,
+  checked_by: SIGNATURE,
+  reviewed_and_approved_by: SIGNATURE,
 });
 export type F34Data = z.infer<typeof F34Schema>;
 

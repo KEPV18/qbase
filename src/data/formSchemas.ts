@@ -753,11 +753,16 @@ export const FORM_SCHEMAS: FormSchema[] = [
     fields: [
       { key: "serial", label: "Serial Number", type: "text", required: true, width: "half", defaultValue: "auto" },
       { key: "date", label: "Date", type: "date", required: true, width: "half" },
-      { key: "project", label: "Project", type: "text", required: true, width: "half" },
-      { key: "design_ref", label: "Design Reference", type: "text", width: "half" },
-      { key: "requirements_met", label: "Requirements Met", type: "select", options: ["Fully", "Partially", "Not Met"], width: "half" },
-      { key: "findings", label: "Verification Findings", type: "textarea", required: true, width: "full" },
-      { key: "verified_by", label: "Verified By", type: "signature", required: true, width: "half" },
+      { key: "project_number", label: "Project Number", type: "text", required: true, width: "half" },
+      { key: "product_name", label: "Product Name", type: "text", required: true, width: "half" },
+      { key: "verification_items", label: "Verification Items", type: "table", columns: [
+        { key: "input", label: "Input Requirements", type: "text", required: true },
+        { key: "output", label: "Output Observed", type: "text", required: true },
+      ]},
+      { key: "remarks", label: "Remarks", type: "textarea", required: false, width: "full" },
+      { key: "conclusion", label: "Conclusion", type: "textarea", required: true, width: "full" },
+      { key: "checked_by", label: "Checked By", type: "signature", required: true, width: "half" },
+      { key: "reviewed_and_approved_by", label: "Reviewed & Approved By", type: "signature", required: true, width: "half" },
     ],
   },
   {
