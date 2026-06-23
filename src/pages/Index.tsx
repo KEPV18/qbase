@@ -146,7 +146,7 @@ function ComplianceBadge({ compliance }: { compliance: FormCompliance }) {
 function ComplianceRadarCard({
   missingPeriodsMap,
 }: {
-  missingPeriodsMap: Map<string, { def: { code: string; name: string; frequency: string }; missing: string[] }>;
+  missingPeriodsMap: Map<string, string[]>;
 }) {
   if (missingPeriodsMap.size === 0) {
     return (
@@ -173,7 +173,9 @@ function ComplianceRadarCard({
         </span>
       </div>
       <div className="space-y-2">
-        {Array.from(missingPeriodsMap.entries()).map(([code, { def, missing }]) => {
+        {Array.from(missingPeriodsMap.entries()).map(([code, missing]) => {
+          const def = RECURRING_FORMS[code];
+          if (!def) return null;
           const freqLabel = def.frequency.charAt(0).toUpperCase() + def.frequency.slice(1);
           return (
             <div key={code} className="flex items-start gap-3 ml-2">
