@@ -76,19 +76,21 @@ function dateToMonthLabel(dateStr: string): string | null {
 
 /**
  * Resolve a human-readable coverage period from a record.
+ * The record has all form_data fields flattened to the top level
+ * (via ...formData spread in recordStorage.ts).
+ * 
  * Priority:
- *   1. form_data.coverage_period (if it's already a named month)
- *   2. form_data.record_month
- *   3. form_data.date / training_date / registration_date etc.
- *   4. Item-level dates (for F/11 items array)
+ *   1. record.coverage_period (already set in DB)
+ *   2. record.record_month
+ *   3. record.date / training_date / registration_date etc.
+ *   4. Item-level dates (for F/11 items array in record)
  *   5. Fallback: "Continuous / Open-Ended"
  */
 export function resolveCoveragePeriod(record: RecordData): string {
-  const fd = record.form_data as Record<string, unknown> | undefined;
-  if (!fd) return 'Continuous / Open-Ended';
+  if (!record) return 'Continuous / Open-Ended';
 
-  // 1. Already a named month in coverage_period
-  const cp = fd.coverage_period as string | undefined;
+  // 1. Already a named month in coverage_period (flattened on record)
+  const cp = record.coverage_period as string | undefined;
   if (cp) {
     const parsed = dateToMonthLabel(cp);
     if (parsed) return parsed;
@@ -97,24 +99,24 @@ export function resolveCoveragePeriod(record: RecordData): string {
   }
 
   // 2. Try record_month
-  const rm = fd.record_month as string | undefined;
+  const rm = record.record_month as string | undefined;
   if (rm) {
     const parsed = dateToMonthLabel(rm);
     if (parsed) return parsed;
   }
 
-  // 3. Try date fields
+  // 3. Try date fields (all flattened to top level)
   for (const key of ['date', 'training_date', 'registration_date', 'assessed_on', 'appraisal_date', 'date_of_joining']) {
-    const dv = fd[key] as string | undefined;
+    const dv = record[key] as string | undefined;
     if (dv) {
       const parsed = dateToMonthLabel(dv);
       if (parsed) return parsed;
     }
   }
 
-  // 4. For F/11, try item-level planDate
+  // 4. For F/11, try item-level planDate (items array flattened on record)
   if (String(record.formCode) === 'F/11') {
-    const items = fd.items as Array<Record<string, unknown>> | undefined;
+    const items = record.items as Array<Record<string, unknown>> | undefined;
     if (Array.isArray(items)) {
       for (const item of items) {
         for (const key of ['planDate', 'actualDate']) {
