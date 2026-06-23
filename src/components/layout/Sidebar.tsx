@@ -10,7 +10,7 @@ import {
   LayoutDashboard, Layers, FileText, Settings, Bell,
   Database, Shield, Users, BarChart3, Briefcase,
   CheckCircle, LogOut, BookOpen, FileCheck, ShieldCheck, Archive,
-  AlertTriangle, Target,
+  AlertTriangle, Target, X,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useNotifications } from "@/hooks/useNotifications";
@@ -81,6 +81,33 @@ function SidebarNavItem({
           {item.badge > 9 ? "9+" : item.badge}
         </span>
       ) : null}
+    </button>
+  );
+}
+
+// Icon-only nav item (collapsed sidebar)
+function SidebarIconItem({
+  item,
+  isActive,
+  onClick,
+}: {
+  item: { label: string; icon: React.ElementType; path: string };
+  isActive: boolean;
+  onClick: () => void;
+}) {
+  const Icon = item.icon;
+  return (
+    <button
+      onClick={onClick}
+      title={item.label}
+      className={cn(
+        "w-full flex items-center justify-center px-2 py-2.5 rounded-lg transition-all duration-200",
+        isActive
+          ? "bg-foreground text-white dark:bg-muted dark:text-foreground"
+          : "text-muted-foreground hover:text-foreground hover:bg-muted"
+      )}
+    >
+      <Icon className={cn("w-[18px] h-[18px]", isActive ? "text-white dark:text-foreground" : "text-muted-foreground/70")} />
     </button>
   );
 }
@@ -158,7 +185,7 @@ export function Sidebar({ mobileOpen, onClose, sidebarOpen, onToggle }: { mobile
             className="hidden lg:flex p-1.5 rounded-lg text-muted-foreground/70 hover:text-foreground hover:bg-muted transition-colors shrink-0"
             title={sidebarOpen ? "Collapse sidebar" : "Expand sidebar"}
           >
-            <PanelLeftClose className="w-4 h-4" />
+            <X className="w-4 h-4" />
           </button>
         </div>
 
