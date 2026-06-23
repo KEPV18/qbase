@@ -70,6 +70,34 @@ export function F22Template({ data, isTemplate = true, editMode = false, onChang
       </span>
     );
 
+  /** Date input: uses native browser date picker (YYYY-MM-DD) but stores as DD/MM/YYYY */
+  const dateInp = (key: string, width: string = "w-full") => {
+    const displayVal = val(d, key); // stored as DD/MM/YYYY
+    // Convert DD/MM/YYYY → YYYY-MM-DD for the input element
+    const inputVal = displayVal && /^\d{2}\/\d{2}\/\d{4}$/.test(displayVal)
+      ? displayVal.split('/').reverse().join('-')
+      : '';
+    return editMode ? (
+      <input
+        type="date"
+        className={cn("border-b border-dashed border-foreground/40 bg-transparent text-sm px-1", width)}
+        value={inputVal}
+        onChange={e => {
+          const raw = e.target.value; // YYYY-MM-DD
+          if (!raw) { onChange?.(key, ''); return; }
+          // Convert YYYY-MM-DD → DD/MM/YYYY
+          const parts = raw.split('-');
+          const ddmm = `${parts[2]}/${parts[1]}/${parts[0]}`;
+          onChange?.(key, ddmm);
+        }}
+      />
+    ) : (
+      <span className={cn("border-b border-dashed border-foreground/30 px-1 inline-block min-w-[4rem]", width)}>
+        {displayVal || (ph ? "___" : "—")}
+      </span>
+    );
+  };
+
   const txt = (key: string, label: string) =>
     editMode ? (
       <textarea
@@ -143,7 +171,7 @@ export function F22Template({ data, isTemplate = true, editMode = false, onChang
           </div>
           <div className="px-4 py-2">
             <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground block mb-0.5">Identified Date</span>
-            <span className="text-sm">{val(d, "identified_date") || (ph ? "___" : "—")}</span>
+            {dateInp("identified_date")}
           </div>
         </div>
 
@@ -250,7 +278,7 @@ export function F22Template({ data, isTemplate = true, editMode = false, onChang
                   <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground block mb-0.5">
                     Action Date
                   </span>
-                  <span className="text-sm">{val(d, "action_taken_date") || (ph ? "___" : "—")}</span>
+                  {dateInp("action_taken_date")}
                 </div>
                 <div>
                   <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground block mb-0.5">
@@ -294,13 +322,13 @@ export function F22Template({ data, isTemplate = true, editMode = false, onChang
               <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground block mb-0.5">
                 Planned Review Date
               </span>
-              <span className="text-sm">{val(d, "planned_review_date") || (ph ? "___" : "—")}</span>
+              {dateInp("planned_review_date")}
             </div>
             <div>
               <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground block mb-0.5">
                 Verified Date
               </span>
-              <span className="text-sm">{val(d, "verified_date") || (ph ? "___" : "—")}</span>
+              {dateInp("verified_date")}
             </div>
             <div>
               <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground block mb-0.5">
