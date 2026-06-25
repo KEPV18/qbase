@@ -1,11 +1,9 @@
 // ============================================================================
 // F/23 — Master List of Records
-// DOCX: 1 table, 16 rows, 10 cols. Grid layout with:
-// Row 0: Title (gs=8) + Serial (gs=2)
-// Row 1: Department (gs=6) + Date (gs=4)
-// Row 2: Column headers: Record No | Title | Format No | Frequency | Method | Access | Storage | Retention Period (gs=2) | Person Responsible
-// Rows 3-14: Data rows
-// Row 15: Authorised Signature (gs=10)
+// DOCX: 9-column table with 35 data rows
+// Columns: Record No. | Title Of Record | Format No. (If Any) | Frequency
+//          Of Collection | Method Of Filing | Access | Storage Place |
+//          Retention Period | Person Responsible
 // ============================================================================
 
 import React, { useState, useCallback } from "react";
@@ -16,7 +14,7 @@ export interface F23Props {
   data?: Record<string, unknown>;
   isTemplate?: boolean;
   editMode?: boolean;
-  onChange?: (field: string, value: string) => void;
+  onChange?: (field: string, value: string | Record<string, unknown>) => void;
   className?: string;
 }
 
@@ -28,22 +26,41 @@ function val(data: Record<string, unknown> | undefined, key: string): string {
 }
 
 interface RowData {
-  recordNo: string; title: string; formatNo: string; frequency: string;
-  methodOfFiling: string; access: string; storagePlace: string;
-  retentionPeriod: string; retentionYears: string; personResponsible: string;
+  record_no: string;
+  title: string;
+  format_no: string;
+  frequency: string;
+  method_of_filing: string;
+  access: string;
+  storage_place: string;
+  retention_period: string;
+  person_responsible: string;
 }
 
-function parseRows(d: Record<string, unknown>, count: number = 8): RowData[] {
-  const raw = d.items || d.rows || [];
+function parseRows(d: Record<string, unknown>): RowData[] {
+  const raw = d.records || d.items || d.rows || [];
   if (Array.isArray(raw) && raw.length > 0 && typeof raw[0] === "object") {
     return raw as RowData[];
   }
-  return Array.from({ length: count }, (_, i) => ({
-    recordNo: "", title: "", formatNo: "", frequency: "",
-    methodOfFiling: "", access: "", storagePlace: "",
-    retentionPeriod: "", retentionYears: "", personResponsible: "",
-  }));
+  return [];
 }
+
+const COL_HEADERS = [
+  "Record No.",
+  "Title Of Record",
+  "Format No. (If Any)",
+  "Frequency Of Collection",
+  "Method Of Filing",
+  "Access",
+  "Storage Place",
+  "Retention Period",
+  "Person Responsible",
+];
+
+const COL_KEYS: (keyof RowData)[] = [
+  "record_no", "title", "format_no", "frequency", "method_of_filing",
+  "access", "storage_place", "retention_period", "person_responsible",
+];
 
 export function F23Template({ data, isTemplate = true, editMode = false, onChange, className }: F23Props) {
   const d = data ?? {};
@@ -58,91 +75,108 @@ export function F23Template({ data, isTemplate = true, editMode = false, onChang
     });
     const updated = [...rows];
     updated[idx] = { ...updated[idx], [key]: value };
-    onChange?.("items", JSON.stringify(updated));
+    onChange?.("records", updated);
   }, [rows, onChange]);
 
   const addRow = useCallback(() => {
-    setRows(prev => [...prev, { recordNo: "", title: "", formatNo: "", frequency: "", methodOfFiling: "", access: "", storagePlace: "", retentionPeriod: "", retentionYears: "", personResponsible: "" }]);
+    setRows(prev => [...prev, {
+      record_no: "", title: "", format_no: "", frequency: "",
+      method_of_filing: "", access: "", storage_place: "",
+      retention_period: "", person_responsible: "",
+    }]);
   }, []);
 
   const removeRow = useCallback((idx: number) => {
     setRows(prev => prev.filter((_, i) => i !== idx));
   }, []);
 
-  const inp = (key: string, label: string, width: string = "w-48") =>
-    editMode ? (
-      <input className={cn("border-b border-dashed border-foreground/40 bg-transparent text-xs px-1", width)} value={val(d, key)} onChange={e => onChange?.(key, e.target.value)} placeholder={label} />
-    ) : (
-      <span className={cn("border-b border-dashed border-foreground/30 px-1 inline-block", width)}>{val(d, key) || (ph ? "___" : "")}</span>
-    );
-
-  const cellInp = (idx: number, key: keyof RowData, label: string) =>
-    editMode ? (
-      <input className="w-full bg-transparent text-xs px-1 border-none outline-none" value={rows[idx]?.[key] || ""} onChange={e => updateRow(idx, key, e.target.value)} placeholder={label} />
-    ) : (
-      <span className="text-xs">{rows[idx]?.[key] || ""}</span>
-    );
-
   return (
-    <div className={cn("bg-background dark:bg-[#1e1d1a] text-foreground text-sm print:bg-white print:text-black print:border-black", className)}>
+    <div className={cn("space-y-4", className)}>
       {/* Header */}
-      <div className="grid grid-cols-[1fr_auto] border border-border">
-        <div className="col-span-1 p-2 font-bold bg-primary/5 text-base">Master List of Records</div>
-        <div className="p-2 border-l border-border bg-primary/5 text-right text-xs">
-          F/23 Rev No. {val(d, "serial") || (ph ? "{{SERIAL}}" : "—")}
+      <div className="border-b pb-2 mb-2">
+        <h3 className="text-sm font-semibold uppercase tracking-wider text-foreground/70">
+          Master List of Records
+        </h3>
+        <div className="text-xs text-foreground/50">F/23</div>
+      </div>
+
+      {/* Info Row */}
+      <div className="grid grid-cols-2 gap-4 text-xs">
+        <div>
+          <span className="text-foreground/50">Serial: </span>
+          <span className="font-medium">{val(d, "serial") || (ph ? "F/23-001" : "")}</span>
+        </div>
+        <div>
+          <span className="text-foreground/50">Date: </span>
+          <span className="font-medium">{val(d, "date") || (ph ? "01/01/2026" : "")}</span>
+        </div>
+        <div>
+          <span className="text-foreground/50">Department: </span>
+          <span className="font-medium">{val(d, "department") || (ph ? "All Departments" : "")}</span>
         </div>
       </div>
 
-      {/* Department / Date row */}
-      <div className="grid grid-cols-[3fr_2fr] border-x border-b border-border text-xs">
-        <div className="p-1.5 border-r border-border">Department 🡪 {inp("department", "Department")}</div>
-        <div className="p-1.5">Date 🡪 {inp("date", "Date")}</div>
+      {/* 9-Column Table */}
+      <div className="w-full overflow-x-auto border rounded-md">
+        <table className="w-full text-[10px] border-collapse">
+          <thead>
+            <tr className="bg-muted/50">
+              {COL_HEADERS.map((h, i) => (
+                <th key={i} className="border px-1.5 py-1 text-left font-semibold whitespace-nowrap">
+                  {h}
+                </th>
+              ))}
+              {editMode && <th className="border px-1.5 py-1 w-8">#</th>}
+            </tr>
+          </thead>
+          <tbody>
+            {rows.map((row, idx) => (
+              <tr key={idx} className="even:bg-muted/20">
+                {COL_KEYS.map((key) => (
+                  <td key={key} className="border px-1.5 py-0.5">
+                    {editMode ? (
+                      <input
+                        className="w-full bg-transparent border-b border-dashed border-foreground/30 outline-none"
+                        value={row[key]}
+                        onChange={(e) => updateRow(idx, key, e.target.value)}
+                      />
+                    ) : (
+                      <span>{row[key]}</span>
+                    )}
+                  </td>
+                ))}
+                {editMode && (
+                  <td className="border px-1 py-0.5 text-center">
+                    <button
+                      onClick={() => removeRow(idx)}
+                      className="text-red-500 hover:text-red-700"
+                      title="Remove row"
+                    >
+                      <Trash2 className="h-3 w-3" />
+                    </button>
+                  </td>
+                )}
+              </tr>
+            ))}
+          </tbody>
+        </table>
       </div>
-
-      {/* Column headers */}
-      <div className="grid grid-cols-[50px_1.5fr_70px_80px_80px_60px_70px_60px_60px_80px] border-x border-b border-border text-[9px] font-semibold bg-muted">
-        <div className="p-1 border-r border-border text-center">Record No.</div>
-        <div className="p-1 border-r border-border">Title Of Record</div>
-        <div className="p-1 border-r border-border">Format No.</div>
-        <div className="p-1 border-r border-border">Frequency</div>
-        <div className="p-1 border-r border-border">Method Of Filing</div>
-        <div className="p-1 border-r border-border">Access</div>
-        <div className="p-1 border-r border-border">Storage Place</div>
-        <div className="p-1 border-r border-border text-center">Retention<br/>Period</div>
-        <div className="p-1 border-r border-border text-center">Retention<br/>Years</div>
-        <div className="p-1">Person Responsible</div>
-      </div>
-
-      {/* Data rows */}
-      {rows.map((row, idx) => (
-        <div key={idx} className="grid grid-cols-[50px_1.5fr_70px_80px_80px_60px_70px_60px_60px_80px] border-x border-b border-border text-xs relative group min-h-[28px]">
-          <div className="p-1 border-r border-border text-center">{cellInp(idx, "recordNo", "F/XX")}</div>
-          <div className="p-1 border-r border-border">{cellInp(idx, "title", "Title")}</div>
-          <div className="p-1 border-r border-border">{cellInp(idx, "formatNo", "F/XX")}</div>
-          <div className="p-1 border-r border-border">{cellInp(idx, "frequency", "Monthly")}</div>
-          <div className="p-1 border-r border-border">{cellInp(idx, "methodOfFiling", "File")}</div>
-          <div className="p-1 border-r border-border">{cellInp(idx, "access", "All")}</div>
-          <div className="p-1 border-r border-border">{cellInp(idx, "storagePlace", "Cabinet")}</div>
-          <div className="p-1 border-r border-border text-center">{cellInp(idx, "retentionPeriod", "2Y")}</div>
-          <div className="p-1 border-r border-border text-center">{cellInp(idx, "retentionYears", "")}</div>
-          <div className="p-1">{cellInp(idx, "personResponsible", "Name")}</div>
-          {editMode && rows.length > 1 && (
-            <button onClick={() => removeRow(idx)} className="absolute -right-6 top-1/2 -translate-y-1/2 text-destructive opacity-0 group-hover:opacity-100 transition-opacity">
-              <Trash2 className="w-3 h-3" />
-            </button>
-          )}
-        </div>
-      ))}
 
       {editMode && (
-        <button onClick={addRow} className="mt-1 flex items-center gap-1 text-xs text-primary hover:underline mx-auto">
-          <Plus className="w-3 h-3" /> Add Row
+        <button
+          onClick={addRow}
+          className="flex items-center gap-1 text-xs text-blue-600 hover:text-blue-800"
+        >
+          <Plus className="h-3 w-3" /> Add Record Entry
         </button>
       )}
 
-      {/* Authorised Signature */}
-      <div className="mt-4 pt-2 border-t border-foreground/20 flex justify-end text-xs">
-        <div>Authorised Signature - Functional Head: {inp("authorised_signature", "Sign")}</div>
+      {/* Footer */}
+      <div className="grid grid-cols-2 gap-4 text-xs pt-2 border-t">
+        <div>
+          <span className="text-foreground/50">Maintained By: </span>
+          <span className="font-medium">{val(d, "maintained_by") || (ph ? "Ahmed Khaled" : "")}</span>
+        </div>
       </div>
     </div>
   );

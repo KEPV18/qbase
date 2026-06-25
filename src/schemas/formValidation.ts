@@ -722,12 +722,17 @@ export type F21Data = z.infer<typeof F21Schema>;
 export const F23Schema = z.object({
   serial: AUTO_SERIAL,
   date: ISO_DATE,
+  department: REQUIRED_TEXT,
   records: z.array(z.object({
-    form_code: REQUIRED_TEXT,
-    record_serial: REQUIRED_TEXT,
-    description: OPTIONAL_TEXT,
-    date_created: OPTIONAL_DATE,
-    storage: OPTIONAL_TEXT,
+    record_no: REQUIRED_TEXT,
+    title: REQUIRED_TEXT,
+    format_no: REQUIRED_TEXT,
+    frequency: REQUIRED_TEXT,
+    method_of_filing: REQUIRED_TEXT,
+    access: REQUIRED_TEXT,
+    storage_place: REQUIRED_TEXT,
+    retention_period: REQUIRED_TEXT,
+    person_responsible: REQUIRED_TEXT,
   })).min(1, 'At least one record entry required'),
   maintained_by: SIGNATURE,
 });
