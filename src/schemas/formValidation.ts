@@ -692,14 +692,12 @@ export type F37Data = z.infer<typeof F37Schema>;
 export const F20Schema = z.object({
   serial: AUTO_SERIAL,
   date: ISO_DATE,
-  location: OPTIONAL_TEXT,
+  time: REQUIRED_TEXT,
+  place: REQUIRED_TEXT,
   chairperson: REQUIRED_TEXT,
-  agenda_items: z.array(z.object({
-    item: REQUIRED_TEXT,
-    presenter: OPTIONAL_TEXT,
-    duration: OPTIONAL_TEXT,
-  })).min(1, 'At least one agenda item required'),
+  agenda: REQUIRED_TEXT,
   prepared_by: SIGNATURE,
+  approved_by: SIGNATURE,
 });
 export type F20Data = z.infer<typeof F20Schema>;
 

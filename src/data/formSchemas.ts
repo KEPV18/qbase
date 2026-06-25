@@ -830,15 +830,13 @@ export const FORM_SCHEMAS: FormSchema[] = [
     description: "Management review meeting agenda.",
     fields: [
       { key: "serial", label: "Serial Number", type: "text", required: true, width: "half", defaultValue: "auto" },
-      { key: "date", label: "Meeting Date", type: "date", required: true, width: "half" },
-      { key: "location", label: "Location", type: "text", width: "half" },
+      { key: "date", label: "Date", type: "date", required: true, width: "half" },
+      { key: "time", label: "Time", type: "text", required: true, width: "third" },
+      { key: "place", label: "Place", type: "text", required: true, width: "third" },
       { key: "chairperson", label: "Chairperson", type: "text", required: true, width: "half" },
-      { key: "agenda_items", label: "Agenda Items", type: "table", columns: [
-        { key: "item", label: "Item", type: "text", required: true },
-        { key: "presenter", label: "Presenter", type: "text" },
-        { key: "duration", label: "Duration", type: "text" },
-      ]},
+      { key: "agenda", label: "Agenda", type: "textarea", required: true, width: "full" },
       { key: "prepared_by", label: "Prepared By", type: "signature", required: true, width: "half" },
+      { key: "approved_by", label: "Approved By", type: "signature", required: true, width: "half" },
     ],
   },
   {
