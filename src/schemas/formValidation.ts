@@ -740,13 +740,15 @@ export type F23Data = z.infer<typeof F23Schema>;
 
 export const F24Schema = z.object({
   serial: AUTO_SERIAL,
-  quarter: QUARTER,
+  department: REQUIRED_TEXT,
   year: YEAR,
+  quarter: QUARTER,
   objectives: z.array(z.object({
-    objective: REQUIRED_TEXT,
-    target: REQUIRED_TEXT,
-    actual: OPTIONAL_TEXT,
-    status: COMPLIANCE_STATUS,
+    criteria: REQUIRED_TEXT,
+    present_target: OPTIONAL_TEXT,
+    future_target: OPTIONAL_TEXT,
+    program: OPTIONAL_TEXT,
+    results: OPTIONAL_TEXT,
   })).min(1, 'At least one objective required'),
   prepared_by: SIGNATURE,
   reviewed_by: SIGNATURE,

@@ -6,7 +6,7 @@
 // R2: Column headers: Quantifiable Criteria | Target (gs=2) | Program (gs=2) | Results for months (gs=13)
 // R3-R7: Data rows (months are split across 13 cols)
 // R8: Signature (gs=5) + empty data
-// Simplification: 5-column grid (Criteria | Present Target | Future Target | Program | Results)
+// Canonical: 5-column grid (criteria | present_target | future_target | program | results)
 // ============================================================================
 
 import React, { useState, useCallback } from "react";
@@ -17,7 +17,7 @@ export interface F24Props {
   data?: Record<string, unknown>;
   isTemplate?: boolean;
   editMode?: boolean;
-  onChange?: (field: string, value: string) => void;
+  onChange?: (field: string, value: string | Record<string, unknown>) => void;
   className?: string;
 }
 
@@ -29,16 +29,19 @@ function val(data: Record<string, unknown> | undefined, key: string): string {
 }
 
 interface RowData {
-  criteria: string; presentTarget: string; futureTarget: string;
-  program: string; results: string;
+  criteria: string;
+  present_target: string;
+  future_target: string;
+  program: string;
+  results: string;
 }
 
-function parseRows(d: Record<string, unknown>, count: number = 5): RowData[] {
-  const raw = d.items || d.rows || [];
-  if (Array.isArray(raw) && raw.length > 0 && typeof raw[0] === "object") return raw as RowData[];
-  return Array.from({ length: count }, () => ({
-    criteria: "", presentTarget: "", futureTarget: "", program: "", results: "",
-  }));
+function parseRows(d: Record<string, unknown>): RowData[] {
+  const raw = d.objectives || d.items || d.rows || [];
+  if (Array.isArray(raw) && raw.length > 0 && typeof raw[0] === "object") {
+    return raw as RowData[];
+  }
+  return [];
 }
 
 export function F24Template({ data, isTemplate = true, editMode = false, onChange, className }: F24Props) {
@@ -47,13 +50,20 @@ export function F24Template({ data, isTemplate = true, editMode = false, onChang
   const [rows, setRows] = useState<RowData[]>(() => parseRows(d));
 
   const updateRow = useCallback((idx: number, key: keyof RowData, value: string) => {
-    setRows(prev => { const next = [...prev]; next[idx] = { ...next[idx], [key]: value }; return next; });
-    const updated = [...rows]; updated[idx] = { ...updated[idx], [key]: value };
-    onChange?.("items", JSON.stringify(updated));
+    setRows(prev => {
+      const next = [...prev];
+      next[idx] = { ...next[idx], [key]: value };
+      return next;
+    });
+    const updated = [...rows];
+    updated[idx] = { ...updated[idx], [key]: value };
+    onChange?.("objectives", updated);
   }, [rows, onChange]);
 
   const addRow = useCallback(() => {
-    setRows(prev => [...prev, { criteria: "", presentTarget: "", futureTarget: "", program: "", results: "" }]);
+    setRows(prev => [...prev, {
+      criteria: "", present_target: "", future_target: "", program: "", results: "",
+    }]);
   }, []);
 
   const removeRow = useCallback((idx: number) => {
@@ -62,16 +72,28 @@ export function F24Template({ data, isTemplate = true, editMode = false, onChang
 
   const inp = (key: string, label: string, width: string = "w-48") =>
     editMode ? (
-      <input className={cn("border-b border-dashed border-foreground/40 bg-transparent text-xs px-1", width)} value={val(d, key)} onChange={e => onChange?.(key, e.target.value)} placeholder={label} />
+      <input
+        className={cn("border-b border-dashed border-foreground/40 bg-transparent text-xs px-1", width)}
+        value={val(d, key)}
+        onChange={e => onChange?.(key, e.target.value)}
+        placeholder={label}
+      />
     ) : (
-      <span className={cn("border-b border-dashed border-foreground/30 px-1 inline-block", width)}>{val(d, key) || (ph ? "___" : "")}</span>
+      <span className={cn("border-b border-dashed border-foreground/30 px-1 inline-block", width)}>
+        {val(d, key) || (ph ? "___" : "")}
+      </span>
     );
 
   const cellInp = (idx: number, key: keyof RowData, label: string) =>
     editMode ? (
-      <input className="w-full bg-transparent text-xs px-1 border-none outline-none" value={rows[idx]?.[key] || ""} onChange={e => updateRow(idx, key, e.target.value)} placeholder={label} />
+      <input
+        className="w-full bg-transparent text-xs px-1 border-none outline-none"
+        value={rows[idx]?.[key] || ""}
+        onChange={e => updateRow(idx, key, e.target.value)}
+        placeholder={label}
+      />
     ) : (
-      <span className="text-xs">{rows[idx]?.[key] || ""}</span>
+      <span className="text-xs whitespace-pre-wrap">{rows[idx]?.[key] || ""}</span>
     );
 
   return (
@@ -84,10 +106,11 @@ export function F24Template({ data, isTemplate = true, editMode = false, onChang
         </div>
       </div>
 
-      {/* Department / Year */}
-      <div className="grid grid-cols-[2fr_5fr] border-x border-b border-border text-xs">
+      {/* Department / Year / Quarter */}
+      <div className="grid grid-cols-[2fr_2fr_3fr] border-x border-b border-border text-xs">
         <div className="p-1.5 border-r border-border">Department 🡪 {inp("department", "Department")}</div>
-        <div className="p-1.5">Year 🡪 {inp("year", "Year", "w-24")}</div>
+        <div className="p-1.5 border-r border-border">Year 🡪 {inp("year", "Year", "w-24")}</div>
+        <div className="p-1.5">Quarter 🡪 {inp("quarter", "Quarter", "w-24")}</div>
       </div>
 
       {/* Column headers */}
@@ -103,12 +126,15 @@ export function F24Template({ data, isTemplate = true, editMode = false, onChang
       {rows.map((row, idx) => (
         <div key={idx} className="grid grid-cols-[1.5fr_1fr_1fr_1.5fr_2fr] border-x border-b border-border text-xs relative group min-h-[28px]">
           <div className="p-1 border-r border-border">{cellInp(idx, "criteria", "Criteria")}</div>
-          <div className="p-1 border-r border-border text-center">{cellInp(idx, "presentTarget", "Target")}</div>
-          <div className="p-1 border-r border-border text-center">{cellInp(idx, "futureTarget", "Future")}</div>
+          <div className="p-1 border-r border-border text-center">{cellInp(idx, "present_target", "Target")}</div>
+          <div className="p-1 border-r border-border text-center">{cellInp(idx, "future_target", "Future")}</div>
           <div className="p-1 border-r border-border">{cellInp(idx, "program", "Program")}</div>
           <div className="p-1">{cellInp(idx, "results", "Results")}</div>
           {editMode && rows.length > 1 && (
-            <button onClick={() => removeRow(idx)} className="absolute -right-6 top-1/2 -translate-y-1/2 text-destructive opacity-0 group-hover:opacity-100 transition-opacity">
+            <button
+              onClick={() => removeRow(idx)}
+              className="absolute -right-6 top-1/2 -translate-y-1/2 text-destructive opacity-0 group-hover:opacity-100 transition-opacity"
+            >
               <Trash2 className="w-3 h-3" />
             </button>
           )}
@@ -116,14 +142,18 @@ export function F24Template({ data, isTemplate = true, editMode = false, onChang
       ))}
 
       {editMode && (
-        <button onClick={addRow} className="mt-1 flex items-center gap-1 text-xs text-primary hover:underline mx-auto">
+        <button
+          onClick={addRow}
+          className="mt-1 flex items-center gap-1 text-xs text-primary hover:underline mx-auto"
+        >
           <Plus className="w-3 h-3" /> Add Row
         </button>
       )}
 
-      {/* Signature */}
-      <div className="mt-4 pt-2 border-t border-foreground/20 flex justify-end text-xs">
-        <div>Signature Of Functional Head 🡪 {inp("signature", "Signature", "w-40")}</div>
+      {/* Signatures */}
+      <div className="mt-4 pt-2 border-t border-foreground/20 flex justify-between text-xs">
+        <div>Prepared By 🡪 {inp("prepared_by", "Prepared By", "w-40")}</div>
+        <div>Reviewed By 🡪 {inp("reviewed_by", "Reviewed By", "w-40")}</div>
       </div>
     </div>
   );
