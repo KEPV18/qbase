@@ -12,7 +12,7 @@ import {
   Download, FileJson, FileSpreadsheet, FileText as FileTextIcon,
   Trash2, Printer, ChevronLeft, ChevronRightIcon,
 } from 'lucide-react';
-import { getFormSchema } from '../data/formSchemas';
+import { getFormSchema, FORM_SCHEMAS } from '../data/formSchemas';
 import { isoToDisplay } from '../schemas';
 import { resolveCoveragePeriod } from '@/lib/temporalUtils';
 import DynamicFormRenderer, { type RecordData } from '../components/forms/DynamicFormRenderer';
@@ -195,8 +195,28 @@ const RecordViewPage: React.FC = () => {
     );
   }
 
-  // ─── No record ─────────────────────────────────────────────────────────
+  // ─── No record — try to redirect form code to first record ────────────
   if (!originalRecord || !schema) {
+    // Check if decodedSerial looks like a form code (e.g. "F/40") and redirect to first record
+    const formCodePattern = /^F\/\d{1,2}$/;
+    if (formCodePattern.test(decodedSerial) && allRecords && !isLoading) {
+      const matching = allRecords
+        .filter(r => String(r.formCode) === decodedSerial)
+        .sort((a, b) => String(a.serial).localeCompare(String(b.serial), undefined, { numeric: true, sensitivity: 'base' }));
+      if (matching.length > 0) {
+        const firstSerial = String(matching[0].serial);
+        // Redirect to the first record of this form
+        navigate(`/records/${encodeURIComponent(firstSerial)}`, { replace: true });
+        return null;
+      }
+      // No records exist for this form code — show form template preview instead
+      const formDef = FORM_SCHEMAS.find(f => f.code === decodedSerial);
+      if (formDef) {
+        navigate(`/form/${encodeURIComponent(decodedSerial)}`, { replace: true });
+        return null;
+      }
+    }
+
     return (
       <AppShell breadcrumbs={getBreadcrumbs()}>
       <div className="max-w-4xl mx-auto flex flex-col items-center justify-center py-20 ds-fade-enter">
