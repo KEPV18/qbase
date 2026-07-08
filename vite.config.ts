@@ -27,13 +27,27 @@ export default defineConfig(({ mode }) => ({
   build: mode !== 'test' ? {
     rollupOptions: {
       output: {
-        manualChunks: {
+        manualChunks(id: string) {
+          // Force F28Template into the same chunk as RecordViewPage
+          if (id.includes('F28Template') || id.includes('RecordViewPage')) {
+            return 'record-view';
+          }
           // Vendor chunks for better caching
-          'vendor-react': ['react', 'react-dom', 'react-router-dom'],
-          'vendor-ui': ['@radix-ui/react-dialog', '@radix-ui/react-select', '@radix-ui/react-popover'],
-          'vendor-utils': ['lucide-react', 'clsx', 'class-variance-authority', 'tailwind-merge'],
-          'vendor-supabase': ['@supabase/supabase-js'],
-          'vendor-query': ['@tanstack/react-query'],
+          if (id.includes('node_modules/react-dom') || id.includes('node_modules/react/') || id.includes('node_modules/react-router')) {
+            return 'vendor-react';
+          }
+          if (id.includes('node_modules/@radix-ui')) {
+            return 'vendor-ui';
+          }
+          if (id.includes('node_modules/lucide-react') || id.includes('node_modules/clsx') || id.includes('node_modules/class-variance-authority') || id.includes('node_modules/tailwind-merge')) {
+            return 'vendor-utils';
+          }
+          if (id.includes('node_modules/@supabase')) {
+            return 'vendor-supabase';
+          }
+          if (id.includes('node_modules/@tanstack')) {
+            return 'vendor-query';
+          }
         },
       },
     },

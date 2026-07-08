@@ -12,11 +12,12 @@ import {
   LayoutDashboard, Layers, FileText, Settings, Bell,
   Database, Shield, Users, BarChart3, Briefcase,
   CheckCircle, LogOut, BookOpen, FileCheck, ShieldCheck, Archive,
-  AlertTriangle, Target, X, Calendar,
+  AlertTriangle, Target, X, Calendar, FolderKanban,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useNotifications } from "@/hooks/useNotifications";
 import { getMonthsFromRecords, monthLabel } from "@/lib/temporalUtils";
+import { PROJECTS } from "@/data/projectsData";
 import defaultLogo from "@/assets/qms-logo.png";
 
 interface NavSection {
@@ -133,11 +134,48 @@ function NotificationNavItem({
   );
 }
 
+/** Project filter dropdown for the sidebar */
+function ProjectFilterDropdown() {
+  const navigate = useNavigate();
+  const location = useLocation();
+
+  const params = new URLSearchParams(location.search);
+  const currentProject = params.get("project") || "";
+
+  const handleChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const val = e.target.value;
+    const newParams = new URLSearchParams(location.search);
+    if (val) {
+      newParams.set("project", val);
+    } else {
+      newParams.delete("project");
+    }
+    const search = newParams.toString();
+    navigate(`${location.pathname}${search ? `?${search}` : ""}`, { replace: true });
+  };
+
+  return (
+    <div className="relative">
+      <FolderKanban className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
+      <select
+        value={currentProject}
+        onChange={handleChange}
+        className="w-full pl-9 pr-4 py-2.5 rounded-lg bg-background dark:bg-[#1a1a18] border border-border dark:border-border text-sm text-foreground dark:text-foreground appearance-none cursor-pointer focus:outline-none focus:ring-2 focus:ring-foreground/10"
+      >
+        <option value="">All Projects</option>
+        {PROJECTS.map(p => (
+          <option key={p.id} value={p.id}>{p.name}</option>
+        ))}
+      </select>
+    </div>
+  );
+}
+
 /** Month filter dropdown for the sidebar */
 function MonthFilterDropdown() {
   const navigate = useNavigate();
   const location = useLocation();
-  const { records } = useRecords();
+  const { data: records } = useRecords();
   const availableMonths = useMemo(() => getMonthsFromRecords(records || []), [records]);
 
   // Read current month from URL query param
@@ -318,12 +356,13 @@ export function Sidebar({ mobileOpen, onClose, sidebarOpen, onToggle }: { mobile
           </div>
         </div>
 
-        {/* Month Filter */}
+        {/* Filters */}
         {sidebarOpen && (
-          <div className="px-4 pb-2">
+          <div className="px-4 pb-2 space-y-2">
             <p className="px-3 mb-2 text-[11px] font-heading font-semibold text-muted-foreground/70 uppercase tracking-wider">
-              FILTER
+              FILTERS
             </p>
+            <ProjectFilterDropdown />
             <MonthFilterDropdown />
           </div>
         )}

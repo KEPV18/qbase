@@ -1,9 +1,12 @@
 // ============================================================================
 // F/28 — Training Attendance Sheet
-// EXACT MATCH of the original DOCX template — 22 rows × 6 columns
+// EXACT MATCH of the original DOCX template — VEZLOO corporate format
+// Table: Sl No | Name Of The Participant | Department | ID NO. | Training Date | Signature
+// 21 rows total (header + 20 data rows)
+// Footer: TRAINER'S SIGNATURE: ____________
 // ============================================================================
 
-import React, { useMemo, useCallback } from "react";
+import React, { useMemo, useCallback, useState, useEffect } from "react";
 import { cn } from "@/lib/utils";
 import { Plus, Trash2 } from "lucide-react";
 
@@ -22,14 +25,27 @@ function val(data: Record<string, unknown> | undefined, key: string): string {
   return typeof v === "string" ? v : String(v);
 }
 
-interface RowData {
-  slNo: string; name: string; department: string; idNo: string; trainingDate: string; signature: string;
+interface AttendeeRow {
+  sl_no: number;
+  name: string;
+  department: string;
+  id_no: string;
+  date: string;
+  signature: string;
 }
 
-function parseRows(d: Record<string, unknown>): RowData[] {
-  const raw = d.items || d.rows || [];
-  if (Array.isArray(raw) && raw.length > 0 && typeof raw[0] === "object") return raw as RowData[];
-  // Return empty array if no data — dynamic rows will build from user input
+function parseAttendees(d: Record<string, unknown>): AttendeeRow[] {
+  const raw = d.attendees || d.items || d.rows || [];
+  if (Array.isArray(raw) && raw.length > 0) {
+    return raw.map((a: Record<string, unknown>, i: number) => ({
+      sl_no: Number(a.sl_no ?? a.slNo ?? (i + 1)),
+      name: String(a.name ?? ""),
+      department: String(a.department ?? ""),
+      id_no: String(a.id_no ?? a.idNo ?? a.id ?? ""),
+      date: String(a.date ?? a.training_date ?? a.trainingDate ?? ""),
+      signature: String(a.signature ?? a.signed_by ?? ""),
+    }));
+  }
   return [];
 }
 
@@ -37,114 +53,151 @@ export function F28Template({ data, isTemplate = true, editMode = false, onChang
   const d = data ?? {};
   const ph = isTemplate && !editMode;
 
-  // useMemo so rows always reflect current data — no stale state trap
-  const initialRows = useMemo(() => parseRows(d), [d.items, d.rows]);
-  const [rows, setRows] = React.useState<RowData[]>(initialRows);
+  const initialRows = useMemo(() => parseAttendees(d), [d.attendees, d.items, d.rows]);
+  const [rows, setRows] = useState<AttendeeRow[]>(initialRows);
 
-  // Reset rows when external data changes
-  React.useEffect(() => {
-    setRows(initialRows);
-  }, [initialRows]);
+  useEffect(() => { setRows(initialRows); }, [initialRows]);
 
-  const updateRow = useCallback((idx: number, key: keyof RowData, value: string) => {
+  const updateRow = useCallback((idx: number, key: keyof AttendeeRow, value: string | number) => {
     setRows(prev => { const next = [...prev]; next[idx] = { ...next[idx], [key]: value }; return next; });
     const updated = [...rows]; updated[idx] = { ...updated[idx], [key]: value };
-    onChange?.("items", JSON.stringify(updated));
+    onChange?.("attendees", JSON.stringify(updated));
   }, [rows, onChange]);
 
   const addRow = useCallback(() => {
-    setRows(prev => [...prev, { slNo: String(prev.length + 1), name: "", department: "", idNo: "", trainingDate: "", signature: "" }]);
+    setRows(prev => [...prev, { sl_no: prev.length + 1, name: "", department: "", id_no: "", date: "", signature: "" }]);
   }, []);
 
   const removeRow = useCallback((idx: number) => {
-    setRows(prev => prev.filter((_, i) => i !== idx).map((r, i) => ({ ...r, slNo: String(i + 1) })));
+    setRows(prev => prev.filter((_, i) => i !== idx).map((r, i) => ({ ...r, sl_no: i + 1 })));
   }, []);
 
-  const inp = (key: string, label: string) =>
-    editMode ? (
-      <input className="w-full bg-transparent text-xs px-1 py-0.5 border-0 border-b border-border dark:border-gray-600 outline-none" value={val(d, key)} onChange={e => onChange?.(key, e.target.value)} placeholder={label} />
-    ) : (
-      <span className="text-xs text-gray-900 dark:text-gray-100">{val(d, key) || ""}</span>
-    );
-
-  const cellInp = (idx: number, key: keyof RowData, label: string) =>
-    editMode ? (
-      <input className="w-full bg-transparent text-xs px-1 py-0.5 border-0 border-b border-border dark:border-gray-600 outline-none" value={rows[idx]?.[key] || ""} onChange={e => updateRow(idx, key, e.target.value)} placeholder={label} />
-    ) : (
-      <span className="text-xs text-gray-900 dark:text-gray-100">{rows[idx]?.[key] || ""}</span>
-    );
+  // Ensure at least 21 rows for DOCX fidelity (1 header + 20 data = 21 rows in tbody)
+  const displayRows = useMemo(() => {
+    const minRows = 20;
+    if (rows.length >= minRows) return rows;
+    const padded = [...rows];
+    while (padded.length < minRows) {
+      padded.push({ sl_no: padded.length + 1, name: "", department: "", id_no: "", date: "", signature: "" });
+    }
+    return padded;
+  }, [rows]);
 
   return (
-    <div className={cn("overflow-x-auto", className)}>
-      <table className="w-full border-collapse border border-border dark:border-gray-600">
-        <tbody>
-          {/* Title row */}
-          <tr>
-            <td colSpan={6} className="border border-border dark:border-gray-600 px-3 py-2 text-center font-bold text-sm text-gray-900 dark:text-gray-100">
-              Training Attendance Sheet
-            </td>
-          </tr>
-          <tr>
-            <td colSpan={2} className="border border-border dark:border-gray-600 px-2 py-1 text-xs text-gray-900 dark:text-gray-100">
-              Sr. No. 🡪 {val(d, "serial") || ""}
-            </td>
-            <td colSpan={2} className="border border-border dark:border-gray-600 px-2 py-1 text-xs text-gray-900 dark:text-gray-100">
-              Training Topic: {inp("training_topic", "Topic")}
-            </td>
-            <td colSpan={2} className="border border-border dark:border-gray-600 px-2 py-1 text-xs text-gray-900 dark:text-gray-100">
-              Date 🡪 {inp("date", "DD/MM/YYYY")}
-            </td>
-          </tr>
+    <div className={cn("w-full max-w-4xl mx-auto bg-white dark:bg-gray-900 border border-slate-200 dark:border-gray-700 rounded-lg overflow-hidden", className)}>
+      {/* ── Title (DOCX: centered heading) ── */}
+      <div className="px-6 pt-6 pb-4">
+        <h2 className="text-base font-bold text-slate-800 dark:text-slate-200 text-center uppercase tracking-wide">
+          Training Attendance Sheet
+        </h2>
+        <p className="text-[11px] text-slate-500 dark:text-slate-400 text-center mt-1">
+          F/28 — Rev No. {val(d, "serial") || "F/28-001"}
+        </p>
+      </div>
 
-          {/* Column headers */}
-          <tr className="bg-muted/50 dark:bg-gray-800">
-            <td className="border border-border dark:border-gray-600 px-2 py-1 text-xs font-semibold text-center">Sl No</td>
-            <td className="border border-border dark:border-gray-600 px-2 py-1 text-xs font-semibold">Name Of The Participant</td>
-            <td className="border border-border dark:border-gray-600 px-2 py-1 text-xs font-semibold">Department</td>
-            <td className="border border-border dark:border-gray-600 px-2 py-1 text-xs font-semibold">ID NO.</td>
-            <td className="border border-border dark:border-gray-600 px-2 py-1 text-xs font-semibold">Training Date</td>
-            <td className="border border-border dark:border-gray-600 px-2 py-1 text-xs font-semibold">Signature</td>
-          </tr>
+      {/* ── 6-Column Attendance Table (DOCX exact) ── */}
+      <div className="px-6 pb-4">
+        <div className="w-full overflow-x-auto">
+          <table className="w-full border-collapse border border-slate-300 dark:border-gray-600">
+            <thead>
+              <tr className="bg-slate-100 dark:bg-gray-800">
+                <th className="border border-slate-300 dark:border-gray-600 px-3 py-2 text-[10px] font-semibold text-slate-700 dark:text-slate-300 uppercase tracking-wider text-center w-12">Sl No</th>
+                <th className="border border-slate-300 dark:border-gray-600 px-3 py-2 text-[10px] font-semibold text-slate-700 dark:text-slate-300 uppercase tracking-wider text-left">Name Of The Participant</th>
+                <th className="border border-slate-300 dark:border-gray-600 px-3 py-2 text-[10px] font-semibold text-slate-700 dark:text-slate-300 uppercase tracking-wider text-left">Department</th>
+                <th className="border border-slate-300 dark:border-gray-600 px-3 py-2 text-[10px] font-semibold text-slate-700 dark:text-slate-300 uppercase tracking-wider text-center w-20">ID NO.</th>
+                <th className="border border-slate-300 dark:border-gray-600 px-3 py-2 text-[10px] font-semibold text-slate-700 dark:text-slate-300 uppercase tracking-wider text-center w-28">Training Date</th>
+                <th className="border border-slate-300 dark:border-gray-600 px-3 py-2 text-[10px] font-semibold text-slate-700 dark:text-slate-300 uppercase tracking-wider text-left">Signature</th>
+                {editMode && <th className="border border-slate-300 dark:border-gray-600 px-3 py-2 text-center w-10"></th>}
+              </tr>
+            </thead>
+            <tbody>
+              {displayRows.map((row, idx) => (
+                <tr key={idx} className={idx % 2 === 0 ? "bg-white dark:bg-gray-900" : "bg-slate-50/50 dark:bg-gray-800/30"}>
+                  <td className="border border-slate-300 dark:border-gray-600 px-3 py-1.5 text-xs text-center text-slate-600 dark:text-slate-400">
+                    {editMode ? (
+                      <input className="w-10 bg-transparent text-xs text-center outline-none" type="number" min={1} value={row.sl_no} onChange={e => updateRow(idx, "sl_no", parseInt(e.target.value) || idx + 1)} />
+                    ) : (
+                      row.sl_no
+                    )}
+                  </td>
+                  <td className="border border-slate-300 dark:border-gray-600 px-3 py-1.5 text-xs text-slate-800 dark:text-slate-200">
+                    {editMode ? (
+                      <input className="w-full bg-transparent text-xs outline-none border-b border-border dark:border-gray-600" value={row.name} onChange={e => updateRow(idx, "name", e.target.value)} placeholder="Name" />
+                    ) : (
+                      row.name
+                    )}
+                  </td>
+                  <td className="border border-slate-300 dark:border-gray-600 px-3 py-1.5 text-xs text-slate-800 dark:text-slate-200">
+                    {editMode ? (
+                      <input className="w-full bg-transparent text-xs outline-none border-b border-border dark:border-gray-600" value={row.department} onChange={e => updateRow(idx, "department", e.target.value)} placeholder="Department" />
+                    ) : (
+                      row.department
+                    )}
+                  </td>
+                  <td className="border border-slate-300 dark:border-gray-600 px-3 py-1.5 text-xs text-center text-slate-800 dark:text-slate-200">
+                    {editMode ? (
+                      <input className="w-16 bg-transparent text-xs text-center outline-none border-b border-border dark:border-gray-600" value={row.id_no} onChange={e => updateRow(idx, "id_no", e.target.value)} placeholder="ID" />
+                    ) : (
+                      row.id_no
+                    )}
+                  </td>
+                  <td className="border border-slate-300 dark:border-gray-600 px-3 py-1.5 text-xs text-center text-slate-800 dark:text-slate-200">
+                    {editMode ? (
+                      <input className="w-24 bg-transparent text-xs text-center outline-none border-b border-border dark:border-gray-600" value={row.date} onChange={e => updateRow(idx, "date", e.target.value)} placeholder="DD/MM/YYYY" />
+                    ) : (
+                      row.date
+                    )}
+                  </td>
+                  <td className="border border-slate-300 dark:border-gray-600 px-3 py-1.5 text-xs text-slate-800 dark:text-slate-200">
+                    {editMode ? (
+                      <input className="w-full bg-transparent text-xs outline-none border-b border-border dark:border-gray-600" value={row.signature} onChange={e => updateRow(idx, "signature", e.target.value)} placeholder="Signature" />
+                    ) : (
+                      row.signature
+                    )}
+                  </td>
+                  {editMode && (
+                    <td className="border border-slate-300 dark:border-gray-600 px-1 py-1.5 text-center">
+                      <button onClick={() => removeRow(idx)} className="text-red-400 hover:text-red-600 transition-colors" title="Remove row">
+                        <Trash2 className="w-3 h-3" />
+                      </button>
+                    </td>
+                  )}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
 
-          {rows.map((row, idx) => (
-            <tr key={idx} className="relative group">
-              <td className="border border-border dark:border-gray-600 px-2 py-1 text-xs text-center">{idx + 1}</td>
-              <td className="border border-border dark:border-gray-600 px-2 py-1 text-xs">{cellInp(idx, "name", "Name")}</td>
-              <td className="border border-border dark:border-gray-600 px-2 py-1 text-xs">{cellInp(idx, "department", "Dept")}</td>
-              <td className="border border-border dark:border-gray-600 px-2 py-1 text-xs">{cellInp(idx, "idNo", "ID")}</td>
-              <td className="border border-border dark:border-gray-600 px-2 py-1 text-xs">{cellInp(idx, "trainingDate", "Date")}</td>
-              <td className="border border-border dark:border-gray-600 px-2 py-1 text-xs">{cellInp(idx, "signature", "Sign")}</td>
-              {editMode && rows.length > 1 && (
-                <td className="absolute -right-8 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100">
-                  <button onClick={() => removeRow(idx)} className="text-red-500"><Trash2 className="w-3 h-3" /></button>
-                </td>
-              )}
-            </tr>
-          ))}
+        {editMode && (
+          <button onClick={addRow} className="mt-2 flex items-center gap-1 text-xs text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 transition-colors">
+            <Plus className="w-3 h-3" /> Add Attendee
+          </button>
+        )}
+      </div>
 
-          {editMode && (
-            <tr>
-              <td colSpan={6} className="border border-border dark:border-gray-600 px-2 py-1">
-                <button onClick={addRow} className="flex items-center gap-1 text-xs text-blue-600 hover:underline">
-                  <Plus className="w-3 h-3" /> Add Row
-                </button>
-              </td>
-            </tr>
+      {/* ── TRAINER'S SIGNATURE (DOCX exact: single line) ── */}
+      <div className="px-6 pb-6">
+        <div className="flex items-end gap-2">
+          <span className="text-xs font-semibold text-slate-700 dark:text-slate-300 whitespace-nowrap">TRAINER'S SIGNATURE:</span>
+          {editMode ? (
+            <input
+              className="flex-1 bg-transparent text-xs outline-none border-b border-slate-300 dark:border-gray-600 pb-0.5"
+              value={val(d, "trainer_signature") || val(d, "conducted_by")}
+              onChange={e => {
+                onChange?.("trainer_signature", e.target.value);
+                onChange?.("conducted_by", e.target.value);
+              }}
+              placeholder="Trainer name"
+            />
+          ) : (
+            <span className="flex-1 border-b border-slate-300 dark:border-gray-600 pb-0.5 text-xs text-slate-800 dark:text-slate-200">
+              {val(d, "trainer_signature") || val(d, "conducted_by") || (ph ? "" : "")}
+            </span>
           )}
-
-          {/* Footer: Trainer + Conducted By */}
-          {rows.length > 0 && (
-            <tr>
-              <td colSpan={6} className="border border-border dark:border-gray-600 px-2 py-1 text-xs">
-                <div className="flex gap-4">
-                  <span><strong>TRAINER'S SIGNATURE:</strong> {inp("trainer", "Name")}</span>
-                  <span><strong>HR:</strong> {inp("conducted_by", "Name")}</span>
-                </div>
-              </td>
-            </tr>
-          )}
-        </tbody>
-      </table>
+        </div>
+      </div>
     </div>
   );
 }
+
+export default F28Template;

@@ -64,10 +64,13 @@ const RecordListPage: React.FC = () => {
   const [searchParams] = useSearchParams();
   const urlFormCode = searchParams.get('formCode');
   const urlSection = searchParams.get('section');
+  const urlMonth = searchParams.get('month');
+  const urlProject = searchParams.get('project');
 
   const [search, setSearch] = useState('');
   const [formFilter, setFormFilter] = useState<string>(urlFormCode || 'all');
-  const [monthFilter, setMonthFilter] = useState<string>('');
+  const [monthFilter, setMonthFilter] = useState<string>(urlMonth || '');
+  const [projectFilter, setProjectFilter] = useState<string>(urlProject || '');
   const [sortBy, setSortBy] = useState<'serial' | 'date' | 'edited'>('serial');
   const [page, setPage] = useState(1);
   const [selectedSerials, setSelectedSerials] = useState<Set<string>>(new Set());
@@ -113,11 +116,11 @@ const RecordListPage: React.FC = () => {
   }, [urlSection]);
 
   useEffect(() => {
-    if (urlFormCode) {
-      setFormFilter(urlFormCode);
-      setPage(1);
-    }
-  }, [urlFormCode]);
+    if (urlFormCode) setFormFilter(urlFormCode);
+    setMonthFilter(urlMonth || '');
+    setProjectFilter(urlProject || '');
+    setPage(1);
+  }, [urlFormCode, urlMonth, urlProject]);
 
   // Integrity cache
   const integrityCache = useMemo(() => {
@@ -137,6 +140,7 @@ const RecordListPage: React.FC = () => {
     if (sectionFormCodes) list = list.filter(r => sectionFormCodes.has(r.formCode as string));
     if (formFilter !== 'all') list = list.filter(r => r.formCode === formFilter);
     if (monthFilter) list = list.filter(r => getRecordMonth(r) === monthFilter);
+    if (projectFilter) list = list.filter(r => r.project_id === projectFilter);
     if (search.trim()) {
       const q = search.toLowerCase();
       list = list.filter(r =>
@@ -154,7 +158,7 @@ const RecordListPage: React.FC = () => {
       }
     });
     return list;
-  }, [records, formFilter, monthFilter, search, sortBy]);
+  }, [records, formFilter, monthFilter, projectFilter, search, sortBy]);
 
   const totalPages = Math.max(1, Math.ceil(filteredRecords.length / PAGE_SIZE));
   const safePage = Math.min(page, totalPages);
@@ -162,7 +166,8 @@ const RecordListPage: React.FC = () => {
 
   const handleSearchChange = (val: string) => { setSearch(val); setPage(1); setSelectedSerials(new Set()); };
   const handleFilterChange = (val: string) => { setFormFilter(val); setPage(1); setSelectedSerials(new Set()); setMonthFilter(''); setViewMode('list'); };
-  const handleMonthChange = (val: string) => { setMonthFilter(val); setPage(1); setSelectedSerials(new Set()); }; 
+  const handleMonthChange = (val: string) => { setMonthFilter(val); setPage(1); setSelectedSerials(new Set()); };
+  const handleProjectChange = (val: string) => { setProjectFilter(val); setPage(1); setSelectedSerials(new Set()); }; 
 
   const toggleSelect = (serial: string) => {
     setSelectedSerials(prev => {

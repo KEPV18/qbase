@@ -6,7 +6,11 @@
 
 import { useParams, useNavigate } from "react-router-dom";
 import { getFormSchema, type FieldSchema } from "@/data/formSchemas";
-import { getFormTemplateComponent } from "@/components/forms/templates";
+import { F28Template } from "@/components/forms/templates/F28Template";
+// ── FORCE VITE INCLUSION ──
+const _FORCE_VITE_INCLUDE: Record<string, React.ComponentType<any>> = {
+  'F/28': F28Template,
+};
 import { AppShell } from "@/components/layout/AppShell";
 import { DocumentView, DocHeader, DocSection, DocField, DocTable } from "@/components/forms/DocumentView";
 import { ArrowLeft, FileText, Layers, FilePlus, AlertTriangle, CalendarCheck, User, UserCheck, Clock, Edit3 } from "lucide-react";
@@ -51,7 +55,7 @@ export default function FormTemplatePreview() {
     { label: code },
   ];
 
-  const TemplateComponent = getFormTemplateComponent(code);
+  let TemplateComponent: React.ComponentType<any> | null = _FORCE_VITE_INCLUDE[code] ?? null;
 
   return (
     <AppShell breadcrumbs={breadcrumbs}>

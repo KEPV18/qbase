@@ -758,13 +758,22 @@ export type F24Data = z.infer<typeof F24Schema>;
 export const F45Schema = z.object({
   serial: AUTO_SERIAL,
   date: ISO_DATE,
+  last_updated_by: REQUIRED_TEXT,
+  update_date: ISO_DATE,
   documents: z.array(z.object({
-    doc_id: REQUIRED_TEXT,
+    sr: REQUIRED_TEXT,
     title: REQUIRED_TEXT,
-    version: OPTIONAL_TEXT,
-    status: DOC_STATUS,
-    date_created: OPTIONAL_DATE,
+    doc_number: REQUIRED_TEXT,
+    current_revision: OPTIONAL_TEXT,
+    revision_date: OPTIONAL_TEXT,
+    revision_details: OPTIONAL_TEXT,
   })).min(1, 'At least one document entry required'),
+  disclaimer: OPTIONAL_TEXT,
+  distribution: z.array(z.object({
+    sr: OPTIONAL_TEXT,
+    name: OPTIONAL_TEXT,
+    copy_no: OPTIONAL_TEXT,
+  })).optional(),
   maintained_by: SIGNATURE,
 });
 export type F45Data = z.infer<typeof F45Schema>;
@@ -772,12 +781,25 @@ export type F45Data = z.infer<typeof F45Schema>;
 export const F46Schema = z.object({
   serial: AUTO_SERIAL,
   date: ISO_DATE,
-  change_type: CHANGE_TYPE,
+  requested_by: REQUIRED_TEXT,
+  designation: REQUIRED_TEXT,
+  department: REQUIRED_TEXT,
+  location: OPTIONAL_TEXT,
   description: REQUIRED_TEXT,
   reason: REQUIRED_TEXT,
-  impact: OPTIONAL_TEXT,
-  approved: z.boolean().default(false),
+  change_type: REQUIRED_TEXT,
+  priority: REQUIRED_TEXT,
+  impact: REQUIRED_TEXT,
+  impact_description: OPTIONAL_TEXT,
+  resources: OPTIONAL_TEXT,
+  approval_status: REQUIRED_TEXT,
   approved_by: SIGNATURE,
+  implementation_date: OPTIONAL_DATE,
+  follow_up: OPTIONAL_TEXT,
+  actual_completion_date: OPTIONAL_DATE,
+  verified_by: OPTIONAL_TEXT,
+  verification_date: OPTIONAL_DATE,
+  comments: OPTIONAL_TEXT,
 });
 export type F46Data = z.infer<typeof F46Schema>;
 

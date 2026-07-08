@@ -1,6 +1,11 @@
 import { createRoot } from "react-dom/client";
 import App from "./App.tsx";
 import "./index.css";
+import "./templates";
+// ── Force Vite to include F28Template in main bundle ──
+import { F28Template } from "./components/forms/templates/F28Template";
+// Use it so Vite can't tree-shake it
+const _F28 = F28Template;
 
 /* ═══ Auto-heal stale cache ═══════════════════════════════════════════ */
 const BUILD_TS = "__BUILD_TIMESTAMP__"; // replaced at build time

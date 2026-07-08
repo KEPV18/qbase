@@ -123,7 +123,7 @@ export function TopNav() {
   return (
     <>
       {/* TopNav Capsule */}
-      <div className="bg-background/80 backdrop-blur-xl border border-border rounded-xl px-5 py-3 flex items-center justify-between shrink-0">
+      <div className="bg-background/80 backdrop-blur-xl border border-border rounded-xl px-5 py-3 flex items-center justify-between grow shrink-0">
         {/* Left — Active Page */}
         <div className="flex items-center gap-3">
           <div className="w-8 h-8 rounded-lg bg-foreground dark:bg-card flex items-center justify-center">
@@ -136,7 +136,7 @@ export function TopNav() {
         </div>
 
         {/* Center — Global Search */}
-        <div className="hidden md:block relative flex-1 max-w-md mx-8" ref={searchRef}>
+        <div className="hidden md:block relative flex-1 mx-8 min-w-0" ref={searchRef}>
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground/70" />
           <input
             type="text"

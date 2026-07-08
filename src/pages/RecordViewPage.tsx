@@ -16,7 +16,11 @@ import { getFormSchema } from '../data/formSchemas';
 import { isoToDisplay } from '../schemas';
 import { resolveCoveragePeriod } from '@/lib/temporalUtils';
 import DynamicFormRenderer, { type RecordData } from '../components/forms/DynamicFormRenderer';
-import { getFormTemplateComponent } from '@/components/forms/templates';
+import { F28Template } from '../components/forms/templates/F28Template';
+// ── FORCE VITE INCLUSION: Direct component references prevent tree-shaking ──
+const _FORCE_VITE_INCLUDE: Record<string, React.ComponentType<any>> = {
+  'F/28': F28Template,
+};
 import { DocumentView, DocHeader, DocSection, DocField, DocTable } from '@/components/forms/DocumentView';
 import { useRecord, useUpdateRecord, useRecords, useDeleteRecord } from '../hooks/useRecordStorage';
 import { useAuditLog } from '../hooks/useAuditLog';
@@ -604,7 +608,9 @@ const RecordViewPage: React.FC = () => {
           />
 
           {(() => {
-            const TemplateComponent = getFormTemplateComponent(originalRecord.formCode as string);
+            const fc = originalRecord.formCode as string;
+            // ── Direct lookup from force-include map ──
+            let TemplateComponent = _FORCE_VITE_INCLUDE[fc] ?? null;
             if (TemplateComponent) {
               return (
                 <TemplateComponent
@@ -616,7 +622,7 @@ const RecordViewPage: React.FC = () => {
             return (
               <div className="space-y-6">
                 {(() => {
-                  const schema = getFormSchema(originalRecord.formCode as string);
+                  const schema = getFormSchema(fc);
                   if (!schema) return null;
                   return schema.fields.map((field, i) => {
                     if (field.type === 'heading') {
@@ -823,7 +829,8 @@ const RecordViewPage: React.FC = () => {
             </div>
           )}
           {(() => {
-            const TemplateComponent = getFormTemplateComponent(originalRecord.formCode as string);
+            const fc = originalRecord.formCode as string;
+            let TemplateComponent = _FORCE_VITE_INCLUDE[fc] ?? null;
             if (TemplateComponent) {
               return (
                 <div className="ds-card p-6">

@@ -52,24 +52,24 @@
     --glow-md: 0 2px 8px hsl(var(--primary) / 0.12), 0 1px 3px hsl(var(--primary) / 0.06);
     --glow-lg: 0 8px 24px hsl(var(--primary) / 0.14), 0 2px 8px hsl(var(--primary) / 0.08);
 
-    /* ── Surface Colors (Slate) ── */
-    --background: 0 0% 100%;      /* #ffffff */
-    --foreground: 222 47% 11%;    /* #0f172a */
-    --card: 210 40% 98%;          /* #f8fafc */
+    /* ── Surface Colors — Soft Cool ── */
+    --background: 210 15% 97%;     /* #f4f6f8 — soft off-white, gentle on eyes */
+    --foreground: 222 47% 11%;     /* #0f172a */
+    --card: 210 10% 99%;           /* #fbfcfd — lighter than bg for card contrast */
     --card-foreground: 222 47% 11%;
-    --popover: 210 40% 98%;       /* #f8fafc */
+    --popover: 210 10% 99%;
     --popover-foreground: 222 47% 11%;
 
     /* ── Brand — Indigo ── */
-    --primary: 239 84% 59%;       /* #4f46e5 */
+    --primary: 239 84% 59%;        /* #4f46e5 */
     --primary-foreground: 0 0% 100%;
 
     /* ── Neutral Variants (Warm) ── */
-    --secondary: 210 40% 96%;     /* #f1f5f9 */
+    --secondary: 210 15% 93%;      /* #e8ebee */
     --secondary-foreground: 222 47% 11%;
-    --muted: 210 40% 96%;         /* #f1f5f9 */
+    --muted: 210 15% 93%;
     --muted-foreground: 215 16% 47%; /* #64748b */
-    --accent: 239 84% 95%;        /* indigo/50 */
+    --accent: 239 84% 95%;         /* indigo/50 */
     --accent-foreground: 239 84% 30%; /* indigo-800 */
 
     /* ── Semantic Colors ── */
@@ -83,9 +83,9 @@
     --info-foreground: 0 0% 100%;
 
     /* ── Interactive ── */
-    --border: 210 40% 95%;          /* #eef3f8 — visible white-blue border */
-    --input: 210 40% 95%;           /* #eef3f8 */
-    --ring: 239 84% 59%;            /* #4f46e5 */
+    --border: 214 18% 86%;         /* #d5dbe2 — soft slate, clearly visible, comfy */
+    --input: 214 18% 86%;
+    --ring: 239 84% 59%;           /* #4f46e5 */
 
     /* Module colors */
     --module-operations: 263 70% 58%;

@@ -123,7 +123,12 @@ export default function DataSanitizer() {
           for (const field of schema.fields) {
             if (!field.required) continue;
             const val = rec[field.key];
-            if (val === null || val === undefined || val === '') {
+            // Deep array enforcement: table/array fields must have >0 items
+            if (field.type === 'table' || field.type === 'array') {
+              if (!Array.isArray(val) || val.length === 0) {
+                emptyFields.push(field.key);
+              }
+            } else if (val === null || val === undefined || val === '') {
               emptyFields.push(field.key);
             }
           }
