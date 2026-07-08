@@ -1,11 +1,12 @@
 // ============================================================================
 // F/30 — Performance Appraisal Report
-// DOCX: 10C x 39R — Employee info + 11 evaluation criteria + totals + conclusion
+// DOCX: 5-Point Evaluation Scale (1=Poor → 5=Excellent)
+// 11 evaluation sections, 20 criteria items, total marking, conclusion
 // ============================================================================
 
-import React from "react";
+import React, { useMemo } from "react";
 import { cn } from "@/lib/utils";
-import { FormDocument } from "../FormKit";
+import { FormDocument, val } from "../FormKit";
 
 export interface F30Props {
   data?: Record<string, unknown>;
@@ -15,42 +16,50 @@ export interface F30Props {
   className?: string;
 }
 
-function val(data: Record<string, unknown> | undefined, key: string): string {
-  if (!data) return "";
-  const v = data[key];
-  if (v == null) return "";
-  return typeof v === "string" ? v : String(v);
+// Evaluation sections — each section has a header + sub-items
+interface EvalItem {
+  id: string;
+  category: string;
+  score: number;
 }
 
-// Evaluation criteria sections
-const EVAL_SECTIONS = [
-  { num: "1", title: "Follow-Up Of Job Timings", items: ["Follow-Up Of Job Timings"] },
-  { num: "2", title: "Working Style", items: [
-    "Positive Attitude", "Work Involvement", "Learning Attitude",
-    "Work Allotment To The Next Employee", "Co-Ordination With The Next Employee",
-    "Motivation Of The Next Employee", "Speed Of Work",
-  ]},
-  { num: "3", title: "Innovativeness", items: [
-    "Any Development Is Done", "Any Cost Effective Measures Implemented",
-    "Any Control Established On Expenses",
-  ]},
-  { num: "4", title: "Improvements Compare To Last Year", items: ["Improvements Compare To Last Year"] },
-  { num: "5", title: "Spare Time Utilisation", items: [
-    "Any Achievement During The Year", "Responsibility Sharing",
-  ]},
-  { num: "6", title: "Follow Up Of The Instructions", items: ["Follow Up Of The Instructions"] },
-  { num: "7", title: "Knowledge Of The Job Handled", items: ["Knowledge Of The Job Handled"] },
-  { num: "8", title: "Knowledge Of The Process", items: ["Knowledge Of The Process"] },
-  { num: "9", title: "Co-Ordination With Other Depts.", items: ["Co-Ordination With Other Depts."] },
-  { num: "10", title: "Record Maintenance", items: ["Record Maintenance"] },
-  { num: "11", title: "Reporting To Immediate Boss", items: ["Reporting To Immediate Boss"] },
+interface EvalSection {
+  num: string;
+  title: string;
+  itemIds: string[];
+}
+
+const EVAL_SECTIONS: EvalSection[] = [
+  { num: "1", title: "Follow-Up Of Job Timings", itemIds: ["1"] },
+  { num: "2", title: "Working Style", itemIds: ["2a","2b","2c","2d","2e","2f","2g"] },
+  { num: "3", title: "Innovativeness", itemIds: ["3a","3b","3c"] },
+  { num: "4", title: "Improvements Compare To Last Year", itemIds: ["4"] },
+  { num: "5", title: "Spare Time Utilisation", itemIds: ["5a","5b"] },
+  { num: "6", title: "Follow Up Of The Instructions", itemIds: ["6"] },
+  { num: "7", title: "Knowledge Of The Job Handled", itemIds: ["7"] },
+  { num: "8", title: "Knowledge Of The Process", itemIds: ["8"] },
+  { num: "9", title: "Co-Ordination With Other Depts.", itemIds: ["9"] },
+  { num: "10", title: "Record Maintenance", itemIds: ["10"] },
+  { num: "11", title: "Reporting To Immediate Boss", itemIds: ["11"] },
 ];
 
 const FC = "F/30";
 
+function parseMatrix(d: Record<string, unknown>): EvalItem[] {
+  const raw = d.evaluation_matrix || d.evaluationMatrix || [];
+  if (Array.isArray(raw) && raw.length > 0) return raw as EvalItem[];
+  return [];
+}
+
 export function F30Template({ data, isTemplate = true, editMode = false, onChange, className }: F30Props) {
   const d = data ?? {};
   const ph = isTemplate && !editMode;
+  const matrix = parseMatrix(d);
+  const matrixMap = useMemo(() => {
+    const m = new Map<string, EvalItem>();
+    matrix.forEach(item => m.set(item.id, item));
+    return m;
+  }, [matrix]);
 
   const inp = (key: string, label: string, width: string = "w-full") =>
     editMode ? (
@@ -59,123 +68,187 @@ export function F30Template({ data, isTemplate = true, editMode = false, onChang
       <span className={cn("border-b border-dashed border-border text-foreground px-1 inline-block min-w-[4rem]", width)}>{val(d, key) || (ph ? "___" : "\u00A0")}</span>
     );
 
-  // Score input for a criteria item (1-4 scale)
-  const scoreInp = (key: string) =>
-    editMode ? (
-      <input className="w-full bg-transparent text-center text-xs text-foreground border-none outline-none" type="number" min={1} max={4} value={val(d, key)} onChange={e => onChange?.(key, e.target.value)} placeholder="0" />
-    ) : (
-      <span className="text-center text-xs text-foreground">{val(d, key) || ""}</span>
-    );
-
-  const textArea = (key: string, placeholder: string, minH: string = "min-h-[40px]") =>
-    editMode ? (
-      <textarea className={cn("w-full bg-transparent text-foreground text-sm p-1 border-none outline-none", minH)} value={val(d, key) || ""} onChange={e => onChange?.(key, e.target.value)} placeholder={placeholder} />
-    ) : (
-      <div className={cn("whitespace-pre-wrap text-foreground", minH)}>{val(d, key) || (ph ? "___" : "")}</div>
-    );
+  // Score columns 1-5
+  const SCORE_COLS = [1, 2, 3, 4, 5];
 
   return (
     <FormDocument formCode={FC} formName="Performance Appraisal" serial={val(d, "serial")} sectionName="HR & Training" className={className}>
-      {/* Header */}
-      <div className="grid grid-cols-[4fr_1fr] border border-border">
-        <div className="p-2 font-bold bg-muted/40 text-foreground text-base">Performance Appraisal Report</div>
-        <div className="p-2 border-l border-border bg-muted/40 text-right text-xs text-foreground">
-          F/30 Rev. No. {val(d, "serial") || (ph ? "{{SERIAL}}" : "—")}
+      {/* ── Header ── */}
+      <div className="grid grid-cols-[4fr_1fr] border border-border rounded-t-lg overflow-hidden">
+        <div className="p-3 font-bold bg-muted/40 text-foreground text-base">Performance Appraisal Report</div>
+        <div className="p-3 border-l border-border bg-muted/40 text-right text-xs text-foreground">
+          F/30 Rev. No. {val(d, "serial") || (ph ? "—" : "")}
         </div>
       </div>
 
-      {/* Employee info */}
-      <div className="grid grid-cols-[2fr_1fr] border-x border-b border-border text-xs text-foreground">
-        <div className="p-1.5 border-r border-border">Sr. No. → {val(d, "serial") || (ph ? "{{SERIAL}}" : "—")}</div>
-        <div className="p-1.5">Date → {inp("date", "Date", "w-28")}</div>
-      </div>
-      <div className="border-x border-b border-border text-xs p-1.5 text-foreground">Name Of Employees → {inp("employee_name", "Employee Name")}</div>
-      <div className="border-x border-b border-border text-xs p-1.5 text-foreground">Designation → {inp("designation", "Designation")}</div>
-      <div className="border-x border-b border-border text-xs p-1.5 text-foreground">Department → {inp("department", "Department")}</div>
-      <div className="border-x border-b border-border text-xs p-1.5 text-foreground">Working In Organisation → {inp("working_months", "X", "w-12")} Months</div>
-      <div className="border-x border-b border-border text-xs p-1.5 text-foreground">Last Year Increment → {inp("last_increment", "N/A or amount")}</div>
-      <div className="border-x border-b border-border text-xs p-1.5 text-foreground">Evaluation Done By → {inp("evaluated_by", "Project Lead")}</div>
-
-      {/* Evaluation Criteria Table Header */}
-      <div className="grid grid-cols-[35px_1fr_40px_40px_40px_40px] border-x border-b border-border text-[10px] font-semibold bg-muted/50 text-foreground">
-        <div className="p-1 border-r border-border">Sr.</div>
-        <div className="p-1 border-r border-border">Evaluation Criteria</div>
-        <div className="p-1 border-r border-border text-center">1</div>
-        <div className="p-1 border-r border-border text-center">2</div>
-        <div className="p-1 border-r border-border text-center">3</div>
-        <div className="p-1 text-center">4</div>
-      </div>
-
-      {/* Evaluation rows grouped by section */}
-      {EVAL_SECTIONS.map((section) => (
-        <React.Fragment key={section.num}>
-          {/* Section header */}
-          <div className="grid grid-cols-[35px_1fr_160px] border-x border-b border-border text-xs bg-muted/30 text-foreground">
-            <div className="p-1 border-r border-border font-semibold text-center">{section.num}</div>
-            <div className="p-1 border-r border-border font-semibold">{section.title}</div>
-            <div className="p-1 text-center text-[10px] text-muted-foreground">1=Poor → 4=Excellent</div>
+      {/* ── Employee Info Grid ── */}
+      <div className="border-x border-b border-border">
+        <div className="grid grid-cols-2 border-b border-border text-xs text-foreground">
+          <div className="p-2 border-r border-border">
+            <span className="text-[9px] font-bold uppercase text-muted-foreground">Sr. No.</span>
+            <div className="font-semibold">{val(d, "serial") || (ph ? "—" : "")}</div>
           </div>
-          {/* Items */}
-          {section.items.map((item, idx) => {
-            const itemKey = `eval_${section.num}_${idx}`;
-            const scoreVal = val(d, itemKey);
-            return (
-              <div key={itemKey} className="grid grid-cols-[35px_1fr_40px_40px_40px_40px] border-x border-b border-border text-xs text-foreground min-h-[24px]">
-                <div className="p-1 border-r border-border text-center text-muted-foreground"></div>
-                <div className="p-1 border-r border-border">{item}</div>
-                <div className="p-1 border-r border-border text-center">
-                  {editMode ? (
-                    <input type="radio" name={itemKey} checked={scoreVal === "1"} onChange={() => onChange?.(itemKey, "1")} className="w-3 h-3" />
-                  ) : (<span>{scoreVal === "1" ? "●" : ""}</span>)}
-                </div>
-                <div className="p-1 border-r border-border text-center">
-                  {editMode ? (
-                    <input type="radio" name={itemKey} checked={scoreVal === "2"} onChange={() => onChange?.(itemKey, "2")} className="w-3 h-3" />
-                  ) : (<span>{scoreVal === "2" ? "●" : ""}</span>)}
-                </div>
-                <div className="p-1 border-r border-border text-center">
-                  {editMode ? (
-                    <input type="radio" name={itemKey} checked={scoreVal === "3"} onChange={() => onChange?.(itemKey, "3")} className="w-3 h-3" />
-                  ) : (<span>{scoreVal === "3" ? "●" : ""}</span>)}
-                </div>
-                <div className="p-1 text-center">
-                  {editMode ? (
-                    <input type="radio" name={itemKey} checked={scoreVal === "4"} onChange={() => onChange?.(itemKey, "4")} className="w-3 h-3" />
-                  ) : (<span>{scoreVal === "4" ? "●" : ""}</span>)}
-                </div>
-              </div>
-            );
-          })}
-        </React.Fragment>
-      ))}
-
-      {/* Total */}
-      <div className="grid grid-cols-[35px_1fr_160px] border-x border-b border-border text-xs bg-muted/40 font-semibold text-foreground">
-        <div className="p-1 border-r border-border"></div>
-        <div className="p-1 border-r border-border">Total Marking →</div>
-        <div className="p-1 text-center">{inp("total_marking", "Total", "w-16")}</div>
+          <div className="p-2">
+            <span className="text-[9px] font-bold uppercase text-muted-foreground">Date</span>
+            <div className="font-semibold">{val(d, "date") || (ph ? "—" : "")}</div>
+          </div>
+        </div>
+        <div className="grid grid-cols-2 border-b border-border text-xs text-foreground">
+          <div className="p-2 border-r border-border">
+            <span className="text-[9px] font-bold uppercase text-muted-foreground">Name Of Employee</span>
+            <div className="font-semibold">{val(d, "employee_name") || (ph ? "—" : "")}</div>
+          </div>
+          <div className="p-2">
+            <span className="text-[9px] font-bold uppercase text-muted-foreground">Designation</span>
+            <div className="font-semibold">{val(d, "designation") || (ph ? "—" : "")}</div>
+          </div>
+        </div>
+        <div className="grid grid-cols-2 border-b border-border text-xs text-foreground">
+          <div className="p-2 border-r border-border">
+            <span className="text-[9px] font-bold uppercase text-muted-foreground">Department</span>
+            <div className="font-semibold">{val(d, "department") || (ph ? "—" : "")}</div>
+          </div>
+          <div className="p-2">
+            <span className="text-[9px] font-bold uppercase text-muted-foreground">Working In Organisation</span>
+            <div className="font-semibold">{val(d, "working_in_organisation") || (ph ? "—" : "")}</div>
+          </div>
+        </div>
+        <div className="grid grid-cols-2 border-b border-border text-xs text-foreground">
+          <div className="p-2 border-r border-border">
+            <span className="text-[9px] font-bold uppercase text-muted-foreground">Last Year Increment</span>
+            <div className="font-semibold">{val(d, "last_year_increment") || (ph ? "—" : "")}</div>
+          </div>
+          <div className="p-2">
+            <span className="text-[9px] font-bold uppercase text-muted-foreground">Evaluation Done By</span>
+            <div className="font-semibold">{val(d, "evaluation_done_by") || (ph ? "—" : "")}</div>
+          </div>
+        </div>
       </div>
 
-      {/* Conclusions */}
-      <div className="border-x border-b border-border text-xs p-1.5 text-foreground">
-        Further Training Need Is Identified → {inp("training_need", "e.g. Improve quality")}
+      {/* ── Evaluation Matrix Table ── */}
+      <div className="w-full overflow-x-auto border-x border-b border-border">
+        <table className="w-full border-collapse text-xs" style={{ minWidth: "500px" }}>
+          <thead>
+            <tr className="bg-muted/50 text-foreground font-semibold">
+              <th className="border-r border-border p-2 text-center" style={{ width: "40px" }}>Sr.</th>
+              <th className="border-r border-border p-2 text-left">Evaluation Criteria</th>
+              {SCORE_COLS.map(n => (
+                <th key={n} className="border-r border-border p-2 text-center" style={{ width: "36px" }}>{n}</th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {EVAL_SECTIONS.map((section) => {
+              const items = section.itemIds.map(id => matrixMap.get(id)).filter(Boolean) as EvalItem[];
+              // If no matrix data and template mode, build placeholder items from section definitions
+              const displayItems = items.length > 0 ? items : (ph ? section.itemIds.map(id => ({
+                id,
+                category: section.itemIds.length === 1 ? section.title : getFallbackCategory(id),
+                score: 0,
+              })) : []);
+
+              return (
+                <React.Fragment key={section.num}>
+                  {/* Section header row */}
+                  <tr className="bg-muted/30 text-foreground">
+                    <td className="border-r border-border p-1.5 text-center font-bold">{section.num}</td>
+                    <td className="border-r border-border p-1.5 font-semibold" colSpan={SCORE_COLS.length}>{section.title}</td>
+                  </tr>
+                  {/* Item rows */}
+                  {displayItems.map((item) => (
+                    <tr key={item.id} className="text-foreground hover:bg-muted/10">
+                      <td className="border-r border-border p-1.5 text-center text-muted-foreground">{item.id}</td>
+                      <td className="border-r border-border p-1.5">{item.category}</td>
+                      {SCORE_COLS.map(n => (
+                        <td key={n} className="border-r border-border p-1.5 text-center">
+                          {item.score === n ? (
+                            <span className="text-amber-500 dark:text-amber-400 font-bold text-sm">✔</span>
+                          ) : null}
+                        </td>
+                      ))}
+                    </tr>
+                  ))}
+                </React.Fragment>
+              );
+            })}
+          </tbody>
+        </table>
       </div>
-      <div className="grid grid-cols-[1fr_1fr] border-x border-b border-border text-xs text-foreground">
-        <div className="p-1.5 border-r border-border">Promotion, If Any → {inp("promotion", "N/A")}</div>
-        <div className="p-1.5">Increment → {inp("increment", "As per company policy")}</div>
+
+      {/* Scale legend */}
+      <div className="px-3 py-1.5 border-x border-b border-border text-[10px] text-muted-foreground text-center">
+        1 = Poor &nbsp;·&nbsp; 2 = Below Average &nbsp;·&nbsp; 3 = Average &nbsp;·&nbsp; 4 = Good &nbsp;·&nbsp; 5 = Excellent
       </div>
-      <div className="grid grid-cols-[1fr_1fr] border-x border-b border-border text-xs text-foreground">
-        <div className="p-1.5 border-r border-border">Suggestions for improvement → {inp("suggestions", "Suggestions")}</div>
-        <div className="p-1.5">Evaluated By: {inp("evaluator_name", "Name")}</div>
+
+      {/* ── Total Marking ── */}
+      <div className="grid grid-cols-[35px_1fr_120px] border-x border-b border-border text-xs bg-muted/40 font-semibold text-foreground">
+        <div className="p-2 border-r border-border"></div>
+        <div className="p-2 border-r border-border">Total Marking →</div>
+        <div className="p-2 text-center text-sm font-bold text-amber-600 dark:text-amber-400">
+          {val(d, "total_marking") || (ph ? "—" : "")}
+        </div>
       </div>
-      <div className="grid grid-cols-[1fr_1fr] border-x border-b border-border text-xs text-foreground">
-        <div className="p-1.5 border-r border-border">Responsibility Shared → {inp("responsibility", "Details")}</div>
-        <div className="p-1.5">Evaluated By: {inp("evaluator_name2", "Name")}</div>
+
+      {/* ── Conclusions ── */}
+      <div className="border-x border-b border-border text-xs text-foreground p-2">
+        <span className="text-[9px] font-bold uppercase text-muted-foreground">Further Training Need Is Identified</span>
+        <div className="font-semibold">{val(d, "further_training_need") || (ph ? "—" : "")}</div>
       </div>
-      <div className="grid grid-cols-[1fr_1fr] border-x border-b border-border text-xs text-foreground">
-        <div className="p-1.5 border-r border-border">Authorities Issued → {inp("authorities", "Details")}</div>
-        <div className="p-1.5">Evaluated By: {inp("evaluator_name3", "Name")}</div>
+
+      <div className="grid grid-cols-2 border-x border-b border-border text-xs text-foreground">
+        <div className="p-2 border-r border-border">
+          <span className="text-[9px] font-bold uppercase text-muted-foreground">Promotion, If Any</span>
+          <div className="font-semibold">{val(d, "promotion") || (ph ? "—" : "")}</div>
+        </div>
+        <div className="p-2">
+          <span className="text-[9px] font-bold uppercase text-muted-foreground">Increment</span>
+          <div className="font-semibold">{val(d, "increment") || (ph ? "—" : "")}</div>
+        </div>
+      </div>
+
+      <div className="border-x border-b border-border text-xs text-foreground p-2">
+        <span className="text-[9px] font-bold uppercase text-muted-foreground">Suggestions For Improvement</span>
+        <div className="font-semibold">{val(d, "suggestions_for_improvement") || (ph ? "—" : "")}</div>
+      </div>
+
+      <div className="border-x border-b border-border text-xs text-foreground p-2">
+        <span className="text-[9px] font-bold uppercase text-muted-foreground">Responsibility Shared</span>
+        <div className="font-semibold">{val(d, "responsibility_shared") || (ph ? "—" : "")}</div>
+      </div>
+
+      <div className="border-x border-b border-border text-xs text-foreground p-2">
+        <span className="text-[9px] font-bold uppercase text-muted-foreground">Authorities Issued</span>
+        <div className="font-semibold">{val(d, "authorities_issued") || (ph ? "—" : "")}</div>
+      </div>
+
+      {/* ── Signature Block ── */}
+      <div className="grid grid-cols-2 border-x border-b border-border rounded-b-lg overflow-hidden">
+        <div className="p-3 border-r border-border">
+          <div className="min-h-[30px] border-b border-border mb-1">
+            <span className="text-sm font-semibold text-foreground">{val(d, "evaluated_by") || (ph ? "—" : "")}</span>
+          </div>
+          <p className="text-[9px] font-bold uppercase text-muted-foreground">Evaluated By</p>
+        </div>
+        <div className="p-3">
+          <div className="min-h-[30px] border-b border-border mb-1">
+            <span className="text-sm font-semibold text-foreground">{val(d, "evaluation_done_by") || (ph ? "—" : "")}</span>
+          </div>
+          <p className="text-[9px] font-bold uppercase text-muted-foreground">Authorised By</p>
+        </div>
       </div>
     </FormDocument>
-    );
+  );
+}
+
+// Fallback category names for template mode
+function getFallbackCategory(id: string): string {
+  const map: Record<string, string> = {
+    "2a": "Positive Attitude", "2b": "Work Involvement", "2c": "Learning Attitude",
+    "2d": "Work Allotment To The Next Employee", "2e": "Co-Ordination With The Next Employee",
+    "2f": "Motivation Of The Next Employee", "2g": "Speed Of Work",
+    "3a": "Any Development Is Done", "3b": "Any Cost Effective Measures Implemented",
+    "3c": "Any Control Established On Expenses",
+    "5a": "Any Achievement During The Year", "5b": "Responsibility Sharing",
+  };
+  return map[id] || "";
 }
