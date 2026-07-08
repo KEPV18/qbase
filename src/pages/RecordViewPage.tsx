@@ -16,11 +16,7 @@ import { getFormSchema } from '../data/formSchemas';
 import { isoToDisplay } from '../schemas';
 import { resolveCoveragePeriod } from '@/lib/temporalUtils';
 import DynamicFormRenderer, { type RecordData } from '../components/forms/DynamicFormRenderer';
-import { F28Template } from '../components/forms/templates/F28Template';
-// ── FORCE VITE INCLUSION: Direct component references prevent tree-shaking ──
-const _FORCE_VITE_INCLUDE: Record<string, React.ComponentType<any>> = {
-  'F/28': F28Template,
-};
+import { getTemplateComponent } from '@/components/templates';
 import { DocumentView, DocHeader, DocSection, DocField, DocTable } from '@/components/forms/DocumentView';
 import { getAccent } from '@/components/forms/FormKit';
 import { useRecord, useUpdateRecord, useRecords, useDeleteRecord } from '../hooks/useRecordStorage';
@@ -601,7 +597,7 @@ const RecordViewPage: React.FC = () => {
 
             {(() => {
               const fc = originalRecord.formCode as string;
-              let TemplateComponent = _FORCE_VITE_INCLUDE[fc] ?? null;
+              let TemplateComponent = getTemplateComponent(fc) ?? null;
               if (TemplateComponent) {
                 return (
                   <TemplateComponent
@@ -809,7 +805,7 @@ const RecordViewPage: React.FC = () => {
           )}
           {(() => {
             const fc = originalRecord.formCode as string;
-            let TemplateComponent = _FORCE_VITE_INCLUDE[fc] ?? null;
+            let TemplateComponent = getTemplateComponent(fc) ?? null;
             if (TemplateComponent) {
               return (
                 <div className="ds-card p-6">
