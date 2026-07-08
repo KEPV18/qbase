@@ -14,7 +14,7 @@ import { cn } from "@/lib/utils";
 import {
   FileText, Folder, Search, ChevronRight, Plus,
   AlertTriangle, CheckCircle, Clock, ShieldAlert, Calendar,
-  Radar,
+  Radar, ArrowUpAZ, ArrowDownAZ,
 } from "lucide-react";
 import type { RecordData } from "@/components/forms/DynamicFormRenderer";
 import {
@@ -209,6 +209,7 @@ export default function Index() {
 
   // ── Global month selector ────────────────────────────────────────
   const [globalMonth, setGlobalMonth] = useState("");
+  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc');
   const availableMonths = useMemo(() => getMonthsFromRecords(records || []), [records]);
 
   // ── COMPLIANCE RADAR — Gap analysis for ALL recurring forms ──────
@@ -311,8 +312,9 @@ export default function Index() {
       const deptCodes = FORM_SCHEMAS.filter(f => f.sectionName === activeDept).map(f => f.code);
       r = r.filter((rec) => deptCodes.includes(String(rec.formCode)));
     }
-    return r.sort((a, b) => String(a.serial || '').localeCompare(String(b.serial || ''), undefined, { numeric: true, sensitivity: 'base' }));
-  }, [records, globalMonth, selectedForm, activeDept]);
+    const sorted = r.sort((a, b) => String(a.serial || '').localeCompare(String(b.serial || ''), undefined, { numeric: true, sensitivity: 'base' }));
+    return sortOrder === 'asc' ? sorted : sorted.reverse();
+  }, [records, globalMonth, selectedForm, activeDept, sortOrder]);
 
   const handleDeptClick = useMemo(() => (dept: string) => {
     setActiveDept(dept);
@@ -458,7 +460,20 @@ export default function Index() {
                   <p className="text-xs text-muted-foreground/70 mt-1">Select a form or department to view records.</p>
                 </div>
               ) : (
-                <div className="divide-y divide-border">
+                <div>
+                  {/* Sort order toggle */}
+                  <div className="flex items-center justify-end gap-2 px-5 py-2 border-b border-border dark:border-border/50">
+                    <span className="text-[10px] text-muted-foreground">Order:</span>
+                    <button
+                      onClick={() => setSortOrder(prev => prev === 'asc' ? 'desc' : 'asc')}
+                      className="flex items-center gap-1 px-2.5 py-1 rounded-md text-[11px] font-medium border border-border bg-muted/30 hover:bg-muted/50 text-foreground transition-colors"
+                      title={sortOrder === 'asc' ? 'Ascending (F/01-001 → F/01-999)' : 'Descending (F/01-999 → F/01-001)'}
+                    >
+                      {sortOrder === 'asc' ? <ArrowUpAZ className="w-3 h-3" /> : <ArrowDownAZ className="w-3 h-3" />}
+                      {sortOrder === 'asc' ? 'A→Z' : 'Z→A'}
+                    </button>
+                  </div>
+                  <div className="divide-y divide-border">
                   {displayedRecords.map((record) => (
                     <button
                       key={record.id}
@@ -480,6 +495,7 @@ export default function Index() {
                       </div>
                     </button>
                   ))}
+                </div>
                 </div>
               )}
             </div>
