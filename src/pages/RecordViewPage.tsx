@@ -67,19 +67,23 @@ const RecordViewPage: React.FC = () => {
 
   // ─── Form-code redirect: /records/F/40 → /records/F/40-001 ───────────
   const isFormCode = /^F\/\d{1,2}$/.test(decodedSerial);
-  const { data: formCodeRecords } = useRecords(isFormCode ? decodedSerial : undefined);
 
   useEffect(() => {
-    if (isFormCode && !isLoading && !originalRecord && formCodeRecords && formCodeRecords.length > 0) {
-      const sorted = [...formCodeRecords].sort((a, b) =>
-        String(a.serial).localeCompare(String(b.serial), undefined, { numeric: true, sensitivity: 'base' })
-      );
-      navigate(`/records/${encodeURIComponent(String(sorted[0].serial))}`, { replace: true });
-    } else if (isFormCode && !isLoading && !originalRecord && formCodeRecords && formCodeRecords.length === 0) {
-      // No records exist for this form code — go to form template
-      navigate(`/form/${encodeURIComponent(decodedSerial)}`, { replace: true });
+    if (isFormCode && !isLoading && !originalRecord && allRecords) {
+      const matching = allRecords
+        .filter(r => String(r.formCode) === decodedSerial)
+        .sort((a, b) => String(a.serial).localeCompare(String(b.serial), undefined, { numeric: true, sensitivity: 'base' }));
+      if (matching.length > 0) {
+        navigate(`/records/${encodeURIComponent(String(matching[0].serial))}`, { replace: true });
+      } else {
+        // No records exist for this form code — go to form template preview
+        const formDef = FORM_SCHEMAS.find(f => f.code === decodedSerial);
+        if (formDef) {
+          navigate(`/form/${encodeURIComponent(decodedSerial)}`, { replace: true });
+        }
+      }
     }
-  }, [isFormCode, decodedSerial, isLoading, originalRecord, formCodeRecords, navigate]);
+  }, [isFormCode, decodedSerial, isLoading, originalRecord, allRecords, navigate, error]);
 
   // Auto-enter edit mode when navigated with ?edit=true (from Data Retrofitting Hub)
   useEffect(() => {
@@ -197,18 +201,23 @@ const RecordViewPage: React.FC = () => {
 
   // ─── Error state ───────────────────────────────────────────────────────
   if (error) {
-    return (
-      <AppShell breadcrumbs={getBreadcrumbs()}>
-      <div className="max-w-4xl mx-auto flex flex-col items-center justify-center py-20 ds-fade-enter">
-        <AlertTriangle className="w-12 h-12 text-destructive mb-4" />
-        <h2 className="text-xl text-foreground mb-2">Failed to Load Record</h2>
-        <p className="text-muted-foreground mb-4">{(error as Error).message}</p>
-        <button onClick={() => refetch()} className="ds-press ds-focus-ring px-4 py-2 bg-primary text-primary-foreground rounded-sm flex items-center gap-2">
-          <RefreshCw className="w-4 h-4" /> Retry
-        </button>
-      </div>
-      </AppShell>
-    );
+    // If it's a form code (e.g. F/40), the "error" is expected — no record with that serial exists
+    // Don't show error, let the redirect logic handle it
+    const formCodePattern = /^F\/\d{1,2}$/;
+    if (!formCodePattern.test(decodedSerial)) {
+      return (
+        <AppShell breadcrumbs={getBreadcrumbs()}>
+        <div className="max-w-4xl mx-auto flex flex-col items-center justify-center py-20 ds-fade-enter">
+          <AlertTriangle className="w-12 h-12 text-destructive mb-4" />
+          <h2 className="text-xl text-foreground mb-2">Failed to Load Record</h2>
+          <p className="text-muted-foreground mb-4">{(error as Error).message}</p>
+          <button onClick={() => refetch()} className="ds-press ds-focus-ring px-4 py-2 bg-primary text-primary-foreground rounded-sm flex items-center gap-2">
+            <RefreshCw className="w-4 h-4" /> Retry
+          </button>
+        </div>
+        </AppShell>
+      );
+    }
   }
 
   // ─── No record ─────────────────────────────────────────────────────────
