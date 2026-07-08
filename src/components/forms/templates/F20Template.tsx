@@ -1,11 +1,13 @@
 // ============================================================================
 // F/20 — Management Review Meeting Agenda
-// DOCX: 1 row × 1 column — single cell with full agenda text
+// DOCX: structured agenda with date/time/place + bullet agenda items
+// Redesigned with accent-themed card layout for visual distinction
 // ============================================================================
 
 import React from "react";
 import { cn } from "@/lib/utils";
-import { FormDocument, val } from "../FormKit";
+import { Calendar, MapPin, Clock, FileText, CheckSquare } from "lucide-react";
+import { FormDocument, val, InfoCard, FieldRow, SectionDivider, TwoColumnBlock } from "../FormKit";
 
 export interface F20Props {
   data?: Record<string, unknown>;
@@ -15,84 +17,119 @@ export interface F20Props {
   className?: string;
 }
 
+const FC = "F/20";
+
 export function F20Template({ data, isTemplate = true, editMode = false, onChange, className }: F20Props) {
   const d = data ?? {};
   const ph = isTemplate && !editMode;
 
-  const inp = (key: string, label: string, width: string = "w-48") =>
+  const inp = (key: string, label: string, width = "w-48") =>
     editMode ? (
-      <input
-        className={cn("border-b border-dashed border-foreground/40 bg-transparent text-sm px-1", width)}
-        value={val(d, key)}
-        onChange={e => onChange?.(key, e.target.value)}
-        placeholder={label}
-      />
+      <input className={cn("border-b border-dashed border-foreground/40 bg-transparent text-sm px-1", width)}
+        value={val(d, key)} onChange={e => onChange?.(key, e.target.value)} placeholder={label} />
     ) : (
       <span className={cn("border-b border-dashed border-foreground/30 px-1 min-w-[6rem] inline-block", width)}>
         {val(d, key) || (ph ? "___" : "")}
       </span>
     );
 
-  const textArea = (key: string, placeholder: string) =>
-    editMode ? (
-      <textarea
-        className="w-full bg-transparent text-sm p-2 border border-dashed border-foreground/40 rounded resize-none min-h-[200px]"
-        value={val(d, key) || ""}
-        onChange={e => onChange?.(key, e.target.value)}
-        placeholder={placeholder}
-      />
-    ) : (
-      <div className="whitespace-pre-wrap text-sm leading-relaxed min-h-[200px]">
-        {val(d, key) || (ph ? "___" : "")}
-      </div>
-    );
+  const AGENDA_ITEMS = [
+    "The status of actions from previous management reviews;",
+    "Changes in external and internal issues relevant to QMS;",
+    "Information on the performance and effectiveness of QMS, including trends in:",
+  ];
+
+  const SUB_ITEMS = [
+    "Customer satisfaction and feedback from relevant interested parties and customer complaints;",
+    "The extent to which quality objectives have been met;",
+    "Process performance and conformity of products and services;",
+    "Nonconformities and corrective actions;",
+    "Monitoring and measurement results and Review effectiveness of system in achieving Quality objectives;",
+  ];
+
+  const EXTRA_ITEMS = [
+    "Audit results;",
+    "The performance of external providers;",
+    "The adequacy of resources;",
+    "Effectiveness of actions to address risks and opportunities",
+    "Opportunities for improvement",
+  ];
 
   return (
-    <FormDocument formCode="F/20" formName="Review Agenda" serial={val(d, "serial")} sectionName="Management & Documentation">
-      {/* 1 row × 1 column table matching Word structure */}
-      <table className="w-full border-collapse text-sm">
-        <tbody>
-          <tr>
-            <td className="border border-border p-4">
-              <div className="space-y-4">
-                <p>Please be advised that there will be management Review Meeting.</p>
-
-                <div className="grid grid-cols-3 gap-4 text-sm">
-                  <div><span className="font-semibold">Date: </span>{inp("date", "DD/MM/YYYY", "w-32")}</div>
-                  <div><span className="font-semibold">Time: </span>{inp("time", "Time", "w-28")}</div>
-                  <div><span className="font-semibold">Place: </span>{inp("place", "Place", "w-32")}</div>
-                </div>
-
-                <div>
-                  <p>The agenda will include.</p>
-                  <ul className="list-disc ml-6 mt-2 space-y-1">
-                    <li>The status of actions from previous management reviews;</li>
-                    <li>Changes in external and internal issues relevant to QMS;</li>
-                    <li>Information on the performance and effectiveness of QMS, including trends in:
-                      <ul className="list-disc ml-6 mt-1 space-y-1">
-                        <li>Customer satisfaction and feedback from relevant interested parties and customer complaints;</li>
-                        <li>The extent to which quality objectives have been met;</li>
-                        <li>Process performance and conformity of products and services;</li>
-                        <li>Nonconformities and corrective actions;</li>
-                        <li>Monitoring and measurement results and Review effectiveness of system in achieving Quality objectives;</li>
-                      </ul>
-                    </li>
-                    <li>Audit results;</li>
-                    <li>The performance of external providers;</li>
-                    <li>The adequacy of resources;</li>
-                    <li>Effectiveness of actions to address risks and opportunities</li>
-                    <li>Opportunities for improvement</li>
-                  </ul>
-                </div>
-
-                <div className="text-right">
-                  <span className="font-semibold">Approved By: </span>{inp("approved_by", "Approved By", "w-40")}
-                </div>
+    <FormDocument formCode={FC} formName="Review Agenda" serial={val(d, "serial")} sectionName="Management & Documentation" className={className}>
+      <div className="p-6 space-y-4">
+        {/* ── Meeting Details Card ── */}
+        <InfoCard formCode={FC} variant="tinted" icon={<Calendar size={14} />} title="Meeting Details">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <div className="flex items-center gap-2">
+              <Calendar size={14} className="text-amber-600 dark:text-amber-400 shrink-0" />
+              <div className="flex flex-col">
+                <span className="text-[9px] font-bold text-amber-600 dark:text-amber-400 uppercase tracking-wide">Date</span>
+                {inp("date", "DD/MM/YYYY", "w-32")}
               </div>
-            </td>
-          </tr>
-        </tbody>
-      </table>
+            </div>
+            <div className="flex items-center gap-2">
+              <Clock size={14} className="text-violet-600 dark:text-violet-400 shrink-0" />
+              <div className="flex flex-col">
+                <span className="text-[9px] font-bold text-violet-600 dark:text-violet-400 uppercase tracking-wide">Time</span>
+                {inp("time", "Time", "w-28")}
+              </div>
+            </div>
+            <div className="flex items-center gap-2">
+              <MapPin size={14} className="text-emerald-600 dark:text-emerald-400 shrink-0" />
+              <div className="flex flex-col">
+                <span className="text-[9px] font-bold text-emerald-600 dark:text-emerald-400 uppercase tracking-wide">Place</span>
+                {inp("place", "Place", "w-32")}
+              </div>
+            </div>
+          </div>
+        </InfoCard>
+
+        {/* ── Notice ── */}
+        <div className="px-4 py-3 rounded-md bg-muted/30 border border-border">
+          <p className="text-[13px] font-semibold text-foreground">
+            Please be advised that there will be Management Review Meeting.
+          </p>
+        </div>
+
+        {/* ── Agenda Items ── */}
+        <SectionDivider formCode={FC} title="Agenda Items" icon={<FileText size={14} />} />
+
+        <div className="px-2 space-y-2">
+          <ul className="space-y-2">
+            {AGENDA_ITEMS.map((item, i) => (
+              <li key={i} className="flex gap-2 text-[12px] text-foreground">
+                <span className="text-violet-600 dark:text-violet-400 font-bold mt-0.5">▸</span>
+                <span className="leading-relaxed">{item}</span>
+              </li>
+            ))}
+          </ul>
+          {/* Sub-items */}
+          <ul className="ml-8 space-y-1.5 border-l-2 border-violet-200 dark:border-violet-800 pl-4">
+            {SUB_ITEMS.map((item, i) => (
+              <li key={i} className="flex gap-2 text-[11px] text-muted-foreground">
+                <span className="text-violet-500 dark:text-violet-400">•</span>
+                <span className="leading-relaxed">{item}</span>
+              </li>
+            ))}
+          </ul>
+          <ul className="space-y-2 mt-2">
+            {EXTRA_ITEMS.map((item, i) => (
+              <li key={i} className="flex gap-2 text-[12px] text-foreground">
+                <span className="text-violet-600 dark:text-violet-400 font-bold mt-0.5">▸</span>
+                <span className="leading-relaxed">{item}</span>
+              </li>
+            ))}
+          </ul>
+        </div>
+
+        {/* ── Approval ── */}
+        <SectionDivider formCode={FC} title="Approval" icon={<CheckSquare size={14} />} />
+        <div className="px-2 flex justify-end items-center gap-2">
+          <span className="text-[11px] font-bold text-violet-700 dark:text-violet-300 uppercase tracking-wide">Approved By</span>
+          {inp("approved_by", "Approved By", "w-48")}
+        </div>
+      </div>
     </FormDocument>
   );
 }

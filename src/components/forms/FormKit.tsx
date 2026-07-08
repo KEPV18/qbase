@@ -664,3 +664,300 @@ export function FormWrapper({ children, className }: { children: React.ReactNode
     </div>
   );
 }
+
+// ════════════════════════════════════════════════════════════════════════
+// 10. INFO CARD — boxed field group with accent border + icon
+//     Use for non-table forms to give visual structure (not just stacked lines)
+// ════════════════════════════════════════════════════════════════════════
+
+interface InfoCardProps {
+  title?: string;
+  icon?: React.ReactNode;
+  children: React.ReactNode;
+  className?: string;
+  formCode?: string;
+  /** Visual style: default bordered card, or accent-tinted */
+  variant?: "default" | "accent" | "tinted";
+}
+
+export function InfoCard({ title, icon, children, className, formCode, variant = "default" }: InfoCardProps) {
+  const a = formCode ? useAccent(formCode) : ACCENT_MAP.blue;
+  return (
+    <div className={cn(
+      "rounded-md border overflow-hidden",
+      variant === "accent" ? cn(a.border, a.borderDark) : "border-border",
+      variant === "tinted" && cn(a.bg, a.bgDark),
+      className,
+    )}>
+      {title && (
+        <div className={cn(
+          "flex items-center gap-2 px-4 py-2 text-[10px] font-bold uppercase tracking-wider border-b",
+          variant === "tinted" || variant === "accent"
+            ? cn(a.text, a.textDark, "border-border")
+            : cn("bg-muted/30 text-muted-foreground border-border"),
+        )}>
+          {icon && <span className="opacity-70">{icon}</span>}
+          {title}
+        </div>
+      )}
+      <div className="px-4 py-3">
+        {children}
+      </div>
+    </div>
+  );
+}
+
+// ════════════════════════════════════════════════════════════════════════
+// 11. FIELD ROW — label + answer on same line, with visual distinction
+//     label is accent-colored, answer is foreground-colored
+// ════════════════════════════════════════════════════════════════════════
+
+interface FieldRowProps {
+  label: string;
+  data: Record<string, unknown>;
+  fieldKey: string;
+  editMode?: boolean;
+  onChange?: (field: string, value: string) => void;
+  formCode?: string;
+  /** Full-width answer (spans remaining space) */
+  fullWidth?: boolean;
+  /** Is this a date field? */
+  isDate?: boolean;
+  className?: string;
+}
+
+export function FieldRow({ label, data, fieldKey, editMode, onChange, formCode, fullWidth, isDate, className }: FieldRowProps) {
+  const a = formCode ? useAccent(formCode) : ACCENT_MAP.blue;
+  const dateDetected = isDate || isDateField(fieldKey, label);
+  const labelCls = dateDetected
+    ? "text-amber-600 dark:text-amber-400"
+    : cn(a.label, a.labelDark);
+  const underline = dateDetected
+    ? "border-amber-300 dark:border-amber-700"
+    : cn(a.border, a.borderDark);
+
+  return (
+    <div className={cn("flex items-baseline gap-3 py-1.5", className)}>
+      <span className={cn("text-[10px] font-bold uppercase tracking-wide shrink-0 min-w-[120px] max-w-[200px]", labelCls)}>
+        {label}
+      </span>
+      {editMode ? (
+        <input
+          className={cn("flex-1 bg-transparent text-[12px] font-semibold outline-none border-b border-dashed pb-0.5 text-foreground", underline)}
+          value={val(data, fieldKey)}
+          onChange={e => onChange?.(fieldKey, e.target.value)}
+        />
+      ) : (
+        <span className={cn(
+          "text-[12px] font-semibold pb-0.5 border-b border-dashed min-h-[18px]",
+          dateDetected ? "text-amber-700 dark:text-amber-300" : "text-foreground",
+          underline,
+          fullWidth ? "flex-1" : "inline-block min-w-[4rem]",
+        )}>
+          {val(data, fieldKey) || "\u00A0"}
+        </span>
+      )}
+    </div>
+  );
+}
+
+// ════════════════════════════════════════════════════════════════════════
+// 12. TEXT BLOCK — large text area with accent border (for descriptions, findings, etc.)
+// ════════════════════════════════════════════════════════════════════════
+
+interface TextBlockProps {
+  label: string;
+  data: Record<string, unknown>;
+  fieldKey: string;
+  editMode?: boolean;
+  onChange?: (field: string, value: string) => void;
+  formCode?: string;
+  minHeight?: string;
+  className?: string;
+}
+
+export function TextBlock({ label, data, fieldKey, editMode, onChange, formCode, minHeight = "min-h-[80px]", className }: TextBlockProps) {
+  const a = formCode ? useAccent(formCode) : ACCENT_MAP.blue;
+  return (
+    <div className={cn("space-y-1", className)}>
+      <span className={cn("text-[10px] font-bold uppercase tracking-wide", a.label, a.labelDark)}>{label}</span>
+      <div className={cn("border rounded-md p-3", a.border, a.borderDark, "bg-muted/10")}>
+        {editMode ? (
+          <textarea
+            className={cn("w-full bg-transparent text-[12px] leading-relaxed outline-none resize-y text-foreground", minHeight)}
+            value={val(data, fieldKey)}
+            onChange={e => onChange?.(fieldKey, e.target.value)}
+          />
+        ) : (
+          <div className={cn("text-[12px] leading-relaxed whitespace-pre-wrap text-foreground", minHeight)}>
+            {val(data, fieldKey) || "\u00A0"}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ════════════════════════════════════════════════════════════════════════
+// 13. CHECKBOX GROUP — visual checkbox group with accent label
+// ════════════════════════════════════════════════════════════════════════
+
+interface CheckboxItem {
+  key: string;
+  label: string;
+  checked: boolean;
+}
+
+interface CheckboxGroupProps {
+  title?: string;
+  items: CheckboxItem[];
+  formCode?: string;
+  onToggle?: (key: string, checked: boolean) => void;
+  editMode?: boolean;
+  className?: string;
+  columns?: 2 | 3 | 4;
+}
+
+export function CheckboxGroup({ title, items, formCode, onToggle, editMode, className, columns = 3 }: CheckboxGroupProps) {
+  const a = formCode ? useAccent(formCode) : ACCENT_MAP.blue;
+  const colClass = columns === 4 ? "grid-cols-4" : columns === 3 ? "grid-cols-3" : "grid-cols-2";
+  return (
+    <div className={cn("space-y-2", className)}>
+      {title && (
+        <span className={cn("text-[10px] font-bold uppercase tracking-wide", a.label, a.labelDark)}>{title}</span>
+      )}
+      <div className={cn("grid gap-2", colClass)}>
+        {items.map(item => (
+          <div key={item.key} className={cn(
+            "flex items-center gap-2 px-3 py-1.5 rounded border text-[11px]",
+            item.checked ? cn(a.bg, a.bgDark, a.border, a.borderDark, a.text, a.textDark) : "border-border text-muted-foreground",
+          )}>
+            {editMode ? (
+              <input
+                type="checkbox"
+                className="w-3.5 h-3.5"
+                checked={item.checked}
+                onChange={e => onToggle?.(item.key, e.target.checked)}
+              />
+            ) : (
+              <span className={cn(
+                "inline-flex items-center justify-center w-3.5 h-3.5 border rounded text-[9px] font-bold",
+                item.checked ? cn(a.text, a.textDark, "border-current") : "border-border",
+              )}>
+                {item.checked ? "✓" : ""}
+              </span>
+            )}
+            <span className={cn("font-medium", item.checked ? "text-foreground" : "text-muted-foreground")}>{item.label}</span>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+// ════════════════════════════════════════════════════════════════════════
+// 14. STAT BADGE — compact metric display (for counts, scores, ratings)
+// ════════════════════════════════════════════════════════════════════════
+
+interface StatBadgeProps {
+  label: string;
+  value: string | number;
+  formCode?: string;
+  className?: string;
+}
+
+export function StatBadge({ label, value, formCode, className }: StatBadgeProps) {
+  const a = formCode ? useAccent(formCode) : ACCENT_MAP.blue;
+  return (
+    <div className={cn(
+      "inline-flex flex-col items-center justify-center px-4 py-2 rounded-md border",
+      a.border, a.borderDark, a.bg, a.bgDark,
+      className,
+    )}>
+      <span className={cn("text-[18px] font-black", a.text, a.textDark)}>{value}</span>
+      <span className={cn("text-[8px] font-bold uppercase tracking-wider", a.label, a.labelDark)}>{label}</span>
+    </div>
+  );
+}
+
+// ════════════════════════════════════════════════════════════════════════
+// 15. TWO-COLUMN BLOCK — left/right layout for forms with paired data
+// ════════════════════════════════════════════════════════════════════════
+
+interface TwoColumnBlockProps {
+  left: React.ReactNode;
+  right: React.ReactNode;
+  className?: string;
+  /** Ratio: 50/50 or 60/40 */
+  ratio?: "50/50" | "60/40" | "40/60";
+}
+
+export function TwoColumnBlock({ left, right, className, ratio = "50/50" }: TwoColumnBlockProps) {
+  const ratioCls = ratio === "60/40" ? "lg:grid-cols-[3fr_2fr]" : ratio === "40/60" ? "lg:grid-cols-[2fr_3fr]" : "lg:grid-cols-2";
+  return (
+    <div className={cn("grid gap-4", ratioCls, className)}>
+      <div>{left}</div>
+      <div>{right}</div>
+    </div>
+  );
+}
+
+// ════════════════════════════════════════════════════════════════════════
+// 16. SECTION DIVIDER — visual separator between form sections
+// ════════════════════════════════════════════════════════════════════════
+
+interface SectionDividerProps {
+  title: string;
+  formCode?: string;
+  icon?: React.ReactNode;
+  className?: string;
+}
+
+export function SectionDivider({ title, formCode, icon, className }: SectionDividerProps) {
+  const a = formCode ? useAccent(formCode) : ACCENT_MAP.blue;
+  return (
+    <div className={cn("flex items-center gap-2 py-2 mt-2", className)}>
+      <div className={cn("h-7 w-7 rounded flex items-center justify-center", a.bg, a.bgDark)}>
+        {icon || <span className={cn("text-[12px] font-black", a.text, a.textDark)}>§</span>}
+      </div>
+      <span className={cn("text-[11px] font-bold uppercase tracking-wider", a.text, a.textDark)}>{title}</span>
+      <div className={cn("flex-1 h-px", a.border, a.borderDark)} />
+    </div>
+  );
+}
+
+// ════════════════════════════════════════════════════════════════════════
+// 17. TIMELINE ITEM — for forms with chronological entries
+// ════════════════════════════════════════════════════════════════════════
+
+interface TimelineItemProps {
+  date?: string;
+  title: string;
+  description?: string;
+  formCode?: string;
+  isLast?: boolean;
+  className?: string;
+}
+
+export function TimelineItem({ date, title, description, formCode, isLast, className }: TimelineItemProps) {
+  const a = formCode ? useAccent(formCode) : ACCENT_MAP.blue;
+  return (
+    <div className={cn("flex gap-3", className)}>
+      {/* Timeline line */}
+      <div className="flex flex-col items-center">
+        <div className={cn("w-2.5 h-2.5 rounded-full mt-1", a.bg, a.bgDark, "border", a.border, a.borderDark)} />
+        {!isLast && <div className="w-px flex-1 bg-border mt-1" />}
+      </div>
+      {/* Content */}
+      <div className="flex-1 pb-3">
+        {date && (
+          <span className={cn("text-[9px] font-bold uppercase tracking-wide", a.label, a.labelDark)}>{date}</span>
+        )}
+        <p className="text-[12px] font-semibold text-foreground">{title}</p>
+        {description && (
+          <p className="text-[11px] text-muted-foreground leading-relaxed mt-0.5">{description}</p>
+        )}
+      </div>
+    </div>
+  );
+}

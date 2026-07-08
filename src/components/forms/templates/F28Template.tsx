@@ -83,19 +83,21 @@ export function F28Template({ data, isTemplate = true, editMode = false, onChang
         data={d}
         editMode={editMode}
         onChange={onChange}
+        formCode="F/28"
         fields={[
           { label: "Topic", key: "topic" },
           { label: "Department", key: "department" },
           { label: "Conducted By", key: "conducted_by" },
           { label: "Designation", key: "designation" },
           { label: "Signature", key: "trainer_signature" },
-          { label: "Date of Training", key: "training_date" },
+          { label: "Date of Training", key: "training_date", isDate: true },
         ]}
       />
 
       {/* 6-Column Attendance Table */}
       <div className="px-6 py-4">
         <FormTable
+          formCode="F/28"
           columns={[
             { key: "sl_no", label: "Sl No", width: "w-12", align: "center" },
             { key: "name", label: "Name Of The Participant" },

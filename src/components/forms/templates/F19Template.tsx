@@ -1,11 +1,12 @@
 // ============================================================================
 // F/19 — Product Description Form
-// DOCX: 1 table, 15 rows, 3 cols: Sr. No | Parameters | Description
-// Simple key-value form listing product attributes.
+// DOCX: Sr. No | Parameters | Description — 14 product attributes
+// Redesigned with alternating accent-tinted rows and icon indicators
 // ============================================================================
 
 import React from "react";
 import { cn } from "@/lib/utils";
+import { Package, FlaskConical, Shield, Boxes, Truck, FileText, AlertCircle, Scale, MapPin, BookOpen, Target, HeartPulse, ClipboardList, ScrollText } from "lucide-react";
 import { FormDocument } from "../FormKit";
 
 export interface F19Props {
@@ -24,67 +25,81 @@ function val(data: Record<string, unknown> | undefined, key: string): string {
 }
 
 const FIELDS = [
-  { key: "product_name", label: "Product Name" },
-  { key: "process_name", label: "Process Name" },
-  { key: "composition", label: "Composition" },
-  { key: "end_product_characteristics", label: "End Product Characteristics" },
-  { key: "method_of_prevention", label: "Method of Prevention" },
-  { key: "storage_condition", label: "Storage Condition" },
-  { key: "distribution_method", label: "Distribution Method" },
-  { key: "support_update_period", label: "Support & Update Period" },
-  { key: "licensing_legal", label: "Licensing & Legal Notices" },
-  { key: "customer_use_guide", label: "Customer Use and Installation/Setup Guide" },
-  { key: "where_sold", label: "Where It Is To Be Sold" },
-  { key: "sensitive_consumer", label: "Sensitive Consumer" },
-  { key: "intended_use", label: "Intended Use" },
-  { key: "regulatory_requirements", label: "Regulatory Requirements" },
+  { key: "product_name", label: "Product Name", icon: Package },
+  { key: "process_name", label: "Process Name", icon: FlaskConical },
+  { key: "composition", label: "Composition", icon: Boxes },
+  { key: "end_product_characteristics", label: "End Product Characteristics", icon: Shield },
+  { key: "method_of_prevention", label: "Method of Prevention", icon: AlertCircle },
+  { key: "storage_condition", label: "Storage Condition", icon: Truck },
+  { key: "distribution_method", label: "Distribution Method", icon: MapPin },
+  { key: "support_update_period", label: "Support & Update Period", icon: FileText },
+  { key: "licensing_legal", label: "Licensing & Legal Notices", icon: Scale },
+  { key: "customer_use_guide", label: "Customer Use & Setup Guide", icon: BookOpen },
+  { key: "where_sold", label: "Where It Is To Be Sold", icon: Target },
+  { key: "sensitive_consumer", label: "Sensitive Consumer", icon: HeartPulse },
+  { key: "intended_use", label: "Intended Use", icon: ClipboardList },
+  { key: "regulatory_requirements", label: "Regulatory Requirements", icon: ScrollText },
 ];
+
+const FC = "F/19";
 
 export function F19Template({ data, isTemplate = true, editMode = false, onChange, className }: F19Props) {
   const d = data ?? {};
   const ph = isTemplate && !editMode;
 
   return (
-    <FormDocument formCode="F/19" formName="Product Description" serial={val(d, "serial")} sectionName="Operations & Production">
-      {/* Header */}
-      <div className="text-center font-bold text-base border-b border-border pb-2 mb-4 flex justify-between items-end">
-        <div className="text-left text-xs text-muted-foreground">F/19</div>
-        <div>Product Description Form</div>
-        <div className="text-right text-xs">
-          Rev No. {val(d, "serial") || (ph ? "{{SERIAL}}" : "—")}
+    <FormDocument formCode={FC} formName="Product Description" serial={val(d, "serial")} sectionName="Operations & Production" className={className}>
+      <div className="p-6">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
+          {FIELDS.map((field, idx) => {
+            const Icon = field.icon;
+            const isEven = idx % 2 === 0;
+            return (
+              <div
+                key={field.key}
+                className={cn(
+                  "flex gap-3 rounded-md border p-3 transition-colors",
+                  isEven
+                    ? "border-lime-200 dark:border-lime-800 bg-lime-50/40 dark:bg-lime-950/20"
+                    : "border-border bg-muted/10",
+                )}
+              >
+                {/* Sr No + Icon */}
+                <div className="flex flex-col items-center gap-1 shrink-0">
+                  <div className={cn(
+                    "w-8 h-8 rounded-md flex items-center justify-center",
+                    isEven ? "bg-lime-100 dark:bg-lime-900/50 text-lime-700 dark:text-lime-300" : "bg-muted/40 text-muted-foreground",
+                  )}>
+                    <Icon size={14} />
+                  </div>
+                  <span className="text-[9px] font-mono text-muted-foreground">{idx + 1}</span>
+                </div>
+                {/* Label + Value */}
+                <div className="flex-1 min-w-0">
+                  <span className={cn(
+                    "text-[9px] font-bold uppercase tracking-wide block mb-1",
+                    isEven ? "text-lime-700 dark:text-lime-300" : "text-muted-foreground",
+                  )}>
+                    {field.label}
+                  </span>
+                  {editMode ? (
+                    <input
+                      className="w-full bg-transparent text-[12px] font-semibold outline-none border-b border-dashed border-border pb-0.5 text-foreground"
+                      value={val(d, field.key)}
+                      onChange={e => onChange?.(field.key, e.target.value)}
+                      placeholder={`Enter ${field.label.toLowerCase()}...`}
+                    />
+                  ) : (
+                    <p className="text-[12px] font-semibold text-foreground leading-relaxed">
+                      {val(d, field.key) || (ph ? "___" : "")}
+                    </p>
+                  )}
+                </div>
+              </div>
+            );
+          })}
         </div>
       </div>
-
-      <table className="w-full border-collapse border border-border text-xs">
-        <thead>
-          <tr className="bg-muted">
-            <th className="border border-border p-1.5 text-center w-12">Sr. No.</th>
-            <th className="border border-border p-1.5 text-left w-1/3">Parameters</th>
-            <th className="border border-border p-1.5 text-left">Description</th>
-          </tr>
-        </thead>
-        <tbody>
-          {FIELDS.map((field, idx) => (
-            <tr key={field.key} className={idx % 2 === 0 ? "bg-background dark:bg-[#1e1d1a]" : "bg-muted/50/50"}>
-              <td className="border border-border p-1.5 text-center">{idx + 1}</td>
-              <td className="border border-border p-1.5 font-medium">{field.label}</td>
-              <td className="border border-border p-1.5">
-                {editMode ? (
-                  <input
-                    className="w-full bg-transparent text-xs px-1 border-none outline-none"
-                    value={val(d, field.key)}
-                    onChange={e => onChange?.(field.key, e.target.value)}
-                    placeholder={`Enter ${field.label.toLowerCase()}...`}
-                  />
-                ) : (
-                  val(d, field.key) || (ph ? "___" : "")
-                )}
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
     </FormDocument>
-
-    );
+  );
 }
