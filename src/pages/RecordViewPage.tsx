@@ -151,17 +151,19 @@ const RecordViewPage: React.FC = () => {
     }
   }, [originalRecord, schema, refetch]);
 
-  // ─── Prev/Next navigation ─────────────────────────────────────────────
+  // ─── Prev/Next navigation + Quick-Jump list ──────────────────────────
   const recordNav = useMemo(() => {
-    if (!originalRecord || !allRecords) return { prevSerial: null, nextSerial: null };
+    if (!originalRecord || !allRecords) return { prevSerial: null, nextSerial: null, sameFormList: [], currentIndex: -1 };
     const sameForm = allRecords
       .filter(r => String(r.formCode) === String(originalRecord.formCode))
-      .sort((a, b) => String(a.serial).localeCompare(String(b.serial)));
+      .sort((a, b) => String(a.serial).localeCompare(String(b.serial), undefined, { numeric: true, sensitivity: 'base' }));
     const idx = sameForm.findIndex(r => r.id === originalRecord.id);
-    if (idx === -1) return { prevSerial: null, nextSerial: null };
+    if (idx === -1) return { prevSerial: null, nextSerial: null, sameFormList: sameForm, currentIndex: -1 };
     return {
       prevSerial: idx > 0 ? sameForm[idx - 1].serial : null,
       nextSerial: idx < sameForm.length - 1 ? sameForm[idx + 1].serial : null,
+      sameFormList: sameForm,
+      currentIndex: idx,
     };
   }, [originalRecord, allRecords]);
 
@@ -337,6 +339,30 @@ const RecordViewPage: React.FC = () => {
               >
                 <ChevronLeft className="w-4 h-4" />
               </button>
+
+              {/* Quick-Jump Record Selector */}
+              {recordNav.sameFormList.length > 1 && recordNav.currentIndex >= 0 && (
+                <select
+                  value={recordNav.currentIndex}
+                  onChange={(e) => {
+                    const idx = Number(e.target.value);
+                    const target = recordNav.sameFormList[idx];
+                    if (target) navigate(`/records/${encodeURIComponent(String(target.serial))}`);
+                  }}
+                  className="bg-background border border-border text-foreground text-xs font-medium rounded-md px-2.5 py-1.5 shadow-sm hover:border-foreground/40 focus:outline-none focus:ring-2 focus:ring-primary cursor-pointer max-w-[220px] truncate"
+                  title="Jump to any record in this form"
+                >
+                  <option value={recordNav.currentIndex} className="font-semibold">
+                    📄 {recordNav.currentIndex + 1} / {recordNav.sameFormList.length}
+                  </option>
+                  {recordNav.sameFormList.map((r, i) => (
+                    <option key={r.id} value={i}>
+                      {i + 1} — {String(r.serial)}
+                    </option>
+                  ))}
+                </select>
+              )}
+
               <button
                 onClick={() => recordNav.nextSerial && navigate(`/records/${encodeURIComponent(String(recordNav.nextSerial))}`)}
                 disabled={!recordNav.nextSerial}
