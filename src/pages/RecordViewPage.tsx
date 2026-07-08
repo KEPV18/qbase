@@ -22,6 +22,7 @@ const _FORCE_VITE_INCLUDE: Record<string, React.ComponentType<any>> = {
   'F/28': F28Template,
 };
 import { DocumentView, DocHeader, DocSection, DocField, DocTable } from '@/components/forms/DocumentView';
+import { getAccent } from '@/components/forms/FormKit';
 import { useRecord, useUpdateRecord, useRecords, useDeleteRecord } from '../hooks/useRecordStorage';
 import { useAuditLog } from '../hooks/useAuditLog';
 import { useAuth } from '../hooks/useAuth';
@@ -609,21 +610,31 @@ const RecordViewPage: React.FC = () => {
                   />
                 );
               }
-              // Fallback: schema-driven render inside VEZLOO doc
+              // Fallback: schema-driven render inside VEZLOO doc (accent-themed)
               const schema = getFormSchema(fc);
+              const a = getAccent(fc);
               return (
                 <div className="w-full bg-card text-foreground border border-border rounded-sm shadow-sm overflow-hidden">
-                  <div className="text-center py-2.5 border-b border-border">
-                    <span className="text-[15px] font-bold tracking-[0.2em] text-foreground">VEZLOO</span>
+                  {/* VEZLOO header — gradient accent */}
+                  <div className={`bg-gradient-to-r ${a.gradient} ${a.gradientDark} px-6 py-4 flex items-center justify-between`}>
+                    <div className="flex items-center gap-4">
+                      <span className="text-[28px] font-black tracking-[0.15em] text-white leading-none">VEZLOO</span>
+                      <span className="text-[11px] font-bold text-white/90 px-2.5 py-1 rounded-md bg-white/20">{fc}</span>
+                    </div>
+                    <div className="flex flex-col items-end gap-1">
+                      <span className="text-[10px] font-mono text-white/80">Rev: {decodedSerial}</span>
+                      <span className="text-[10px] font-mono text-white/60">P.1</span>
+                    </div>
                   </div>
-                  <div className="flex items-center justify-between px-4 py-2 border-b border-border bg-muted/40">
-                    <span className="text-[12px] font-bold text-foreground uppercase">{(originalRecord.formName as string) || schema?.name || fc}</span>
-                    <span className="text-[10px] font-mono text-muted-foreground">{fc} · Rev: {decodedSerial} · P.1</span>
+                  {/* Title bar — accent bg */}
+                  <div className={`flex items-center justify-between px-6 py-2.5 border-b border-border ${a.bg} ${a.bgDark}`}>
+                    <span className={`text-[14px] font-bold uppercase tracking-wide ${a.text} ${a.textDark}`}>{(originalRecord.formName as string) || schema?.name || fc}</span>
+                    <span className={`text-[10px] font-mono px-2 py-0.5 rounded ${a.chip} ${a.chipDark} ${a.text} ${a.textDark}`}>QMS</span>
                   </div>
                   <div className="px-6 py-6 space-y-4">
                     {schema?.fields.map((field, i) => {
                       if (field.type === 'heading') {
-                        return <div key={i} className="px-4 py-2 bg-muted/40 border border-border text-[10px] font-bold text-muted-foreground uppercase">{field.label}</div>;
+                        return <div key={i} className={`px-4 py-2 border border-border text-[10px] font-bold uppercase ${a.bg} ${a.bgDark} ${a.text} ${a.textDark}`}>{field.label}</div>;
                       }
                       const value = (originalRecord as RecordData)[field.key];
                       if (value === undefined || value === null || value === '') return null;
@@ -632,27 +643,29 @@ const RecordViewPage: React.FC = () => {
                         const columns = field.columns || [];
                         return (
                           <div key={i} className="space-y-1">
-                            <p className="text-[9px] font-bold text-muted-foreground uppercase">{field.label}</p>
+                            <p className={`text-[9px] font-bold uppercase ${a.label} ${a.labelDark}`}>{field.label}</p>
                             <div className="border border-border overflow-x-auto">
                               <table className="w-full border-collapse text-[11px] font-[Arial,sans-serif]">
-                                <thead><tr>{columns.map(c => <th key={c.key} className="border border-border px-2 py-1 text-[10px] font-bold text-foreground bg-muted/50 uppercase">{c.label}</th>)}</tr></thead>
+                                <thead><tr>{columns.map(c => <th key={c.key} className={`border border-border px-2 py-1 text-[10px] font-bold uppercase ${a.text} ${a.textDark} ${a.bg} ${a.bgDark}`}>{c.label}</th>)}</tr></thead>
                                 <tbody>{rows.map((row, ri) => <tr key={ri} className={ri % 2 ? "bg-muted/20" : ""}>{columns.map(c => <td key={c.key} className="border border-border px-2 py-1 text-[11px] text-foreground">{String(row[c.key] ?? "")}</td>)}</tr>)}</tbody>
                               </table>
                             </div>
                           </div>
                         );
                       }
+                      const isDate = /date|expiry|validity|received|dispatch|review|approved|target/i.test(field.key + " " + field.label);
                       return (
                         <div key={i} className="flex flex-col gap-0.5">
-                          <span className="text-[9px] font-bold text-muted-foreground uppercase">{field.label}</span>
-                          <span className="text-[11px] text-foreground pb-0.5 border-b border-dashed border-border min-h-[16px]">{field.type === 'textarea' ? <span className="whitespace-pre-wrap">{String(value)}</span> : String(value)}</span>
+                          <span className={`text-[9px] font-bold uppercase ${isDate ? "text-amber-600 dark:text-amber-400" : `${a.label} ${a.labelDark}`}`}>{field.label}</span>
+                          <span className={`text-[11px] pb-0.5 border-b border-dashed min-h-[16px] ${isDate ? "text-amber-700 dark:text-amber-300 border-amber-300 dark:border-amber-700" : `text-foreground ${a.border} ${a.borderDark}`}`}>{field.type === 'textarea' ? <span className="whitespace-pre-wrap">{String(value)}</span> : String(value)}</span>
                         </div>
                       );
                     })}
                   </div>
-                  <div className="flex items-center justify-between px-4 py-1.5 border-t border-border bg-muted/40 text-[9px] text-muted-foreground font-mono">
-                    <span>VEZLOO — Quality Management System</span>
-                    <span>{fc} · Page 1</span>
+                  {/* Footer */}
+                  <div className={`flex items-center justify-between px-6 py-2 border-t border-border ${a.bg} ${a.bgDark}`}>
+                    <span className={`text-[9px] font-mono ${a.text} ${a.textDark}`}>VEZLOO — QMS</span>
+                    <span className={`text-[9px] font-mono ${a.text} ${a.textDark}`}>{fc} · Page 1</span>
                   </div>
                 </div>
               );

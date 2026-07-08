@@ -17,6 +17,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import { FORMS_REGISTRY } from "@/data/formsRegistry";
+import { getAccent } from "@/components/forms/FormKit";
 
 // Format ISO date
 function formatDate(iso: string | null | undefined): string {
@@ -159,23 +160,32 @@ export default function FormTemplatePreview() {
           <div className="max-w-[1400px] mx-auto">
             {TemplateComponent ? (
               <TemplateComponent isTemplate={true} />
-            ) : (
+            ) : (() => {
+              const accent = getAccent(code);
+              return (
               <div className="w-full bg-card text-foreground border border-border rounded-sm shadow-sm overflow-hidden">
-                {/* VEZLOO header */}
-                <div className="text-center py-2.5 border-b border-border">
-                  <span className="text-[15px] font-bold tracking-[0.2em] text-foreground">VEZLOO</span>
+                {/* VEZLOO header — gradient accent */}
+                <div className={cn("bg-gradient-to-r px-6 py-4 flex items-center justify-between", accent.gradient, accent.gradientDark)}>
+                  <div className="flex items-center gap-4">
+                    <span className="text-[28px] font-black tracking-[0.15em] text-white leading-none">VEZLOO</span>
+                    <span className="text-[11px] font-bold text-white/90 px-2.5 py-1 rounded-md bg-white/20">{code}</span>
+                  </div>
+                  <div className="flex flex-col items-end gap-1">
+                    {schema.section && <span className="text-[10px] font-semibold text-white/70 uppercase tracking-wider">{schema.section}</span>}
+                    <span className="text-[10px] font-mono text-white/60">P.1</span>
+                  </div>
                 </div>
-                {/* Title bar */}
-                <div className="flex items-center justify-between px-4 py-2 border-b border-border bg-muted/40">
-                  <span className="text-[12px] font-bold text-foreground uppercase">{schema.name}</span>
-                  <span className="text-[10px] font-mono text-muted-foreground">{code} · P.1</span>
+                {/* Title bar — accent bg */}
+                <div className={cn("flex items-center justify-between px-6 py-2.5 border-b border-border", accent.bg, accent.bgDark)}>
+                  <span className={cn("text-[14px] font-bold uppercase tracking-wide", accent.text, accent.textDark)}>{schema.name}</span>
+                  <span className={cn("text-[10px] font-mono px-2 py-0.5 rounded", accent.chip, accent.chipDark, accent.text, accent.textDark)}>QMS</span>
                 </div>
                 {/* Fields */}
                 <div className="px-6 py-6 space-y-4">
                   {schema.fields.map((field, i) => {
                     if (field.type === 'heading') {
                       return (
-                        <div key={i} className="px-4 py-2 bg-muted/40 border border-border text-[10px] font-bold text-muted-foreground uppercase tracking-wider">
+                        <div key={i} className={cn("px-4 py-2 border border-border text-[10px] font-bold uppercase tracking-wider", accent.bg, accent.bgDark, accent.text, accent.textDark)}>
                           {field.label}
                         </div>
                       );
@@ -184,13 +194,13 @@ export default function FormTemplatePreview() {
                       const columns = field.columns || [];
                       return (
                         <div key={i} className="space-y-1.5">
-                          <p className="text-[9px] font-bold text-muted-foreground uppercase tracking-wide">{field.label}</p>
+                          <p className={cn("text-[9px] font-bold uppercase tracking-wide", accent.label, accent.labelDark)}>{field.label}</p>
                           <div className="border border-border rounded-sm overflow-hidden">
                             <table className="w-full border-collapse text-[11px] font-[Arial,sans-serif]">
                               <thead>
                                 <tr>
                                   {columns.map(c => (
-                                    <th key={c.key} className="border border-border px-2 py-1.5 text-[10px] font-bold text-foreground bg-muted/50 uppercase">
+                                    <th key={c.key} className={cn("border border-border px-2 py-1.5 text-[10px] font-bold uppercase", accent.text, accent.textDark, accent.bg, accent.bgDark)}>
                                       {c.label}
                                     </th>
                                   ))}
@@ -208,26 +218,38 @@ export default function FormTemplatePreview() {
                         </div>
                       );
                     }
+                    const isDate = /date|expiry|validity|received|dispatch|review|approved|target/i.test(field.key + " " + field.label);
                     return (
                       <div key={i} className="flex flex-col gap-0.5">
-                        <span className="text-[9px] font-bold text-muted-foreground uppercase tracking-wide">
+                        <span className={cn(
+                          "text-[9px] font-bold uppercase tracking-wide",
+                          isDate ? "text-amber-600 dark:text-amber-400" : cn(accent.label, accent.labelDark),
+                        )}>
                           {field.label}
                           {field.required && <span className="text-red-500 ml-0.5">*</span>}
                         </span>
-                        <div className="h-7 border-b border-dashed border-border flex items-center">
-                          <span className="text-[11px] text-muted-foreground/50 italic">{field.type}</span>
+                        <div className={cn(
+                          "h-7 border-b border-dashed flex items-center",
+                          isDate ? "border-amber-300 dark:border-amber-700" : cn(accent.border, accent.borderDark),
+                        )}>
+                          <span className={cn(
+                            "text-[11px] italic",
+                            isDate ? "text-amber-600/50 dark:text-amber-400/50" : "text-muted-foreground/50",
+                          )}>{field.type}</span>
                         </div>
                       </div>
                     );
                   })}
                 </div>
                 {/* Footer */}
-                <div className="flex items-center justify-between px-4 py-1.5 border-t border-border bg-muted/40 text-[9px] text-muted-foreground font-mono">
-                  <span>VEZLOO — Quality Management System</span>
-                  <span>{code} · Page 1</span>
+                <div className={cn("flex items-center justify-between px-6 py-2 border-t border-border", accent.bg, accent.bgDark)}>
+                  <span className={cn("text-[9px] font-mono", accent.text, accent.textDark)}>VEZLOO — QMS</span>
+                  <span className={cn("text-[9px] font-mono", accent.text, accent.textDark)}>{code} · Page 1</span>
                 </div>
               </div>
-            )}
+              );
+            })()
+            }
           </div>
         </div>
 
