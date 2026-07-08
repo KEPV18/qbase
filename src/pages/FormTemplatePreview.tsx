@@ -154,49 +154,81 @@ export default function FormTemplatePreview() {
           </div>
         </div>
 
-        {/* ── Form Content ── */}
-        <div className="w-full">
-          {TemplateComponent ? (
-            <TemplateComponent isTemplate={true} />
-          ) : (
-            <div className="px-6 py-8 space-y-6">
-              <DocHeader
-                serial={code}
-                formName={schema.name}
-                formCode={code}
-                sectionName={schema.sectionName}
-              />
-              <div className="space-y-6">
-                {schema.fields.map((field, i) => {
-                  if (field.type === 'heading') {
-                    return <DocSection key={i} title={field.label} />;
-                  }
-                  if (field.type === 'table') {
-                    const columns = field.columns || [];
+        {/* ── Form Content — full-width document page ── */}
+        <div className="w-full bg-muted/20 py-4 px-4 sm:px-6 lg:px-8">
+          <div className="max-w-[1400px] mx-auto">
+            {TemplateComponent ? (
+              <TemplateComponent isTemplate={true} />
+            ) : (
+              <div className="w-full bg-white border border-black/15 rounded-sm shadow-sm overflow-hidden">
+                {/* VEZLOO header */}
+                <div className="text-center py-2.5 border-b border-black/15">
+                  <span className="text-[15px] font-bold tracking-[0.2em] text-black">VEZLOO</span>
+                </div>
+                {/* Title bar */}
+                <div className="flex items-center justify-between px-4 py-2 border-b border-black/15 bg-black/[0.02]">
+                  <span className="text-[12px] font-bold text-black uppercase">{schema.name}</span>
+                  <span className="text-[10px] font-mono text-black/60">{code} · P.1</span>
+                </div>
+                {/* Fields */}
+                <div className="px-6 py-6 space-y-4">
+                  {schema.fields.map((field, i) => {
+                    if (field.type === 'heading') {
+                      return (
+                        <div key={i} className="px-4 py-2 bg-black/[0.04] border border-black/15 text-[10px] font-bold text-black/70 uppercase tracking-wider">
+                          {field.label}
+                        </div>
+                      );
+                    }
+                    if (field.type === 'table') {
+                      const columns = field.columns || [];
+                      return (
+                        <div key={i} className="space-y-1.5">
+                          <p className="text-[9px] font-bold text-black/50 uppercase tracking-wide">{field.label}</p>
+                          <div className="border border-black/15 rounded-sm overflow-hidden">
+                            <table className="w-full border-collapse text-[11px] font-[Arial,sans-serif]">
+                              <thead>
+                                <tr>
+                                  {columns.map(c => (
+                                    <th key={c.key} className="border border-black/30 px-2 py-1.5 text-[10px] font-bold text-black bg-black/[0.04] uppercase">
+                                      {c.label}
+                                    </th>
+                                  ))}
+                                </tr>
+                              </thead>
+                              <tbody>
+                                <tr>
+                                  {columns.map(c => (
+                                    <td key={c.key} className="border border-black/30 px-2 py-2 text-[11px] text-black/30 italic">—</td>
+                                  ))}
+                                </tr>
+                              </tbody>
+                            </table>
+                          </div>
+                        </div>
+                      );
+                    }
                     return (
-                      <div key={field.key} className="space-y-1.5">
-                        <p className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider">{field.label}</p>
-                        <p className="text-sm text-border italic">
-                          Table with {columns.length} column{columns.length !== 1 ? 's' : ''}: {columns.map(c => c.label).join(', ')}
-                        </p>
+                      <div key={i} className="flex flex-col gap-0.5">
+                        <span className="text-[9px] font-bold text-black/50 uppercase tracking-wide">
+                          {field.label}
+                          {field.required && <span className="text-red-500 ml-0.5">*</span>}
+                        </span>
+                        <div className="h-7 border-b border-dashed border-black/20 flex items-center">
+                          <span className="text-[11px] text-black/30 italic">{field.type}</span>
+                        </div>
                       </div>
                     );
-                  }
-                  return (
-                    <div key={field.key} className="space-y-1">
-                      <p className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider">
-                        {field.label}
-                        {field.required && <span className="text-red-400 ml-1">*</span>}
-                      </p>
-                      <div className="h-9 border-b border-border flex items-center px-1">
-                        <span className="text-sm text-border italic">{field.type}</span>
-                      </div>
-                    </div>
-                  );
-                })}
+                  })}
+                </div>
+                {/* Footer */}
+                <div className="flex items-center justify-between px-4 py-1.5 border-t border-black/15 bg-black/[0.02] text-[9px] text-black/50 font-mono">
+                  <span>VEZLOO — Quality Management System</span>
+                  <span>{code} · Page 1</span>
+                </div>
               </div>
-            </div>
-          )}
+            )}
+          </div>
         </div>
 
         {/* ── Bottom Navigation ── */}

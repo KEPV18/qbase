@@ -586,113 +586,79 @@ const RecordViewPage: React.FC = () => {
       {/* ─── Content ──────────────────────────────────────────────────── */}
 
       {mode === 'view' ? (
-        <DocumentView subtitle={`${originalRecord.formCode as string} · ${(originalRecord as RecordData)._sectionName || ''}`} maxWidth={originalRecord.formCode === 'F/50' ? 'max-w-[95%]' : undefined}>
-          {/* ── Print header (visible only when printing) ── */}
-          <div className="print-only print-header">
-            <h2 className="company-name">QBase — Quality Management System</h2>
-            <p className="print-meta">
-              <span>Serial: <strong>{decodedSerial}</strong></span>
-              <span>Form: <strong>{originalRecord.formCode as string}</strong></span>
-              <span>Date: <strong>{new Date().toLocaleDateString()}</strong></span>
-              <span>Printed: <strong>{new Date().toLocaleString()}</strong></span>
-            </p>
-          </div>
+        <div className="w-full bg-muted/20 py-4 px-4 sm:px-6 lg:px-8">
+          <div className="max-w-[1400px] mx-auto">
+            {/* Print header */}
+            <div className="print-only print-header">
+              <h2 className="company-name">QBase — Quality Management System</h2>
+              <p className="print-meta">
+                <span>Serial: <strong>{decodedSerial}</strong></span>
+                <span>Form: <strong>{originalRecord.formCode as string}</strong></span>
+                <span>Date: <strong>{new Date().toLocaleDateString()}</strong></span>
+              </p>
+            </div>
 
-          <DocHeader
-            serial={decodedSerial}
-            formName={(originalRecord.formName as string) || ''}
-            formCode={originalRecord.formCode as string}
-            sectionName={(originalRecord as RecordData)._sectionName as string}
-            projectScope={String(originalRecord.project_scope ?? 'Company-Wide')}
-            coveragePeriod={resolveCoveragePeriod(originalRecord as RecordData)}
-          />
-
-          {(() => {
-            const fc = originalRecord.formCode as string;
-            // ── Direct lookup from force-include map ──
-            let TemplateComponent = _FORCE_VITE_INCLUDE[fc] ?? null;
-            if (TemplateComponent) {
+            {(() => {
+              const fc = originalRecord.formCode as string;
+              let TemplateComponent = _FORCE_VITE_INCLUDE[fc] ?? null;
+              if (TemplateComponent) {
+                return (
+                  <TemplateComponent
+                    data={originalRecord as unknown as Record<string, unknown>}
+                    isTemplate={false}
+                  />
+                );
+              }
+              // Fallback: schema-driven render inside VEZLOO doc
+              const schema = getFormSchema(fc);
               return (
-                <TemplateComponent
-                  data={originalRecord as unknown as Record<string, unknown>}
-                  isTemplate={false}
-                />
-              );
-            }
-            return (
-              <div className="space-y-6">
-                {(() => {
-                  const schema = getFormSchema(fc);
-                  if (!schema) return null;
-                  return schema.fields.map((field, i) => {
-                    if (field.type === 'heading') {
-                      return <DocSection key={i} title={field.label} />;
-                    }
-                    const value = (originalRecord as RecordData)[field.key];
-                    if (value === undefined || value === null || value === '') return null;
-
-                    if (field.type === 'table') {
-                      const rows = Array.isArray(value) ? value : [];
-                      const columns = field.columns || [];
+                <div className="w-full bg-white border border-black/15 rounded-sm shadow-sm overflow-hidden">
+                  <div className="text-center py-2.5 border-b border-black/15">
+                    <span className="text-[15px] font-bold tracking-[0.2em] text-black">VEZLOO</span>
+                  </div>
+                  <div className="flex items-center justify-between px-4 py-2 border-b border-black/15 bg-black/[0.02]">
+                    <span className="text-[12px] font-bold text-black uppercase">{(originalRecord.formName as string) || schema?.name || fc}</span>
+                    <span className="text-[10px] font-mono text-black/60">{fc} · Rev: {decodedSerial} · P.1</span>
+                  </div>
+                  <div className="px-6 py-6 space-y-4">
+                    {schema?.fields.map((field, i) => {
+                      if (field.type === 'heading') {
+                        return <div key={i} className="px-4 py-2 bg-black/[0.04] border border-black/15 text-[10px] font-bold text-black/70 uppercase">{field.label}</div>;
+                      }
+                      const value = (originalRecord as RecordData)[field.key];
+                      if (value === undefined || value === null || value === '') return null;
+                      if (field.type === 'table') {
+                        const rows = Array.isArray(value) ? value : [];
+                        const columns = field.columns || [];
+                        return (
+                          <div key={i} className="space-y-1">
+                            <p className="text-[9px] font-bold text-black/50 uppercase">{field.label}</p>
+                            <div className="border border-black/15 overflow-x-auto">
+                              <table className="w-full border-collapse text-[11px] font-[Arial,sans-serif]">
+                                <thead><tr>{columns.map(c => <th key={c.key} className="border border-black/30 px-2 py-1 text-[10px] font-bold text-black bg-black/[0.04] uppercase">{c.label}</th>)}</tr></thead>
+                                <tbody>{rows.map((row, ri) => <tr key={ri} className={ri % 2 ? "bg-black/[0.025]" : ""}>{columns.map(c => <td key={c.key} className="border border-black/30 px-2 py-1 text-[11px] text-black">{String(row[c.key] ?? "")}</td>)}</tr>)}</tbody>
+                              </table>
+                            </div>
+                          </div>
+                        );
+                      }
                       return (
-                        <div key={field.key} className="space-y-1.5">
-                          <p className="text-[11px] font-medium text-gray-400 dark:text-gray-500 uppercase tracking-wider">{field.label}</p>
-                          <DocTable columns={columns} rows={rows} />
+                        <div key={i} className="flex flex-col gap-0.5">
+                          <span className="text-[9px] font-bold text-black/50 uppercase">{field.label}</span>
+                          <span className="text-[11px] text-black pb-0.5 border-b border-dashed border-black/20 min-h-[16px]">{field.type === 'textarea' ? <span className="whitespace-pre-wrap">{String(value)}</span> : String(value)}</span>
                         </div>
                       );
-                    }
-
-                    if (field.type === 'textarea') {
-                      return (
-                        <DocField key={field.key} label={field.label} value={
-                          <div className="whitespace-pre-wrap text-sm leading-relaxed">{String(value)}</div>
-                        } />
-                      );
-                    }
-
-                    return (
-                      <DocField key={field.key} label={field.label} value={String(value)} />
-                    );
-                  });
-                })()}
-              </div>
-            );
-          })()}
-
-          {/* ── Print signature block (visible only when printing) ── */}
-          <div className="print-only print-signature">
-            <div className="sig-line">
-              <div className="sig-field">
-                <div className="sig-label">Prepared by</div>
-                <div className="sig-line-blank"></div>
-              </div>
-              <div className="sig-field">
-                <div className="sig-label">Date</div>
-                <div className="sig-line-blank"></div>
-              </div>
-            </div>
-            <div className="sig-line">
-              <div className="sig-field">
-                <div className="sig-label">Reviewed by</div>
-                <div className="sig-line-blank"></div>
-              </div>
-              <div className="sig-field">
-                <div className="sig-label">Date</div>
-                <div className="sig-line-blank"></div>
-              </div>
-            </div>
-            <div className="sig-line">
-              <div className="sig-field">
-                <div className="sig-label">Approved by</div>
-                <div className="sig-line-blank"></div>
-              </div>
-              <div className="sig-field">
-                <div className="sig-label">Date</div>
-                <div className="sig-line-blank"></div>
-              </div>
-            </div>
+                    })}
+                  </div>
+                  <div className="flex items-center justify-between px-4 py-1.5 border-t border-black/15 bg-black/[0.02] text-[9px] text-black/50 font-mono">
+                    <span>VEZLOO — Quality Management System</span>
+                    <span>{fc} · Page 1</span>
+                  </div>
+                </div>
+              );
+            })()}
           </div>
-        </DocumentView>
+        </div>
       ) : mode === 'history' ? (
         <div className="ds-card p-6 page-transition">
           <div className="flex items-center justify-between mb-4">
