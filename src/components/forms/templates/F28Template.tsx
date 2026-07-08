@@ -1,8 +1,9 @@
 // ============================================================================
 // F/28 — Training Attendance Sheet
 // EXACT MATCH of the original DOCX template — VEZLOO corporate format
+// Header: VEZLOO | Training Attendance Sheet | F/28 Rev No. Page No.
+// Metadata: Topic | Department | Conducted By | Designation | Signature | Date
 // Table: Sl No | Name Of The Participant | Department | ID NO. | Training Date | Signature
-// 21 rows total (header + 20 data rows)
 // Footer: TRAINER'S SIGNATURE: ____________
 // ============================================================================
 
@@ -72,7 +73,7 @@ export function F28Template({ data, isTemplate = true, editMode = false, onChang
     setRows(prev => prev.filter((_, i) => i !== idx).map((r, i) => ({ ...r, sl_no: i + 1 })));
   }, []);
 
-  // Ensure at least 21 rows for DOCX fidelity (1 header + 20 data = 21 rows in tbody)
+  // Ensure at least 20 data rows for DOCX fidelity
   const displayRows = useMemo(() => {
     const minRows = 20;
     if (rows.length >= minRows) return rows;
@@ -83,20 +84,52 @@ export function F28Template({ data, isTemplate = true, editMode = false, onChang
     return padded;
   }, [rows]);
 
+  const metaField = (label: string, key: string, full = false) => (
+    <div className={cn("flex items-center gap-1", full ? "col-span-1" : "")}>
+      <span className="text-[10px] font-semibold text-slate-500 dark:text-slate-400 whitespace-nowrap">{label}:</span>
+      {editMode ? (
+        <input
+          className="flex-1 bg-transparent text-[11px] outline-none border-b border-slate-300 dark:border-gray-600 pb-0.5 min-w-0"
+          value={val(d, key)}
+          onChange={e => onChange?.(key, e.target.value)}
+          placeholder=""
+        />
+      ) : (
+        <span className="text-[11px] text-slate-800 dark:text-slate-200 truncate">{val(d, key) || (ph ? "" : "")}</span>
+      )}
+    </div>
+  );
+
   return (
     <div className={cn("w-full max-w-4xl mx-auto bg-white dark:bg-gray-900 border border-slate-200 dark:border-gray-700 rounded-lg overflow-hidden", className)}>
-      {/* ── Title (DOCX: centered heading) ── */}
-      <div className="px-6 pt-6 pb-4">
-        <h2 className="text-base font-bold text-slate-800 dark:text-slate-200 text-center uppercase tracking-wide">
-          Training Attendance Sheet
-        </h2>
-        <p className="text-[11px] text-slate-500 dark:text-slate-400 text-center mt-1">
-          F/28 — Rev No. {val(d, "serial") || "F/28-001"}
-        </p>
+      {/* ── VEZLOO Corporate Header (DOCX Header Table 1) ── */}
+      <div className="bg-gradient-to-r from-blue-900 to-blue-700 dark:from-blue-950 dark:to-blue-800 text-white px-6 py-4">
+        <div className="flex items-center justify-between">
+          <div>
+            <h2 className="text-lg font-bold tracking-tight">VEZLOO</h2>
+            <p className="text-xs text-blue-200">Training Attendance Sheet</p>
+          </div>
+          <div className="text-right">
+            <p className="text-sm font-semibold">F/28</p>
+            <p className="text-[10px] text-blue-200">Rev No. {val(d, "serial") || "F/28-001"} &nbsp;|&nbsp; Page No. 1</p>
+          </div>
+        </div>
       </div>
 
-      {/* ── 6-Column Attendance Table (DOCX exact) ── */}
-      <div className="px-6 pb-4">
+      {/* ── Metadata Grid (DOCX Header Table 2: 3×4) ── */}
+      <div className="px-6 py-4 border-b border-slate-200 dark:border-gray-700">
+        <div className="grid grid-cols-2 gap-x-8 gap-y-2.5">
+          {metaField("Topic", "course_name")}
+          {metaField("Department", "department")}
+          {metaField("Conducted By", "trainer")}
+          {metaField("Designation", "designation")}
+          {metaField("Signature", "trainer_signature")}
+          {metaField("Date of Training", "date")}
+        </div>
+      </div>
+
+      {/* ── 6-Column Attendance Table (21 rows: 1 header + 20 data) ── */}
+      <div className="px-6 py-4">
         <div className="w-full overflow-x-auto">
           <table className="w-full border-collapse border border-slate-300 dark:border-gray-600">
             <thead>
@@ -175,7 +208,7 @@ export function F28Template({ data, isTemplate = true, editMode = false, onChang
         )}
       </div>
 
-      {/* ── TRAINER'S SIGNATURE (DOCX exact: single line) ── */}
+      {/* ── TRAINER'S SIGNATURE (DOCX: single line at bottom) ── */}
       <div className="px-6 pb-6">
         <div className="flex items-end gap-2">
           <span className="text-xs font-semibold text-slate-700 dark:text-slate-300 whitespace-nowrap">TRAINER'S SIGNATURE:</span>
@@ -191,7 +224,7 @@ export function F28Template({ data, isTemplate = true, editMode = false, onChang
             />
           ) : (
             <span className="flex-1 border-b border-slate-300 dark:border-gray-600 pb-0.5 text-xs text-slate-800 dark:text-slate-200">
-              {val(d, "trainer_signature") || val(d, "conducted_by") || (ph ? "" : "")}
+              {val(d, "trainer_signature") || val(d, "conducted_by") || ""}
             </span>
           )}
         </div>
