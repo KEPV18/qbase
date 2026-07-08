@@ -474,12 +474,13 @@ export default function Index() {
                     </button>
                   </div>
                   <div className="divide-y divide-border">
-                  {displayedRecords.map((record) => (
+                  {displayedRecords.map((record, idx) => (
                     <button
                       key={record.id}
                       onClick={() => navigate(`/records/${encodeURIComponent(record.serial || "")}`)}
                       className="w-full flex items-center gap-4 px-5 py-4 hover:bg-background dark:hover:bg-[#1a1a18]/50 transition-colors text-left group"
                     >
+                      <span className="font-mono text-[10px] text-muted-foreground shrink-0 w-5 text-right">{idx + 1}</span>
                       <span className="font-mono text-[10px] text-muted-foreground shrink-0">{record.serial}</span>
                       <div className="flex-1 min-w-0">
                         <p className="text-sm font-medium text-foreground dark:text-foreground truncate">
