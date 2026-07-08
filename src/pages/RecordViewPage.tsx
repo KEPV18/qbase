@@ -612,18 +612,18 @@ const RecordViewPage: React.FC = () => {
               // Fallback: schema-driven render inside VEZLOO doc
               const schema = getFormSchema(fc);
               return (
-                <div className="w-full bg-white border border-black/15 rounded-sm shadow-sm overflow-hidden">
-                  <div className="text-center py-2.5 border-b border-black/15">
-                    <span className="text-[15px] font-bold tracking-[0.2em] text-black">VEZLOO</span>
+                <div className="w-full bg-card text-foreground border border-border rounded-sm shadow-sm overflow-hidden">
+                  <div className="text-center py-2.5 border-b border-border">
+                    <span className="text-[15px] font-bold tracking-[0.2em] text-foreground">VEZLOO</span>
                   </div>
-                  <div className="flex items-center justify-between px-4 py-2 border-b border-black/15 bg-black/[0.02]">
-                    <span className="text-[12px] font-bold text-black uppercase">{(originalRecord.formName as string) || schema?.name || fc}</span>
-                    <span className="text-[10px] font-mono text-black/60">{fc} · Rev: {decodedSerial} · P.1</span>
+                  <div className="flex items-center justify-between px-4 py-2 border-b border-border bg-muted/40">
+                    <span className="text-[12px] font-bold text-foreground uppercase">{(originalRecord.formName as string) || schema?.name || fc}</span>
+                    <span className="text-[10px] font-mono text-muted-foreground">{fc} · Rev: {decodedSerial} · P.1</span>
                   </div>
                   <div className="px-6 py-6 space-y-4">
                     {schema?.fields.map((field, i) => {
                       if (field.type === 'heading') {
-                        return <div key={i} className="px-4 py-2 bg-black/[0.04] border border-black/15 text-[10px] font-bold text-black/70 uppercase">{field.label}</div>;
+                        return <div key={i} className="px-4 py-2 bg-muted/40 border border-border text-[10px] font-bold text-muted-foreground uppercase">{field.label}</div>;
                       }
                       const value = (originalRecord as RecordData)[field.key];
                       if (value === undefined || value === null || value === '') return null;
@@ -632,11 +632,11 @@ const RecordViewPage: React.FC = () => {
                         const columns = field.columns || [];
                         return (
                           <div key={i} className="space-y-1">
-                            <p className="text-[9px] font-bold text-black/50 uppercase">{field.label}</p>
-                            <div className="border border-black/15 overflow-x-auto">
+                            <p className="text-[9px] font-bold text-muted-foreground uppercase">{field.label}</p>
+                            <div className="border border-border overflow-x-auto">
                               <table className="w-full border-collapse text-[11px] font-[Arial,sans-serif]">
-                                <thead><tr>{columns.map(c => <th key={c.key} className="border border-black/30 px-2 py-1 text-[10px] font-bold text-black bg-black/[0.04] uppercase">{c.label}</th>)}</tr></thead>
-                                <tbody>{rows.map((row, ri) => <tr key={ri} className={ri % 2 ? "bg-black/[0.025]" : ""}>{columns.map(c => <td key={c.key} className="border border-black/30 px-2 py-1 text-[11px] text-black">{String(row[c.key] ?? "")}</td>)}</tr>)}</tbody>
+                                <thead><tr>{columns.map(c => <th key={c.key} className="border border-border px-2 py-1 text-[10px] font-bold text-foreground bg-muted/50 uppercase">{c.label}</th>)}</tr></thead>
+                                <tbody>{rows.map((row, ri) => <tr key={ri} className={ri % 2 ? "bg-muted/20" : ""}>{columns.map(c => <td key={c.key} className="border border-border px-2 py-1 text-[11px] text-foreground">{String(row[c.key] ?? "")}</td>)}</tr>)}</tbody>
                               </table>
                             </div>
                           </div>
@@ -644,13 +644,13 @@ const RecordViewPage: React.FC = () => {
                       }
                       return (
                         <div key={i} className="flex flex-col gap-0.5">
-                          <span className="text-[9px] font-bold text-black/50 uppercase">{field.label}</span>
-                          <span className="text-[11px] text-black pb-0.5 border-b border-dashed border-black/20 min-h-[16px]">{field.type === 'textarea' ? <span className="whitespace-pre-wrap">{String(value)}</span> : String(value)}</span>
+                          <span className="text-[9px] font-bold text-muted-foreground uppercase">{field.label}</span>
+                          <span className="text-[11px] text-foreground pb-0.5 border-b border-dashed border-border min-h-[16px]">{field.type === 'textarea' ? <span className="whitespace-pre-wrap">{String(value)}</span> : String(value)}</span>
                         </div>
                       );
                     })}
                   </div>
-                  <div className="flex items-center justify-between px-4 py-1.5 border-t border-black/15 bg-black/[0.02] text-[9px] text-black/50 font-mono">
+                  <div className="flex items-center justify-between px-4 py-1.5 border-t border-border bg-muted/40 text-[9px] text-muted-foreground font-mono">
                     <span>VEZLOO — Quality Management System</span>
                     <span>{fc} · Page 1</span>
                   </div>

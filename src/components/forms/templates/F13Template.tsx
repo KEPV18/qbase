@@ -51,8 +51,8 @@ function parseItems(d: Record<string, unknown>): Item[] {
 
 // ── Shared CSS constants ───────────────────────────────────────────────────
 
-const TBL = "border border-black/30 print:border-black";
-const TBL_IN = "border border-black/30 print:border-black";
+const TBL = "border border-border print:border-black";
+const TBL_IN = "border border-border print:border-black";
 
 const inpStyle =
   "w-full bg-transparent border-b border-dashed border-foreground/40 text-xs px-0.5 outline-none focus:border-foreground/70";

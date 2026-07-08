@@ -2,7 +2,7 @@
 // QBase — FormKit: Unified Template Components
 // Single source of truth for ALL 35 form templates.
 // Enforces consistent VEZLOO header, form title bar, content area, and footer.
-// Every template imports from here — change here = change everywhere.
+// Theme-aware: uses CSS variables that adapt to light/dark mode.
 // ============================================================================
 
 import React from "react";
@@ -27,7 +27,7 @@ export function val(data: Record<string, unknown> | undefined, key: string): str
 
 // ════════════════════════════════════════════════════════════════════════
 // 1. FORM DOCUMENT — the main page wrapper (unified for all 35 templates)
-//    Full-width white page with VEZLOO header, title bar, content, footer.
+//    Full-width page with VEZLOO header, title bar, content, footer.
 // ════════════════════════════════════════════════════════════════════════
 
 interface FormDocumentProps {
@@ -50,27 +50,27 @@ export function FormDocument({
 }: FormDocumentProps) {
   return (
     <div className={cn(
-      "w-full bg-white text-black font-[Arial,sans-serif] text-[11px]",
-      "print:bg-white print:text-black print:shadow-none print:rounded-none",
-      "border border-black/15 rounded-sm shadow-sm overflow-hidden",
+      "w-full bg-card text-foreground font-[Arial,sans-serif] text-[11px]",
+      "border border-border rounded-sm shadow-sm overflow-hidden",
+      "print:bg-white print:text-black print:shadow-none print:rounded-none print:border-black",
       className,
     )}>
-      {/* ── VEZLOO HEADER (consistent across all forms) ── */}
-      <div className="text-center py-2.5 border-b border-black/15 bg-white">
-        <span className="text-[15px] font-bold tracking-[0.2em] text-black">VEZLOO</span>
+      {/* ── VEZLOO HEADER ── */}
+      <div className="text-center py-2.5 border-b border-border bg-card">
+        <span className="text-[15px] font-bold tracking-[0.2em] text-foreground">VEZLOO</span>
       </div>
 
-      {/* ── FORM TITLE BAR (form name + form code + serial + section) ── */}
-      <div className="flex items-center justify-between px-4 py-2 border-b border-black/15 bg-black/[0.02]">
+      {/* ── FORM TITLE BAR ── */}
+      <div className="flex items-center justify-between px-4 py-2 border-b border-border bg-muted/40">
         <div className="flex items-center gap-3 min-w-0">
-          <span className="text-[12px] font-bold text-black uppercase truncate">{formName}</span>
+          <span className="text-[12px] font-bold text-foreground uppercase truncate">{formName}</span>
         </div>
-        <div className="flex items-center gap-2 shrink-0 text-[10px] font-mono text-black/60">
+        <div className="flex items-center gap-2 shrink-0 text-[10px] font-mono text-muted-foreground">
           {sectionName && <span className="hidden sm:inline">{sectionName}</span>}
-          {sectionName && <span className="text-black/20">|</span>}
-          <span className="font-bold text-black/80">{formCode}</span>
-          {serial && <><span className="text-black/20">|</span><span className="text-black/80">Rev: {serial}</span></>}
-          <span className="text-black/20">|</span>
+          {sectionName && <span className="text-border">|</span>}
+          <span className="font-bold text-foreground/80">{formCode}</span>
+          {serial && <><span className="text-border">|</span><span className="text-foreground/80">Rev: {serial}</span></>}
+          <span className="text-border">|</span>
           <span>P.{pageNumber}</span>
         </div>
       </div>
@@ -80,8 +80,8 @@ export function FormDocument({
         {children}
       </div>
 
-      {/* ── FOOTER (consistent across all forms) ── */}
-      <div className="flex items-center justify-between px-4 py-1.5 border-t border-black/15 bg-black/[0.02] text-[9px] text-black/50 font-mono">
+      {/* ── FOOTER ── */}
+      <div className="flex items-center justify-between px-4 py-1.5 border-t border-border bg-muted/40 text-[9px] text-muted-foreground font-mono">
         <span>VEZLOO — Quality Management System</span>
         <span>{formCode} · Page {pageNumber}</span>
       </div>
@@ -90,7 +90,7 @@ export function FormDocument({
 }
 
 // ════════════════════════════════════════════════════════════════════════
-// 2. FORM HEADER — in-page section header (for forms with metadata grids)
+// 2. FORM HEADER — in-page section header
 // ════════════════════════════════════════════════════════════════════════
 
 interface FormHeaderProps {
@@ -100,7 +100,7 @@ interface FormHeaderProps {
 
 export function FormHeader({ children, className }: FormHeaderProps) {
   return (
-    <div className={cn("px-4 py-2.5 border-b border-black/15 bg-black/[0.03]", className)}>
+    <div className={cn("px-4 py-2.5 border-b border-border bg-muted/30", className)}>
       {children}
     </div>
   );
@@ -108,7 +108,6 @@ export function FormHeader({ children, className }: FormHeaderProps) {
 
 // ════════════════════════════════════════════════════════════════════════
 // 3. FORM META GRID — metadata fields (Topic, Department, etc.)
-//    Clean label-above-value layout for readability.
 // ════════════════════════════════════════════════════════════════════════
 
 interface MetaField {
@@ -129,19 +128,19 @@ export function FormMetaGrid({ fields, data, editMode, onChange, columns = 2, cl
   const d = data ?? {};
   const colClass = columns === 4 ? "grid-cols-4" : columns === 3 ? "grid-cols-3" : "grid-cols-2";
   return (
-    <div className={cn("px-4 py-3 border-b border-black/15", className)}>
+    <div className={cn("px-4 py-3 border-b border-border", className)}>
       <div className={cn("grid gap-x-6 gap-y-3", colClass)}>
         {fields.map(f => (
           <div key={f.key} className="flex flex-col gap-0.5">
-            <span className="text-[9px] font-bold text-black/50 uppercase tracking-wide">{f.label}</span>
+            <span className="text-[9px] font-bold text-muted-foreground uppercase tracking-wide">{f.label}</span>
             {editMode ? (
               <input
-                className="w-full bg-transparent text-[11px] outline-none border-b border-dashed border-black/30 pb-0.5 font-[Arial,sans-serif] text-black"
+                className="w-full bg-transparent text-[11px] outline-none border-b border-dashed border-border pb-0.5 font-[Arial,sans-serif] text-foreground"
                 value={val(d, f.key)}
                 onChange={e => onChange?.(f.key, e.target.value)}
               />
             ) : (
-              <span className="text-[11px] text-black pb-0.5 border-b border-dashed border-black/20 min-h-[16px] font-[Arial,sans-serif]">
+              <span className="text-[11px] text-foreground pb-0.5 border-b border-dashed border-border min-h-[16px] font-[Arial,sans-serif]">
                 {val(d, f.key) || "\u00A0"}
               </span>
             )}
@@ -153,7 +152,7 @@ export function FormMetaGrid({ fields, data, editMode, onChange, columns = 2, cl
 }
 
 // ════════════════════════════════════════════════════════════════════════
-// 4. FORM TABLE — consistent HTML table with black borders
+// 4. FORM TABLE — consistent HTML table with theme-aware borders
 // ════════════════════════════════════════════════════════════════════════
 
 interface FormTableColumn {
@@ -180,7 +179,7 @@ export function FormTable({ columns, children, striped = true, className }: Form
               <th
                 key={col.key}
                 className={cn(
-                  "border border-black/30 px-2 py-1.5 text-[10px] font-bold text-black bg-black/[0.04] uppercase tracking-wide",
+                  "border border-border px-2 py-1.5 text-[10px] font-bold text-foreground bg-muted/50 uppercase tracking-wide",
                   col.align === "center" && "text-center",
                   col.align === "right" && "text-right",
                   !col.align && "text-left",
@@ -210,7 +209,7 @@ interface FormTableRowProps {
 export function FormTableRow({ children, index = 0, striped = true, className }: FormTableRowProps) {
   return (
     <tr className={cn(
-      striped && index % 2 === 1 && "bg-black/[0.025]",
+      striped && index % 2 === 1 && "bg-muted/20",
       className,
     )}>
       {children}
@@ -230,7 +229,7 @@ export function FormTableCell({ children, align, colSpan, rowSpan, className }: 
   return (
     <td
       className={cn(
-        "border border-black/30 px-2 py-1.5 text-[11px] font-[Arial,sans-serif] text-black",
+        "border border-border px-2 py-1.5 text-[11px] font-[Arial,sans-serif] text-foreground",
         align === "center" && "text-center",
         align === "right" && "text-right",
         className,
@@ -265,23 +264,23 @@ export function FormSignature({ fields, data, editMode, onChange, columns = 2, c
   const d = data ?? {};
   const colClass = columns === 4 ? "grid-cols-4" : columns === 3 ? "grid-cols-3" : columns === 1 ? "flex justify-end" : "grid-cols-2";
   return (
-    <div className={cn("px-4 py-4 border-t border-black/15", className)}>
+    <div className={cn("px-4 py-4 border-t border-border", className)}>
       <div className={cn("gap-6", colClass)}>
         {fields.map(f => (
           <div key={f.key} className="flex flex-col">
-            <div className="min-h-[24px] border-b border-black/30 pb-1 mb-1">
+            <div className="min-h-[24px] border-b border-border pb-1 mb-1">
               {editMode ? (
                 <input
-                  className="w-full bg-transparent text-[11px] outline-none font-[Arial,sans-serif] text-black"
+                  className="w-full bg-transparent text-[11px] outline-none font-[Arial,sans-serif] text-foreground"
                   value={val(d, f.key)}
                   onChange={e => onChange?.(f.key, e.target.value)}
                   placeholder={f.label}
                 />
               ) : (
-                <span className="text-[11px] text-black font-[Arial,sans-serif]">{val(d, f.key)}</span>
+                <span className="text-[11px] text-foreground font-[Arial,sans-serif]">{val(d, f.key)}</span>
               )}
             </div>
-            <p className="text-[9px] font-bold text-black/60 uppercase tracking-wider">{f.label}</p>
+            <p className="text-[9px] font-bold text-muted-foreground uppercase tracking-wider">{f.label}</p>
           </div>
         ))}
       </div>
@@ -300,7 +299,7 @@ interface FormSectionProps {
 
 export function FormSection({ title, className }: FormSectionProps) {
   return (
-    <div className={cn("px-4 py-2 bg-black/[0.04] border-x border-t border-black/15 text-[10px] font-bold text-black/70 uppercase tracking-wider", className)}>
+    <div className={cn("px-4 py-2 bg-muted/40 border-x border-t border-border text-[10px] font-bold text-muted-foreground uppercase tracking-wider", className)}>
       {title}
     </div>
   );
@@ -318,9 +317,9 @@ interface FormCalloutProps {
 
 export function FormCallout({ children, variant = "info", className }: FormCalloutProps) {
   const styles = {
-    info: "bg-blue-50 border-blue-200 text-blue-800",
-    success: "bg-green-50 border-green-200 text-green-800",
-    warning: "bg-amber-50 border-amber-200 text-amber-800",
+    info: "bg-primary/10 border-primary/20 text-primary",
+    success: "bg-green-500/10 border-green-500/20 text-green-600 dark:text-green-400",
+    warning: "bg-amber-500/10 border-amber-500/20 text-amber-600 dark:text-amber-400",
   };
   return (
     <div className={cn("border rounded-sm px-4 py-3 text-[11px]", styles[variant], className)}>
@@ -336,7 +335,7 @@ export function FormCallout({ children, variant = "info", className }: FormCallo
 /** Read-only field with dashed underline (template mode) */
 export function FieldValue({ value, placeholder = "___" }: { value: string; placeholder?: string }) {
   return (
-    <span className="border-b border-dashed border-black/30 px-1 inline-block min-w-[4rem] text-[11px] font-[Arial,sans-serif]">
+    <span className="border-b border-dashed border-border px-1 inline-block min-w-[4rem] text-[11px] font-[Arial,sans-serif] text-foreground">
       {value || placeholder}
     </span>
   );
@@ -353,7 +352,7 @@ export function FieldInput({
 }) {
   return (
     <input
-      className={cn("border-b border-dashed border-black/30 bg-transparent text-[11px] px-1 outline-none font-[Arial,sans-serif] text-black", className)}
+      className={cn("border-b border-dashed border-border bg-transparent text-[11px] px-1 outline-none font-[Arial,sans-serif] text-foreground", className)}
       value={value}
       onChange={e => onChange(e.target.value)}
       placeholder={placeholder}
@@ -368,8 +367,8 @@ export function FieldInput({
 export function FormWrapper({ children, className }: { children: React.ReactNode; className?: string }) {
   return (
     <div className={cn(
-      "w-full bg-white text-black text-[11px] font-[Arial,sans-serif]",
-      "border border-black/15 rounded-sm shadow-sm overflow-hidden",
+      "w-full bg-card text-foreground text-[11px] font-[Arial,sans-serif]",
+      "border border-border rounded-sm shadow-sm overflow-hidden",
       "print:bg-white print:text-black print:shadow-none print:rounded-none print:border-black",
       className,
     )}>

@@ -294,7 +294,7 @@ export const ResponsiveTemplate: React.FC<{
     <div className="hidden md:block">{children}</div>
     <div className="block md:hidden space-y-2">
       {cardData?.map((card, idx) => (
-        <div key={idx} className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-sm p-3 space-y-1">
+        <div key={idx} className="bg-card border border-border rounded-sm p-3 space-y-1">
           <p className="text-[10px] uppercase tracking-wider text-gray-400 font-semibold">{card.label}</p>
           <p className={cn("text-sm", card.value ? "text-gray-900 dark:text-gray-100" : "text-gray-300 dark:text-gray-600 italic")}>
             {card.value || "—"}
