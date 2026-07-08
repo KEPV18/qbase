@@ -321,8 +321,8 @@ const RecordViewPage: React.FC = () => {
   // ─── Render ────────────────────────────────────────────────────────────
 
   return (
-    <AppShell breadcrumbs={getBreadcrumbs()} maxWidth={originalRecord.formCode === 'F/50' ? 'max-w-full' : 'max-w-[1400px]'}>
-    <div className={`${originalRecord.formCode === 'F/50' ? 'max-w-full' : 'max-w-[1400px]'} mx-auto page-transition px-4 py-6`}>
+    <AppShell breadcrumbs={getBreadcrumbs()} maxWidth="max-w-full">
+    <div className="max-w-full mx-auto page-transition px-4 py-6">
       {/* Top bar */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-6">
         <div className="flex items-center gap-2">
