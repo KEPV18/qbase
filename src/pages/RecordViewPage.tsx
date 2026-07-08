@@ -65,25 +65,14 @@ const RecordViewPage: React.FC = () => {
   const [exportMenuOpen, setExportMenuOpen] = useState(false);
   const [searchParams] = useSearchParams();
 
-  // ─── Form-code redirect: /records/F/40 → /records/F/40-001 ───────────
+  // ─── Form-code redirect: /records/F/40 → /form-code/F/40 → /records/F/40-001 ──
   const isFormCode = /^F\/\d{1,2}$/.test(decodedSerial);
 
   useEffect(() => {
-    if (isFormCode && !isLoading && !originalRecord && allRecords) {
-      const matching = allRecords
-        .filter(r => String(r.formCode) === decodedSerial)
-        .sort((a, b) => String(a.serial).localeCompare(String(b.serial), undefined, { numeric: true, sensitivity: 'base' }));
-      if (matching.length > 0) {
-        navigate(`/records/${encodeURIComponent(String(matching[0].serial))}`, { replace: true });
-      } else {
-        // No records exist for this form code — go to form template preview
-        const formDef = FORM_SCHEMAS.find(f => f.code === decodedSerial);
-        if (formDef) {
-          navigate(`/form/${encodeURIComponent(decodedSerial)}`, { replace: true });
-        }
-      }
+    if (isFormCode) {
+      navigate(`/form-code/${encodeURIComponent(decodedSerial)}`, { replace: true });
     }
-  }, [isFormCode, decodedSerial, isLoading, originalRecord, allRecords, navigate, error]);
+  }, [isFormCode, decodedSerial, navigate]);
 
   // Auto-enter edit mode when navigated with ?edit=true (from Data Retrofitting Hub)
   useEffect(() => {

@@ -32,6 +32,7 @@ const ProjectDetailPage = lazy(() => import("./pages/ProjectDetailPage"));
 const RecordCreationPage = lazy(() => import("./pages/RecordCreationPage"));
 const RecordListPage = lazy(() => import("./pages/RecordListPage"));
 const RecordViewPage = lazy(() => import("./pages/RecordViewPage"));
+const FormCodeRedirect = lazy(() => import("./pages/FormCodeRedirect"));
 const DataIntegrityPage = lazy(() => import("./pages/DataIntegrityPage"));
 const NotificationsPage = lazy(() => import("./pages/NotificationsPage"));
 const KPIDashboardPage = lazy(() => import("./pages/KPIDashboardPage"));
@@ -112,6 +113,7 @@ const App = () => {
                       <Route path="/create" element={<PageBoundary><RecordCreationPage /></PageBoundary>} />
                       <Route path="/records" element={<Navigate to="/" replace />} />
                       <Route path="/records/:serial" element={<PageBoundary><RecordViewPage /></PageBoundary>} />
+                      <Route path="/form-code/:serial" element={<PageBoundary><FormCodeRedirect /></PageBoundary>} />
                       <Route path="/integrity" element={<PageBoundary><DataIntegrityPage /></PageBoundary>} />
                       <Route path="/settings" element={<PageBoundary><SettingsPage /></PageBoundary>} />
                       <Route path="/admin/accounts" element={<RequireRole roles={["admin"]}><PageBoundary><AdminPanel /></PageBoundary></RequireRole>} />
