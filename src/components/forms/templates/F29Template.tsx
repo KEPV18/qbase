@@ -1,13 +1,20 @@
 // ============================================================================
 // F/29 — Employee Training & Competence Record Sheet
-// DOCX: 34C x 22R — Wide matrix: Name/Qualification/Experience/Skill/Training topics
-// Strategy: Horizontal scroll for training topic columns (simplified to 5 topic slots)
+// DOCX: 22 rows × 34 cols — wide horizontal matrix
+// Structure:
+//   R0-R1: Title + Annual Assessment Done By/On (Top Management) + Rev No
+//   R2-R3: Column headers (Sr.No | Name & Designation | Qual Req/Avail | Exp Req/Avail | Skill | Training Topics 1-15)
+//   R4-R11: Data rows (employees with topic checkboxes)
+//   R12: Training Status legend (Identified / Given / Effective / Not Required)
+//   R13-R19: Type Of Training Given (Sr.No | Topic No. | Reviewed By Authorised Person)
+//   R20: Note about Req./Avail.
+//   R21: Review of employees competence on
 // ============================================================================
 
-import React, { useState, useCallback } from "react";
+import React, { useState, useCallback, useMemo } from "react";
 import { cn } from "@/lib/utils";
-import { Plus, Trash2 } from "lucide-react";
-import { FormDocument } from "../FormKit";
+import { Plus, Trash2, User, GraduationCap, Award, CheckCircle2, ClipboardCheck, FileSignature } from "lucide-react";
+import { FormDocument, val, InfoCard, SectionDivider, StatBadge } from "../FormKit";
 
 export interface F29Props {
   data?: Record<string, unknown>;
@@ -17,133 +24,264 @@ export interface F29Props {
   className?: string;
 }
 
-function val(data: Record<string, unknown> | undefined, key: string): string {
-  if (!data) return "";
-  const v = data[key];
-  if (v == null) return "";
-  return typeof v === "string" ? v : String(v);
-}
-
 interface RowData {
-  srNo: string; name: string; designation: string;
-  qualReq: string; qualAvail: string;
-  expReq: string; expAvail: string;
+  srNo: string;
+  name: string;
+  designation: string;
+  qualReq: string;
+  qualAvail: string;
+  expReq: string;
+  expAvail: string;
   skillAvail: string;
-  training1: string; training2: string; training3: string; training4: string; training5: string;
+  training1: string;
+  training2: string;
+  training3: string;
+  training4: string;
+  training5: string;
 }
 
-function parseRows(d: Record<string, unknown>, count: number = 5): RowData[] {
+function parseRows(d: Record<string, unknown>): RowData[] {
   const raw = d.items || d.rows || [];
   if (Array.isArray(raw) && raw.length > 0 && typeof raw[0] === "object") return raw as RowData[];
-  return Array.from({ length: count }, (_, i) => ({
-    srNo: String(i + 1), name: "", designation: "", qualReq: "", qualAvail: "", expReq: "", expAvail: "", skillAvail: "", training1: "", training2: "", training3: "", training4: "", training5: "",
-  }));
+  return [];
+}
+
+// Training status legend
+const STATUS_ITEMS = [
+  { key: "training_identified", label: "Training Is Identified", color: "text-amber-600 dark:text-amber-400", bg: "bg-amber-50 dark:bg-amber-950/30", border: "border-amber-200 dark:border-amber-800" },
+  { key: "training_given", label: "Training Is Given", color: "text-blue-600 dark:text-blue-400", bg: "bg-blue-50 dark:bg-blue-950/30", border: "border-blue-200 dark:border-blue-800" },
+  { key: "training_effective", label: "Training Is Effective", color: "text-emerald-600 dark:text-emerald-400", bg: "bg-emerald-50 dark:bg-emerald-950/30", border: "border-emerald-200 dark:border-emerald-800" },
+  { key: "training_not_required", label: "Training Not Required", color: "text-rose-600 dark:text-rose-400", bg: "bg-rose-50 dark:bg-rose-950/30", border: "border-rose-200 dark:border-rose-800" },
+];
+
+// Training topics given (sub-table)
+interface TrainingGivenRow {
+  srNo: string;
+  topicNo: string;
+  reviewedBy: string;
+}
+
+function parseTrainingGiven(d: Record<string, unknown>): TrainingGivenRow[] {
+  const raw = d.training_given_items || d.trainingTopics || [];
+  if (Array.isArray(raw) && raw.length > 0 && typeof raw[0] === "object") return raw as TrainingGivenRow[];
+  return [];
 }
 
 export function F29Template({ data, isTemplate = true, editMode = false, onChange, className }: F29Props) {
   const d = data ?? {};
   const ph = isTemplate && !editMode;
-  const [rows, setRows] = useState<RowData[]>(() => parseRows(d));
+  const rows = useMemo(() => parseRows(d), [d]);
+  const trainingGivenRows = useMemo(() => parseTrainingGiven(d), [d]);
 
-  const updateRow = useCallback((idx: number, key: keyof RowData, value: string) => {
-    setRows(prev => { const next = [...prev]; next[idx] = { ...next[idx], [key]: value }; return next; });
-    const updated = [...rows]; updated[idx] = { ...updated[idx], [key]: value };
-    onChange?.("items", JSON.stringify(updated));
-  }, [rows, onChange]);
+  // Training status
+  const trainingStatus = (d.training_status && typeof d.training_status === "object" ? d.training_status : d.result && typeof d.result === "object" ? d.result : {}) as Record<string, string>;
 
-  const addRow = useCallback(() => {
-    setRows(prev => [...prev, { srNo: String(prev.length + 1), name: "", designation: "", qualReq: "", qualAvail: "", expReq: "", expAvail: "", skillAvail: "", training1: "", training2: "", training3: "", training4: "", training5: "" }]);
-  }, []);
-
-  const removeRow = useCallback((idx: number) => { setRows(prev => prev.filter((_, i) => i !== idx)); }, []);
-
-  const cellInp = (idx: number, key: keyof RowData, label: string, width: string = "w-full") =>
+  const inp = (key: string, label: string, width = "w-full") =>
     editMode ? (
-      <input className={cn("bg-transparent text-xs px-0.5 border-none outline-none", width)} value={rows[idx]?.[key] || ""} onChange={e => updateRow(idx, key, e.target.value)} placeholder={label} />
+      <input className={cn("border-b border-dashed border-amber-400 dark:border-amber-700 bg-transparent text-[12px] font-semibold px-1 outline-none", width)}
+        value={val(d, key)} onChange={e => onChange?.(key, e.target.value)} placeholder={label} />
     ) : (
-      <span className="text-xs">{rows[idx]?.[key] || ""}</span>
+      <span className={cn("border-b border-dashed border-amber-300 dark:border-amber-700 px-1 inline-block min-w-[4rem] text-[12px] font-semibold", width)}>
+        {val(d, key) || (ph ? "___" : "")}
+      </span>
     );
+
+  const FC = "F/29";
 
   return (
-    <FormDocument formCode="F/29" formName="Training Record" serial={val(d, "serial")} sectionName="HR & Training">
-      {/* Header */}
-      <div className="grid grid-cols-[3fr_2fr_1fr] border border-border">
-        <div className="p-2 font-bold bg-primary/5 text-base">Employee Training &amp; Competence Record Sheet</div>
-        <div className="p-2 border-l border-border bg-primary/5 text-xs">
-          <div>Annual Assessment Done By: {val(d, "assessed_by") || (ph ? "___" : "")}</div>
-          <div className="mt-1">Annual Assessment Done On: {val(d, "assessed_on") || (ph ? "___" : "")}</div>
-        </div>
-        <div className="p-2 border-l border-border bg-primary/5 text-right text-xs">
-          F/29 Rev No. {val(d, "serial") || (ph ? "{{SERIAL}}" : "—")}
-        </div>
-      </div>
+    <FormDocument formCode={FC} formName="Employee Training & Competence Record Sheet" serial={val(d, "serial")} sectionName="HR & Training" className={className}>
+      <div className="p-6 space-y-4">
+        {/* ── Annual Assessment Info ── */}
+        <InfoCard formCode={FC} variant="tinted" icon={<Award size={14} />} title="Annual Assessment">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <div className="flex items-center gap-2">
+              <User size={14} className="text-amber-600 dark:text-amber-400 shrink-0" />
+              <div className="flex flex-col">
+                <span className="text-[9px] font-bold text-amber-600 dark:text-amber-400 uppercase tracking-wide">Assessed By</span>
+                <span className="text-[12px] font-semibold text-foreground">{val(d, "assessed_by") || "Top Management"}</span>
+              </div>
+            </div>
+            <div className="flex items-center gap-2">
+              <ClipboardCheck size={14} className="text-amber-600 dark:text-amber-400 shrink-0" />
+              <div className="flex flex-col">
+                <span className="text-[9px] font-bold text-amber-600 dark:text-amber-400 uppercase tracking-wide">Assessed On</span>
+                {inp("assessed_on", "Date")}
+              </div>
+            </div>
+            <div className="flex items-center gap-2">
+              <GraduationCap size={14} className="text-amber-600 dark:text-amber-400 shrink-0" />
+              <div className="flex flex-col">
+                <span className="text-[9px] font-bold text-amber-600 dark:text-amber-400 uppercase tracking-wide">Training Type / Course</span>
+                <span className="text-[12px] font-semibold text-foreground truncate">{val(d, "training_type") || val(d, "course_name")}</span>
+              </div>
+            </div>
+          </div>
+        </InfoCard>
 
-      {/* Table with horizontal scroll for training columns */}
-      <div className="overflow-x-auto">
-        <table className="w-full border-collapse text-[10px]">
-          <thead>
-            <tr className="bg-muted">
-              <th className="border border-border p-1 w-[30px]" rowSpan={2}>Sr.</th>
-              <th className="border border-border p-1" colSpan={3}>Name &amp; Designation</th>
-              <th className="border border-border p-1" colSpan={2}>Qualification</th>
-              <th className="border border-border p-1" colSpan={2}>Experience</th>
-              <th className="border border-border p-1" rowSpan={2}>Skill Available</th>
-              <th className="border border-border p-1" colSpan={5}>Type of Training (Topic No.)</th>
-              {editMode && <th className="border border-border p-1 w-[24px]" rowSpan={2}></th>}
-            </tr>
-            <tr className="bg-muted">
-              <th className="border border-border p-1">Name</th>
-              <th className="border border-border p-1">Designation</th>
-              <th className="border border-border p-1">Req.</th>
-              <th className="border border-border p-1">Avail.</th>
-              <th className="border border-border p-1">Req.</th>
-              <th className="border border-border p-1">Avail.</th>
-              <th className="border border-border p-1">1</th>
-              <th className="border border-border p-1">2</th>
-              <th className="border border-border p-1">3</th>
-              <th className="border border-border p-1">4</th>
-              <th className="border border-border p-1">5</th>
-            </tr>
-          </thead>
-          <tbody>
-            {rows.map((row, idx) => (
-              <tr key={idx} className="group hover:bg-muted/50/50">
-                <td className="border border-border p-0.5 text-center">{idx + 1}</td>
-                <td className="border border-border p-0.5">{cellInp(idx, "name", "Name")}</td>
-                <td className="border border-border p-0.5">{cellInp(idx, "designation", "Desig")}</td>
-                <td className="border border-border p-0.5 text-center">{cellInp(idx, "qualReq", "R")}</td>
-                <td className="border border-border p-0.5 text-center">{cellInp(idx, "qualAvail", "A")}</td>
-                <td className="border border-border p-0.5 text-center">{cellInp(idx, "expReq", "R")}</td>
-                <td className="border border-border p-0.5 text-center">{cellInp(idx, "expAvail", "A")}</td>
-                <td className="border border-border p-0.5 text-center">{cellInp(idx, "skillAvail", "•")}</td>
-                <td className="border border-border p-0.5 text-center">{cellInp(idx, "training1", "•")}</td>
-                <td className="border border-border p-0.5 text-center">{cellInp(idx, "training2", "•")}</td>
-                <td className="border border-border p-0.5 text-center">{cellInp(idx, "training3", "•")}</td>
-                <td className="border border-border p-0.5 text-center">{cellInp(idx, "training4", "•")}</td>
-                <td className="border border-border p-0.5 text-center">{cellInp(idx, "training5", "•")}</td>
-                {editMode && rows.length > 1 && (
-                  <td className="border border-border p-0.5 text-center">
-                    <button onClick={() => removeRow(idx)} className="text-destructive hover:text-red-600"><Trash2 className="w-3 h-3" /></button>
-                  </td>
-                )}
+        {/* ── Employee Info ── */}
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+          <div className="flex flex-col gap-0.5">
+            <span className="text-[9px] font-bold text-amber-600 dark:text-amber-400 uppercase tracking-wide">Employee Name</span>
+            <span className="text-[12px] font-semibold text-foreground border-b border-dashed border-amber-300 dark:border-amber-700 pb-0.5">{val(d, "employee_name") || "\u00A0"}</span>
+          </div>
+          <div className="flex flex-col gap-0.5">
+            <span className="text-[9px] font-bold text-amber-600 dark:text-amber-400 uppercase tracking-wide">Employee ID</span>
+            <span className="text-[12px] font-semibold text-foreground border-b border-dashed border-amber-300 dark:border-amber-700 pb-0.5">{val(d, "employee_id") || "\u00A0"}</span>
+          </div>
+          <div className="flex flex-col gap-0.5">
+            <span className="text-[9px] font-bold text-amber-600 dark:text-amber-400 uppercase tracking-wide">Department</span>
+            <span className="text-[12px] font-semibold text-foreground border-b border-dashed border-amber-300 dark:border-amber-700 pb-0.5">{val(d, "department") || "\u00A0"}</span>
+          </div>
+          <div className="flex flex-col gap-0.5">
+            <span className="text-[9px] font-bold text-amber-600 dark:text-amber-400 uppercase tracking-wide">Trainer</span>
+            <span className="text-[12px] font-semibold text-foreground border-b border-dashed border-amber-300 dark:border-amber-700 pb-0.5">{val(d, "trainer") || "\u00A0"}</span>
+          </div>
+        </div>
+
+        {/* ── Competence Matrix Table ── */}
+        <SectionDivider formCode={FC} title="Competence & Training Matrix" icon={<CheckCircle2 size={14} />} />
+
+        {/* Desktop: horizontal scroll table matching DOCX */}
+        <div className="w-full overflow-x-auto border border-border rounded-md">
+          <table className="w-full border-collapse text-[10px]" style={{ minWidth: "900px" }}>
+            <thead>
+              {/* Header row 1 */}
+              <tr className="bg-amber-50 dark:bg-amber-950/30">
+                <th className="border border-border px-1.5 py-1.5 text-[9px] font-bold text-amber-700 dark:text-amber-300 uppercase" rowSpan={2} style={{ width: "35px" }}>Sr. No.</th>
+                <th className="border border-border px-1.5 py-1.5 text-[9px] font-bold text-amber-700 dark:text-amber-300 uppercase" rowSpan={2}>Name Of Employee & Designation</th>
+                <th className="border border-border px-1.5 py-1 text-[9px] font-bold text-amber-700 dark:text-amber-300 uppercase text-center" colSpan={2}>Qualification</th>
+                <th className="border border-border px-1.5 py-1 text-[9px] font-bold text-amber-700 dark:text-amber-300 uppercase text-center" colSpan={2}>Experience</th>
+                <th className="border border-border px-1.5 py-1.5 text-[9px] font-bold text-amber-700 dark:text-amber-300 uppercase" rowSpan={2} style={{ width: "60px" }}>Skill Avail.</th>
+                <th className="border border-border px-1.5 py-1 text-[9px] font-bold text-amber-700 dark:text-amber-300 uppercase text-center" colSpan={5}>Type Of Training (Topic No.)</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+              {/* Header row 2 */}
+              <tr className="bg-amber-50 dark:bg-amber-950/30">
+                <th className="border border-border px-1 py-0.5 text-[9px] font-bold text-amber-600 dark:text-amber-400 text-center">Req.</th>
+                <th className="border border-border px-1 py-0.5 text-[9px] font-bold text-amber-600 dark:text-amber-400 text-center">Avail.</th>
+                <th className="border border-border px-1 py-0.5 text-[9px] font-bold text-amber-600 dark:text-amber-400 text-center">Req.</th>
+                <th className="border border-border px-1 py-0.5 text-[9px] font-bold text-amber-600 dark:text-amber-400 text-center">Avail.</th>
+                <th className="border border-border px-1 text-[9px] font-bold text-amber-600 dark:text-amber-400 text-center" style={{ width: "30px" }}>1</th>
+                <th className="border border-border px-1 text-[9px] font-bold text-amber-600 dark:text-amber-400 text-center" style={{ width: "30px" }}>2</th>
+                <th className="border border-border px-1 text-[9px] font-bold text-amber-600 dark:text-amber-400 text-center" style={{ width: "30px" }}>3</th>
+                <th className="border border-border px-1 text-[9px] font-bold text-amber-600 dark:text-amber-400 text-center" style={{ width: "30px" }}>4</th>
+                <th className="border border-border px-1 text-[9px] font-bold text-amber-600 dark:text-amber-400 text-center" style={{ width: "30px" }}>5</th>
+              </tr>
+            </thead>
+            <tbody>
+              {rows.length > 0 ? rows.map((row, idx) => (
+                <tr key={idx} className={idx % 2 === 1 ? "bg-muted/20" : ""}>
+                  <td className="border border-border px-1.5 py-1 text-center text-foreground">{row.srNo || idx + 1}</td>
+                  <td className="border border-border px-1.5 py-1 text-foreground">
+                    <span className="font-semibold">{row.name}</span>
+                    {row.designation && <span className="text-muted-foreground text-[9px] ml-1">({row.designation})</span>}
+                  </td>
+                  <td className="border border-border px-1 py-1 text-center text-foreground">{row.qualReq || ""}</td>
+                  <td className="border border-border px-1 py-1 text-center text-foreground">{row.qualAvail || ""}</td>
+                  <td className="border border-border px-1 py-1 text-center text-foreground">{row.expReq || ""}</td>
+                  <td className="border border-border px-1 py-1 text-center text-foreground">{row.expAvail || ""}</td>
+                  <td className="border border-border px-1 py-1 text-center text-foreground">{row.skillAvail || ""}</td>
+                  {[1, 2, 3, 4, 5].map(n => {
+                    const v = (row as Record<string, string>)[`training${n}`];
+                    return (
+                      <td key={n} className="border border-border px-1 py-1 text-center">
+                        {v === "☑" || v === "✓" ? (
+                          <span className="text-amber-600 dark:text-amber-400 font-bold">☑</span>
+                        ) : v ? (
+                          <span className="text-foreground">{v}</span>
+                        ) : ""}
+                      </td>
+                    );
+                  })}
+                </tr>
+              )) : (
+                <tr>
+                  <td colSpan={13} className="border border-border px-2 py-4 text-center text-muted-foreground text-[10px] italic">
+                    No competence records
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
 
-      {editMode && (
-        <button onClick={addRow} className="mt-1 flex items-center gap-1 text-xs text-primary hover:underline mx-auto">
-          <Plus className="w-3 h-3" /> Add Row
-        </button>
-      )}
+        {/* ── Training Status Legend ── */}
+        <SectionDivider formCode={FC} title="Training Status" icon={<CheckCircle2 size={14} />} />
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+          {STATUS_ITEMS.map(item => {
+            const checked = trainingStatus[item.key] === "☑" || trainingStatus[item.key] === "✓" || trainingStatus[item.key] === "true";
+            return (
+              <div key={item.key} className={cn(
+                "flex items-center gap-2 px-3 py-2 rounded-md border text-[11px]",
+                checked ? cn(item.bg, item.border) : "border-border bg-muted/10",
+              )}>
+                <span className={cn(
+                  "inline-flex items-center justify-center w-4 h-4 border rounded text-[10px] font-bold shrink-0",
+                  checked ? cn(item.color, "border-current") : "border-border text-muted-foreground",
+                )}>
+                  {checked ? "☑" : ""}
+                </span>
+                <span className={cn("font-medium", checked ? item.color : "text-muted-foreground")}>{item.label}</span>
+              </div>
+            );
+          })}
+        </div>
 
-      {/* Signatures */}
-      <div className="grid grid-cols-[1fr_1fr] border border-t-2 border-border text-xs mt-1">
-        <div className="p-1.5 border-r border-border">Prepared By: {val(d, "prepared_by") || (ph ? "___" : "")}</div>
-        <div className="p-1.5">Authorised Person: {val(d, "authorised_by") || (ph ? "___" : "")}</div>
+        {/* ── Type Of Training Given ── */}
+        <SectionDivider formCode={FC} title="Type Of Training Given" icon={<FileSignature size={14} />} />
+        <div className="border border-border rounded-md overflow-hidden">
+          <table className="w-full border-collapse text-[10px]">
+            <thead>
+              <tr className="bg-amber-50 dark:bg-amber-950/30">
+                <th className="border border-border px-2 py-1 text-[9px] font-bold text-amber-700 dark:text-amber-300 uppercase text-center" style={{ width: "50px" }}>Sr. No.</th>
+                <th className="border border-border px-2 py-1 text-[9px] font-bold text-amber-700 dark:text-amber-300 uppercase text-center" style={{ width: "80px" }}>Topic No.</th>
+                <th className="border border-border px-2 py-1 text-[9px] font-bold text-amber-700 dark:text-amber-300 uppercase">Reviewed By — Authorised Person</th>
+              </tr>
+            </thead>
+            <tbody>
+              {trainingGivenRows.length > 0 ? trainingGivenRows.map((row, idx) => (
+                <tr key={idx} className={idx % 2 === 1 ? "bg-muted/20" : ""}>
+                  <td className="border border-border px-2 py-1 text-center text-foreground">{row.srNo || idx + 1}</td>
+                  <td className="border border-border px-2 py-1 text-center text-foreground">{row.topicNo}</td>
+                  <td className="border border-border px-2 py-1 text-foreground">{row.reviewedBy}</td>
+                </tr>
+              )) : (
+                <tr>
+                  <td colSpan={3} className="border border-border px-2 py-3 text-center text-muted-foreground text-[10px] italic">
+                    No training topics recorded
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
+
+        {/* ── Note ── */}
+        <div className="px-4 py-2.5 rounded-md bg-amber-50/40 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-800 text-[10px] text-amber-800 dark:text-amber-200">
+          <span className="font-bold">Note:</span> Req. Means Min. Required, Avail. Means Available. Skill Should Be Required Min. As Per E/HRD/01
+        </div>
+
+        {/* ── Review of competence ── */}
+        <div className="flex items-center gap-3 text-[11px]">
+          <span className="font-bold text-amber-700 dark:text-amber-300 uppercase tracking-wide">Review of employees competence on</span>
+          {inp("training_date", "Date", "w-32")}
+        </div>
+
+        {/* ── Signatures ── */}
+        <div className="grid grid-cols-2 gap-6 pt-3 border-t border-border">
+          <div className="flex flex-col">
+            <div className="min-h-[28px] border-b border-border pb-1 mb-1">
+              <span className="text-[12px] font-semibold text-foreground">{val(d, "prepared_by") || "\u00A0"}</span>
+            </div>
+            <p className="text-[9px] font-bold text-amber-700 dark:text-amber-300 uppercase tracking-wider">Prepared By</p>
+          </div>
+          <div className="flex flex-col">
+            <div className="min-h-[28px] border-b border-border pb-1 mb-1">
+              <span className="text-[12px] font-semibold text-foreground">{val(d, "authorised_by") || "\u00A0"}</span>
+            </div>
+            <p className="text-[9px] font-bold text-amber-700 dark:text-amber-300 uppercase tracking-wider">Authorised By</p>
+          </div>
+        </div>
       </div>
     </FormDocument>
-
-    );
+  );
 }
