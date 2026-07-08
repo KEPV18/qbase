@@ -4,9 +4,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { FORM_SCHEMAS } from '@/data/formSchemas';
 import { Loader2 } from 'lucide-react';
 import { AppShell } from '@/components/layout/AppShell';
-
-const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL?.trim() || 'https://iouuikteroixnsqazznc.supabase.co';
-const SUPABASE_KEY = (import.meta.env.VITE_SUPABASE_ANON_KEY?.trim() || import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY?.trim()) || '';
+import { supabase } from '@/integrations/supabase/client';
 
 export default function FormCodeRedirect() {
   const { serial } = useParams<{ serial: string }>();
@@ -21,20 +19,22 @@ export default function FormCodeRedirect() {
       return;
     }
 
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 8000);
-
     (async () => {
       try {
+        // Get the current session access token
+        const { data: sessionData } = await supabase.auth.getSession();
+        const accessToken = sessionData?.session?.access_token;
+
+        const headers: Record<string, string> = {
+          'apikey': import.meta.env.VITE_SUPABASE_ANON_KEY?.trim() || '',
+        };
+        if (accessToken) {
+          headers['Authorization'] = `Bearer ${accessToken}`;
+        }
+
         const res = await fetch(
-          `${SUPABASE_URL}/rest/v1/records?select=serial&form_code=eq.${encodeURIComponent(decodedSerial)}&deleted_at=is.null&order=serial&limit=1`,
-          {
-            headers: {
-              'apikey': SUPABASE_KEY,
-              'Authorization': `Bearer ${SUPABASE_KEY}`,
-            },
-            signal: controller.signal,
-          }
+          `${import.meta.env.VITE_SUPABASE_URL?.trim()}/rest/v1/records?select=serial&form_code=eq.${encodeURIComponent(decodedSerial)}&deleted_at=is.null&order=serial&limit=1`,
+          { headers }
         );
 
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
@@ -52,17 +52,9 @@ export default function FormCodeRedirect() {
           }
         }
       } catch (err) {
-        if ((err as Error).name === 'AbortError') {
-          setError('Request timed out');
-        } else {
-          setError((err as Error).message);
-        }
-      } finally {
-        clearTimeout(timeoutId);
+        setError((err as Error).message);
       }
     })();
-
-    return () => controller.abort();
   }, [isFormCode, decodedSerial, navigate]);
 
   return (
