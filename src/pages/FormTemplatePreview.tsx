@@ -59,8 +59,8 @@ export default function FormTemplatePreview() {
 
   return (
     <AppShell breadcrumbs={breadcrumbs}>
-      <div className="min-h-screen bg-muted/30 dark:bg-[#1a1a18] print:bg-white flex justify-center py-8 px-4">
-        <div className="w-full max-w-[800px] bg-background dark:bg-[#1e1d1a] shadow-sm rounded-lg border border-border min-h-[500px] print:bg-white print:text-black print:border-black print:shadow-none print:rounded-none">
+      <div className="min-h-screen print:bg-white flex justify-center py-6 px-4">
+        <div className="w-full bg-background dark:bg-[#1e1d1a] shadow-sm rounded-lg border border-border min-h-[500px] print:bg-white print:text-black print:border-black print:shadow-none print:rounded-none">
           {/* Top bar */}
           <div className="px-12 pt-6 pb-3 border-b border-border flex items-center justify-between">
             <button onClick={() => navigate('/forms')} className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors">

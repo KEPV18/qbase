@@ -20,7 +20,7 @@ export function DocumentView({
   children,
   className,
   subtitle,
-  maxWidth = "max-w-[800px]",
+  maxWidth = "max-w-[1100px]",
 }: DocumentViewProps) {
   return (
     <div className="min-h-screen bg-muted/30 dark:bg-[#1a1a18] flex justify-center py-8 px-4 print:bg-white">

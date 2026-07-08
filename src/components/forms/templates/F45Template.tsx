@@ -136,7 +136,7 @@ export function F45Template({ data, isTemplate = true, editMode = false, onChang
     );
 
   return (
-    <div className={cn("space-y-4", className)}>
+    <div className={cn("bg-background dark:bg-[#1e1d1a] text-foreground text-sm print:bg-white print:text-black print:border-black space-y-4", className)}>
       {/* Header */}
       <div className="border-b pb-2 mb-2">
         <h3 className="text-sm font-semibold uppercase tracking-wider text-foreground/70">

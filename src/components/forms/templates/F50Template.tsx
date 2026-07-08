@@ -107,18 +107,18 @@ export function F50Template({ data, isTemplate = true, editMode = false, onChang
   }, [onChange]);
 
   // ── Styling presets ─────────────────────────────────────────────────
-  const labelCls = "bg-slate-100 dark:bg-slate-800 font-semibold text-sm px-2 py-1.5 border border-slate-300 dark:border-slate-600 text-slate-700 dark:text-slate-300";
-  const valueCls = "px-1.5 py-1.5 border border-slate-300 dark:border-slate-600 text-sm text-slate-900 dark:text-slate-100 min-h-[2rem]";
-  const emptyValueCls = cn(valueCls, isTemplate ? "text-slate-300 dark:text-slate-600" : "");
-  const titleCls = "bg-slate-100 dark:bg-slate-800 font-bold text-base px-3 py-2 border border-slate-300 dark:border-slate-600 text-slate-900 dark:text-slate-100";
+  const labelCls = "bg-muted/50 font-semibold text-sm px-2 py-1.5 border border-border text-muted-foreground";
+  const valueCls = "px-1.5 py-1.5 border border-border text-sm text-foreground min-h-[2rem]";
+  const emptyValueCls = cn(valueCls, isTemplate ? "text-muted-foreground" : "");
+  const titleCls = "bg-muted/50 font-bold text-base px-3 py-2 border border-border text-foreground";
   const headerCls = "bg-indigo-50 dark:bg-indigo-950 font-semibold text-xs uppercase tracking-wide px-1.5 py-1.5 border border-indigo-200 dark:border-indigo-800 text-indigo-800 dark:text-indigo-300";
-  const inputCls = "w-full bg-transparent outline-none text-sm text-slate-900 dark:text-slate-100 placeholder:text-slate-300 dark:placeholder:text-slate-600";
+  const inputCls = "w-full bg-transparent outline-none text-sm text-foreground placeholder:text-muted-foreground";
 
   const serialValue = val(d, "serial") || val(d, "formCode") || "";
 
   return (
-    <div className={cn("overflow-x-auto", className)}>
-      <table className="w-full table-auto border-collapse">
+    <div className={cn("bg-background dark:bg-[#1e1d1a] text-foreground text-sm print:bg-white print:text-black print:border-black overflow-x-auto", className)}>
+      <table className="w-full table-auto border-collapse border border-border">
         <colgroup>
           <col className="w-[7%]" />
           <col className="w-[9%]" />
@@ -145,7 +145,7 @@ export function F50Template({ data, isTemplate = true, editMode = false, onChang
                 <>
                   F 50 Rev{" "}
                   <input
-                    className="inline w-16 text-xs bg-transparent outline-none border-b border-slate-400 text-center text-slate-900 dark:text-slate-100 placeholder:text-slate-400"
+                    className="inline w-16 text-xs bg-transparent outline-none border-b border-border text-center text-foreground placeholder:text-slate-400"
                     value={serialValue}
                     onChange={e => onChange?.("serial", e.target.value)}
                     placeholder="00"
@@ -300,7 +300,7 @@ export function F50Template({ data, isTemplate = true, editMode = false, onChang
           {/* ── Add Row button (edit mode only) ───────────── */}
           {editMode && !isTemplate && (
             <tr>
-              <td colSpan={13} className="border border-slate-300 dark:border-slate-600 px-2 py-1">
+              <td colSpan={13} className="border border-border px-2 py-1">
                 <button
                   type="button"
                   onClick={() => updateEntries([...entries, emptyEntry()])}
@@ -315,7 +315,7 @@ export function F50Template({ data, isTemplate = true, editMode = false, onChang
           {/* ── Delete row button (edit mode, >1 row) ──── */}
           {editMode && !isTemplate && entries.length > 1 && (
             <tr>
-              <td colSpan={13} className="border border-slate-300 dark:border-slate-600 px-2 py-1">
+              <td colSpan={13} className="border border-border px-2 py-1">
                 <button
                   type="button"
                   onClick={() => updateEntries(entries.slice(0, -1))}
@@ -329,7 +329,7 @@ export function F50Template({ data, isTemplate = true, editMode = false, onChang
 
           {/* ── VEZLOO footer ────────────────────────────── */}
           <tr>
-            <td colSpan={13} className="text-center text-xs font-bold text-slate-400 dark:text-slate-500 py-1 border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900">
+            <td colSpan={13} className="text-center text-xs font-bold text-muted-foreground py-1 border border-border bg-background">
               VEZLOO
             </td>
           </tr>

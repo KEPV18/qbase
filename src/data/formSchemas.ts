@@ -544,11 +544,11 @@ export const FORM_SCHEMAS: FormSchema[] = [
     description: "Training session attendance record with 6-column attendance table (Sl No, Name, Department, ID NO., Training Date, Signature).",
     fields: [
       { key: "serial", label: "Serial Number", type: "text", required: true, width: "half", defaultValue: "auto" },
-      { key: "course_name", label: "Course Name / Topic", type: "text", required: true, width: "full" },
+      { key: "topic", label: "Topic", type: "text", required: true, width: "full" },
       { key: "department", label: "Department", type: "text", required: true, width: "half" },
-      { key: "trainer", label: "Trainer / Conducted By", type: "text", required: true, width: "half" },
+      { key: "conducted_by", label: "Conducted By", type: "text", required: true, width: "half" },
       { key: "designation", label: "Designation", type: "text", width: "half" },
-      { key: "date", label: "Training Date", type: "date", required: true, width: "half" },
+      { key: "training_date", label: "Training Date", type: "date", required: true, width: "half" },
       { key: "attendees", label: "Attendees", type: "table", required: true, columns: [
         { key: "sl_no", label: "Sl No", type: "number" },
         { key: "name", label: "Name Of The Participant", type: "text", required: true },
@@ -558,6 +558,7 @@ export const FORM_SCHEMAS: FormSchema[] = [
         { key: "signature", label: "Signature", type: "text" },
       ]},
       { key: "trainer_signature", label: "Trainer's Signature", type: "signature", required: true, width: "full" },
+      { key: "hr_signature", label: "HR Signature", type: "signature", required: true, width: "half" },
     ],
   },
   {
