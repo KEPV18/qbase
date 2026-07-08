@@ -311,7 +311,7 @@ export default function Index() {
       const deptCodes = FORM_SCHEMAS.filter(f => f.sectionName === activeDept).map(f => f.code);
       r = r.filter((rec) => deptCodes.includes(String(rec.formCode)));
     }
-    return r.sort((a, b) => new Date(String(b._createdAt || new Date().toISOString())).getTime() - new Date(String(a._createdAt || new Date().toISOString())).getTime());
+    return r.sort((a, b) => String(a.serial || '').localeCompare(String(b.serial || ''), undefined, { numeric: true, sensitivity: 'base' }));
   }, [records, globalMonth, selectedForm, activeDept]);
 
   const handleDeptClick = useMemo(() => (dept: string) => {
