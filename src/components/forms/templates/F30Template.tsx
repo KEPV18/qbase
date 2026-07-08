@@ -46,56 +46,58 @@ const EVAL_SECTIONS = [
   { num: "11", title: "Reporting To Immediate Boss", items: ["Reporting To Immediate Boss"] },
 ];
 
+const FC = "F/30";
+
 export function F30Template({ data, isTemplate = true, editMode = false, onChange, className }: F30Props) {
   const d = data ?? {};
   const ph = isTemplate && !editMode;
 
   const inp = (key: string, label: string, width: string = "w-full") =>
     editMode ? (
-      <input className={cn("border-b border-dashed border-foreground/40 bg-transparent text-sm px-1", width)} value={val(d, key)} onChange={e => onChange?.(key, e.target.value)} placeholder={label} />
+      <input className={cn("border-b border-dashed border-border bg-transparent text-foreground text-sm px-1 outline-none", width)} value={val(d, key)} onChange={e => onChange?.(key, e.target.value)} placeholder={label} />
     ) : (
-      <span className={cn("border-b border-dashed border-foreground/30 px-1 inline-block min-w-[4rem]", width)}>{val(d, key) || (ph ? "___" : "")}</span>
+      <span className={cn("border-b border-dashed border-border text-foreground px-1 inline-block min-w-[4rem]", width)}>{val(d, key) || (ph ? "___" : "\u00A0")}</span>
     );
 
   // Score input for a criteria item (1-4 scale)
   const scoreInp = (key: string) =>
     editMode ? (
-      <input className="w-full bg-transparent text-center text-xs border-none outline-none" type="number" min={1} max={4} value={val(d, key)} onChange={e => onChange?.(key, e.target.value)} placeholder="0" />
+      <input className="w-full bg-transparent text-center text-xs text-foreground border-none outline-none" type="number" min={1} max={4} value={val(d, key)} onChange={e => onChange?.(key, e.target.value)} placeholder="0" />
     ) : (
-      <span className="text-center text-xs">{val(d, key) || ""}</span>
+      <span className="text-center text-xs text-foreground">{val(d, key) || ""}</span>
     );
 
   const textArea = (key: string, placeholder: string, minH: string = "min-h-[40px]") =>
     editMode ? (
-      <textarea className={cn("w-full bg-transparent text-sm p-1 border-none outline-none", minH)} value={val(d, key) || ""} onChange={e => onChange?.(key, e.target.value)} placeholder={placeholder} />
+      <textarea className={cn("w-full bg-transparent text-foreground text-sm p-1 border-none outline-none", minH)} value={val(d, key) || ""} onChange={e => onChange?.(key, e.target.value)} placeholder={placeholder} />
     ) : (
-      <div className={cn("whitespace-pre-wrap", minH)}>{val(d, key) || (ph ? "___" : "")}</div>
+      <div className={cn("whitespace-pre-wrap text-foreground", minH)}>{val(d, key) || (ph ? "___" : "")}</div>
     );
 
   return (
-    <FormDocument formCode="F/30" formName="Performance Appraisal" serial={val(d, "serial")} sectionName="HR & Training">
+    <FormDocument formCode={FC} formName="Performance Appraisal" serial={val(d, "serial")} sectionName="HR & Training" className={className}>
       {/* Header */}
       <div className="grid grid-cols-[4fr_1fr] border border-border">
-        <div className="p-2 font-bold bg-primary/5 text-base">Performance Appraisal Report</div>
-        <div className="p-2 border-l border-border bg-primary/5 text-right text-xs">
+        <div className="p-2 font-bold bg-muted/40 text-foreground text-base">Performance Appraisal Report</div>
+        <div className="p-2 border-l border-border bg-muted/40 text-right text-xs text-foreground">
           F/30 Rev. No. {val(d, "serial") || (ph ? "{{SERIAL}}" : "—")}
         </div>
       </div>
 
       {/* Employee info */}
-      <div className="grid grid-cols-[2fr_1fr] border-x border-b border-border text-xs">
-        <div className="p-1.5 border-r border-border">Sr. No. 🡪 {val(d, "serial") || (ph ? "{{SERIAL}}" : "—")}</div>
-        <div className="p-1.5">Date 🡪 {inp("date", "Date", "w-28")}</div>
+      <div className="grid grid-cols-[2fr_1fr] border-x border-b border-border text-xs text-foreground">
+        <div className="p-1.5 border-r border-border">Sr. No. → {val(d, "serial") || (ph ? "{{SERIAL}}" : "—")}</div>
+        <div className="p-1.5">Date → {inp("date", "Date", "w-28")}</div>
       </div>
-      <div className="border-x border-b border-border text-xs p-1.5">Name Of Employees 🡪 {inp("employee_name", "Employee Name")}</div>
-      <div className="border-x border-b border-border text-xs p-1.5">Designation 🡪 {inp("designation", "Designation")}</div>
-      <div className="border-x border-b border-border text-xs p-1.5">Department 🡪 {inp("department", "Department")}</div>
-      <div className="border-x border-b border-border text-xs p-1.5">Working In Organisation 🡪 {inp("working_months", "X", "w-12")} Months</div>
-      <div className="border-x border-b border-border text-xs p-1.5">Last Year Increment 🡪 {inp("last_increment", "N/A or amount")}</div>
-      <div className="border-x border-b border-border text-xs p-1.5">Evaluation Done By 🡪 {inp("evaluated_by", "Project Lead")}</div>
+      <div className="border-x border-b border-border text-xs p-1.5 text-foreground">Name Of Employees → {inp("employee_name", "Employee Name")}</div>
+      <div className="border-x border-b border-border text-xs p-1.5 text-foreground">Designation → {inp("designation", "Designation")}</div>
+      <div className="border-x border-b border-border text-xs p-1.5 text-foreground">Department → {inp("department", "Department")}</div>
+      <div className="border-x border-b border-border text-xs p-1.5 text-foreground">Working In Organisation → {inp("working_months", "X", "w-12")} Months</div>
+      <div className="border-x border-b border-border text-xs p-1.5 text-foreground">Last Year Increment → {inp("last_increment", "N/A or amount")}</div>
+      <div className="border-x border-b border-border text-xs p-1.5 text-foreground">Evaluation Done By → {inp("evaluated_by", "Project Lead")}</div>
 
-      {/* Evaluation Criteria Table */}
-      <div className="grid grid-cols-[35px_1fr_40px_40px_40px_40px] border-x border-b border-border text-[10px] font-semibold bg-muted">
+      {/* Evaluation Criteria Table Header */}
+      <div className="grid grid-cols-[35px_1fr_40px_40px_40px_40px] border-x border-b border-border text-[10px] font-semibold bg-muted/50 text-foreground">
         <div className="p-1 border-r border-border">Sr.</div>
         <div className="p-1 border-r border-border">Evaluation Criteria</div>
         <div className="p-1 border-r border-border text-center">1</div>
@@ -108,7 +110,7 @@ export function F30Template({ data, isTemplate = true, editMode = false, onChang
       {EVAL_SECTIONS.map((section) => (
         <React.Fragment key={section.num}>
           {/* Section header */}
-          <div className="grid grid-cols-[35px_1fr_160px] border-x border-b border-border text-xs bg-blue-50 dark:bg-blue-950/30/50">
+          <div className="grid grid-cols-[35px_1fr_160px] border-x border-b border-border text-xs bg-muted/30 text-foreground">
             <div className="p-1 border-r border-border font-semibold text-center">{section.num}</div>
             <div className="p-1 border-r border-border font-semibold">{section.title}</div>
             <div className="p-1 text-center text-[10px] text-muted-foreground">1=Poor → 4=Excellent</div>
@@ -118,7 +120,7 @@ export function F30Template({ data, isTemplate = true, editMode = false, onChang
             const itemKey = `eval_${section.num}_${idx}`;
             const scoreVal = val(d, itemKey);
             return (
-              <div key={itemKey} className="grid grid-cols-[35px_1fr_40px_40px_40px_40px] border-x border-b border-border text-xs min-h-[24px]">
+              <div key={itemKey} className="grid grid-cols-[35px_1fr_40px_40px_40px_40px] border-x border-b border-border text-xs text-foreground min-h-[24px]">
                 <div className="p-1 border-r border-border text-center text-muted-foreground"></div>
                 <div className="p-1 border-r border-border">{item}</div>
                 <div className="p-1 border-r border-border text-center">
@@ -148,33 +150,32 @@ export function F30Template({ data, isTemplate = true, editMode = false, onChang
       ))}
 
       {/* Total */}
-      <div className="grid grid-cols-[35px_1fr_160px] border-x border-b border-border text-xs bg-muted font-semibold">
+      <div className="grid grid-cols-[35px_1fr_160px] border-x border-b border-border text-xs bg-muted/40 font-semibold text-foreground">
         <div className="p-1 border-r border-border"></div>
-        <div className="p-1 border-r border-border">Total Marking 🡪</div>
+        <div className="p-1 border-r border-border">Total Marking →</div>
         <div className="p-1 text-center">{inp("total_marking", "Total", "w-16")}</div>
       </div>
 
       {/* Conclusions */}
-      <div className="border-x border-b border-border text-xs p-1.5">
-        Further Training Need Is Identified 🡪 {inp("training_need", "e.g. Improve quality")}
+      <div className="border-x border-b border-border text-xs p-1.5 text-foreground">
+        Further Training Need Is Identified → {inp("training_need", "e.g. Improve quality")}
       </div>
-      <div className="grid grid-cols-[1fr_1fr] border-x border-b border-border text-xs">
-        <div className="p-1.5 border-r border-border">Promotion, If Any 🡪 {inp("promotion", "N/A")}</div>
-        <div className="p-1.5">Increment 🡪 {inp("increment", "As per company policy")}</div>
+      <div className="grid grid-cols-[1fr_1fr] border-x border-b border-border text-xs text-foreground">
+        <div className="p-1.5 border-r border-border">Promotion, If Any → {inp("promotion", "N/A")}</div>
+        <div className="p-1.5">Increment → {inp("increment", "As per company policy")}</div>
       </div>
-      <div className="grid grid-cols-[1fr_1fr] border-x border-b border-border text-xs">
-        <div className="p-1.5 border-r border-border">Suggestions for improvement 🡪 {inp("suggestions", "Suggestions")}</div>
+      <div className="grid grid-cols-[1fr_1fr] border-x border-b border-border text-xs text-foreground">
+        <div className="p-1.5 border-r border-border">Suggestions for improvement → {inp("suggestions", "Suggestions")}</div>
         <div className="p-1.5">Evaluated By: {inp("evaluator_name", "Name")}</div>
       </div>
-      <div className="grid grid-cols-[1fr_1fr] border-x border-b border-border text-xs">
-        <div className="p-1.5 border-r border-border">Responsibility Shared 🡪 {inp("responsibility", "Details")}</div>
+      <div className="grid grid-cols-[1fr_1fr] border-x border-b border-border text-xs text-foreground">
+        <div className="p-1.5 border-r border-border">Responsibility Shared → {inp("responsibility", "Details")}</div>
         <div className="p-1.5">Evaluated By: {inp("evaluator_name2", "Name")}</div>
       </div>
-      <div className="grid grid-cols-[1fr_1fr] border-x border-b border-border text-xs">
-        <div className="p-1.5 border-r border-border">Authorities Issued 🡪 {inp("authorities", "Details")}</div>
+      <div className="grid grid-cols-[1fr_1fr] border-x border-b border-border text-xs text-foreground">
+        <div className="p-1.5 border-r border-border">Authorities Issued → {inp("authorities", "Details")}</div>
         <div className="p-1.5">Evaluated By: {inp("evaluator_name3", "Name")}</div>
       </div>
     </FormDocument>
-
     );
 }
