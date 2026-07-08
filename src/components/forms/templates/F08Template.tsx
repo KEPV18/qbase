@@ -42,11 +42,6 @@ export function F08Template({ data, isTemplate = true, editMode = false, onChang
     <FormDocument formCode="F/08" formName="Purchase Order" serial={val(d, "serial")} sectionName="Sales & Customer Service">
       {/* ====== DESKTOP: Full DOCX-replica table ====== */}
       <div className="hidden md:block">
-        {/* Company header */}
-        <div className="text-center py-3">
-          <span className="text-3xl font-bold tracking-widest text-foreground">VEZLOO</span>
-        </div>
-
         <table className="w-full border-collapse border border-border">
           <colgroup>
             <col className="w-[8%]" /><col className="w-[8%]" /><col className="w-[8%]" />
@@ -61,7 +56,7 @@ export function F08Template({ data, isTemplate = true, editMode = false, onChang
             <tr>
               <td colSpan={13} className="border border-border px-3 py-2 text-center">
                 <strong className="text-sm uppercase text-foreground">
-                  Order Form / Order Confirmation (Company Ongoing Services)
+                  Order Form / Order Confirmation
                 </strong>
               </td>
               <td className="border border-border px-2 py-1 text-[10px] text-gray-500 dark:text-gray-400 text-center leading-tight">
@@ -254,7 +249,7 @@ export function F08Template({ data, isTemplate = true, editMode = false, onChang
                 <strong>Remarks :</strong> {val(d, "remarks") || "--"}
               </td>
               <td colSpan={6} className="border border-border px-3 py-1.5 text-sm text-foreground">
-                <strong>Reviewed By :</strong> {val(d, "reviewed_by") || "--"}
+                <strong>Reviewed By : Authorised Person</strong> {val(d, "reviewed_by") || "--"}
               </td>
             </tr>
 
@@ -295,9 +290,6 @@ export function F08Template({ data, isTemplate = true, editMode = false, onChang
 
       {/* ====== MOBILE: Card stack ====== */}
       <div className="block md:hidden space-y-2">
-        <div className="border border-border rounded-sm p-3 text-center">
-          <span className="text-2xl font-bold tracking-widest">VEZLOO</span>
-        </div>
         <div className="border border-border rounded-sm p-3 text-center text-sm">
           <strong>Order Form / Order Confirmation</strong>
           <div className="text-xs text-muted-foreground mt-1">{serialValue}</div>

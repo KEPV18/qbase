@@ -67,7 +67,6 @@ export default function FormTemplatePreview() {
   return (
     <AppShell breadcrumbs={breadcrumbs}>
       <div className="w-full">
-        <div className="bg-red-600 text-white text-center py-2 font-bold text-lg">TOP NAV TEST</div>
         {/* ── Top Navigation Bar ── */}
         <div className="px-4 py-3 flex items-center justify-between border-b border-border bg-background">
           {/* Left: Back + Prev */}
@@ -200,7 +199,6 @@ export default function FormTemplatePreview() {
           )}
         </div>
 
-        <div className="bg-blue-600 text-white text-center py-2 font-bold text-lg">BOTTOM NAV TEST</div>
         {/* ── Bottom Navigation ── */}
         <div className="px-4 py-4 border-t border-border flex items-center justify-between bg-background">
           <button

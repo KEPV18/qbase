@@ -1,12 +1,10 @@
 // ============================================================================
 // F/13 — Purchase Order
-// Canonical rewrite matching DOCX structure exactly.
-// Keys match formSchemas.ts and DB form_data exactly.
+// 24 rows × 10 columns. Matches Word document structure exactly.
 // ============================================================================
 
 import React from "react";
 import { cn } from "@/lib/utils";
-import { FileText, Shield } from "lucide-react";
 import { FormDocument } from "../FormKit";
 
 export interface F13Props {
@@ -17,6 +15,8 @@ export interface F13Props {
   className?: string;
 }
 
+// ── Helpers ────────────────────────────────────────────────────────────────
+
 function val(data: Record<string, unknown> | undefined, key: string): string {
   if (!data) return "";
   const v = data[key];
@@ -24,204 +24,297 @@ function val(data: Record<string, unknown> | undefined, key: string): string {
   return typeof v === "string" ? v : String(v);
 }
 
-function parseItems(d: Record<string, unknown>): Array<{ sr_no: string; description: string; quantity: string }> {
-  const raw = d.items;
-  if (Array.isArray(raw) && raw.length > 0 && typeof raw[0] === "object") {
-    return raw as Array<{ sr_no: string; description: string; quantity: string }>;
-  }
-  return [{ sr_no: "1", description: "Not Applicable – Service Based Operations", quantity: "0" }];
+interface Item {
+  description: string;
+  qty: string | number;
+  rate: string | number;
+  amount: string | number;
 }
 
-export function F13Template({ data, isTemplate = true, editMode = false, onChange, className }: F13Props) {
+function parseItems(d: Record<string, unknown>): Item[] {
+  const raw = d.items;
+  if (Array.isArray(raw) && raw.length > 0) {
+    return raw.map((r: Record<string, unknown>) => ({
+      description: String(r.description ?? ""),
+      qty: String(r.qty ?? ""),
+      rate: String(r.rate ?? ""),
+      amount: String(r.amount ?? ""),
+    }));
+  }
+  return Array.from({ length: 14 }, () => ({
+    description: "",
+    qty: "",
+    rate: "",
+    amount: "",
+  }));
+}
+
+// ── Shared CSS constants ───────────────────────────────────────────────────
+
+const TBL = "border border-black/30 print:border-black";
+const TBL_IN = "border border-black/30 print:border-black";
+
+const inpStyle =
+  "w-full bg-transparent border-b border-dashed border-foreground/40 text-xs px-0.5 outline-none focus:border-foreground/70";
+
+// ── Component ──────────────────────────────────────────────────────────────
+
+export function F13Template({
+  data,
+  isTemplate = true,
+  editMode = false,
+  onChange,
+  className,
+}: F13Props) {
   const d = data ?? {};
   const ph = isTemplate && !editMode;
   const items = parseItems(d);
 
-  const inp = (key: string, label: string, width: string = "w-full") =>
+  const placeholder = (v: string) => v || (ph ? "—" : "");
+
+  // Inline editable cell
+  const ec = (
+    field: string,
+    value: string,
+    opts?: { className?: string; label?: string }
+  ) =>
     editMode ? (
       <input
-        className={cn("border-b border-dashed border-foreground/40 bg-transparent text-sm px-1", width)}
-        value={val(d, key)}
-        onChange={e => onChange?.(key, e.target.value)}
-        placeholder={label}
+        className={cn(inpStyle, opts?.className)}
+        value={value}
+        placeholder={opts?.label}
+        onChange={(e) => onChange?.(field, e.target.value)}
       />
     ) : (
-      <span className={cn("border-b border-dashed border-foreground/30 px-1 inline-block min-w-[4rem]", width)}>
-        {val(d, key) || (ph ? "___" : "")}
-      </span>
+      <span className={cn("text-xs", opts?.className)}>{placeholder(value)}</span>
     );
 
-  const txt = (key: string, label: string) =>
-    editMode ? (
-      <textarea
-        className="w-full bg-transparent border border-dashed border-foreground/40 text-xs p-1 rounded resize-none"
-        rows={3}
-        value={val(d, key)}
-        onChange={e => onChange?.(key, e.target.value)}
-        placeholder={label}
-      />
-    ) : (
-      <span className="text-xs whitespace-pre-wrap">{val(d, key) || (ph ? "___" : "")}</span>
-    );
-
-  const cellInp = (itemIdx: number, fieldKey: string, label: string) =>
+  // Item editable cell (scoped to items array)
+  const ic = (idx: number, key: keyof Item, value: string) =>
     editMode ? (
       <input
-        className="w-full bg-transparent border-b border-dashed border-foreground/40 text-xs px-1"
-        value={items[itemIdx]?.[fieldKey as keyof typeof items[0]] || ""}
-        onChange={e => {
-          const updated = [...items];
-          updated[itemIdx] = { ...updated[itemIdx], [fieldKey]: e.target.value };
-          onChange?.("items", updated);
+        className={inpStyle}
+        value={value}
+        placeholder={key}
+        onChange={(e) => {
+          const next = [...items];
+          next[idx] = { ...next[idx], [key]: e.target.value };
+          onChange?.("items", next as unknown as Record<string, unknown>);
         }}
-        placeholder={label}
       />
     ) : (
-      <span className="text-xs">{items[itemIdx]?.[fieldKey as keyof typeof items[0]] || (ph ? "___" : "")}</span>
+      <span className="text-xs">{placeholder(value)}</span>
     );
 
   return (
-    <FormDocument formCode="F/13" formName="Purchase Order" serial={val(d, "serial")} sectionName="Procurement & Vendors">
-      {/* ── Header Block ── */}
-      <div className="border border-border rounded-t-sm">
-        <div className="grid grid-cols-[3fr_1fr]">
-          <div className="p-3 font-bold text-lg bg-primary/5 flex items-center gap-2">
-            <FileText className="w-5 h-5 text-primary" />
-            Purchase Order
-          </div>
-          <div className="p-3 border-l border-border bg-primary/5 text-right text-xs font-mono">
-            F/13 Rev No. {val(d, "serial") || (ph ? "{{SERIAL}}" : "—")}
-          </div>
-        </div>
+    <FormDocument
+      formCode="F/13"
+      formName="Purchase Order"
+      serial={val(d, "serial")}
+      sectionName="Procurement & Vendors"
+    >
+      {/* ── 10-Column Table ──────────────────────────────────────────── */}
+      <div className={cn("w-full overflow-x-auto", className)}>
+        <table className="w-full border-collapse text-[11px] leading-tight min-w-[700px] print:min-w-0">
+          <tbody>
+            {/* ── Row 0: Title ── */}
+            <tr>
+              <td colSpan={9} className={cn(TBL, "p-2 font-bold text-base text-center")}>
+                Purchase Order
+              </td>
+              <td
+                className={cn(TBL, "p-2 text-center text-[10px] font-mono whitespace-pre-line")}
+              >
+                {"F/13\nRev No."}
+                {val(d, "serial") || (ph ? "{{SERIAL}}" : "")}
+              </td>
+            </tr>
 
-        {/* PO No + Date row */}
-        <div className="grid grid-cols-[1fr_1fr] border-t border-border text-xs">
-          <div className="p-2 border-r border-border font-semibold">
-            Purchase Order No. 🡪 <span className="font-mono">{val(d, "purchase_order_no") || val(d, "serial") || (ph ? "___" : "—")}</span>
-          </div>
-          <div className="p-2 font-semibold">
-            Date 🡪 {inp("date", "DD/MM/YYYY", "w-28")}
-          </div>
-        </div>
+            {/* ── Row 1: To / PO No ── */}
+            <tr>
+              <td colSpan={5} className={cn(TBL, "p-2 font-semibold")}>
+                To,
+              </td>
+              <td colSpan={5} className={cn(TBL, "p-2")}>
+                <span className="font-semibold">Purchase Order No. 🡪 </span>
+                {ec("serial", val(d, "serial"), { label: "PO No." })}
+              </td>
+            </tr>
 
-        {/* Vendor / To */}
-        <div className="border-t border-border text-xs p-2">
-          <span className="font-semibold">To,</span> {inp("to", "Supplier Name / Address")}
-        </div>
+            {/* ── Row 2: To / Date ── */}
+            <tr>
+              <td colSpan={5} className={cn(TBL, "p-2")}>
+                {ec("supplier_name", val(d, "supplier_name"), { label: "Supplier Name" })}
+                <br />
+                <span className="text-[10px]">
+                  {ec("supplier_address", val(d, "supplier_address"), {
+                    label: "Supplier Address",
+                    className: "text-[10px]",
+                  })}
+                </span>
+              </td>
+              <td colSpan={5} className={cn(TBL, "p-2")}>
+                <span className="font-semibold">Date 🡪 </span>
+                {ec("date", val(d, "date"), { label: "DD/MM/YYYY" })}
+              </td>
+            </tr>
 
-        {/* Intro Statement */}
-        <div className="border-t border-border text-xs p-2 bg-muted/30 italic">
-          We Are Pleased To Place An Order For The Below Mentioned Items ;
-        </div>
+            {/* ── Row 3: Statement ── */}
+            <tr>
+              <td colSpan={10} className={cn(TBL, "p-2 italic bg-muted/20")}>
+                We Are Pleased To Place An Order For The Following:
+              </td>
+            </tr>
+
+            {/* ── Row 4: Column Headers ── */}
+            <tr className="bg-muted/30 font-semibold">
+              <td className={cn(TBL, "p-1 text-center")}>Sr. No.</td>
+              <td colSpan={2} className={cn(TBL, "p-1")}>
+                Description
+              </td>
+              <td colSpan={3} className={cn(TBL, "p-1 text-right")}>
+                Qty.
+              </td>
+              <td className={cn(TBL, "p-1 text-right")}>Rate</td>
+              <td colSpan={3} className={cn(TBL, "p-1 text-right")}>
+                Amount
+              </td>
+            </tr>
+
+            {/* ── Rows 5-18: 14 Data Rows ── */}
+            {items.map((item, idx) => (
+              <tr key={idx}>
+                <td className={cn(TBL, "p-1 text-center")}>{idx + 1}</td>
+                <td colSpan={2} className={cn(TBL, "p-1")}>
+                  {ic(idx, "description", item.description)}
+                </td>
+                <td colSpan={3} className={cn(TBL, "p-1 text-right")}>
+                  {ic(idx, "qty", item.qty as string)}
+                </td>
+                <td className={cn(TBL, "p-1 text-right")}>
+                  {ic(idx, "rate", item.rate as string)}
+                </td>
+                <td colSpan={3} className={cn(TBL, "p-1 text-right")}>
+                  {ic(idx, "amount", item.amount as string)}
+                </td>
+              </tr>
+            ))}
+
+            {/* ── Row 19: Total ── */}
+            <tr className="font-bold bg-muted/20">
+              <td colSpan={5} className={cn(TBL, "p-1")} />
+              <td colSpan={2} className={cn(TBL, "p-1 text-right")}>
+                Total
+              </td>
+              <td colSpan={3} className={cn(TBL, "p-1 text-right")}>
+                {ec("total", val(d, "total"), { label: "Total" })}
+              </td>
+            </tr>
+
+            {/* ── Row 20: Delivery Schedule ── */}
+            <tr>
+              <td colSpan={3} className={cn(TBL, "p-1.5 font-semibold")}>
+                Delivery Schedule
+              </td>
+              <td colSpan={7} className={cn(TBL, "p-1.5")}>
+                {ec("delivery_schedule", val(d, "delivery_schedule"), {
+                  label: "Delivery Schedule",
+                })}
+              </td>
+            </tr>
+
+            {/* ── Row 21: Payment Terms ── */}
+            <tr>
+              <td colSpan={3} className={cn(TBL, "p-1.5 font-semibold")}>
+                Payment Terms
+              </td>
+              <td colSpan={7} className={cn(TBL, "p-1.5")}>
+                {ec("payment_terms", val(d, "payment_terms"), {
+                  label: "Payment Terms",
+                })}
+              </td>
+            </tr>
+
+            {/* ── Row 22: Remarks ── */}
+            <tr>
+              <td colSpan={3} className={cn(TBL, "p-1.5 font-semibold")}>
+                Remarks
+              </td>
+              <td colSpan={7} className={cn(TBL, "p-1.5")}>
+                {ec("remarks", val(d, "remarks"), { label: "Remarks" })}
+              </td>
+            </tr>
+
+            {/* ── Row 23: Authorised Signatory ── */}
+            <tr>
+              <td colSpan={3} className={cn(TBL, "p-1.5 font-semibold")}>
+                Authorised Signatory
+              </td>
+              <td colSpan={7} className={cn(TBL, "p-1.5")}>
+                {ec("authorised_signatory", val(d, "authorised_signatory"), {
+                  label: "Authorised Signatory",
+                })}
+              </td>
+            </tr>
+          </tbody>
+        </table>
       </div>
 
-      {/* ── Items Table (3-column: Sr.No., Description, Qty.) ── */}
-      <div className="border-x border-b border-border">
-        <div className="grid grid-cols-[60px_2fr_80px] text-[10px] font-bold bg-muted border-b border-border">
-          <div className="p-1.5 border-r border-border text-center">Sr. No.</div>
-          <div className="p-1.5 border-r border-border">Description</div>
-          <div className="p-1.5 text-right">Qty.</div>
+      {/* ── Mobile Fallback ── */}
+      <div className="md:hidden mt-4 space-y-3 text-xs border border-border rounded p-3 print:hidden">
+        <p className="font-semibold text-muted-foreground">— Mobile Preview —</p>
+        <div>
+          <span className="font-semibold">PO No: </span>
+          {val(d, "serial") || "—"}
         </div>
-
-        {items.map((item, idx) => (
-          <div key={idx} className="grid grid-cols-[60px_2fr_80px] border-b border-border text-xs last:border-b-0">
-            <div className="p-1.5 border-r border-border text-center">{cellInp(idx, "sr_no", "No.")}</div>
-            <div className="p-1.5 border-r border-border">{cellInp(idx, "description", "Description")}</div>
-            <div className="p-1.5 text-right">{cellInp(idx, "quantity", "Qty")}</div>
-          </div>
-        ))}
-
-        {/* Total Amount row */}
-        <div className="grid grid-cols-[60px_2fr_80px] border-t-2 border-border text-xs font-bold bg-muted/20">
-          <div className="p-1.5 border-r border-border" />
-          <div className="p-1.5 border-r border-border text-right">Total Amount In Rs. 🡪</div>
-          <div className="p-1.5 text-right">{inp("total_amount", "0", "w-16")}</div>
+        <div>
+          <span className="font-semibold">Date: </span>
+          {val(d, "date") || "—"}
         </div>
-      </div>
-
-      {/* ── Specifications ── */}
-      <div className="border-x border-b border-border text-xs">
-        <div className="p-2">
-          <span className="font-semibold">Specifications:</span>
-          <div className="mt-1">{txt("specifications", "Specifications text")}</div>
+        <div>
+          <span className="font-semibold">Supplier: </span>
+          {val(d, "supplier_name") || "—"}
         </div>
-      </div>
-
-      {/* ── Supplies Notice ── */}
-      <div className="border-x border-b border-border text-xs p-2 bg-amber-50 dark:bg-amber-950/20 border-l-2 border-l-amber-400">
-        <span className="font-semibold text-amber-700 dark:text-amber-400">📋 Supplies Notice:</span>
-        <div className="mt-1">{txt("note", "Supplies notice text")}</div>
-      </div>
-
-      {/* ── Terms Grid (4×2) ── */}
-      <div className="border-x border-b border-border text-xs">
-        <div className="grid grid-cols-2">
-          <div className="p-2 border-r border-border">
-            <span className="font-semibold">Delivery Period:</span>
-            <div className="mt-0.5">{inp("delivery_period", "N/A", "w-40")}</div>
-          </div>
-          <div className="p-2">
-            <span className="font-semibold">Payment Terms:</span>
-            <div className="mt-0.5">{inp("payment_terms", "N/A", "w-40")}</div>
-          </div>
+        <div>
+          <span className="font-semibold">Address: </span>
+          {val(d, "supplier_address") || "—"}
         </div>
-        <div className="grid grid-cols-2 border-t border-border">
-          <div className="p-2 border-r border-border">
-            <span className="font-semibold">Mode of Despatch:</span>
-            <div className="mt-0.5">{inp("mode_of_despatch", "N/A", "w-40")}</div>
-          </div>
-          <div className="p-2">
-            <span className="font-semibold">Despatch Arrangement:</span>
-            <div className="mt-0.5">{inp("despatch_arrangement", "By US / You", "w-40")}</div>
-          </div>
+        <div className="mt-2 space-y-2">
+          <p className="font-semibold">Items:</p>
+          {items.map(
+            (item, i) =>
+              item.description && (
+                <div key={i} className="pl-2 border-l-2 border-border">
+                  <div>{item.description}</div>
+                  <div className="text-muted-foreground">
+                    Qty: {item.qty || "—"} | Rate: {item.rate || "—"} | Amt:{" "}
+                    {item.amount || "—"}
+                  </div>
+                </div>
+              )
+          )}
         </div>
-        <div className="grid grid-cols-2 border-t border-border">
-          <div className="p-2 border-r border-border">
-            <span className="font-semibold">Method of Product Approval:</span>
-            <div className="mt-0.5">{inp("method_of_product_approval", "Inspection method", "w-40")}</div>
-          </div>
-          <div className="p-2">
-            <span className="font-semibold">Requirement of Test Certificate:</span>
-            <div className="mt-0.5">{inp("requirement_of_test_certificate", "Yes / No", "w-40")}</div>
-          </div>
+        <div>
+          <span className="font-semibold">Total: </span>
+          {val(d, "total") || "—"}
         </div>
-        <div className="grid grid-cols-2 border-t border-border">
-          <div className="p-2 border-r border-border">
-            <span className="font-semibold">Insurance:</span>
-            <div className="mt-0.5">{inp("insurance", "By US / You / N/A", "w-40")}</div>
-          </div>
-          <div className="p-2">
-            <span className="font-semibold">Despatch Destination:</span>
-            <div className="mt-0.5">{inp("despatch_destination", "Destination", "w-40")}</div>
-          </div>
+        <div>
+          <span className="font-semibold">Delivery: </span>
+          {val(d, "delivery_schedule") || "—"}
         </div>
-      </div>
-
-      {/* ── Terms & Conditions ── */}
-      <div className="border-x border-b border-border p-3 bg-blue-50 dark:bg-blue-950/20 border-l-4 border-l-blue-500">
-        <div className="flex items-start gap-2">
-          <Shield className="w-4 h-4 text-blue-600 dark:text-blue-400 mt-0.5 shrink-0" />
-          <div>
-            <span className="font-semibold text-blue-700 dark:text-blue-400 text-xs">ISO 9001:2015 — Terms &amp; Conditions</span>
-            <div className="mt-1.5 text-xs text-blue-800 dark:text-blue-300 whitespace-pre-wrap">
-              {txt("terms_and_conditions", "Terms and conditions text")}
-            </div>
-          </div>
+        <div>
+          <span className="font-semibold">Payment: </span>
+          {val(d, "payment_terms") || "—"}
         </div>
-      </div>
-
-      {/* ── Footer Signatures ── */}
-      <div className="grid grid-cols-[1fr_1fr] border-x border-b border-border rounded-b-sm text-xs">
-        <div className="p-3 border-r border-border">
-          <span className="font-semibold">Prepared By:</span>
-          <div className="mt-1">{inp("prepared_by", "Management Representative", "w-40")}</div>
+        <div>
+          <span className="font-semibold">Remarks: </span>
+          {val(d, "remarks") || "—"}
         </div>
-        <div className="p-3">
-          <span className="font-semibold">Reviewed And Approved By:</span>
-          <div className="mt-1">{inp("approved_by", "Top Management", "w-40")}</div>
+        <div>
+          <span className="font-semibold">Signatory: </span>
+          {val(d, "authorised_signatory") || "—"}
         </div>
       </div>
     </FormDocument>
-
-    );
+  );
 }

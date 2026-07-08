@@ -1,15 +1,16 @@
 // ============================================================================
 // F/23 — Master List of Records
-// DOCX: 9-column table with 35 data rows
-// Columns: Record No. | Title Of Record | Format No. (If Any) | Frequency
-//          Of Collection | Method Of Filing | Access | Storage Place |
-//          Retention Period | Person Responsible
+// DOCX: 16 rows × 10 columns
+// R0: Title merged cols 0-7, rev cols 8-9
+// R1: Department merged cols 0-5, Date merged cols 6-9
+// R2: 8 headers (Retention Period = 2 cols) → 10 cols total
+// R3-R15: 13 data rows
 // ============================================================================
 
 import React, { useState, useCallback } from "react";
 import { cn } from "@/lib/utils";
 import { Plus, Trash2 } from "lucide-react";
-import { FormDocument } from "../FormKit";
+import { FormDocument, val } from "../FormKit";
 
 export interface F23Props {
   data?: Record<string, unknown>;
@@ -17,13 +18,6 @@ export interface F23Props {
   editMode?: boolean;
   onChange?: (field: string, value: string | Record<string, unknown>) => void;
   className?: string;
-}
-
-function val(data: Record<string, unknown> | undefined, key: string): string {
-  if (!data) return "";
-  const v = data[key];
-  if (v == null) return "";
-  return typeof v === "string" ? v : String(v);
 }
 
 interface RowData {
@@ -46,6 +40,11 @@ function parseRows(d: Record<string, unknown>): RowData[] {
   return [];
 }
 
+const COL_KEYS: (keyof RowData)[] = [
+  "record_no", "title", "format_no", "frequency", "method_of_filing",
+  "access", "storage_place", "retention_period", "person_responsible",
+];
+
 const COL_HEADERS = [
   "Record No.",
   "Title Of Record",
@@ -58,10 +57,8 @@ const COL_HEADERS = [
   "Person Responsible",
 ];
 
-const COL_KEYS: (keyof RowData)[] = [
-  "record_no", "title", "format_no", "frequency", "method_of_filing",
-  "access", "storage_place", "retention_period", "person_responsible",
-];
+// 10-col widths for 9 headers (retention spans 2)
+const COL_WIDTHS = ["w-[6%]", "w-[16%]", "w-[8%]", "w-[10%]", "w-[10%]", "w-[7%]", "w-[8%]", "w-[14%]", "w-[14%]"];
 
 export function F23Template({ data, isTemplate = true, editMode = false, onChange, className }: F23Props) {
   const d = data ?? {};
@@ -91,53 +88,68 @@ export function F23Template({ data, isTemplate = true, editMode = false, onChang
     setRows(prev => prev.filter((_, i) => i !== idx));
   }, []);
 
+  const inp = (key: string, label: string, width: string = "w-48") =>
+    editMode ? (
+      <input
+        className={cn("border-b border-dashed border-foreground/40 bg-transparent text-xs px-1", width)}
+        value={val(d, key)}
+        onChange={e => onChange?.(key, e.target.value)}
+        placeholder={label}
+      />
+    ) : (
+      <span className={cn("border-b border-dashed border-foreground/30 px-1 inline-block", width)}>
+        {val(d, key) || (ph ? "___" : "")}
+      </span>
+    );
+
   return (
     <FormDocument formCode="F/23" formName="Master List of Records" serial={val(d, "serial")} sectionName="Management & Documentation">
-      {/* Header */}
-      <div className="border-b pb-2 mb-2">
-        <h3 className="text-sm font-semibold uppercase tracking-wider text-foreground/70">
-          Master List of Records
-        </h3>
-        <div className="text-xs text-foreground/50">F/23</div>
-      </div>
+      {/* 16 rows × 10 columns table matching Word structure */}
+      <div className="w-full overflow-x-auto">
+        <table className="w-full border-collapse text-[10px]">
+          <tbody>
+            {/* Row 0: Title merged cols 0-7, Rev No cols 8-9 */}
+            <tr>
+              <td colSpan={8} className="border border-border p-2 font-bold text-sm bg-primary/5 text-center">
+                Master List of Records
+              </td>
+              <td colSpan={2} className="border border-border p-2 text-right text-xs bg-primary/5">
+                F/23 Rev No. {val(d, "serial") || (ph ? "{{SERIAL}}" : "—")}
+              </td>
+            </tr>
 
-      {/* Info Row */}
-      <div className="grid grid-cols-2 gap-4 text-xs">
-        <div>
-          <span className="text-foreground/50">Serial: </span>
-          <span className="font-medium">{val(d, "serial") || (ph ? "F/23-001" : "")}</span>
-        </div>
-        <div>
-          <span className="text-foreground/50">Date: </span>
-          <span className="font-medium">{val(d, "date") || (ph ? "01/01/2026" : "")}</span>
-        </div>
-        <div>
-          <span className="text-foreground/50">Department: </span>
-          <span className="font-medium">{val(d, "department") || (ph ? "All Departments" : "")}</span>
-        </div>
-      </div>
+            {/* Row 1: Department merged cols 0-5, Date merged cols 6-9 */}
+            <tr>
+              <td colSpan={6} className="border border-border p-1.5 text-xs">
+                <span className="font-semibold">Department → </span>{inp("department", "Department", "w-40")}
+              </td>
+              <td colSpan={4} className="border border-border p-1.5 text-xs">
+                <span className="font-semibold">Date → </span>{inp("date", "DD/MM/YYYY", "w-28")}
+              </td>
+            </tr>
 
-      {/* 9-Column Table */}
-      <div className="w-full overflow-x-auto border rounded-md">
-        <table className="w-full text-[10px] border-collapse">
-          <thead>
+            {/* Row 2: Headers — 9 headers in 10 cols (Retention spans 2) */}
             <tr className="bg-muted/50">
               {COL_HEADERS.map((h, i) => (
-                <th key={i} className="border px-1.5 py-1 text-left font-semibold whitespace-nowrap">
+                <td
+                  key={i}
+                  colSpan={i === 7 ? 2 : 1}
+                  className="border border-border px-1.5 py-1 text-left font-semibold whitespace-nowrap"
+                >
                   {h}
-                </th>
+                </td>
               ))}
-              {editMode && <th className="border px-1.5 py-1 w-8">#</th>}
+              {editMode && <td className="border border-border px-1.5 py-1 w-8">#</td>}
             </tr>
-          </thead>
-          <tbody>
+
+            {/* Rows 3–15: 13 data rows */}
             {rows.map((row, idx) => (
-              <tr key={idx} className="even:bg-muted/20">
+              <tr key={idx} className={cn(idx % 2 === 1 && "bg-muted/20")}>
                 {COL_KEYS.map((key) => (
-                  <td key={key} className="border px-1.5 py-0.5">
+                  <td key={key} className="border border-border px-1.5 py-0.5">
                     {editMode ? (
                       <input
-                        className="w-full bg-transparent border-b border-dashed border-foreground/30 outline-none"
+                        className="w-full bg-transparent border-b border-dashed border-foreground/30 outline-none text-[10px]"
                         value={row[key]}
                         onChange={(e) => updateRow(idx, key, e.target.value)}
                       />
@@ -147,7 +159,7 @@ export function F23Template({ data, isTemplate = true, editMode = false, onChang
                   </td>
                 ))}
                 {editMode && (
-                  <td className="border px-1 py-0.5 text-center">
+                  <td className="border border-border px-1 py-0.5 text-center">
                     <button
                       onClick={() => removeRow(idx)}
                       className="text-red-500 hover:text-red-700"
@@ -166,7 +178,7 @@ export function F23Template({ data, isTemplate = true, editMode = false, onChang
       {editMode && (
         <button
           onClick={addRow}
-          className="flex items-center gap-1 text-xs text-blue-600 hover:text-blue-800"
+          className="flex items-center gap-1 text-xs text-blue-600 hover:text-blue-800 mt-2"
         >
           <Plus className="h-3 w-3" /> Add Record Entry
         </button>
@@ -180,6 +192,5 @@ export function F23Template({ data, isTemplate = true, editMode = false, onChang
         </div>
       </div>
     </FormDocument>
-
-    );
+  );
 }

@@ -1,15 +1,7 @@
-// ============================================================================
-// F/14 — Indent and Incoming Inspection Record
-// Canonical rewrite matching DOCX structure exactly.
-// Pillar 1: Horizontal Matrix — 6-column items table preserved
-// Pillar 2: Deep DOCX Ingestion — full lifecycle text extraction
-// Pillar 4: Continuous Validation — schema keys match template exactly
-// ============================================================================
-
 import React, { useState, useCallback } from "react";
 import { cn } from "@/lib/utils";
-import { Plus, Trash2, Info } from "lucide-react";
-import { FormDocument } from "../FormKit";
+import { Plus, Trash2 } from "lucide-react";
+import { FormDocument, val } from "../FormKit";
 
 export interface F14Props {
   data?: Record<string, unknown>;
@@ -19,21 +11,21 @@ export interface F14Props {
   className?: string;
 }
 
-function val(data: Record<string, unknown> | undefined, key: string): string {
-  if (!data) return "";
-  const v = data[key];
-  if (v == null) return "";
-  return typeof v === "string" ? v : String(v);
+interface RowData {
+  date: string;
+  item_description: string;
+  qty: string;
+  supplier: string;
+  inspection_status: string;
+  inspected_by: string;
 }
 
-interface RowData {
-  date: string; itemDescription: string; qty: string; supplier: string; inspectionStatus: string; inspectedBy: string;
-}
+const EMPTY_ROW: RowData = { date: "", item_description: "", qty: "", supplier: "", inspection_status: "", inspected_by: "" };
 
 function parseRows(d: Record<string, unknown>): RowData[] {
   const raw = d.items;
   if (Array.isArray(raw) && raw.length > 0 && typeof raw[0] === "object") return raw as RowData[];
-  return [{ date: "", itemDescription: "", qty: "", supplier: "", inspectionStatus: "", inspectedBy: "" }];
+  return Array.from({ length: 9 }, () => ({ ...EMPTY_ROW }));
 }
 
 export function F14Template({ data, isTemplate = true, editMode = false, onChange, className }: F14Props) {
@@ -47,18 +39,8 @@ export function F14Template({ data, isTemplate = true, editMode = false, onChang
     onChange?.("items", updated);
   }, [rows, onChange]);
 
-  const addRow = useCallback(() => {
-    setRows(prev => [...prev, { date: "", itemDescription: "", qty: "", supplier: "", inspectionStatus: "", inspectedBy: "" }]);
-  }, []);
-
+  const addRow = useCallback(() => { setRows(prev => [...prev, { ...EMPTY_ROW }]); }, []);
   const removeRow = useCallback((idx: number) => { setRows(prev => prev.filter((_, i) => i !== idx)); }, []);
-
-  const inp = (key: string, label: string, width: string = "w-48") =>
-    editMode ? (
-      <input className={cn("border-b border-dashed border-foreground/40 bg-transparent text-xs px-1", width)} value={val(d, key)} onChange={e => onChange?.(key, e.target.value)} placeholder={label} />
-    ) : (
-      <span className={cn("border-b border-dashed border-foreground/30 px-1 inline-block", width)}>{val(d, key) || (ph ? "___" : "")}</span>
-    );
 
   const cellInp = (idx: number, key: keyof RowData, label: string) =>
     editMode ? (
@@ -67,70 +49,104 @@ export function F14Template({ data, isTemplate = true, editMode = false, onChang
       <span className="text-xs">{rows[idx]?.[key] || ""}</span>
     );
 
+  const metaInp = (key: string, label: string) =>
+    editMode ? (
+      <input className="border-b border-dashed border-foreground/40 bg-transparent text-xs px-1 w-full" value={val(d, key)} onChange={e => onChange?.(key, e.target.value)} placeholder={label} />
+    ) : (
+      <span className="border-b border-dashed border-foreground/30 px-1 inline-block">{val(d, key) || (ph ? "___" : "")}</span>
+    );
+
   return (
-    <FormDocument formCode="F/14" formName="Incoming Inspection" serial={val(d, "serial")} sectionName="Quality & Audit">
-      {/* ── Header ── */}
-      <div className="grid grid-cols-[3fr_1fr] border border-border">
-        <div className="p-2 font-bold bg-primary/5 text-base">Indent and Incoming Inspection Record</div>
-        <div className="p-2 border-l border-border bg-primary/5 text-right text-xs">
-          F/14 Rev No. {val(d, "serial") || (ph ? "{{SERIAL}}" : "—")}
-        </div>
+    <FormDocument formCode="F/14" formName="Indent and Incoming Inspection Record" serial={val(d, "serial")} sectionName="Quality & Audit">
+      {/* ── Desktop: 7-column table (Word: 12 rows × 7 cols) ── */}
+      <div className="hidden md:block overflow-x-auto">
+        <table className="w-full border-collapse border border-border text-xs">
+          <tbody>
+            {/* Row 0: Title merged cols 0-5, col 6 = Rev No */}
+            <tr>
+              <td colSpan={6} className="border border-border p-2 font-bold bg-primary/5 text-base">
+                Indent and Incoming Inspection Record
+              </td>
+              <td className="border border-border p-2 bg-primary/5 text-right text-xs whitespace-nowrap">
+                F/14 Rev No. {val(d, "serial") || (ph ? "{{SERIAL}}" : "—")}
+              </td>
+            </tr>
+
+            {/* Row 1: "Details Of Execution / Receipt" spans cols 3-6 */}
+            <tr className="bg-muted text-[10px] font-semibold">
+              <td className="border border-border p-1">Date</td>
+              <td className="border border-border p-1">Item Description</td>
+              <td className="border border-border p-1">Qty.</td>
+              <td colSpan={4} className="border border-border p-1 text-center">Details Of Execution / Receipt</td>
+            </tr>
+
+            {/* Row 2: Inspected By spans cols 5-6 */}
+            <tr className="bg-muted text-[10px] font-semibold">
+              <td className="border border-border p-1">Date</td>
+              <td className="border border-border p-1">Item Description</td>
+              <td className="border border-border p-1">Qty.</td>
+              <td className="border border-border p-1">Name Of Supplier</td>
+              <td className="border border-border p-1">Inspection Status</td>
+              <td colSpan={2} className="border border-border p-1">Inspected By</td>
+            </tr>
+
+            {/* Rows 3-11: 9 data rows */}
+            {rows.map((row, idx) => (
+              <tr key={idx} className="min-h-[28px] group">
+                <td className="border border-border p-1">{cellInp(idx, "date", "Date")}</td>
+                <td className="border border-border p-1">{cellInp(idx, "item_description", "Item")}</td>
+                <td className="border border-border p-1 text-center">{cellInp(idx, "qty", "Qty")}</td>
+                <td className="border border-border p-1">{cellInp(idx, "supplier", "Supplier")}</td>
+                <td className="border border-border p-1">{cellInp(idx, "inspection_status", "Status")}</td>
+                <td colSpan={2} className="border border-border p-1 relative">
+                  {cellInp(idx, "inspected_by", "By")}
+                  {editMode && rows.length > 1 && (
+                    <button onClick={() => removeRow(idx)} className="absolute -right-6 top-1/2 -translate-y-1/2 text-destructive opacity-0 group-hover:opacity-100 transition-opacity">
+                      <Trash2 className="w-3 h-3" />
+                    </button>
+                  )}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
       </div>
 
-      {/* ── Indent No. + Date ── */}
-      <div className="grid grid-cols-[1fr_1fr] border-x border-b border-border text-xs">
-        <div className="p-1.5 border-r border-border">Indent No.: {val(d, "indent_no") || val(d, "serial") || (ph ? "{{SERIAL}}" : "—")}</div>
-        <div className="p-1.5">Date: {inp("date", "Date", "w-28")}</div>
+      {/* ── Mobile: stacked fallback ── */}
+      <div className="md:hidden p-2 border border-border text-xs space-y-3">
+        <div className="font-bold text-base">Indent and Incoming Inspection Record</div>
+        <div className="text-muted-foreground text-[10px]">F/14 Rev No. {val(d, "serial") || (ph ? "{{SERIAL}}" : "—")}</div>
+        {rows.map((row, idx) => (
+          <div key={idx} className="border border-border p-2 space-y-1 relative group">
+            <div className="font-semibold text-muted-foreground text-[10px]">Row {idx + 1}</div>
+            <div className="grid grid-cols-2 gap-1">
+              <div><span className="text-muted-foreground">Date:</span> {cellInp(idx, "date", "Date")}</div>
+              <div><span className="text-muted-foreground">Item:</span> {cellInp(idx, "item_description", "Item")}</div>
+              <div><span className="text-muted-foreground">Qty:</span> {cellInp(idx, "qty", "Qty")}</div>
+              <div><span className="text-muted-foreground">Supplier:</span> {cellInp(idx, "supplier", "Supplier")}</div>
+              <div><span className="text-muted-foreground">Status:</span> {cellInp(idx, "inspection_status", "Status")}</div>
+              <div><span className="text-muted-foreground">By:</span> {cellInp(idx, "inspected_by", "By")}</div>
+            </div>
+            {editMode && rows.length > 1 && (
+              <button onClick={() => removeRow(idx)} className="absolute top-1 right-1 text-destructive">
+                <Trash2 className="w-3 h-3" />
+              </button>
+            )}
+          </div>
+        ))}
       </div>
-
-      {/* ── 6-Column Items Table (Horizontal Matrix) ── */}
-      <div className="grid grid-cols-[70px_1fr_60px_1fr_1fr_1fr] border-x border-b border-border text-[10px] font-semibold bg-muted">
-        <div className="p-1 border-r border-border">Date</div>
-        <div className="p-1 border-r border-border">Item Description</div>
-        <div className="p-1 border-r border-border">Qty.</div>
-        <div className="p-1 border-r border-border">Name Of Supplier</div>
-        <div className="p-1 border-r border-border">Inspection Status</div>
-        <div className="p-1">Inspected By</div>
-      </div>
-
-      {rows.map((row, idx) => (
-        <div key={idx} className="grid grid-cols-[70px_1fr_60px_1fr_1fr_1fr] border-x border-b border-border text-xs relative group min-h-[28px]">
-          <div className="p-1 border-r border-border">{cellInp(idx, "date", "Date")}</div>
-          <div className="p-1 border-r border-border">{cellInp(idx, "itemDescription", "Item")}</div>
-          <div className="p-1 border-r border-border text-center">{cellInp(idx, "qty", "Qty")}</div>
-          <div className="p-1 border-r border-border">{cellInp(idx, "supplier", "Supplier")}</div>
-          <div className="p-1 border-r border-border">{cellInp(idx, "inspectionStatus", "Status")}</div>
-          <div className="p-1">{cellInp(idx, "inspectedBy", "By")}</div>
-          {editMode && rows.length > 1 && (
-            <button onClick={() => removeRow(idx)} className="absolute -right-6 top-1/2 -translate-y-1/2 text-destructive opacity-0 group-hover:opacity-100 transition-opacity">
-              <Trash2 className="w-3 h-3" />
-            </button>
-          )}
-        </div>
-      ))}
 
       {editMode && (
-        <button onClick={addRow} className="mt-1 flex items-center gap-1 text-xs text-primary hover:underline mx-auto">
+        <button onClick={addRow} className="mt-2 flex items-center gap-1 text-xs text-primary hover:underline mx-auto">
           <Plus className="w-3 h-3" /> Add Row
         </button>
       )}
 
-      {/* ── Disclaimer Callout ── */}
-      {val(d, "disclaimer") && (
-        <div className="mx-0 mt-2 p-2 bg-blue-50 dark:bg-blue-950/20 border-l-4 border-l-blue-500 border-x border-b border-border text-xs">
-          <div className="flex items-start gap-2">
-            <Info className="w-4 h-4 text-blue-600 dark:text-blue-400 mt-0.5 shrink-0" />
-            <span className="text-blue-800 dark:text-blue-300">{val(d, "disclaimer")}</span>
-          </div>
-        </div>
-      )}
-
       {/* ── Footer Signatures ── */}
-      <div className="mt-3 pt-2 border-t border-foreground/20 flex justify-between text-xs">
-        <div>Prepared By: {inp("prepared_by", "Name", "w-36")}</div>
-        <div>Checked By: {inp("checked_by", "Name", "w-36")}</div>
+      <div className="mt-3 pt-2 border-t border-foreground/20 flex justify-between text-xs px-2">
+        <div>Prepared By: {metaInp("prepared_by", "Name")}</div>
+        <div>Checked By: {metaInp("checked_by", "Name")}</div>
       </div>
     </FormDocument>
-
-    );
+  );
 }

@@ -1,13 +1,16 @@
 // ============================================================================
 // F/47 — Internal Audit Checklist
-// DOCX: 6C x 303R — ISO 9001:2015 clauses 4-10 with questions and status
-// Strategy: Collapsible sections per ISO clause, each question has Yes/No/N/A + Evidence
+// DOCX: 303 rows × 6 columns
+// R0: "REQUIREMENT" (5 cols) | "STATUS"
+// R1: "4. Context Of the Organization" (merged 5 cols)
+// R2: "4.1" | "Understanding..." (4 cols) | STATUS
+// Subsequent rows: ISO 9001 audit checklist items
 // ============================================================================
 
 import React, { useState } from "react";
 import { cn } from "@/lib/utils";
 import { ChevronDown, ChevronRight } from "lucide-react";
-import { FormDocument } from "../FormKit";
+import { FormDocument, val } from "../FormKit";
 
 export interface F47Props {
   data?: Record<string, unknown>;
@@ -17,14 +20,7 @@ export interface F47Props {
   className?: string;
 }
 
-function val(data: Record<string, unknown> | undefined, key: string): string {
-  if (!data) return "";
-  const v = data[key];
-  if (v == null) return "";
-  return typeof v === "string" ? v : String(v);
-}
-
-// ISO 9001:2015 Audit checklist structure - clauses and questions
+// ISO 9001:2015 Audit checklist structure
 const AUDIT_SECTIONS = [
   {
     clause: "4",
@@ -284,7 +280,7 @@ export function F47Template({ data, isTemplate = true, editMode = false, onChang
   const d = data ?? {};
   const ph = isTemplate && !editMode;
 
-  const [openSections, setOpenSections] = useState<Set<string>>(new Set(["4", "5"]));
+  const [openSections, setOpenSections] = useState<Set<string>>(new Set(AUDIT_SECTIONS.map(s => s.clause)));
 
   const toggleSection = (clause: string) => {
     setOpenSections(prev => {
@@ -301,103 +297,109 @@ export function F47Template({ data, isTemplate = true, editMode = false, onChang
       <div className="flex gap-1">
         {["Yes", "No", "N/A"].map(opt => (
           <label key={opt} className="flex items-center gap-0.5 text-[10px]">
-            <input type="radio" name={key} className="w-2.5 h-2.5" checked={current === opt} onChange={() => onChange?.(key, opt)} />
+            <input
+              type="radio"
+              name={key}
+              className="w-2.5 h-2.5"
+              checked={current === opt}
+              onChange={() => onChange?.(key, opt)}
+            />
             {opt}
           </label>
         ))}
       </div>
     ) : (
-      <span className="text-xs font-medium">{current || ""}</span>
+      <span className="text-[10px] font-medium">{current || ""}</span>
     );
   };
 
   const evidenceInp = (key: string) =>
     editMode ? (
-      <input className="w-full bg-transparent text-[10px] px-0.5 border-none outline-none" value={val(d, key)} onChange={e => onChange?.(key, e.target.value)} placeholder="Evidence/Reference" />
+      <input
+        className="w-full bg-transparent text-[10px] px-0.5 border-none outline-none"
+        value={val(d, key)}
+        onChange={e => onChange?.(key, e.target.value)}
+        placeholder="Evidence/Reference"
+      />
     ) : (
       <span className="text-[10px]">{val(d, key) || ""}</span>
     );
 
-  // Count total questions
-  const totalQuestions = AUDIT_SECTIONS.reduce((acc, s) => 
-    acc + s.subclauses.reduce((a, sc) => a + sc.questions.length, 0), 0);
-
   return (
-    <FormDocument formCode="F/47" formName="Audit Checklist" serial={val(d, "serial")} sectionName="Quality & Audit">
-      {/* Header */}
-      <div className="grid grid-cols-[4fr_2fr_1fr] border border-border">
-        <div className="p-2 font-bold bg-primary/5 text-base">Internal Audit Checklist</div>
-        <div className="p-2 border-l border-border bg-primary/5 text-xs flex flex-col justify-center">
-          <div>Audit Date: {val(d, "audit_date") || (ph ? "___" : "")}</div>
-          <div>Auditor: {val(d, "auditor") || (ph ? "___" : "")}</div>
-        </div>
-        <div className="p-2 border-l border-border bg-primary/5 text-right text-xs">
-          F/47 Rev No. {val(d, "serial") || (ph ? "{{SERIAL}}" : "—")}
-        </div>
+    <FormDocument formCode="F/47" formName="Internal Audit Checklist" serial={val(d, "serial")} sectionName="Quality & Audit">
+      <div className="w-full overflow-x-auto">
+        <table className="w-full text-[9px] border-collapse" style={{ tableLayout: "fixed" }}>
+          <colgroup>
+            <col style={{ width: "6%" }} />
+            <col style={{ width: "54%" }} />
+            <col style={{ width: "10%" }} />
+            <col style={{ width: "15%" }} />
+            <col style={{ width: "15%" }} />
+          </colgroup>
+          <thead>
+            {/* Row 0: REQUIREMENT (5 cols) | STATUS */}
+            <tr className="bg-primary/10">
+              <td className="border border-border p-1.5 font-bold text-xs" colSpan={2}>REQUIREMENT</td>
+              <td className="border border-border p-1.5 font-bold text-xs" colSpan={2}>EVIDENCE</td>
+              <td className="border border-border p-1.5 font-bold text-xs">STATUS</td>
+            </tr>
+          </thead>
+          <tbody>
+            {AUDIT_SECTIONS.map(section => {
+              const isOpen = openSections.has(section.clause);
+              return (
+                <React.Fragment key={section.clause}>
+                  {/* Section header row */}
+                  <tr className="bg-muted/50">
+                    <td className="border border-border p-1 font-semibold text-xs" colSpan={2}>
+                      <button
+                        className="flex items-center gap-1 text-left w-full"
+                        onClick={() => toggleSection(section.clause)}
+                      >
+                        {isOpen ? <ChevronDown className="w-3 h-3" /> : <ChevronRight className="w-3 h-3" />}
+                        {section.clause}. {section.title}
+                      </button>
+                    </td>
+                    <td className="border border-border p-1" colSpan={2}></td>
+                    <td className="border border-border p-1"></td>
+                  </tr>
+
+                  {/* Subclause + question rows */}
+                  {isOpen && section.subclauses.map(subclause => (
+                    <React.Fragment key={subclause.ref}>
+                      {/* Subclause header */}
+                      <tr className="bg-muted/30">
+                        <td className="border border-border p-1 font-medium text-[10px]">{subclause.ref}</td>
+                        <td className="border border-border p-1 font-medium text-[10px]" colSpan={4}>{subclause.title}</td>
+                      </tr>
+
+                      {/* Question rows */}
+                      {subclause.questions.map((question, qi) => {
+                        const key = `s${section.clause}_${subclause.ref}_${qi}`;
+                        return (
+                          <tr key={key} className="even:bg-muted/20">
+                            <td className="border border-border px-1 py-0.5 text-[9px] text-muted-foreground">{subclause.ref}.{qi + 1}</td>
+                            <td className="border border-border px-1 py-0.5 text-[9px]">{question}</td>
+                            <td className="border border-border px-1 py-0.5" colSpan={2}>{evidenceInp(`${key}_evidence`)}</td>
+                            <td className="border border-border px-1 py-0.5">{statusRadio(key)}</td>
+                          </tr>
+                        );
+                      })}
+                    </React.Fragment>
+                  ))}
+                </React.Fragment>
+              );
+            })}
+          </tbody>
+        </table>
       </div>
-
-      <div className="text-xs text-muted-foreground px-2 py-1 bg-muted/50 border-x border-b border-border">
-        ISO 9001:2015 Compliance Checklist — {totalQuestions} questions across {AUDIT_SECTIONS.length} clauses
-      </div>
-
-      {/* Collapsible sections */}
-      {AUDIT_SECTIONS.map(section => {
-        const isOpen = openSections.has(section.clause);
-        const questionCount = section.subclauses.reduce((a, sc) => a + sc.questions.length, 0);
-        // Count answered questions
-        let answeredCount = 0;
-        section.subclauses.forEach(sc => {
-          sc.questions.forEach((_, qi) => {
-            const key = `s${section.clause}_${sc.ref}_${qi}`;
-            if (val(d, key)) answeredCount++;
-          });
-        });
-
-        return (
-          <div key={section.clause} className="border-x border-b border-border">
-            {/* Section header - clickable */}
-            <button
-              className="w-full flex items-center justify-between px-2 py-1.5 bg-primary/10 hover:bg-primary/15 transition-colors text-xs font-semibold"
-              onClick={() => toggleSection(section.clause)}
-            >
-              <span className="flex items-center gap-1">
-                {isOpen ? <ChevronDown className="w-3 h-3" /> : <ChevronRight className="w-3 h-3" />}
-                {section.clause}. {section.title}
-              </span>
-              <span className="text-muted-foreground">{answeredCount}/{questionCount}</span>
-            </button>
-
-            {isOpen && section.subclauses.map(subclause => (
-              <div key={subclause.ref} className="border-t border-foreground/10">
-                {/* Subclause header */}
-                <div className="px-3 py-1 bg-muted/50 text-xs font-medium">
-                  {subclause.ref} {subclause.title}
-                </div>
-
-                {/* Questions */}
-                {subclause.questions.map((question, qi) => {
-                  const key = `s${section.clause}_${subclause.ref}_${qi}`;
-                  return (
-                    <div key={key} className="grid grid-cols-[1fr_120px_1fr] gap-0 border-t border-foreground/5 px-3 py-1 text-[11px] even:bg-muted/50/30">
-                      <div className="py-0.5 pr-2">{question}</div>
-                      <div className="py-0.5 pr-2">{statusRadio(key)}</div>
-                      <div className="py-0.5">{evidenceInp(`${key}_evidence`)}</div>
-                    </div>
-                  );
-                })}
-              </div>
-            ))}
-          </div>
-        );
-      })}
 
       {/* Sign-off */}
-      <div className="grid grid-cols-[1fr_1fr_1fr] border border-t-2 border-border text-xs">
+      <div className="grid grid-cols-3 border border-t-2 border-border text-xs mt-2">
         <div className="p-1.5 border-r border-border">Auditor: {val(d, "auditor") || (ph ? "___" : "")}</div>
         <div className="p-1.5 border-r border-border">Date: {val(d, "audit_date") || (ph ? "___" : "")}</div>
         <div className="p-1.5">Approved: {val(d, "approved_by") || (ph ? "___" : "")}</div>
       </div>
     </FormDocument>
-
-    );
+  );
 }

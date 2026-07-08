@@ -1,11 +1,11 @@
 // ============================================================================
-// F/25 — Audit Plan (Canonical Rewrite)
-// DOCX ground truth: 4-column audit matrix, corporate mandate, closure footer.
+// F/25 — Audit Plan
+// WORD: 19 rows × 9 columns
 // ============================================================================
 
 import React, { useState, useCallback } from "react";
 import { cn } from "@/lib/utils";
-import { Plus, Trash2, AlertTriangle, CheckCircle2 } from "lucide-react";
+import { Plus, Trash2 } from "lucide-react";
 import { FormDocument, val } from "../FormKit";
 
 export interface F25Props {
@@ -16,23 +16,16 @@ export interface F25Props {
   className?: string;
 }
 
-function val(data: Record<string, unknown> | undefined, key: string): string {
-  if (!data) return "";
-  const v = data[key];
-  if (v == null) return "";
-  return typeof v === "string" ? v : String(v);
-}
-
-interface AuditMatrixRow {
+interface AuditRow {
   department: string;
   activity_scope: string;
   date_time: string;
   auditor: string;
 }
 
-function parseMatrix(d: Record<string, unknown>): AuditMatrixRow[] {
+function parseMatrix(d: Record<string, unknown>): AuditRow[] {
   const raw = d.audit_matrix || d.items || d.rows || [];
-  if (Array.isArray(raw) && raw.length > 0 && typeof raw[0] === "object") return raw as AuditMatrixRow[];
+  if (Array.isArray(raw) && raw.length > 0 && typeof raw[0] === "object") return raw as AuditRow[];
   return [
     { department: "Top Management / Management Representative", activity_scope: "Management review & coordination", date_time: "Week 4 – Jan 2026", auditor: "Ahmed Khaled" },
     { department: "Marketing", activity_scope: "Not in scope – January", date_time: "N/A", auditor: "N/A" },
@@ -47,9 +40,9 @@ function parseMatrix(d: Record<string, unknown>): AuditMatrixRow[] {
 export function F25Template({ data, isTemplate = true, editMode = false, onChange, className }: F25Props) {
   const d = data ?? {};
   const ph = isTemplate && !editMode;
-  const [matrix, setMatrix] = useState<AuditMatrixRow[]>(() => parseMatrix(d));
+  const [matrix, setMatrix] = useState<AuditRow[]>(() => parseMatrix(d));
 
-  const updateMatrix = useCallback((idx: number, key: keyof AuditMatrixRow, value: string) => {
+  const updateMatrix = useCallback((idx: number, key: keyof AuditRow, value: string) => {
     setMatrix(prev => {
       const next = [...prev];
       next[idx] = { ...next[idx], [key]: value };
@@ -70,193 +63,177 @@ export function F25Template({ data, isTemplate = true, editMode = false, onChang
     });
   }, [onChange]);
 
-  const inp = (key: string, label: string, width: string = "w-48") =>
+  const inp = (key: string, placeholder: string) =>
     editMode ? (
       <input
-        className={cn("border-b border-dashed border-foreground/40 bg-transparent text-xs px-1", width)}
+        className="w-full bg-transparent text-[11px] px-1 border-none outline-none"
         value={val(d, key)}
         onChange={e => onChange?.(key, e.target.value)}
-        placeholder={label}
+        placeholder={placeholder}
       />
     ) : (
-      <span className={cn("border-b border-dashed border-foreground/30 px-1 inline-block", width)}>
-        {val(d, key) || (ph ? "___" : "")}
+      <span className="text-[11px] leading-tight block min-w-[3rem]">
+        {val(d, key) || (ph ? "" : "")}
       </span>
     );
 
-  const cellInp = (idx: number, key: keyof AuditMatrixRow, label: string) =>
+  const cellInp = (idx: number, key: keyof AuditRow, placeholder: string) =>
     editMode ? (
       <input
-        className="w-full bg-transparent text-xs px-1 border-none outline-none"
+        className="w-full bg-transparent text-[11px] px-0.5 border-none outline-none"
         value={matrix[idx]?.[key] || ""}
         onChange={e => updateMatrix(idx, key, e.target.value)}
-        placeholder={label}
+        placeholder={placeholder}
       />
     ) : (
-      <span className="text-xs">{matrix[idx]?.[key] || ""}</span>
+      <span className="text-[11px]">{matrix[idx]?.[key] || ""}</span>
     );
+
+  const cls = "border border-border text-[11px] px-1.5 py-1";
+  const clsH = cn(cls, "font-semibold bg-muted/50");
 
   return (
     <FormDocument formCode="F/25" formName="Audit Plan" serial={val(d, "serial")} sectionName="Quality & Audit">
-      {/* ── Header Banner ── */}
-      <div className="grid grid-cols-[8fr_1fr] border border-border">
-        <div className="p-2 font-bold bg-primary/5 text-base">Audit Plan</div>
-        <div className="p-2 border-l border-border bg-primary/5 text-right text-xs whitespace-nowrap">
-          F/25 Rev No. {val(d, "audit_plan_no") || val(d, "serial") || (ph ? "{{SERIAL}}" : "—")}
-        </div>
-      </div>
-
-      {/* ── Audit Plan No. / Date ── */}
-      <div className="grid grid-cols-[3fr_2fr] border-x border-b border-border text-xs">
-        <div className="p-1.5 border-r border-border">
-          Audit Plan No. 🡪 {inp("audit_plan_no", "F/25-001", "w-28")}
-        </div>
-        <div className="p-1.5">Date 🡪 {inp("date", "01/01/2026", "w-28")}</div>
-      </div>
-
-      {/* ── From / To ── */}
-      <div className="grid grid-cols-[3fr_2fr] border-x border-b border-border text-xs">
-        <div className="p-1.5 border-r border-border">
-          From 🡪 {inp("from_role", "Management Representative", "w-64")}
-        </div>
-        <div className="p-1.5">
-          To 🡪 {inp("to_role", "Auditors / Auditee", "w-48")}
-        </div>
-      </div>
-
-      {/* ── Metadata Cards: Last Audit + Next Audit ── */}
-      <div className="grid grid-cols-2 border-x border-b border-border text-xs">
-        {/* Last Audit */}
-        <div className="p-2 border-r border-border bg-muted/30">
-          <div className="font-semibold text-[10px] uppercase tracking-wider text-muted-foreground mb-1">Last Audit</div>
-          <div className="grid grid-cols-[1fr_1fr] gap-x-2 gap-y-0.5">
-            <span className="text-muted-foreground">Month:</span>
-            <span>{inp("last_audit_month", "N/A", "w-20")}</span>
-            <span className="text-muted-foreground">Plan No.:</span>
-            <span>{inp("last_audit_plan_no", "N/A", "w-20")}</span>
-            <span className="text-muted-foreground">Plan Date:</span>
-            <span>{inp("last_audit_plan_date", "N/A", "w-20")}</span>
-          </div>
-        </div>
-        {/* Next Audit */}
-        <div className="p-2 bg-muted/30">
-          <div className="font-semibold text-[10px] uppercase tracking-wider text-muted-foreground mb-1">Next Audit</div>
-          <div className="grid grid-cols-[1fr_1fr] gap-x-2 gap-y-0.5">
-            <span className="text-muted-foreground">Due:</span>
-            <span>{inp("next_audit_due_month", "01/02/2026", "w-20")}</span>
-            <span className="text-muted-foreground">Plan No.:</span>
-            <span>{inp("next_audit_plan_no", "F/25-002", "w-20")}</span>
-          </div>
-        </div>
-      </div>
-
-      {/* ── Corporate Mandate Alert ── */}
-      <div className="border-x border-b border-border p-2 bg-amber-50/50 dark:bg-amber-950/20 border-l-4 border-l-amber-500">
-        <div className="flex gap-2 items-start">
-          <AlertTriangle className="w-4 h-4 text-amber-600 mt-0.5 shrink-0" />
-          <div>
-            <div className="text-[10px] font-semibold uppercase tracking-wider text-amber-700 dark:text-amber-400 mb-0.5">
-              Corporate Mandate
-            </div>
-            <p className="text-[11px] leading-relaxed text-amber-900 dark:text-amber-200">
-              {val(d, "intro_corporate_note") || (
-                ph
-                  ? "Please note that internal quality audit in our Organization is planned as per the details given below; so, please make yourself available as per the time schedule for your departmental audit and co-operate auditors during the course of audit and they are given access to all facilities, documents as required."
-                  : ""
-              )}
-            </p>
-          </div>
-        </div>
-      </div>
-
-      {/* ── Audit Matrix: 4-Column Table ── */}
-      <div className="border-x border-border">
-        {/* Table Header */}
-        <div className="grid grid-cols-[1.5fr_2.5fr_1.5fr_1.5fr] text-[10px] font-semibold bg-muted border-b border-border">
-          <div className="p-1.5 border-r border-border">Department</div>
-          <div className="p-1.5 border-r border-border">Audit All Activity / Part</div>
-          <div className="p-1.5 border-r border-border">Date And Time</div>
-          <div className="p-1.5">Auditor</div>
-        </div>
-
-        {/* Table Rows */}
-        {matrix.map((row, idx) => (
-          <div
-            key={idx}
-            className="grid grid-cols-[1.5fr_2.5fr_1.5fr_1.5fr] border-b border-border text-xs relative group min-h-[28px]"
-          >
-            <div className="p-1 border-r border-border">{cellInp(idx, "department", "Department")}</div>
-            <div className="p-1 border-r border-border">{cellInp(idx, "activity_scope", "Scope of audit")}</div>
-            <div className="p-1 border-r border-border">{cellInp(idx, "date_time", "Date / Time")}</div>
-            <div className="p-1 flex items-center gap-1">
-              {cellInp(idx, "auditor", "Auditor name")}
-              {editMode && matrix.length > 1 && (
-                <button
-                  onClick={() => removeRow(idx)}
-                  className="text-destructive opacity-0 group-hover:opacity-100 transition-opacity shrink-0"
-                >
-                  <Trash2 className="w-3 h-3" />
-                </button>
-              )}
-            </div>
+      {/* Mobile fallback */}
+      <div className="md:hidden space-y-2 text-xs p-2 border border-border rounded-lg">
+        <div className="font-bold text-sm">Audit Plan</div>
+        <div>Audit Plan No: {inp("audit_plan_no", "Plan No")}</div>
+        <div>Date: {inp("date", "Date")}</div>
+        <div>From: {inp("from_role", "From")}</div>
+        <div>To: {inp("to_role", "To")}</div>
+        {matrix.map((row, i) => (
+          <div key={i} className="border-t pt-1">
+            <div>{row.department}</div>
+            <div className="text-muted-foreground">{row.activity_scope}</div>
           </div>
         ))}
-
-        {/* Add Row Button */}
-        {editMode && (
-          <button
-            onClick={addRow}
-            className="w-full py-1 flex items-center justify-center gap-1 text-xs text-primary hover:bg-muted/50 transition-colors"
-          >
-            <Plus className="w-3 h-3" /> Add Department Row
-          </button>
-        )}
       </div>
 
-      {/* ── Closure Footer ── */}
-      <div className="border-x border-b border-border p-2 space-y-2">
-        {/* Status */}
-        <div className="flex items-center gap-2 text-xs">
-          <span className="text-muted-foreground">Status Of Actual Audit:</span>
-          {editMode ? (
-            <input
-              className="border-b border-dashed border-foreground/40 bg-transparent text-xs px-1 w-28"
-              value={val(d, "status_of_actual_audit")}
-              onChange={e => onChange?.("status_of_actual_audit", e.target.value)}
-              placeholder="Completed"
-            />
-          ) : (
-            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300">
-              <CheckCircle2 className="w-3 h-3" />
-              {val(d, "status_of_actual_audit") || "Completed"}
-            </span>
-          )}
-        </div>
+      {/* Desktop table — 9 columns */}
+      <table className="w-full border-collapse border border-border text-[11px] hidden md:table">
+        <tbody>
+          {/* Row 0: Title merged 0-7, col 8 = rev */}
+          <tr>
+            <td colSpan={8} className={cn(cls, "font-bold text-center text-sm bg-primary/5")}>
+              Audit Plan
+            </td>
+            <td className={cn(cls, "text-right bg-primary/5 whitespace-nowrap")}>
+              F/25 Rev No.{val(d, "audit_plan_no") || val(d, "serial") || (ph ? "{{SERIAL}}" : "")}
+            </td>
+          </tr>
 
-        {/* Remarks */}
-        <div className="text-xs">
-          <span className="text-muted-foreground block mb-0.5">Remarks:</span>
-          {editMode ? (
-            <textarea
-              className="w-full border border-border bg-transparent text-xs p-1 rounded"
-              value={val(d, "remarks")}
-              onChange={e => onChange?.("remarks", e.target.value)}
-              placeholder="Audit schedule was verbally communicated..."
-              rows={2}
-            />
-          ) : (
-            <p className="text-xs leading-relaxed">{val(d, "remarks") || (ph ? "___" : "")}</p>
-          )}
-        </div>
+          {/* Row 1: Audit Plan No. cols 0-3, Date cols 4-8 */}
+          <tr>
+            <td colSpan={4} className={cls}>
+              Audit Plan No. → {inp("audit_plan_no", "F/25-001")}
+            </td>
+            <td colSpan={5} className={cls}>
+              Date → {inp("date", "DD/MM/YYYY")}
+            </td>
+          </tr>
 
-        {/* Reviewed & Approved By */}
-        <div className="flex justify-between text-xs pt-1 border-t border-foreground/10">
-          <div>
-            Reviewed & Approved By:{" "}
-            {inp("reviewed_and_approved_by", "Management Representative", "w-40")}
-          </div>
-        </div>
-      </div>
+          {/* Row 2: From cols 0-3, To cols 4-8 */}
+          <tr>
+            <td colSpan={4} className={cls}>
+              From → Management Representative
+            </td>
+            <td colSpan={5} className={cls}>
+              To → Auditors / Audittee
+            </td>
+          </tr>
+
+          {/* Row 3: Last Audit Done In The Month Of cols 0-3, Last Audit Plan No. cols 4-8 */}
+          <tr>
+            <td colSpan={4} className={cls}>
+              Last Audit Done In The Month Of : {inp("last_audit_month", "Month")}
+            </td>
+            <td colSpan={5} className={cls}>
+              Last Audit Plan No. : {inp("last_audit_plan_no", "Plan No.")}
+            </td>
+          </tr>
+
+          {/* Row 4: Last Audit Done In The Month Of cols 0-3, Last Audit Plan Date cols 4-8 */}
+          <tr>
+            <td colSpan={4} className={cls}>
+              Last Audit Done In The Month Of : {inp("last_audit_month2", "Month")}
+            </td>
+            <td colSpan={5} className={cls}>
+              Last Audit Plan Date : {inp("last_audit_plan_date", "DD/MM/YYYY")}
+            </td>
+          </tr>
+
+          {/* Row 5: Audit matrix header */}
+          <tr>
+            <td colSpan={3} className={cn(clsH, "text-center")}>
+              Department
+            </td>
+            <td colSpan={3} className={cn(clsH, "text-center")}>
+              Audit All Activity / Part
+            </td>
+            <td className={cn(clsH, "text-center")}>
+              Date And Time
+            </td>
+            <td colSpan={2} className={cn(clsH, "text-center")}>
+              Auditor
+            </td>
+          </tr>
+
+          {/* Rows 6-17: audit matrix rows (up to 12) */}
+          {matrix.map((row, idx) => (
+            <tr key={idx}>
+              <td colSpan={3} className={cls}>
+                {cellInp(idx, "department", "Department")}
+              </td>
+              <td colSpan={3} className={cls}>
+                {cellInp(idx, "activity_scope", "Scope")}
+              </td>
+              <td className={cls}>
+                {cellInp(idx, "date_time", "Date/Time")}
+              </td>
+              <td colSpan={2} className={cls}>
+                <div className="flex items-center gap-1">
+                  {cellInp(idx, "auditor", "Auditor")}
+                  {editMode && matrix.length > 1 && (
+                    <button
+                      onClick={() => removeRow(idx)}
+                      className="text-destructive opacity-0 group-hover:opacity-100 transition-opacity shrink-0"
+                    >
+                      <Trash2 className="w-3 h-3" />
+                    </button>
+                  )}
+                </div>
+              </td>
+            </tr>
+          ))}
+
+          {/* Add row button spans full width */}
+          {editMode && (
+            <tr>
+              <td colSpan={9} className="border border-border">
+                <button
+                  onClick={addRow}
+                  className="w-full py-1 flex items-center justify-center gap-1 text-[11px] text-primary hover:bg-muted/50 transition-colors"
+                >
+                  <Plus className="w-3 h-3" /> Add Row
+                </button>
+              </td>
+            </tr>
+          )}
+
+          {/* Row 18: Signature row */}
+          <tr>
+            <td colSpan={3} className={cls}>
+              Reviewed By : {inp("reviewed_by", "Reviewer Name")}
+            </td>
+            <td colSpan={3} className={cls}>
+              Approved By : {inp("approved_by", "Approver Name")}
+            </td>
+            <td colSpan={3} className={cls}>
+              Management Representative : {inp("management_rep", "Name")}
+            </td>
+          </tr>
+        </tbody>
+      </table>
     </FormDocument>
   );
 }

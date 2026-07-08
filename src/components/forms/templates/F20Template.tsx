@@ -1,16 +1,11 @@
 // ============================================================================
 // F/20 — Management Review Meeting Agenda
-// Canonical rewrite matching DOCX structure exactly.
-// DOCX: Single-cell table with full meeting notice text including:
-//   Date, Time, Place, full agenda with bullet points, Approved By
-// Pillar 2: Deep DOCX Ingestion — full lifecycle text extraction
-// Pillar 4: Continuous Validation — schema keys match template exactly
+// DOCX: 1 row × 1 column — single cell with full agenda text
 // ============================================================================
 
 import React from "react";
 import { cn } from "@/lib/utils";
-import { FileText } from "lucide-react";
-import { FormDocument } from "../FormKit";
+import { FormDocument, val } from "../FormKit";
 
 export interface F20Props {
   data?: Record<string, unknown>;
@@ -18,13 +13,6 @@ export interface F20Props {
   editMode?: boolean;
   onChange?: (field: string, value: string) => void;
   className?: string;
-}
-
-function val(data: Record<string, unknown> | undefined, key: string): string {
-  if (!data) return "";
-  const v = data[key];
-  if (v == null) return "";
-  return typeof v === "string" ? v : String(v);
 }
 
 export function F20Template({ data, isTemplate = true, editMode = false, onChange, className }: F20Props) {
@@ -45,72 +33,66 @@ export function F20Template({ data, isTemplate = true, editMode = false, onChang
       </span>
     );
 
-  const textArea = (key: string, placeholder: string, minH: string = "min-h-[120px]") =>
+  const textArea = (key: string, placeholder: string) =>
     editMode ? (
       <textarea
-        className={cn("w-full bg-transparent text-sm p-2 border border-dashed border-foreground/40 rounded resize-none", minH)}
+        className="w-full bg-transparent text-sm p-2 border border-dashed border-foreground/40 rounded resize-none min-h-[200px]"
         value={val(d, key) || ""}
         onChange={e => onChange?.(key, e.target.value)}
         placeholder={placeholder}
       />
     ) : (
-      <div className={cn("whitespace-pre-wrap text-sm leading-relaxed", minH)}>
+      <div className="whitespace-pre-wrap text-sm leading-relaxed min-h-[200px]">
         {val(d, key) || (ph ? "___" : "")}
       </div>
     );
 
   return (
     <FormDocument formCode="F/20" formName="Review Agenda" serial={val(d, "serial")} sectionName="Management & Documentation">
-      {/* ── Header ── */}
-      <div className="grid grid-cols-[3fr_1fr] border border-border">
-        <div className="p-2 font-bold bg-primary/5 text-base flex items-center gap-2">
-          <FileText className="w-5 h-5 text-primary" />
-          Management Review Meeting Agenda
-        </div>
-        <div className="p-2 border-l border-border bg-primary/5 text-right text-xs">
-          F/20 Rev No. {val(d, "serial") || (ph ? "{{SERIAL}}" : "—")}
-        </div>
-      </div>
+      {/* 1 row × 1 column table matching Word structure */}
+      <table className="w-full border-collapse text-sm">
+        <tbody>
+          <tr>
+            <td className="border border-border p-4">
+              <div className="space-y-4">
+                <p>Please be advised that there will be management Review Meeting.</p>
 
-      {/* ── Sr. No. + Date ── */}
-      <div className="grid grid-cols-[1fr_1fr] border-x border-b border-border text-xs">
-        <div className="p-1.5 border-r border-border">
-          <span className="font-semibold">Sr. No. 🡪</span> {val(d, "serial") || (ph ? "{{SERIAL}}" : "—")}
-        </div>
-        <div className="p-1.5">
-          <span className="font-semibold">Date 🡪</span> {inp("date", "DD/MM/YYYY", "w-28")}
-        </div>
-      </div>
+                <div className="grid grid-cols-3 gap-4 text-sm">
+                  <div><span className="font-semibold">Date: </span>{inp("date", "DD/MM/YYYY", "w-32")}</div>
+                  <div><span className="font-semibold">Time: </span>{inp("time", "Time", "w-28")}</div>
+                  <div><span className="font-semibold">Place: </span>{inp("place", "Place", "w-32")}</div>
+                </div>
 
-      {/* ── Meeting Info ── */}
-      <div className="grid grid-cols-3 border-x border-b border-border text-xs">
-        <div className="p-1.5 border-r border-border">
-          <span className="font-semibold">Time 🡪</span> {inp("time", "Time", "w-24")}
-        </div>
-        <div className="p-1.5 border-r border-border">
-          <span className="font-semibold">Place 🡪</span> {inp("place", "Place", "w-32")}
-        </div>
-        <div className="p-1.5">
-          <span className="font-semibold">Chairperson 🡪</span> {inp("chairperson", "Chairperson", "w-36")}
-        </div>
-      </div>
+                <div>
+                  <p>The agenda will include.</p>
+                  <ul className="list-disc ml-6 mt-2 space-y-1">
+                    <li>The status of actions from previous management reviews;</li>
+                    <li>Changes in external and internal issues relevant to QMS;</li>
+                    <li>Information on the performance and effectiveness of QMS, including trends in:
+                      <ul className="list-disc ml-6 mt-1 space-y-1">
+                        <li>Customer satisfaction and feedback from relevant interested parties and customer complaints;</li>
+                        <li>The extent to which quality objectives have been met;</li>
+                        <li>Process performance and conformity of products and services;</li>
+                        <li>Nonconformities and corrective actions;</li>
+                        <li>Monitoring and measurement results and Review effectiveness of system in achieving Quality objectives;</li>
+                      </ul>
+                    </li>
+                    <li>Audit results;</li>
+                    <li>The performance of external providers;</li>
+                    <li>The adequacy of resources;</li>
+                    <li>Effectiveness of actions to address risks and opportunities</li>
+                    <li>Opportunities for improvement</li>
+                  </ul>
+                </div>
 
-      {/* ── Full Agenda Text ── */}
-      <div className="border-x border-b border-border">
-        <div className="p-1.5 bg-muted/50 text-xs font-semibold border-b border-border">Agenda</div>
-        <div className="p-2">{textArea("agenda", "Full meeting agenda...", "min-h-[200px]")}</div>
-      </div>
-
-      {/* ── Footer Signatures ── */}
-      <div className="grid grid-cols-[1fr_1fr] border-x border-b border-border rounded-b-sm text-xs">
-        <div className="p-1.5 border-r border-border">
-          <span className="font-semibold">Prepared By 🡪</span> {inp("prepared_by", "Name", "w-36")}
-        </div>
-        <div className="p-1.5">
-          <span className="font-semibold">Approved By 🡪</span> {inp("approved_by", "Name", "w-36")}
-        </div>
-      </div>
+                <div className="text-right">
+                  <span className="font-semibold">Approved By: </span>{inp("approved_by", "Approved By", "w-40")}
+                </div>
+              </div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
     </FormDocument>
-
-    );
+  );
 }

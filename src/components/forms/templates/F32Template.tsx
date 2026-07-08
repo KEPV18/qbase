@@ -1,16 +1,11 @@
 // ============================================================================
 // F/32 — R&D Request Form
-// Canonical rewrite matching DOCX structure exactly.
-// DOCX: 17C x 25R — Multi-section: request info, product details,
-//   feasibility review, priority, approvals
-// Pillar 2: Deep DOCX Ingestion — full lifecycle text extraction
-// Pillar 4: Continuous Validation — schema keys match template exactly
+// DOCX: 17C x 25R — Request info, product details, feasibility, approvals
 // ============================================================================
 
 import React from "react";
 import { cn } from "@/lib/utils";
-import { FileText, CheckCircle2, XCircle, AlertTriangle } from "lucide-react";
-import { FormDocument } from "../FormKit";
+import { FormDocument, val } from "../FormKit";
 
 export interface F32Props {
   data?: Record<string, unknown>;
@@ -20,212 +15,253 @@ export interface F32Props {
   className?: string;
 }
 
-function val(data: Record<string, unknown> | undefined, key: string): string {
-  if (!data) return "";
-  const v = data[key];
-  if (v == null) return "";
-  return typeof v === "string" ? v : String(v);
-}
-
 export function F32Template({ data, isTemplate = true, editMode = false, onChange, className }: F32Props) {
   const d = data ?? {};
   const ph = isTemplate && !editMode;
 
-  const inp = (key: string, label: string, width: string = "w-full") =>
+  const inp = (key: string, placeholder: string, className?: string) =>
     editMode ? (
-      <input className={cn("border-b border-dashed border-foreground/40 bg-transparent text-sm px-1", width)} value={val(d, key)} onChange={e => onChange?.(key, e.target.value)} placeholder={label} />
+      <input
+        className={cn("w-full bg-transparent text-xs px-1 border-none outline-none", className)}
+        value={val(d, key)}
+        onChange={e => onChange?.(key, e.target.value)}
+        placeholder={placeholder}
+      />
     ) : (
-      <span className={cn("border-b border-dashed border-foreground/30 px-1 inline-block min-w-[4rem]", width)}>{val(d, key) || (ph ? "___" : "")}</span>
+      <span className={cn("text-xs", className)}>{val(d, key) || (ph ? "___" : "")}</span>
     );
 
-  const textArea = (key: string, placeholder: string, minH: string = "min-h-[60px]") =>
+  const textArea = (key: string, placeholder: string, minH = "min-h-[40px]") =>
     editMode ? (
-      <textarea className={cn("w-full bg-transparent text-sm p-2 border border-dashed border-foreground/40 rounded resize-none", minH)} value={val(d, key) || ""} onChange={e => onChange?.(key, e.target.value)} placeholder={placeholder} />
+      <textarea
+        className={cn("w-full bg-transparent text-xs p-1 border border-dashed border-foreground/30 rounded resize-none", minH)}
+        value={val(d, key) || ""}
+        onChange={e => onChange?.(key, e.target.value)}
+        placeholder={placeholder}
+      />
     ) : (
-      <div className={cn("whitespace-pre-wrap text-sm", minH)}>{val(d, key) || (ph ? "___" : "")}</div>
+      <div className={cn("whitespace-pre-wrap text-xs", minH)}>{val(d, key) || (ph ? "___" : "")}</div>
     );
 
-  const labelRow = (label: string, value: React.ReactNode) => (
-    <div className="grid grid-cols-[200px_1fr] border-b border-border text-xs">
-      <div className="p-2 border-r border-border font-semibold bg-muted/30">{label}</div>
-      <div className="p-2">{value}</div>
-    </div>
+  const td = (children: React.ReactNode, colSpan = 1, className?: string) => (
+    <td colSpan={colSpan} className={cn("border border-border p-1.5 text-xs", className)}>
+      {children}
+    </td>
   );
 
   return (
     <FormDocument formCode="F/32" formName="R&D Request" serial={val(d, "serial")} sectionName="R&D & Design">
-      {/* ── Header: Ref No + Date ── */}
-      <div className="grid grid-cols-[1fr_1fr] border border-border">
-        <div className="p-2 font-bold bg-primary/5 text-base flex items-center gap-2">
-          <FileText className="w-5 h-5 text-primary" />
-          Research And Development Request Report
-        </div>
-        <div className="p-2 border-l border-border bg-primary/5 text-right text-xs">
-          F/32 Rev No. {val(d, "serial") || (ph ? "{{SERIAL}}" : "—")}
-        </div>
-      </div>
+      <div className="overflow-x-auto">
+        <table className="w-full border-collapse text-[11px]">
+          <tbody>
+            {/* Row 0: Ref No + Date */}
+            <tr>
+              {td(<>{inp("serial", "Serial")} 🡪 {val(d, "serial") || (ph ? "{{SERIAL}}" : "—")}</>, 9)}
+              {td(<>Date 🡪 {inp("date", "DD/MM/YYYY")}</>, 8)}
+            </tr>
 
-      {/* ── Ref No + Date ── */}
-      <div className="grid grid-cols-[1fr_1fr] border-x border-b border-border text-xs">
-        <div className="p-2 border-r border-border">
-          <span className="font-semibold">Ref. No. 🡪</span> {val(d, "serial") || (ph ? "{{SERIAL}}" : "—")}
-        </div>
-        <div className="p-2">
-          <span className="font-semibold">Date 🡪</span> {inp("date", "DD/MM/YYYY", "w-28")}
-        </div>
-      </div>
+            {/* Row 1: From / To */}
+            <tr>
+              {td(<>From 🡪 {inp("from_department", "Department")}</>, 9)}
+              {td(<>To 🡪 R&D Head</>, 8)}
+            </tr>
 
-      {/* ── From / To ── */}
-      <div className="grid grid-cols-[1fr_1fr] border-x border-b border-border text-xs">
-        <div className="p-2 border-r border-border">
-          <span className="font-semibold">From 🡪</span> {inp("from_department", "Department", "w-40")}
-        </div>
-        <div className="p-2">
-          <span className="font-semibold">To 🡪</span> {inp("to_department", "Department", "w-40")}
-        </div>
-      </div>
-
-      {/* ── Request Type ── */}
-      <div className="border-x border-b border-border text-xs p-2">
-        <span className="font-semibold">Request for:</span> {inp("request_type", "Modification / New / Other", "w-64")}
-      </div>
-
-      {/* ── Product Details Section ── */}
-      <div className="border-x border-b border-border">
-        <div className="p-1.5 bg-muted/50 text-xs font-semibold border-b border-border">Product Details</div>
-        {labelRow("Name of customer", inp("customer_name", "Customer Name", "w-48"))}
-        {labelRow("Name of product", inp("product_name", "Product Name", "w-48"))}
-        {labelRow("Specification / standard", inp("specification", "Specification", "w-64"))}
-        {labelRow("Product code no.", inp("product_code", "N/A", "w-36"))}
-        {labelRow("Sample / standard enclosed", inp("sample_enclosed", "Yes / No", "w-24"))}
-        {labelRow("Name of present manufacturer", inp("manufacturer", "Manufacturer", "w-48"))}
-        {labelRow("Present market", inp("present_market", "Market", "w-48"))}
-      </div>
-
-      {/* ── Reason for Development ── */}
-      <div className="border-x border-b border-border">
-        <div className="p-1.5 bg-muted/50 text-xs font-semibold border-b border-border">Reason for Development</div>
-        <div className="p-2">{textArea("reason_for_development", "Reason for development", "min-h-[60px]")}</div>
-      </div>
-
-      {/* ── Design Input Details ── */}
-      <div className="border-x border-b border-border">
-        <div className="p-1.5 bg-muted/50 text-xs font-semibold border-b border-border">Design Input Details</div>
-        <div className="p-2">{textArea("design_input_details", "Design input details", "min-h-[60px]")}</div>
-      </div>
-
-      {/* ── Target Completion + Remarks ── */}
-      <div className="grid grid-cols-[1fr_1fr] border-x border-b border-border text-xs">
-        <div className="p-2 border-r border-border">
-          <span className="font-semibold">Target completion:</span> {inp("target_completion", "DD/MM/YYYY", "w-28")}
-        </div>
-        <div className="p-2">
-          <span className="font-semibold">Remarks:</span> {inp("remarks", "Remarks", "w-48")}
-        </div>
-      </div>
-
-      {/* ── Requested By ── */}
-      <div className="border-x border-b border-border text-xs p-2">
-        <span className="font-semibold">Requested by:</span> {inp("requested_by", "Name", "w-40")}
-      </div>
-
-      {/* ── Feasibility Review ── */}
-      <div className="border-x border-b border-border">
-        <div className="p-1.5 bg-amber-50 dark:bg-amber-950/20 text-xs font-semibold border-b border-border flex items-center gap-2">
-          <AlertTriangle className="w-4 h-4 text-amber-600" />
-          Feasibility Review by Research and Development Head
-        </div>
-        <div className="p-2 text-xs">
-          <div className="flex items-center gap-4 mb-2">
-            <label className="flex items-center gap-1">
-              {editMode ? (
-                <input type="radio" name="feasibility" checked={val(d, "feasibility") === "approved"} onChange={() => onChange?.("feasibility", "approved")} />
-              ) : (
-                <span className="inline-flex items-center gap-1">
-                  {val(d, "feasibility") === "approved" ? <CheckCircle2 className="w-4 h-4 text-green-600" /> : <span className="w-4 h-4 border border-foreground/30 rounded-full inline-block" />}
-                </span>
+            {/* Row 2: Request type checkboxes */}
+            <tr>
+              {td("Request for", 3, "font-semibold bg-muted/30")}
+              {td(
+                <label className="flex items-center gap-1">
+                  {editMode ? (
+                    <input type="checkbox" checked={val(d, "request_type") === "new"} onChange={() => onChange?.("request_type", "new")} />
+                  ) : (
+                    <span className="w-3 h-3 border border-foreground/30 inline-block text-center text-[8px]">{val(d, "request_type") === "new" ? "✓" : ""}</span>
+                  )}
+                  New product development
+                </label>,
+                10
               )}
-              <span className={val(d, "feasibility") === "approved" ? "text-green-700 dark:text-green-400 font-semibold" : ""}>Approved to process further</span>
-            </label>
-            <label className="flex items-center gap-1">
-              {editMode ? (
-                <input type="radio" name="feasibility" checked={val(d, "feasibility") === "rejected"} onChange={() => onChange?.("feasibility", "rejected")} />
-              ) : (
-                <span className="inline-flex items-center gap-1">
-                  {val(d, "feasibility") === "rejected" ? <XCircle className="w-4 h-4 text-red-600" /> : <span className="w-4 h-4 border border-foreground/30 rounded-full inline-block" />}
-                </span>
+              {td(
+                <label className="flex items-center gap-1">
+                  {editMode ? (
+                    <input type="checkbox" checked={val(d, "request_type") === "modification"} onChange={() => onChange?.("request_type", "modification")} />
+                  ) : (
+                    <span className="w-3 h-3 border border-foreground/30 inline-block text-center text-[8px]">{val(d, "request_type") === "modification" ? "✓" : ""}</span>
+                  )}
+                  Modification in existing product
+                </label>,
+                4
               )}
-              <span className={val(d, "feasibility") === "rejected" ? "text-red-700 dark:text-red-400 font-semibold" : ""}>Rejected and verbally intimated to requestor</span>
-            </label>
-          </div>
-          <div className="mt-2">
-            <span className="font-semibold">Reason for rejection of request, if any:</span>
-            <div className="mt-1">{textArea("rejection_reason", "N/A", "min-h-[40px]")}</div>
-          </div>
-        </div>
-      </div>
+            </tr>
 
-      {/* ── Project No. + Priority ── */}
-      <div className="grid grid-cols-[1fr_1fr] border-x border-b border-border text-xs">
-        <div className="p-2 border-r border-border">
-          <span className="font-semibold">Project no. allotted:</span> {inp("project_no", "RD-XXX-001", "w-36")}
-        </div>
-        <div className="p-2">
-          <span className="font-semibold">Priority:</span>
-          <div className="flex items-center gap-3 mt-1">
-            <label className="flex items-center gap-1">
-              {editMode ? (
-                <input type="radio" name="priority" checked={val(d, "priority") === "high"} onChange={() => onChange?.("priority", "high")} />
-              ) : (
-                <span className="inline-block w-3 h-3 border border-foreground/30 rounded-full text-[8px] text-center">{val(d, "priority") === "high" ? "●" : ""}</span>
-              )}
-              <span className={val(d, "priority") === "high" ? "text-red-600 font-semibold" : ""}>High</span>
-            </label>
-            <label className="flex items-center gap-1">
-              {editMode ? (
-                <input type="radio" name="priority" checked={val(d, "priority") === "normal"} onChange={() => onChange?.("priority", "normal")} />
-              ) : (
-                <span className="inline-block w-3 h-3 border border-foreground/30 rounded-full text-[8px] text-center">{val(d, "priority") === "normal" ? "●" : ""}</span>
-              )}
-              <span>Normal</span>
-            </label>
-            <label className="flex items-center gap-1">
-              {editMode ? (
-                <input type="radio" name="priority" checked={val(d, "priority") === "routine"} onChange={() => onChange?.("priority", "routine")} />
-              ) : (
-                <span className="inline-block w-3 h-3 border border-foreground/30 rounded-full text-[8px] text-center">{val(d, "priority") === "routine" ? "●" : ""}</span>
-              )}
-              <span>Routine</span>
-            </label>
-          </div>
-        </div>
-      </div>
+            {/* Row 3: Name of customer */}
+            <tr>
+              {td(<><span className="font-semibold">Name of customer:</span> {inp("customer_name", "Customer Name")}</>, 17)}
+            </tr>
 
-      {/* ── R&D Execution Section ── */}
-      <div className="border-x border-b border-border">
-        <div className="p-1.5 bg-green-50 dark:bg-green-950/20 text-xs font-semibold border-b border-border flex items-center gap-2">
-          <CheckCircle2 className="w-4 h-4 text-green-600" />
-          R&D Execution
-        </div>
-        <div className="grid grid-cols-[1fr_1fr] border-b border-border text-xs">
-          <div className="p-2 border-r border-border">
-            <span className="font-semibold">Target completion by R&D:</span> {inp("rd_target_completion", "DD/MM/YYYY", "w-28")}
-          </div>
-          <div className="p-2">
-            <span className="font-semibold">Job assigned to:</span> {inp("assigned_to", "Team / Person", "w-40")}
-          </div>
-        </div>
-        <div className="p-2 text-xs">
-          <span className="font-semibold">Remarks:</span>
-          <div className="mt-1">{textArea("rd_remarks", "R&D remarks", "min-h-[40px]")}</div>
-        </div>
-      </div>
+            {/* Row 4: Name of product */}
+            <tr>
+              {td(<><span className="font-semibold">Name of product:</span> {inp("product_name", "Product Name")}</>, 17)}
+            </tr>
 
-      {/* ── Approved By ── */}
-      <div className="border-x border-b border-border rounded-b-sm text-xs p-2">
-        <span className="font-semibold">Approved by:</span> {inp("approved_by", "Name", "w-40")}
+            {/* Row 5: Description of product / modification */}
+            <tr>
+              {td(
+                <div>
+                  <div className="font-semibold mb-1">Description of product / modification:</div>
+                  {textArea("product_description", "Description")}
+                </div>,
+                17,
+                "min-h-[60px]"
+              )}
+            </tr>
+
+            {/* Row 6: Specification / standard */}
+            <tr>
+              {td(<><span className="font-semibold">Specification / standard:</span> {inp("specification", "Specification")}</>, 17)}
+            </tr>
+
+            {/* Row 7: Product code / Sample enclosed */}
+            <tr>
+              {td(<><span className="font-semibold">Product code no.:</span> {inp("product_code", "N/A")}</>, 9)}
+              {td(<><span className="font-semibold">Sample / standard enclosed:</span> {inp("sample_enclosed", "Yes / No")}</>, 8)}
+            </tr>
+
+            {/* Row 8: Expected date / Priority / Estimated cost */}
+            <tr>
+              {td(<><span className="font-semibold">Expected date of completion:</span> {inp("target_completion", "DD/MM/YYYY")}</>, 6)}
+              {td(
+                <div>
+                  <span className="font-semibold">Priority:</span>
+                  <div className="flex gap-2 mt-0.5">
+                    {(["high", "normal", "routine"] as const).map(p => (
+                      <label key={p} className="flex items-center gap-0.5">
+                        {editMode ? (
+                          <input type="radio" name="priority" checked={val(d, "priority") === p} onChange={() => onChange?.("priority", p)} />
+                        ) : (
+                          <span className="w-2.5 h-2.5 border border-foreground/30 rounded-full text-[7px] text-center inline-block">{val(d, "priority") === p ? "●" : ""}</span>
+                        )}
+                        <span className="capitalize">{p}</span>
+                      </label>
+                    ))}
+                  </div>
+                </div>,
+                5
+              )}
+              {td(<><span className="font-semibold">Estimated cost:</span> {inp("estimated_cost", "₹")}</>, 6)}
+            </tr>
+
+            {/* Row 9: Name of present manufacturer */}
+            <tr>
+              {td(<><span className="font-semibold">Name of present manufacturer:</span> {inp("manufacturer", "Manufacturer")}</>, 17)}
+            </tr>
+
+            {/* Row 10: Present market */}
+            <tr>
+              {td(<><span className="font-semibold">Present market:</span> {inp("present_market", "Market")}</>, 17)}
+            </tr>
+
+            {/* Row 11: Reason for Development */}
+            <tr>
+              {td(
+                <div>
+                  <div className="font-semibold mb-1">Reason for Development:</div>
+                  {textArea("reason_for_development", "Reason")}
+                </div>,
+                17,
+                "min-h-[60px]"
+              )}
+            </tr>
+
+            {/* Row 12: Design Input Details */}
+            <tr>
+              {td(
+                <div>
+                  <div className="font-semibold mb-1">Design Input Details:</div>
+                  {textArea("design_input_details", "Design inputs")}
+                </div>,
+                17,
+                "min-h-[60px]"
+              )}
+            </tr>
+
+            {/* Row 13: Target completion by R&D / Job assigned to */}
+            <tr>
+              {td(<><span className="font-semibold">Target completion by R&D:</span> {inp("rd_target_completion", "DD/MM/YYYY")}</>, 9)}
+              {td(<><span className="font-semibold">Job assigned to:</span> {inp("assigned_to", "Team / Person")}</>, 8)}
+            </tr>
+
+            {/* Row 14: R&D Remarks */}
+            <tr>
+              {td(
+                <div>
+                  <div className="font-semibold mb-1">R&D Remarks:</div>
+                  {textArea("rd_remarks", "Remarks")}
+                </div>,
+                17,
+                "min-h-[40px]"
+              )}
+            </tr>
+
+            {/* Row 15: Feasibility Review label */}
+            <tr>
+              {td(<span className="font-semibold bg-amber-50 dark:bg-amber-950/20 px-2 py-0.5 rounded">Feasibility Review by Research and Development Head</span>, 17)}
+            </tr>
+
+            {/* Row 16: Approved / Rejected */}
+            <tr>
+              {td(
+                <div className="flex gap-4">
+                  <label className="flex items-center gap-1">
+                    {editMode ? (
+                      <input type="radio" name="feasibility" checked={val(d, "feasibility") === "approved"} onChange={() => onChange?.("feasibility", "approved")} />
+                    ) : (
+                      <span className="w-3 h-3 border border-foreground/30 rounded-full inline-block text-center text-[8px]">{val(d, "feasibility") === "approved" ? "✓" : ""}</span>
+                    )}
+                    Approved to process further
+                  </label>
+                  <label className="flex items-center gap-1">
+                    {editMode ? (
+                      <input type="radio" name="feasibility" checked={val(d, "feasibility") === "rejected"} onChange={() => onChange?.("feasibility", "rejected")} />
+                    ) : (
+                      <span className="w-3 h-3 border border-foreground/30 rounded-full inline-block text-center text-[8px]">{val(d, "feasibility") === "rejected" ? "✗" : ""}</span>
+                    )}
+                    Rejected and verbally intimated to requestor
+                  </label>
+                </div>,
+                17
+              )}
+            </tr>
+
+            {/* Row 17: Rejection reason */}
+            <tr>
+              {td(
+                <div>
+                  <span className="font-semibold">Reason for rejection of request, if any:</span>
+                  <div className="mt-0.5">{textArea("rejection_reason", "N/A", "min-h-[30px]")}</div>
+                </div>,
+                17
+              )}
+            </tr>
+
+            {/* Row 18: Project no. allotted */}
+            <tr>
+              {td(<><span className="font-semibold">Project no. allotted:</span> {inp("project_no", "RD-XXX-001")}</>, 17)}
+            </tr>
+
+            {/* Row 19: Approved by */}
+            <tr>
+              {td(<><span className="font-semibold">Approved by:</span> {inp("approved_by", "Name")}</>, 17)}
+            </tr>
+
+            {/* Rows 20-24: Empty spacer rows for signature/print alignment */}
+            {Array.from({ length: 5 }).map((_, i) => (
+              <tr key={i}>
+                {td(<>&nbsp;</>, 17, "h-4")}
+              </tr>
+            ))}
+          </tbody>
+        </table>
       </div>
     </FormDocument>
-
-    );
+  );
 }

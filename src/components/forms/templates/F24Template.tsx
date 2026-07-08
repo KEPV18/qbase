@@ -1,18 +1,17 @@
 // ============================================================================
 // F/24 — Objectives & Targets
-// DOCX: 1 table, 9 rows, 18 cols. Complex grid layout.
-// R0: Title (gs=10) + Rev No (gs=8)
-// R1: Department (gs=4) + Year (gs=14)
-// R2: Column headers: Quantifiable Criteria | Target (gs=2) | Program (gs=2) | Results for months (gs=13)
-// R3-R7: Data rows (months are split across 13 cols)
-// R8: Signature (gs=5) + empty data
-// Canonical: 5-column grid (criteria | present_target | future_target | program | results)
+// DOCX: 9 rows × 18 columns
+// R0: Title merged cols 0-9, Rev No cols 10-17
+// R1: Department cols 0-3, Year cols 4-17
+// R2: Headers with specific colspans → 18 cols total
+// R3: Sub-headers
+// R4–R8: 5 data rows
 // ============================================================================
 
 import React, { useState, useCallback } from "react";
 import { cn } from "@/lib/utils";
 import { Plus, Trash2 } from "lucide-react";
-import { FormDocument } from "../FormKit";
+import { FormDocument, val } from "../FormKit";
 
 export interface F24Props {
   data?: Record<string, unknown>;
@@ -20,13 +19,6 @@ export interface F24Props {
   editMode?: boolean;
   onChange?: (field: string, value: string | Record<string, unknown>) => void;
   className?: string;
-}
-
-function val(data: Record<string, unknown> | undefined, key: string): string {
-  if (!data) return "";
-  const v = data[key];
-  if (v == null) return "";
-  return typeof v === "string" ? v : String(v);
 }
 
 interface RowData {
@@ -88,64 +80,108 @@ export function F24Template({ data, isTemplate = true, editMode = false, onChang
   const cellInp = (idx: number, key: keyof RowData, label: string) =>
     editMode ? (
       <input
-        className="w-full bg-transparent text-xs px-1 border-none outline-none"
+        className="w-full bg-transparent text-[10px] px-1 border-none outline-none"
         value={rows[idx]?.[key] || ""}
         onChange={e => updateRow(idx, key, e.target.value)}
         placeholder={label}
       />
     ) : (
-      <span className="text-xs whitespace-pre-wrap">{rows[idx]?.[key] || ""}</span>
+      <span className="text-[10px] whitespace-pre-wrap">{rows[idx]?.[key] || ""}</span>
     );
 
   return (
     <FormDocument formCode="F/24" formName="Objectives & Targets" serial={val(d, "serial")} sectionName="Management & Documentation">
-      {/* Header */}
-      <div className="grid grid-cols-[2fr_1fr] border border-border">
-        <div className="p-2 font-bold bg-primary/5 text-base">Objectives & Targets</div>
-        <div className="p-2 border-l border-border bg-primary/5 text-right text-xs">
-          F/24 Rev No. {val(d, "serial") || (ph ? "{{SERIAL}}" : "—")}
-        </div>
-      </div>
+      {/* 9 rows × 18 columns table matching Word structure */}
+      <div className="w-full overflow-x-auto">
+        <table className="w-full border-collapse text-[10px]">
+          <tbody>
+            {/* Row 0: Title merged cols 0-9, Rev No cols 10-17 */}
+            <tr>
+              <td colSpan={10} className="border border-border p-2 font-bold text-sm bg-primary/5 text-center">
+                Objectives & Targets
+              </td>
+              <td colSpan={8} className="border border-border p-2 text-right text-xs bg-primary/5">
+                F/24 Rev No. {val(d, "serial") || (ph ? "{{SERIAL}}" : "—")}
+              </td>
+            </tr>
 
-      {/* Department / Year / Quarter */}
-      <div className="grid grid-cols-[2fr_2fr_3fr] border-x border-b border-border text-xs">
-        <div className="p-1.5 border-r border-border">Department 🡪 {inp("department", "Department")}</div>
-        <div className="p-1.5 border-r border-border">Year 🡪 {inp("year", "Year", "w-24")}</div>
-        <div className="p-1.5">Quarter 🡪 {inp("quarter", "Quarter", "w-24")}</div>
-      </div>
+            {/* Row 1: Department cols 0-3, Year cols 4-17 */}
+            <tr>
+              <td colSpan={4} className="border border-border p-1.5 text-xs">
+                <span className="font-semibold">Department → </span>{inp("department", "Department", "w-40")}
+              </td>
+              <td colSpan={14} className="border border-border p-1.5 text-xs">
+                <span className="font-semibold">Year → </span>{inp("year", "Year", "w-24")}
+              </td>
+            </tr>
 
-      {/* Column headers */}
-      <div className="grid grid-cols-[1.5fr_1fr_1fr_1.5fr_2fr] border-x border-b border-border text-[10px] font-semibold bg-muted">
-        <div className="p-1 border-r border-border">Quantifiable Criteria / Control Parameters</div>
-        <div className="p-1 border-r border-border text-center">Present<br/>Target</div>
-        <div className="p-1 border-r border-border text-center">Future<br/>Target</div>
-        <div className="p-1 border-r border-border">Program to Achieve Objective</div>
-        <div className="p-1">Results</div>
-      </div>
+            {/* Row 2: Column headers — 18 cols total */}
+            <tr className="bg-muted/50">
+              <td colSpan={4} className="border border-border px-1.5 py-1 text-left font-semibold">
+                Quantifiable Criteria / Control Parameters
+              </td>
+              <td colSpan={2} className="border border-border px-1.5 py-1 text-center font-semibold">
+                Present
+              </td>
+              <td colSpan={2} className="border border-border px-1.5 py-1 text-center font-semibold">
+                Future
+              </td>
+              <td colSpan={2} className="border border-border px-1.5 py-1 text-left font-semibold">
+                Program to achieve Objective
+              </td>
+              <td colSpan={8} className="border border-border px-1.5 py-1 text-center font-semibold">
+                Results for the month of
+              </td>
+            </tr>
 
-      {/* Data rows */}
-      {rows.map((row, idx) => (
-        <div key={idx} className="grid grid-cols-[1.5fr_1fr_1fr_1.5fr_2fr] border-x border-b border-border text-xs relative group min-h-[28px]">
-          <div className="p-1 border-r border-border">{cellInp(idx, "criteria", "Criteria")}</div>
-          <div className="p-1 border-r border-border text-center">{cellInp(idx, "present_target", "Target")}</div>
-          <div className="p-1 border-r border-border text-center">{cellInp(idx, "future_target", "Future")}</div>
-          <div className="p-1 border-r border-border">{cellInp(idx, "program", "Program")}</div>
-          <div className="p-1">{cellInp(idx, "results", "Results")}</div>
-          {editMode && rows.length > 1 && (
-            <button
-              onClick={() => removeRow(idx)}
-              className="absolute -right-6 top-1/2 -translate-y-1/2 text-destructive opacity-0 group-hover:opacity-100 transition-opacity"
-            >
-              <Trash2 className="w-3 h-3" />
-            </button>
-          )}
-        </div>
-      ))}
+            {/* Row 3: Sub-headers for months */}
+            <tr className="bg-muted/30">
+              <td colSpan={4} className="border border-border px-1 py-0.5"></td>
+              <td colSpan={2} className="border border-border px-1 py-0.5 text-center">Target</td>
+              <td colSpan={2} className="border border-border px-1 py-0.5 text-center">Target</td>
+              <td colSpan={2} className="border border-border px-1 py-0.5"></td>
+              <td className="border border-border px-1 py-0.5 text-center">Jan</td>
+              <td className="border border-border px-1 py-0.5 text-center">Feb</td>
+              <td className="border border-border px-1 py-0.5 text-center">Mar</td>
+              <td className="border border-border px-1 py-0.5 text-center">Apr</td>
+              <td className="border border-border px-1 py-0.5 text-center">May</td>
+              <td className="border border-border px-1 py-0.5 text-center">Jun</td>
+              <td className="border border-border px-1 py-0.5 text-center">Jul</td>
+              <td className="border border-border px-1 py-0.5 text-center">Aug</td>
+              <td className="border border-border px-1 py-0.5 text-center">Sep</td>
+              <td className="border border-border px-1 py-0.5 text-center">Oct</td>
+              <td className="border border-border px-1 py-0.5 text-center">Nov</td>
+              <td className="border border-border px-1 py-0.5 text-center">Dec</td>
+            </tr>
+
+            {/* Rows 4–8: 5 data rows */}
+            {rows.map((row, idx) => (
+              <tr key={idx} className={cn(idx % 2 === 1 && "bg-muted/20")}>
+                <td colSpan={4} className="border border-border px-1.5 py-0.5">{cellInp(idx, "criteria", "Criteria")}</td>
+                <td colSpan={2} className="border border-border px-1.5 py-0.5 text-center">{cellInp(idx, "present_target", "Target")}</td>
+                <td colSpan={2} className="border border-border px-1.5 py-0.5 text-center">{cellInp(idx, "future_target", "Future")}</td>
+                <td colSpan={2} className="border border-border px-1.5 py-0.5">{cellInp(idx, "program", "Program")}</td>
+                <td colSpan={8} className="border border-border px-1.5 py-0.5 text-center">{cellInp(idx, "results", "Results")}</td>
+                {editMode && rows.length > 1 && (
+                  <td className="border border-border px-1 py-0.5 text-center">
+                    <button
+                      onClick={() => removeRow(idx)}
+                      className="text-destructive hover:text-destructive/80"
+                    >
+                      <Trash2 className="w-3 h-3" />
+                    </button>
+                  </td>
+                )}
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
 
       {editMode && (
         <button
           onClick={addRow}
-          className="mt-1 flex items-center gap-1 text-xs text-primary hover:underline mx-auto"
+          className="mt-2 flex items-center gap-1 text-xs text-primary hover:underline mx-auto"
         >
           <Plus className="w-3 h-3" /> Add Row
         </button>
@@ -153,10 +189,9 @@ export function F24Template({ data, isTemplate = true, editMode = false, onChang
 
       {/* Signatures */}
       <div className="mt-4 pt-2 border-t border-foreground/20 flex justify-between text-xs">
-        <div>Prepared By 🡪 {inp("prepared_by", "Prepared By", "w-40")}</div>
-        <div>Reviewed By 🡪 {inp("reviewed_by", "Reviewed By", "w-40")}</div>
+        <div>Prepared By → {inp("prepared_by", "Prepared By", "w-40")}</div>
+        <div>Reviewed By → {inp("reviewed_by", "Reviewed By", "w-40")}</div>
       </div>
     </FormDocument>
-
-    );
+  );
 }
