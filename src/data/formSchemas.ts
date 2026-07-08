@@ -622,13 +622,13 @@ export const FORM_SCHEMAS: FormSchema[] = [
     fields: [
       { key: "serial", label: "Serial Number", type: "text", required: true, width: "half", defaultValue: "auto" },
       { key: "period", label: "Period", type: "text", required: true, width: "half" },
-      { key: "matrix", label: "Competence Matrix", type: "table", columns: [
-        { key: "name", label: "Employee Name", type: "text", required: true },
-        { key: "role", label: "Role", type: "text" },
-        { key: "skill", label: "Skill/Competence", type: "text", required: true },
-        { key: "level", label: "Level", type: "select", options: ["Expert", "Proficient", "Basic", "Needs Training"] },
-      ]},
+      { key: "project_scope", label: "Project Scope", type: "text", width: "full" },
+      { key: "items", label: "Competence Matrix Items", type: "array", required: true },
+      { key: "reviewed_by", label: "Reviewed By", type: "text", width: "half" },
+      { key: "reviewed_on", label: "Reviewed On", type: "text", width: "half" },
       { key: "prepared_by", label: "Prepared By", type: "signature", required: true, width: "half" },
+      { key: "prepared_on", label: "Prepared On", type: "text", width: "half" },
+      { key: "authorised_by", label: "Authorised By", type: "signature", width: "half" },
     ],
   },
   {
