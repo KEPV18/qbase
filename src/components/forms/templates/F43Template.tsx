@@ -1,6 +1,8 @@
 // ============================================================================
-// F/43 — Induction Training Form
-// WORD: 21R × 10C — Employee info + 15 training topic rows + signature
+// F/43 — Induction Training Form (COMPLETE DOCX-Faithful Rebuild)
+// Header: Employee info (name, ID, designation, dept, qualification, joining date, project, trainer)
+// Checklist: 15 training topics with ✔ marks
+// Footer: Signatures (Inductee, Trainer, Authorised Person/Manager) + Effectiveness
 // ============================================================================
 
 import React from "react";
@@ -14,7 +16,7 @@ export interface F43Props {
   className?: string;
 }
 
-const DEFAULT_TOPICS: { num: string; topic: string }[] = [
+const TRAINING_TOPICS: { num: string; topic: string }[] = [
   { num: "1", topic: "Details about the organization" },
   { num: "2", topic: "Organization business activities" },
   { num: "3", topic: "Organization structure in general" },
@@ -36,140 +38,151 @@ export function F43Template({ data, isTemplate = true, editMode = false, onChang
   const d = data ?? {};
   const ph = isTemplate && !editMode;
 
-  const inp = (key: string, label: string, width: string = "w-full") =>
-    editMode ? (
-      <input className="border-b border-dashed border-foreground/40 bg-transparent text-sm px-1" style={{ width }}
-        value={val(d, key)} onChange={e => onChange?.(key, e.target.value)} placeholder={label} />
-    ) : (
-      <span className="border-b border-dashed border-foreground/30 px-1 inline-block min-w-[4rem]" style={{ width }}>
-        {val(d, key) || (ph ? "___" : "")}
-      </span>
-    );
-
-  const topics = Array.isArray(d.topics) ? d.topics as Record<string, string>[] : DEFAULT_TOPICS;
+  const txt = (key: string, fallback = "") => {
+    const v = val(d, key);
+    return v || (ph ? fallback : v || "—");
+  };
 
   const th = "border border-border p-1 text-[9px] font-semibold bg-muted";
   const tc = "border border-border p-0.5 text-[10px]";
 
-  // ── Mobile fallback ──
-  const mobileView = (
-    <div className="md:hidden space-y-2 text-xs p-2">
-      <div><strong>Employee:</strong> {val(d, "employee_name") || "—"}</div>
-      <div><strong>Dept:</strong> {val(d, "department") || "—"}</div>
-      <div><strong>Date:</strong> {val(d, "date") || "—"}</div>
-      {topics.map((t, i) => (
-        <div key={i} className="flex gap-2">
-          <span>{t.num || i + 1}.</span>
-          <span>{t.topic}</span>
-        </div>
-      ))}
-    </div>
-  );
+  // All 15 topics get ✔ by default for completed induction records
+  const isCompleted = !isTemplate;
 
   return (
     <FormDocument formCode="F/43" formName="Induction Training Form" serial={val(d, "serial")} sectionName="HR & Training">
-      {/* ── Row 0: Title ── */}
+      {/* ── Header: Title + Rev ── */}
       <div className="overflow-x-auto">
         <table className="w-full border-collapse text-[10px]">
-          <colgroup><col span={10} /></colgroup>
           <tbody>
-            {/* Row 0: Title + Rev */}
             <tr>
-              <td colSpan={8} className="border border-border p-2 font-bold bg-primary/5 text-sm">Induction Training Form</td>
-              <td colSpan={2} className="border border-border p-2 bg-primary/5 text-right text-xs">
+              <td className="border border-border p-2 font-bold bg-primary/5 text-sm whitespace-nowrap">Induction Training Form</td>
+              <td className="border border-border p-2 bg-primary/5 text-right text-xs whitespace-nowrap font-semibold">
                 F/43 Rev No. {val(d, "serial") || (ph ? "{{SERIAL}}" : "—")}
               </td>
-            </tr>
-            {/* Row 1: Sr.No + Date */}
-            <tr>
-              <td colSpan={4} className="border border-border p-1.5 text-xs">Sr. No. → {val(d, "serial") || (ph ? "{{SERIAL}}" : "—")}</td>
-              <td colSpan={6} className="border border-border p-1.5 text-xs">Date → {inp("date", "Date")}</td>
-            </tr>
-            {/* Row 2: Name Of Employee */}
-            <tr>
-              <td colSpan={10} className="border border-border p-1.5 text-xs">Name Of Employee → {inp("employee_name", "Employee Name")}</td>
-            </tr>
-            {/* Row 3: Date Of Joining */}
-            <tr>
-              <td colSpan={10} className="border border-border p-1.5 text-xs">Date Of Joining → {inp("date_of_joining", "Date")}</td>
-            </tr>
-            {/* Row 4: Department */}
-            <tr>
-              <td colSpan={10} className="border border-border p-1.5 text-xs">Department → {inp("department", "Department")}</td>
             </tr>
           </tbody>
         </table>
       </div>
 
-      {/* Mobile fallback */}
-      {mobileView}
-
-      {/* ── Rows 5-19: Training topics checklist (10-col table) ── */}
+      {/* ── Employee Info Block ── */}
       <div className="overflow-x-auto">
-        <table className="w-full border-collapse text-[10px] hidden md:table">
+        <table className="w-full border-collapse text-[11px]">
+          <tbody>
+            <tr>
+              <td className="border border-border p-1.5 font-semibold w-[15%]">Sr. No.</td>
+              <td className="border border-border p-1.5 w-[35%]">{txt("serial")}</td>
+              <td className="border border-border p-1.5 font-semibold w-[15%]">Date</td>
+              <td className="border border-border p-1.5 w-[35%]">{txt("date")}</td>
+            </tr>
+            <tr>
+              <td className="border border-border p-1.5 font-semibold">Name of Employee</td>
+              <td className="border border-border p-1.5">{txt("employee_name")}</td>
+              <td className="border border-border p-1.5 font-semibold">Employee ID</td>
+              <td className="border border-border p-1.5">{txt("employee_id")}</td>
+            </tr>
+            <tr>
+              <td className="border border-border p-1.5 font-semibold">Designation</td>
+              <td className="border border-border p-1.5">{txt("designation")}</td>
+              <td className="border border-border p-1.5 font-semibold">Date of Joining</td>
+              <td className="border border-border p-1.5">{txt("date_of_joining")}</td>
+            </tr>
+            <tr>
+              <td className="border border-border p-1.5 font-semibold">Department</td>
+              <td className="border border-border p-1.5">{txt("department")}</td>
+              <td className="border border-border p-1.5 font-semibold">Project</td>
+              <td className="border border-border p-1.5">{txt("project")}</td>
+            </tr>
+            <tr>
+              <td className="border border-border p-1.5 font-semibold">Qualification</td>
+              <td className="border border-border p-1.5">{txt("qualification")}</td>
+              <td className="border border-border p-1.5 font-semibold">Trainer</td>
+              <td className="border border-border p-1.5">{txt("trainer")}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      {/* ── Training Topics Checklist ── */}
+      <div className="overflow-x-auto mt-1">
+        <table className="w-full border-collapse text-[10px]">
           <thead>
             <tr className="bg-muted">
-              <th className={th} style={{ width: "35px" }}>Sr.</th>
-              <th className={th} colSpan={9}>Training Topics / Checklist</th>
+              <th className={th} style={{ width: "40px" }}>Sr.</th>
+              <th className={th}>Training Topics / Checklist</th>
+              <th className={th} style={{ width: "50px" }}>Trainer</th>
+              <th className={th} style={{ width: "50px" }}>Inductee</th>
             </tr>
           </thead>
           <tbody>
-            {topics.map((topic, idx) => {
-              const num = String(topic.num || idx + 1);
-              const topicText = topic.topic || "";
-              const completed = val(d, `topic_${num}_completed`);
-              const trainer = val(d, `topic_${num}_trainer`);
-              return (
-                <tr key={idx}>
-                  <td className={tc + " text-center"}>{num}</td>
-                  <td className={tc} colSpan={4}>{topicText}</td>
-                  <td className={tc} colSpan={2}>
-                    {editMode ? (
-                      <input className="w-full bg-transparent text-[10px] border-none outline-none"
-                        value={trainer} onChange={e => onChange?.(`topic_${num}_trainer`, e.target.value)} placeholder="Trainer" />
-                    ) : <span>{trainer}</span>}
-                  </td>
-                  <td className={tc} colSpan={3}>
-                    {editMode ? (
-                      <input className="w-full bg-transparent text-[10px] border-none outline-none"
-                        value={completed} onChange={e => onChange?.(`topic_${num}_completed`, e.target.value)} placeholder="Completed On / Sign" />
-                    ) : <span>{completed}</span>}
-                  </td>
-                </tr>
-              );
-            })}
-            {/* Pad to ~15 rows if fewer topics */}
-            {Array.from({ length: Math.max(0, 15 - topics.length) }, (_, i) => (
-              <tr key={`empty-${i}`}>
-                <td className={tc + " text-center"}>{topics.length + i + 1}</td>
-                <td className={tc} colSpan={9}></td>
+            {TRAINING_TOPICS.map((t, idx) => (
+              <tr key={idx} className="hover:bg-muted/30">
+                <td className={tc + " text-center"}>{t.num}</td>
+                <td className={tc}>{t.topic}</td>
+                <td className={tc + " text-center"}>
+                  {editMode ? (
+                    <input className="w-full bg-transparent text-[10px] text-center border-none outline-none"
+                      value={val(d, `topic_${t.num}_trainer`) || ""} onChange={e => onChange?.(`topic_${t.num}_trainer`, e.target.value)} />
+                  ) : (
+                    <span>{isCompleted ? "✔" : ""}</span>
+                  )}
+                </td>
+                <td className={tc + " text-center"}>
+                  {editMode ? (
+                    <input className="w-full bg-transparent text-[10px] text-center border-none outline-none"
+                      value={val(d, `topic_${t.num}_inductee`) || ""} onChange={e => onChange?.(`topic_${t.num}_inductee`, e.target.value)} />
+                  ) : (
+                    <span>{isCompleted ? "✔" : ""}</span>
+                  )}
+                </td>
               </tr>
             ))}
           </tbody>
         </table>
       </div>
 
-      {/* ── Row 20: Signature row ── */}
-      <div className="overflow-x-auto">
-        <table className="w-full border-collapse text-[10px]">
-          <colgroup><col span={10} /></colgroup>
+      {/* ── Signatures Block ── */}
+      <div className="overflow-x-auto mt-1">
+        <table className="w-full border-collapse text-[11px]">
           <tbody>
             <tr>
-              <td className="border border-border p-1.5 text-xs font-semibold" colSpan={2}>
-                Sign. Inductee: {inp("inductee_sign", "Name")}
+              <td className="border border-border p-2 font-semibold" style={{ width: "25%" }}>
+                Sign. of Inductee
               </td>
-              <td className="border border-border p-1.5 text-xs font-semibold" colSpan={3}>
-                Date: {inp("sign_date", "Date")}
+              <td className="border border-border p-2" style={{ width: "25%" }}>
+                {txt("employee_name")}
               </td>
-              <td className="border border-border p-1.5 text-xs font-semibold" colSpan={2}>
-                Authorised Person: {inp("authorised_sign", "Name")}
+              <td className="border border-border p-2 font-semibold" style={{ width: "25%" }}>
+                Date
               </td>
-              <td className="border border-border p-1.5 text-xs" colSpan={3}>
-                Effectiveness On Training → {inp("effectiveness", "By Trainer/HOD")}
+              <td className="border border-border p-2" style={{ width: "25%" }}>
+                {txt("date")}
+              </td>
+            </tr>
+            <tr>
+              <td className="border border-border p-2 font-semibold">
+                Trainer Signature
+              </td>
+              <td className="border border-border p-2">
+                {txt("trainer_signature") || txt("trainer")}
+              </td>
+              <td className="border border-border p-2 font-semibold">
+                Authorised Person
+              </td>
+              <td className="border border-border p-2">
+                {txt("manager_signature") || txt("issued_by")}
               </td>
             </tr>
           </tbody>
         </table>
+      </div>
+
+      {/* ── Effectiveness ── */}
+      <div className="border border-border mt-1 p-3 bg-muted/20 rounded-sm">
+        <div className="text-[11px] font-bold mb-1 text-foreground">Effectiveness on Training</div>
+        <div className="text-[11px] text-muted-foreground">
+          {txt("effectiveness") || (ph ? "Employee demonstrated understanding of training topics..." : "—")}
+        </div>
       </div>
     </FormDocument>
   );
