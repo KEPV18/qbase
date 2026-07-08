@@ -66,22 +66,20 @@ const RecordViewPage: React.FC = () => {
   const [searchParams] = useSearchParams();
 
   // ─── Form-code redirect: /records/F/40 → /records/F/40-001 ───────────
+  const isFormCode = /^F\/\d{1,2}$/.test(decodedSerial);
+  const { data: formCodeRecords } = useRecords(isFormCode ? decodedSerial : undefined);
+
   useEffect(() => {
-    const formCodePattern = /^F\/\d{1,2}$/;
-    if (formCodePattern.test(decodedSerial) && !isLoading && !originalRecord && allRecords && allRecords.length > 0) {
-      const matching = allRecords
-        .filter(r => String(r.formCode) === decodedSerial)
-        .sort((a, b) => String(a.serial).localeCompare(String(b.serial), undefined, { numeric: true, sensitivity: 'base' }));
-      if (matching.length > 0) {
-        navigate(`/records/${encodeURIComponent(String(matching[0].serial))}`, { replace: true });
-      } else {
-        const formDef = FORM_SCHEMAS.find(f => f.code === decodedSerial);
-        if (formDef) {
-          navigate(`/form/${encodeURIComponent(decodedSerial)}`, { replace: true });
-        }
-      }
+    if (isFormCode && !isLoading && !originalRecord && formCodeRecords && formCodeRecords.length > 0) {
+      const sorted = [...formCodeRecords].sort((a, b) =>
+        String(a.serial).localeCompare(String(b.serial), undefined, { numeric: true, sensitivity: 'base' })
+      );
+      navigate(`/records/${encodeURIComponent(String(sorted[0].serial))}`, { replace: true });
+    } else if (isFormCode && !isLoading && !originalRecord && formCodeRecords && formCodeRecords.length === 0) {
+      // No records exist for this form code — go to form template
+      navigate(`/form/${encodeURIComponent(decodedSerial)}`, { replace: true });
     }
-  }, [decodedSerial, isLoading, originalRecord, allRecords, navigate]);
+  }, [isFormCode, decodedSerial, isLoading, originalRecord, formCodeRecords, navigate]);
 
   // Auto-enter edit mode when navigated with ?edit=true (from Data Retrofitting Hub)
   useEffect(() => {
@@ -216,39 +214,27 @@ const RecordViewPage: React.FC = () => {
   // ─── No record ─────────────────────────────────────────────────────────
   if (!originalRecord || !schema) {
     const formCodePattern = /^F\/\d{1,2}$/;
-    // If it's a form code and allRecords not yet loaded, show loading
-    if (formCodePattern.test(decodedSerial) && !allRecords) {
+    // If it's a form code, show loading while formCodeRecords fetch
+    if (formCodePattern.test(decodedSerial)) {
       return (
         <AppShell breadcrumbs={getBreadcrumbs()}>
         <div className="max-w-4xl mx-auto flex flex-col items-center justify-center py-20">
           <Loader2 className="w-8 h-8 animate-spin text-primary mb-4" />
-          <p className="text-muted-foreground">Loading {decodedSerial}...</p>
+          <p className="text-muted-foreground">Redirecting to {decodedSerial}...</p>
         </div>
         </AppShell>
       );
     }
-    // If it's a form code and allRecords loaded but no matching records, the useEffect will redirect
-    // Only show "Not Found" for actual serials (not form codes)
-    if (!formCodePattern.test(decodedSerial)) {
-      return (
-        <AppShell breadcrumbs={getBreadcrumbs()}>
-        <div className="max-w-4xl mx-auto flex flex-col items-center justify-center py-20 ds-fade-enter">
-          <FileText className="w-12 h-12 text-muted-foreground/40 mb-4" />
-          <h2 className="text-xl text-foreground mb-2">Record Not Found</h2>
-          <p className="text-muted-foreground mb-4">No record with serial <code className="text-primary font-mono">{decodedSerial}</code></p>
-          <button onClick={() => navigate('/')} className="ds-press ds-focus-ring px-4 py-2 bg-primary text-primary-foreground rounded-sm flex items-center gap-2">
-            <ArrowLeft className="w-4 h-4" /> Back to Records
-          </button>
-        </div>
-        </AppShell>
-      );
-    }
-    // Form code with allRecords loaded — waiting for useEffect redirect
+    // Regular serial not found
     return (
       <AppShell breadcrumbs={getBreadcrumbs()}>
-      <div className="max-w-4xl mx-auto flex flex-col items-center justify-center py-20">
-        <Loader2 className="w-8 h-8 animate-spin text-primary mb-4" />
-        <p className="text-muted-foreground">Redirecting...</p>
+      <div className="max-w-4xl mx-auto flex flex-col items-center justify-center py-20 ds-fade-enter">
+        <FileText className="w-12 h-12 text-muted-foreground/40 mb-4" />
+        <h2 className="text-xl text-foreground mb-2">Record Not Found</h2>
+        <p className="text-muted-foreground mb-4">No record with serial <code className="text-primary font-mono">{decodedSerial}</code></p>
+        <button onClick={() => navigate('/')} className="ds-press ds-focus-ring px-4 py-2 bg-primary text-primary-foreground rounded-sm flex items-center gap-2">
+          <ArrowLeft className="w-4 h-4" /> Back to Records
+        </button>
       </div>
       </AppShell>
     );
