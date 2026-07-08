@@ -10,6 +10,7 @@
 import React from "react";
 import { cn } from "@/lib/utils";
 import { FileText } from "lucide-react";
+import { FormDocument } from "../FormKit";
 
 export interface F20Props {
   data?: Record<string, unknown>;
@@ -59,7 +60,7 @@ export function F20Template({ data, isTemplate = true, editMode = false, onChang
     );
 
   return (
-    <div className={cn("bg-background dark:bg-[#1e1d1a] text-foreground text-sm leading-relaxed print:bg-white print:text-black print:border-black", className)}>
+    <FormDocument formCode="F/20" formName="Review Agenda" serial={val(d, "serial")} sectionName="Management & Documentation">
       {/* ── Header ── */}
       <div className="grid grid-cols-[3fr_1fr] border border-border">
         <div className="p-2 font-bold bg-primary/5 text-base flex items-center gap-2">
@@ -109,6 +110,7 @@ export function F20Template({ data, isTemplate = true, editMode = false, onChang
           <span className="font-semibold">Approved By 🡪</span> {inp("approved_by", "Name", "w-36")}
         </div>
       </div>
-    </div>
-  );
+    </FormDocument>
+
+    );
 }

@@ -9,6 +9,7 @@
 
 import React from "react";
 import { cn } from "@/lib/utils";
+import { FormDocument } from "../FormKit";
 
 export interface F18Props {
   data?: Record<string, unknown>;
@@ -42,7 +43,7 @@ export function F18Template({ data, isTemplate = true, editMode = false, onChang
     );
 
   return (
-    <div className={cn("bg-background dark:bg-[#1e1d1a] text-foreground text-sm print:bg-white print:text-black print:border-black", className)}>
+    <FormDocument formCode="F/18" formName="Product Re-Call" serial={val(d, "serial")} sectionName="Sales & Customer Service">
       {/* Header */}
       <div className="grid grid-cols-[2fr_1fr] border border-border">
         <div className="p-2 font-bold bg-primary/5 text-base">Product Re-Call Report</div>
@@ -86,6 +87,7 @@ export function F18Template({ data, isTemplate = true, editMode = false, onChang
           </tbody>
         </table>
       </div>
-    </div>
-  );
+    </FormDocument>
+
+    );
 }

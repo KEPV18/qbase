@@ -6,6 +6,7 @@
 
 import React from "react";
 import { cn } from "@/lib/utils";
+import { FormDocument } from "../FormKit";
 
 export interface F21Props {
   data?: Record<string, unknown>;
@@ -40,7 +41,7 @@ export function F21Template({ data, isTemplate = true, editMode = false, onChang
     );
 
   return (
-    <div className={cn("bg-background dark:bg-[#1e1d1a] text-foreground text-sm leading-relaxed print:bg-white print:text-black print:border-black", className)}>
+    <FormDocument formCode="F/21" formName="Review Minutes" serial={val(d, "serial")} sectionName="Management & Documentation">
       {/* Header */}
       <div className="text-center font-bold text-base border-b border-border pb-2 mb-4 flex justify-between items-end">
         <div className="text-left text-xs text-muted-foreground">F/21</div>
@@ -114,6 +115,7 @@ export function F21Template({ data, isTemplate = true, editMode = false, onChang
           Approved By: {inp("approved_by", "Approved By", "w-40")}
         </div>
       </div>
-    </div>
-  );
+    </FormDocument>
+
+    );
 }

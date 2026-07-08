@@ -6,6 +6,7 @@
 import React, { useState, useCallback } from "react";
 import { cn } from "@/lib/utils";
 import { Plus, Trash2 } from "lucide-react";
+import { FormDocument } from "../FormKit";
 
 export interface F42Props {
   data?: Record<string, unknown>;
@@ -66,7 +67,7 @@ export function F42Template({ data, isTemplate = true, editMode = false, onChang
     );
 
   return (
-    <div className={cn("bg-background dark:bg-[#1e1d1a] text-foreground text-sm print:bg-white print:text-black print:border-black", className)}>
+    <FormDocument formCode="F/42" formName="Annual Training Program" serial={val(d, "serial")} sectionName="HR & Training">
       {/* Header */}
       <div className="grid grid-cols-[6fr_1fr] border border-border">
         <div className="p-2 font-bold bg-primary/5 text-base">Annual Training Program</div>
@@ -124,6 +125,7 @@ export function F42Template({ data, isTemplate = true, editMode = false, onChang
       <div className="border border-t-2 border-border text-xs mt-2 p-1.5">
         Reviewed And Approved By: {inp("approved_by", "Authorised Person")}
       </div>
-    </div>
-  );
+    </FormDocument>
+
+    );
 }

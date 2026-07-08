@@ -44,7 +44,7 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
             </button>
             <span className="font-semibold text-foreground dark:text-foreground">QBase</span>
           </div>
-          <main className="flex-1 p-5 pb-24 lg:pb-5">
+          <main className="flex-1 overflow-y-auto p-5 pb-24 lg:pb-5">
             {children}
           </main>
         </div>

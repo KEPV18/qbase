@@ -6,6 +6,7 @@
 
 import React from "react";
 import { cn } from "@/lib/utils";
+import { FormDocument } from "../FormKit";
 
 export interface F19Props {
   data?: Record<string, unknown>;
@@ -44,7 +45,7 @@ export function F19Template({ data, isTemplate = true, editMode = false, onChang
   const ph = isTemplate && !editMode;
 
   return (
-    <div className={cn("bg-background dark:bg-[#1e1d1a] text-foreground text-sm print:bg-white print:text-black print:border-black", className)}>
+    <FormDocument formCode="F/19" formName="Product Description" serial={val(d, "serial")} sectionName="Operations & Production">
       {/* Header */}
       <div className="text-center font-bold text-base border-b border-border pb-2 mb-4 flex justify-between items-end">
         <div className="text-left text-xs text-muted-foreground">F/19</div>
@@ -83,6 +84,7 @@ export function F19Template({ data, isTemplate = true, editMode = false, onChang
           ))}
         </tbody>
       </table>
-    </div>
-  );
+    </FormDocument>
+
+    );
 }

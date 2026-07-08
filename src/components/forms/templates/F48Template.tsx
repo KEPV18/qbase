@@ -12,6 +12,7 @@
 
 import React from "react";
 import { cn } from "@/lib/utils";
+import { FormDocument } from "../FormKit";
 
 export interface F48Props {
   data?: Record<string, unknown>;
@@ -41,7 +42,7 @@ export function F48Template({ data, isTemplate = true, editMode = false, onChang
     );
 
   return (
-    <div className={cn("bg-background dark:bg-[#1e1d1a] text-foreground text-sm print:bg-white print:text-black print:border-black", className)}>
+    <FormDocument formCode="F/48" formName="Internal Audit Report" serial={val(d, "serial")} sectionName="Quality & Audit">
       <table className="w-full border-collapse border border-border text-xs">
         <tbody>
           {/* Row 0: TYPE | DATE | REPORT NO */}
@@ -134,6 +135,7 @@ export function F48Template({ data, isTemplate = true, editMode = false, onChang
           </tr>
         </tbody>
       </table>
-    </div>
-  );
+    </FormDocument>
+
+    );
 }

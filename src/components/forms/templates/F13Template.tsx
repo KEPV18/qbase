@@ -7,6 +7,7 @@
 import React from "react";
 import { cn } from "@/lib/utils";
 import { FileText, Shield } from "lucide-react";
+import { FormDocument } from "../FormKit";
 
 export interface F13Props {
   data?: Record<string, unknown>;
@@ -80,7 +81,7 @@ export function F13Template({ data, isTemplate = true, editMode = false, onChang
     );
 
   return (
-    <div className={cn("bg-background dark:bg-[#1e1d1a] text-foreground text-sm print:bg-white print:text-black print:border-black", className)}>
+    <FormDocument formCode="F/13" formName="Purchase Order" serial={val(d, "serial")} sectionName="Procurement & Vendors">
       {/* ── Header Block ── */}
       <div className="border border-border rounded-t-sm">
         <div className="grid grid-cols-[3fr_1fr]">
@@ -220,6 +221,7 @@ export function F13Template({ data, isTemplate = true, editMode = false, onChang
           <div className="mt-1">{inp("approved_by", "Top Management", "w-40")}</div>
         </div>
       </div>
-    </div>
-  );
+    </FormDocument>
+
+    );
 }

@@ -16,6 +16,7 @@
 import React, { useState, useCallback } from "react";
 import { cn } from "@/lib/utils";
 import { Plus, Trash2 } from "lucide-react";
+import { FormDocument } from "../FormKit";
 
 export interface F45Props {
   data?: Record<string, unknown>;
@@ -136,7 +137,7 @@ export function F45Template({ data, isTemplate = true, editMode = false, onChang
     );
 
   return (
-    <div className={cn("bg-background dark:bg-[#1e1d1a] text-foreground text-sm print:bg-white print:text-black print:border-black space-y-4", className)}>
+    <FormDocument formCode="F/45" formName="Master List of Documents" serial={val(d, "serial")} sectionName="Management & Documentation">
       {/* Header */}
       <div className="border-b pb-2 mb-2">
         <h3 className="text-sm font-semibold uppercase tracking-wider text-foreground/70">
@@ -290,6 +291,7 @@ export function F45Template({ data, isTemplate = true, editMode = false, onChang
           <span className="font-medium">{val(d, "maintained_by") || (ph ? "Ahmed Khaled" : "")}</span>
         </div>
       </div>
-    </div>
-  );
+    </FormDocument>
+
+    );
 }

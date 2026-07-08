@@ -10,6 +10,7 @@
 import React, { useState, useCallback } from "react";
 import { cn } from "@/lib/utils";
 import { Plus, Trash2 } from "lucide-react";
+import { FormDocument } from "../FormKit";
 
 export interface F11Props {
   data?: Record<string, unknown>;
@@ -76,7 +77,7 @@ export function F11Template({ data, isTemplate = true, editMode = false, onChang
     );
 
   return (
-    <div className={cn("bg-background dark:bg-[#1e1d1a] text-foreground text-sm print:bg-white print:text-black print:border-black", className)}>
+    <FormDocument formCode="F/11" formName="Production Plan" serial={val(d, "serial")} sectionName="Operations & Production">
       {/* Title row */}
       <div className="grid grid-cols-[4fr_1fr] border border-border">
         <div className="p-2 font-bold bg-primary/5 text-base">Production Plan</div>
@@ -206,6 +207,7 @@ export function F11Template({ data, isTemplate = true, editMode = false, onChang
           </span>
         </div>
       )}
-    </div>
-  );
+    </FormDocument>
+
+    );
 }

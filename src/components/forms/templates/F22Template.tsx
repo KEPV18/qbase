@@ -9,6 +9,7 @@
 
 import React from "react";
 import { cn } from "@/lib/utils";
+import { FormDocument } from "../FormKit";
 
 export interface F22Props {
   data?: Record<string, unknown>;
@@ -152,7 +153,7 @@ export function F22Template({ data, isTemplate = true, editMode = false, onChang
   };
 
   return (
-    <div className={cn("bg-background dark:bg-[#1e1d1a] text-foreground text-sm print:bg-white print:text-black", className)}>
+    <FormDocument formCode="F/22" formName="Corrective Action" serial={val(d, "serial")} sectionName="Quality & Audit">
       {/* ═══════════════════════════════════════════════════════════════════
           SECTION 1: HEADER — Serial, Department, Identified Date/By
           ═══════════════════════════════════════════════════════════════════ */}
@@ -356,6 +357,7 @@ export function F22Template({ data, isTemplate = true, editMode = false, onChang
           </div>
         </div>
       </div>
-    </div>
-  );
+    </FormDocument>
+
+    );
 }

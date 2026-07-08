@@ -10,6 +10,7 @@
 import React from "react";
 import { cn } from "@/lib/utils";
 import { FileText, CheckCircle2 } from "lucide-react";
+import { FormDocument } from "../FormKit";
 
 export interface F34Props {
   data?: Record<string, unknown>;
@@ -70,7 +71,7 @@ export function F34Template({ data, isTemplate = true, editMode = false, onChang
   };
 
   return (
-    <div className={cn("bg-background dark:bg-[#1e1d1a] text-foreground text-sm print:bg-white print:text-black print:border-black", className)}>
+    <FormDocument formCode="F/34" formName="Design Verification" serial={val(d, "serial")} sectionName="R&D & Design">
       {/* ── Header ── */}
       <div className="grid grid-cols-[3fr_1fr] border border-border">
         <div className="p-2 font-bold bg-primary/5 text-base flex items-center gap-2">
@@ -137,6 +138,7 @@ export function F34Template({ data, isTemplate = true, editMode = false, onChang
           <span className="font-semibold">Reviewed And Approved By:</span> {inp("reviewed_and_approved_by", "Name", "w-36")}
         </div>
       </div>
-    </div>
-  );
+    </FormDocument>
+
+    );
 }

@@ -6,6 +6,7 @@
 
 import React, { useState, useEffect } from "react";
 import { cn } from "@/lib/utils";
+import { FormDocument } from "../FormKit";
 
 export interface F10Props {
   data?: Record<string, unknown>;
@@ -56,7 +57,7 @@ export function F10Template({ data, isTemplate = true, editMode = false, onChang
   };
 
   return (
-    <div className={cn("bg-background dark:bg-[#1e1d1a] text-foreground text-sm print:bg-white print:text-black print:border-black overflow-x-auto", className)}>
+    <FormDocument formCode="F/10" formName="Customer Feedback" serial={val(d, "serial")} sectionName="Sales & Customer Service">
       <table className="w-full border-collapse border border-border">
         <colgroup>
           <col className="w-[15%]" /><col className="w-[10%]" /><col className="w-[10%]" />
@@ -220,6 +221,7 @@ export function F10Template({ data, isTemplate = true, editMode = false, onChang
           </tr>
         </tbody>
       </table>
-    </div>
-  );
+    </FormDocument>
+
+    );
 }

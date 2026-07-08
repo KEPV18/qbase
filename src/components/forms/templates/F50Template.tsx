@@ -14,6 +14,7 @@
 import React, { useCallback, useMemo } from "react";
 import { cn } from "@/lib/utils";
 import { Plus, Trash2 } from "lucide-react";
+import { FormDocument } from "../FormKit";
 
 export interface F50Props {
   data?: Record<string, unknown>;
@@ -117,7 +118,7 @@ export function F50Template({ data, isTemplate = true, editMode = false, onChang
   const serialValue = val(d, "serial") || val(d, "formCode") || "";
 
   return (
-    <div className={cn("bg-background dark:bg-[#1e1d1a] text-foreground text-sm print:bg-white print:text-black print:border-black overflow-x-auto", className)}>
+    <FormDocument formCode="F/50" formName="Customer Property" serial={val(d, "serial")} sectionName="Sales & Customer Service">
       <table className="w-full table-auto border-collapse border border-border">
         <colgroup>
           <col className="w-[7%]" />
@@ -335,6 +336,7 @@ export function F50Template({ data, isTemplate = true, editMode = false, onChang
           </tr>
         </tbody>
       </table>
-    </div>
-  );
+    </FormDocument>
+
+    );
 }

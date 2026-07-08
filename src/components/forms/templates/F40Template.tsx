@@ -7,6 +7,7 @@
 import React, { useState, useCallback } from "react";
 import { cn } from "@/lib/utils";
 import { Plus, Trash2 } from "lucide-react";
+import { FormDocument } from "../FormKit";
 
 export interface F40Props {
   data?: Record<string, unknown>;
@@ -64,7 +65,7 @@ export function F40Template({ data, isTemplate = true, editMode = false, onChang
     );
 
   return (
-    <div className={cn("bg-background dark:bg-[#1e1d1a] text-foreground text-sm print:bg-white print:text-black print:border-black", className)}>
+    <FormDocument formCode="F/40" formName="Competence Matrix" serial={val(d, "serial")} sectionName="HR & Training">
       {/* Header */}
       <div className="grid grid-cols-[3fr_2fr_1fr] border border-border">
         <div className="p-2 font-bold bg-primary/5 text-base">Competence Matrix</div>
@@ -141,6 +142,7 @@ export function F40Template({ data, isTemplate = true, editMode = false, onChang
       <div className="border border-t-2 border-border text-xs mt-1 p-1.5">
         Authorised Person: {val(d, "authorised_by") || (ph ? "___" : "")}
       </div>
-    </div>
-  );
+    </FormDocument>
+
+    );
 }

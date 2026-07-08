@@ -6,6 +6,7 @@
 
 import React, { useMemo } from "react";
 import { cn } from "@/lib/utils";
+import { FormDocument } from "../FormKit";
 
 export interface F09Props {
   data?: Record<string, unknown>;
@@ -59,7 +60,7 @@ export function F09Template({ data, isTemplate = true, editMode = false, onChang
   };
 
   return (
-    <div className={cn("bg-background dark:bg-[#1e1d1a] text-foreground text-sm print:bg-white print:text-black print:border-black overflow-x-auto", className)}>
+    <FormDocument formCode="F/09" formName="Customer Complaint" serial={val(d, "serial")} sectionName="Sales & Customer Service">
       <table className="w-full border-collapse border border-border">
         <colgroup>
           <col className="w-[8%]" /><col className="w-[8%]" /><col className="w-[8%]" />
@@ -298,6 +299,7 @@ export function F09Template({ data, isTemplate = true, editMode = false, onChang
           </tr>
         </tbody>
       </table>
-    </div>
-  );
+    </FormDocument>
+
+    );
 }

@@ -10,7 +10,7 @@
 import React, { useMemo, useCallback, useState, useEffect } from "react";
 import { cn } from "@/lib/utils";
 import { Plus, Trash2 } from "lucide-react";
-import { FormWrapper, FormHeader, FormMetaGrid, FormTable, FormTableRow, FormTableCell, val } from "../FormKit";
+import { FormDocument, FormHeader, FormMetaGrid, FormTable, FormTableRow, FormTableCell, val } from "../FormKit";
 
 export interface F28Props {
   data?: Record<string, unknown>;
@@ -77,10 +77,7 @@ export function F28Template({ data, isTemplate = true, editMode = false, onChang
   }, [rows]);
 
   return (
-    <FormWrapper className={className}>
-      {/* VEZLOO Corporate Header */}
-      <FormHeader formCode="F/28" formName="Training Attendance Sheet" serial={val(d, "serial")} />
-
+    <FormDocument formCode="F/28" formName="Training Attendance Sheet" serial={val(d, "serial")} sectionName="HR & Training" className={className}>
       {/* Metadata Grid — canonical keys matching DB form_data */}
       <FormMetaGrid
         data={d}
@@ -172,7 +169,7 @@ export function F28Template({ data, isTemplate = true, editMode = false, onChang
           )}
         </div>
       </div>
-    </FormWrapper>
+    </FormDocument>
   );
 }
 

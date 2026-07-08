@@ -13,6 +13,7 @@
 import React, { useState, useCallback } from "react";
 import { cn } from "@/lib/utils";
 import { Plus, Trash2 } from "lucide-react";
+import { FormDocument } from "../FormKit";
 
 export interface F15Props {
   data?: Record<string, unknown>;
@@ -69,7 +70,7 @@ export function F15Template({ data, isTemplate = true, editMode = false, onChang
     );
 
   return (
-    <div className={cn("bg-background dark:bg-[#1e1d1a] text-foreground text-sm print:bg-white print:text-black print:border-black", className)}>
+    <FormDocument formCode="F/15" formName="Approved Vendor List" serial={val(d, "serial")} sectionName="Procurement & Vendors">
       {/* ── Header ── */}
       <div className="grid grid-cols-[4fr_2fr] border border-border">
         <div className="p-2 font-bold bg-primary/5 text-base">Approved Vendor List</div>
@@ -119,6 +120,7 @@ export function F15Template({ data, isTemplate = true, editMode = false, onChang
         <div>Prepared By: {val(d, "prepared_by") || (ph ? "___" : "")}</div>
         <div>Approved By: {val(d, "approved_by") || (ph ? "___" : "")}</div>
       </div>
-    </div>
-  );
+    </FormDocument>
+
+    );
 }

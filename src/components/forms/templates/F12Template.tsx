@@ -8,6 +8,7 @@
 import React, { useState, useCallback } from "react";
 import { cn } from "@/lib/utils";
 import { Plus, Trash2 } from "lucide-react";
+import { FormDocument } from "../FormKit";
 
 export interface F12Props {
   data?: Record<string, unknown>;
@@ -77,7 +78,7 @@ export function F12Template({ data, isTemplate = true, editMode = false, onChang
     );
 
   return (
-    <div className={cn("bg-background dark:bg-[#1e1d1a] text-foreground text-sm print:bg-white print:text-black print:border-black", className)}>
+    <FormDocument formCode="F/12" formName="Non-Conforming Product" serial={val(d, "serial")} sectionName="Quality & Audit">
       {/* Header */}
       <div className="grid grid-cols-[1fr_auto] border border-border text-xs">
         <div className="col-span-1 p-2 font-bold bg-primary/5 flex items-center text-base">
@@ -157,6 +158,7 @@ export function F12Template({ data, isTemplate = true, editMode = false, onChang
           {val(d, "authorised_signature") || (ph ? "_____________" : "")}
         </span>
       </div>
-    </div>
-  );
+    </FormDocument>
+
+    );
 }

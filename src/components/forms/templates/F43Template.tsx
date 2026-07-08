@@ -5,6 +5,7 @@
 
 import React from "react";
 import { cn } from "@/lib/utils";
+import { FormDocument } from "../FormKit";
 
 export interface F43Props {
   data?: Record<string, unknown>;
@@ -58,7 +59,7 @@ export function F43Template({ data, isTemplate = true, editMode = false, onChang
   const topics = Array.isArray(d.topics) ? d.topics : defaultTopics;
 
   return (
-    <div className={cn("bg-background dark:bg-[#1e1d1a] text-foreground text-sm print:bg-white print:text-black print:border-black", className)}>
+    <FormDocument formCode="F/43" formName="Induction Training" serial={val(d, "serial")} sectionName="HR & Training">
       {/* Header */}
       <div className="grid grid-cols-[4fr_1fr] border border-border">
         <div className="p-2 font-bold bg-primary/5 text-base">Induction Training Form</div>
@@ -149,6 +150,7 @@ export function F43Template({ data, isTemplate = true, editMode = false, onChang
         <div className="p-1.5 border-r border-border">Effectiveness On Training 🡪 {inp("effectiveness", "By Trainer/HOD")}</div>
         <div className="p-1.5">Signature – Trainer / HOD: {inp("trainer_sign", "Name")}</div>
       </div>
-    </div>
-  );
+    </FormDocument>
+
+    );
 }

@@ -8,6 +8,7 @@
 
 import React from "react";
 import { cn } from "@/lib/utils";
+import { FormDocument } from "../FormKit";
 
 export interface F44Props {
   data?: Record<string, unknown>;
@@ -39,7 +40,7 @@ export function F44Template({ data, isTemplate = true, editMode = false, onChang
   const signedDocUrl = val(d, "signed_document_url");
 
   return (
-    <div className={cn("bg-background dark:bg-[#1e1d1a] text-foreground text-sm print:bg-white print:text-black print:border-black", className)}>
+    <FormDocument formCode="F/44" formName="Job Description" serial={val(d, "serial")} sectionName="HR & Training">
       {/* Header */}
       <div className="text-center font-bold text-base border-b border-border pb-2 mb-4 flex justify-between items-end">
         <div className="text-left text-xs text-muted-foreground">F/44</div>
@@ -112,6 +113,7 @@ export function F44Template({ data, isTemplate = true, editMode = false, onChang
       <div className="mt-4 pt-2 border-t border-foreground/20 flex justify-end text-xs">
         <div>Approved By: {inp("approved_by", "Name", "w-40")}</div>
       </div>
-    </div>
-  );
+    </FormDocument>
+
+    );
 }

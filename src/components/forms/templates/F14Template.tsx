@@ -9,6 +9,7 @@
 import React, { useState, useCallback } from "react";
 import { cn } from "@/lib/utils";
 import { Plus, Trash2, Info } from "lucide-react";
+import { FormDocument } from "../FormKit";
 
 export interface F14Props {
   data?: Record<string, unknown>;
@@ -67,7 +68,7 @@ export function F14Template({ data, isTemplate = true, editMode = false, onChang
     );
 
   return (
-    <div className={cn("bg-background dark:bg-[#1e1d1a] text-foreground text-sm print:bg-white print:text-black print:border-black", className)}>
+    <FormDocument formCode="F/14" formName="Incoming Inspection" serial={val(d, "serial")} sectionName="Quality & Audit">
       {/* ── Header ── */}
       <div className="grid grid-cols-[3fr_1fr] border border-border">
         <div className="p-2 font-bold bg-primary/5 text-base">Indent and Incoming Inspection Record</div>
@@ -129,6 +130,7 @@ export function F14Template({ data, isTemplate = true, editMode = false, onChang
         <div>Prepared By: {inp("prepared_by", "Name", "w-36")}</div>
         <div>Checked By: {inp("checked_by", "Name", "w-36")}</div>
       </div>
-    </div>
-  );
+    </FormDocument>
+
+    );
 }

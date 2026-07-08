@@ -7,6 +7,7 @@
 
 import React from "react";
 import { cn } from "@/lib/utils";
+import { FormDocument } from "../FormKit";
 
 export interface F46Props {
   data?: Record<string, unknown>;
@@ -43,7 +44,7 @@ export function F46Template({ data, isTemplate = true, editMode = false, onChang
     );
 
   return (
-    <div className={cn("bg-background dark:bg-[#1e1d1a] text-foreground text-sm space-y-4", className)}>
+    <FormDocument formCode="F/46" formName="Change Management" serial={val(d, "serial")} sectionName="Management & Documentation">
       {/* Header */}
       <div className="flex justify-between items-end border-b border-border pb-2">
         <div className="text-left text-xs text-muted-foreground">F/46</div>
@@ -142,6 +143,7 @@ export function F46Template({ data, isTemplate = true, editMode = false, onChang
           </div>
         )}
       </div>
-    </div>
-  );
+    </FormDocument>
+
+    );
 }

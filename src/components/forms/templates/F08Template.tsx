@@ -8,6 +8,7 @@
 import React, { useCallback, useMemo } from "react";
 import { cn } from "@/lib/utils";
 import { Plus, Trash2 } from "lucide-react";
+import { FormDocument } from "../FormKit";
 import {
   valAny, val, todayDDMMYYYY,
   labelCls, valueCls, emptyValueCls,
@@ -38,7 +39,7 @@ export function F08Template({ data, isTemplate = true, editMode = false, onChang
   const serialValue = val(d, "serial");
 
   return (
-    <div className={cn("bg-background dark:bg-[#1e1d1a] text-foreground text-sm print:bg-white print:text-black print:border-black", className)}>
+    <FormDocument formCode="F/08" formName="Purchase Order" serial={val(d, "serial")} sectionName="Sales & Customer Service">
       {/* ====== DESKTOP: Full DOCX-replica table ====== */}
       <div className="hidden md:block">
         {/* Company header */}
@@ -325,6 +326,7 @@ export function F08Template({ data, isTemplate = true, editMode = false, onChang
           <div><span className="font-semibold">Despatch Date:</span> {val(d, "despatch_date") || "--"}</div>
         </div>
       </div>
-    </div>
-  );
+    </FormDocument>
+
+    );
 }

@@ -10,6 +10,7 @@
 import React from "react";
 import { cn } from "@/lib/utils";
 import { FileText, CheckCircle2, XCircle, AlertTriangle } from "lucide-react";
+import { FormDocument } from "../FormKit";
 
 export interface F32Props {
   data?: Record<string, unknown>;
@@ -52,7 +53,7 @@ export function F32Template({ data, isTemplate = true, editMode = false, onChang
   );
 
   return (
-    <div className={cn("bg-background dark:bg-[#1e1d1a] text-foreground text-sm print:bg-white print:text-black print:border-black", className)}>
+    <FormDocument formCode="F/32" formName="R&D Request" serial={val(d, "serial")} sectionName="R&D & Design">
       {/* ── Header: Ref No + Date ── */}
       <div className="grid grid-cols-[1fr_1fr] border border-border">
         <div className="p-2 font-bold bg-primary/5 text-base flex items-center gap-2">
@@ -224,6 +225,7 @@ export function F32Template({ data, isTemplate = true, editMode = false, onChang
       <div className="border-x border-b border-border rounded-b-sm text-xs p-2">
         <span className="font-semibold">Approved by:</span> {inp("approved_by", "Name", "w-40")}
       </div>
-    </div>
-  );
+    </FormDocument>
+
+    );
 }

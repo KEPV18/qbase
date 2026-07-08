@@ -5,6 +5,7 @@
 
 import React from "react";
 import { cn } from "@/lib/utils";
+import { FormDocument } from "../FormKit";
 
 export interface F30Props {
   data?: Record<string, unknown>;
@@ -72,7 +73,7 @@ export function F30Template({ data, isTemplate = true, editMode = false, onChang
     );
 
   return (
-    <div className={cn("bg-background dark:bg-[#1e1d1a] text-foreground text-sm print:bg-white print:text-black print:border-black", className)}>
+    <FormDocument formCode="F/30" formName="Performance Appraisal" serial={val(d, "serial")} sectionName="HR & Training">
       {/* Header */}
       <div className="grid grid-cols-[4fr_1fr] border border-border">
         <div className="p-2 font-bold bg-primary/5 text-base">Performance Appraisal Report</div>
@@ -173,6 +174,7 @@ export function F30Template({ data, isTemplate = true, editMode = false, onChang
         <div className="p-1.5 border-r border-border">Authorities Issued 🡪 {inp("authorities", "Details")}</div>
         <div className="p-1.5">Evaluated By: {inp("evaluator_name3", "Name")}</div>
       </div>
-    </div>
-  );
+    </FormDocument>
+
+    );
 }

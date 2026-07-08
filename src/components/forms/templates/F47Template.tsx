@@ -7,6 +7,7 @@
 import React, { useState } from "react";
 import { cn } from "@/lib/utils";
 import { ChevronDown, ChevronRight } from "lucide-react";
+import { FormDocument } from "../FormKit";
 
 export interface F47Props {
   data?: Record<string, unknown>;
@@ -322,7 +323,7 @@ export function F47Template({ data, isTemplate = true, editMode = false, onChang
     acc + s.subclauses.reduce((a, sc) => a + sc.questions.length, 0), 0);
 
   return (
-    <div className={cn("bg-background dark:bg-[#1e1d1a] text-foreground text-sm print:bg-white print:text-black print:border-black", className)}>
+    <FormDocument formCode="F/47" formName="Audit Checklist" serial={val(d, "serial")} sectionName="Quality & Audit">
       {/* Header */}
       <div className="grid grid-cols-[4fr_2fr_1fr] border border-border">
         <div className="p-2 font-bold bg-primary/5 text-base">Internal Audit Checklist</div>
@@ -396,6 +397,7 @@ export function F47Template({ data, isTemplate = true, editMode = false, onChang
         <div className="p-1.5 border-r border-border">Date: {val(d, "audit_date") || (ph ? "___" : "")}</div>
         <div className="p-1.5">Approved: {val(d, "approved_by") || (ph ? "___" : "")}</div>
       </div>
-    </div>
-  );
+    </FormDocument>
+
+    );
 }

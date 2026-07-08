@@ -7,6 +7,7 @@
 
 import React from "react";
 import { cn } from "@/lib/utils";
+import { FormDocument } from "../FormKit";
 
 export interface F16Props {
   data?: Record<string, unknown>;
@@ -56,7 +57,7 @@ export function F16Template({ data, isTemplate = true, editMode = false, onChang
     );
 
   return (
-    <div className={cn("bg-background dark:bg-[#1e1d1a] text-foreground text-sm print:bg-white print:text-black print:border-black", className)}>
+    <FormDocument formCode="F/16" formName="Supplier Registration" serial={val(d, "serial")} sectionName="Procurement & Vendors">
       {/* Header */}
       <div className="grid grid-cols-[3fr_1fr] border border-border">
         <div className="p-2 font-bold bg-primary/5 text-base">Supplier Registration Form</div>
@@ -166,6 +167,7 @@ export function F16Template({ data, isTemplate = true, editMode = false, onChang
           </tr>
         </tbody>
       </table>
-    </div>
-  );
+    </FormDocument>
+
+    );
 }
