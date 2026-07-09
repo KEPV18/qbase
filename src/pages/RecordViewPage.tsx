@@ -378,7 +378,7 @@ const RecordViewPage: React.FC = () => {
                 <ChevronLeft className="w-4 h-4" />
               </button>
 
-              {/* Quick-Jump Record Selector */}
+              {/* Quick-Jump Record Selector — F/44 Hybrid Split-Group Badging */}
               {recordNav.sameFormList.length > 1 && recordNav.currentIndex >= 0 && (
                 <select
                   value={recordNav.currentIndex}
@@ -387,38 +387,36 @@ const RecordViewPage: React.FC = () => {
                     const target = recordNav.sameFormList[idx];
                     if (target) navigate(`/records/${encodeURIComponent(String(target.serial))}`);
                   }}
-                  className="bg-background border border-border text-foreground text-xs font-medium rounded-md px-2.5 py-1.5 shadow-sm hover:border-foreground/40 focus:outline-none focus:ring-2 focus:ring-primary cursor-pointer max-w-[260px] truncate"
+                  className="bg-background border border-border text-foreground text-xs font-medium rounded-md px-2.5 py-1.5 shadow-sm hover:border-foreground/40 focus:outline-none focus:ring-2 focus:ring-primary cursor-pointer max-w-[280px] truncate"
                   title="Jump to any record in this form"
                 >
                   <option value={recordNav.currentIndex} className="font-semibold">
                     📄 {recordNav.currentIndex + 1} / {recordNav.sameFormList.length}
                   </option>
-                  {/* Text records group */}
-                  {recordNav.textSerials.size > 0 && recordNav.pdfSerials.size > 0 && (
-                    <optgroup label="📝 Text Records">
-                      {recordNav.sameFormList.map((r, i) => {
-                        if (recordNav.pdfSerials.has(String(r.serial))) return null;
-                        return <option key={r.id} value={i}>📝 {i + 1} — {String(r.serial)}</option>;
-                      })}
-                    </optgroup>
-                  )}
-                  {/* PDF records group */}
-                  {recordNav.textSerials.size > 0 && recordNav.pdfSerials.size > 0 && (
-                    <optgroup label="📕 PDF Records">
-                      {recordNav.sameFormList.map((r, i) => {
-                        if (!recordNav.pdfSerials.has(String(r.serial))) return null;
-                        return <option key={r.id} value={i}>📕 {i + 1} — {String(r.serial)}</option>;
-                      })}
-                    </optgroup>
-                  )}
-                  {/* Single type — no optgroups */}
-                  {recordNav.textSerials.size === 0 || recordNav.pdfSerials.size === 0 ? (
+                  {/* Split-group: only applies when both types coexist (F/44 hybrid) */}
+                  {recordNav.textSerials.size > 0 && recordNav.pdfSerials.size > 0 ? (
+                    <>
+                      <optgroup label="📝 Standard QMS Records (Digital Tables)">
+                        {recordNav.sameFormList.map((r, i) => {
+                          if (recordNav.pdfSerials.has(String(r.serial))) return null;
+                          return <option key={r.id} value={i}>📝 {i + 1} — {String(r.serial)}</option>;
+                        })}
+                      </optgroup>
+                      <optgroup label="📄 Digitized Assets (Uploaded PDFs)">
+                        {recordNav.sameFormList.map((r, i) => {
+                          if (!recordNav.pdfSerials.has(String(r.serial))) return null;
+                          return <option key={r.id} value={i}>🔴 {i + 1} — {String(r.serial)} [PDF]</option>;
+                        })}
+                      </optgroup>
+                    </>
+                  ) : (
+                    /* Single type — flat list with badges */
                     recordNav.sameFormList.map((r, i) => (
                       <option key={r.id} value={i}>
-                        {recordNav.pdfSerials.has(String(r.serial)) ? '📕' : '📝'} {i + 1} — {String(r.serial)}
+                        {recordNav.pdfSerials.has(String(r.serial)) ? `🔴 ${i + 1} — ${String(r.serial)} [PDF]` : `📝 ${i + 1} — ${String(r.serial)}`}
                       </option>
                     ))
-                  ) : null}
+                  )}
                 </select>
               )}
 
@@ -531,6 +529,18 @@ const RecordViewPage: React.FC = () => {
           <span className="backdrop-blur-sm border rounded-md px-2 py-0.5 text-[10px] font-semibold ml-2" style={deptAccent}>
             {deptName}
           </span>
+          {/* F/44 Hybrid: PDF record badge */}
+          {originalRecord.signed_document_url && (
+            <span className="ml-1 px-2 py-0.5 text-[10px] font-bold rounded-md bg-red-500/15 text-red-600 dark:text-red-400 border border-red-500/20">
+              🔴 PDF ASSET
+            </span>
+          )}
+          {/* F/44 Hybrid: Text record badge */}
+          {String(originalRecord.formCode) === 'F/44' && !originalRecord.signed_document_url && (
+            <span className="ml-1 px-2 py-0.5 text-[10px] font-bold rounded-md bg-blue-500/15 text-blue-600 dark:text-blue-400 border border-blue-500/20">
+              📝 DIGITAL TABLE
+            </span>
+          )}
           {integritySeverity !== 'clean' && mode === 'view' && (
             <span className={`ml-auto px-2 py-0.5 text-xs font-medium rounded-full border ${
               integritySeverity === 'critical'

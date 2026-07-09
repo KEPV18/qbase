@@ -127,10 +127,10 @@ export function F44Template({ data, isTemplate = true, editMode = false, onChang
             </div>
           </div>
 
-          {/* Embedded PDF viewer */}
+          {/* Embedded PDF viewer — full-screen high-fidelity */}
           <div className="w-full rounded-md border border-border overflow-hidden bg-muted/20">
-            <object data={signedDocUrl} type="application/pdf" className="w-full" style={{ height: "800px" }}>
-              <iframe src={signedDocUrl} className="w-full" style={{ height: "800px", border: "none" }}
+            <object data={signedDocUrl} type="application/pdf" className="w-full h-[80vh] border-none">
+              <iframe src={signedDocUrl} className="w-full h-[80vh] border-none"
                 title="Signed Job Description PDF">
                 <p className="p-4 text-sm text-muted-foreground text-center">
                   Your browser does not support inline PDFs.
