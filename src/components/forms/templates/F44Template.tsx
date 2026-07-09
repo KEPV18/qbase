@@ -35,7 +35,8 @@ function parseResponsibilities(raw: string): RespSection[] {
   // Section heading patterns: "Category (Clause X) — TAG" or "Category — TAG"
   const headingRe = /^(.+?)(?:\s*\(Clause[^)]*\))?\s*[—–-]\s*(.+)$/;
   // Non-clause headings: "Qualifications & Requirements", "Key Performance Indicators (KPIs)", etc.
-  const plainHeadingRe = /^(Qualifications|Key Performance|Financial|Employee Name|Employee Signature|Date)/i;
+  // NOTE: Employee Name/Signature/Date are NOT headings — they're signature fields
+  const plainHeadingRe = /^(Qualifications|Key Performance|Financial & Risk)/i;
 
   const sections: RespSection[] = [];
   let current: RespSection | null = null;
@@ -51,7 +52,7 @@ function parseResponsibilities(raw: string): RespSection[] {
       clauseMatch[2].includes('OVERSIGHT') ||
       clauseMatch[2].includes('PRIMARY') ||
       clauseMatch[2].includes('INTERIM')
-    )) || isPlainHeading || line.startsWith('Qualifications') || line.startsWith('Key Performance');
+    )) || isPlainHeading;
 
     if (isHeading) {
       // Save previous section
@@ -305,16 +306,16 @@ export function F44Template({ data, isTemplate = true, editMode = false, onChang
                     if (item.includes(':') && !item.includes('Clause')) {
                       const [k, ...v] = item.split(':');
                       return (
-                        <li key={i} className="text-[11px] flex items-start gap-2">
-                          <span className="text-muted-foreground mt-0.5">▸</span>
+                        <li key={i} className="text-[11px] flex items-start gap-1.5 leading-relaxed">
+                          <span className="text-muted-foreground shrink-0">▸</span>
                           <span><span className="font-semibold text-foreground">{k}:</span> <span className="text-muted-foreground">{v.join(':').trim()}</span></span>
                         </li>
                       );
                     }
                     // Regular bullet
                     return (
-                      <li key={i} className="text-[11px] flex items-start gap-2">
-                        <span className="text-muted-foreground mt-0.5 shrink-0">▸</span>
+                      <li key={i} className="text-[11px] flex items-start gap-1.5 leading-relaxed">
+                        <span className="text-muted-foreground shrink-0">▸</span>
                         <span className="text-foreground/90">{item}</span>
                       </li>
                     );
