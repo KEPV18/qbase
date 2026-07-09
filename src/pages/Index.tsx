@@ -5,7 +5,7 @@
 //           Compliance Radar (gap analysis for ALL recurring forms)
 // ============================================================================
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { useRecords } from "@/hooks/useRecordStorage";
@@ -201,16 +201,35 @@ export default function Index() {
   const navigate = useNavigate();
   const { user } = useAuth();
   const { data: records, isLoading: recordsLoading } = useRecords();
-  const [activeDept, setActiveDept] = useState("Sales & Customer Service");
-  const [selectedForm, setSelectedForm] = useState<string | null>(null);
+  const [activeDept, setActiveDept] = useState(() => {
+    const saved = localStorage.getItem('qms_activeDept');
+    return saved || "Sales & Customer Service";
+  });
+  const [selectedForm, setSelectedForm] = useState<string | null>(() => {
+    return localStorage.getItem('qms_selectedForm') || null;
+  });
   const [formSearch, setFormSearch] = useState("");
+
+  // Persist activeDept and selectedForm to localStorage
+  useEffect(() => {
+    localStorage.setItem('qms_activeDept', activeDept);
+  }, [activeDept]);
+  useEffect(() => {
+    if (selectedForm) localStorage.setItem('qms_selectedForm', selectedForm);
+    else localStorage.removeItem('qms_selectedForm');
+  }, [selectedForm]);
 
   const firstName = (user?.name || "User").split(" ")[0];
 
   // ── Global month selector ────────────────────────────────────────
-  const [globalMonth, setGlobalMonth] = useState("");
-  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc');
+  const [globalMonth, setGlobalMonth] = useState(() => localStorage.getItem('qms_globalMonth') || "");
+  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>(() => {
+    return (localStorage.getItem('qms_sortOrder') as 'asc' | 'desc') || 'asc';
+  });
   const availableMonths = useMemo(() => getMonthsFromRecords(records || []), [records]);
+
+  useEffect(() => { localStorage.setItem('qms_globalMonth', globalMonth); }, [globalMonth]);
+  useEffect(() => { localStorage.setItem('qms_sortOrder', sortOrder); }, [sortOrder]);
 
   // ── COMPLIANCE RADAR — Gap analysis for ALL recurring forms ──────
   const missingPeriodsMap = useMemo(() => getAllMissingPeriods(records || []), [records]);
