@@ -162,17 +162,28 @@ const RecordViewPage: React.FC = () => {
 
   // ─── Prev/Next navigation + Quick-Jump list ──────────────────────────
   const recordNav = useMemo(() => {
-    if (!originalRecord || !allRecords) return { prevSerial: null, nextSerial: null, sameFormList: [], currentIndex: -1 };
+    if (!originalRecord || !allRecords) return { prevSerial: null, nextSerial: null, sameFormList: [], currentIndex: -1, pdfSerials: new Set<string>(), textSerials: new Set<string>() };
     const sameForm = allRecords
       .filter(r => String(r.formCode) === String(originalRecord.formCode))
       .sort((a, b) => String(a.serial).localeCompare(String(b.serial), undefined, { numeric: true, sensitivity: 'base' }));
     const idx = sameForm.findIndex(r => r.id === originalRecord.id);
-    if (idx === -1) return { prevSerial: null, nextSerial: null, sameFormList: sameForm, currentIndex: -1 };
+    if (idx === -1) return { prevSerial: null, nextSerial: null, sameFormList: sameForm, currentIndex: -1, pdfSerials: new Set<string>(), textSerials: new Set<string>() };
+
+    // Classify each record as PDF or text
+    const pdfSerials = new Set<string>();
+    const textSerials = new Set<string>();
+    for (const r of sameForm) {
+      if (r.signed_document_url) pdfSerials.add(String(r.serial));
+      else textSerials.add(String(r.serial));
+    }
+
     return {
       prevSerial: idx > 0 ? sameForm[idx - 1].serial : null,
       nextSerial: idx < sameForm.length - 1 ? sameForm[idx + 1].serial : null,
       sameFormList: sameForm,
       currentIndex: idx,
+      pdfSerials,
+      textSerials,
     };
   }, [originalRecord, allRecords]);
 
@@ -376,17 +387,38 @@ const RecordViewPage: React.FC = () => {
                     const target = recordNav.sameFormList[idx];
                     if (target) navigate(`/records/${encodeURIComponent(String(target.serial))}`);
                   }}
-                  className="bg-background border border-border text-foreground text-xs font-medium rounded-md px-2.5 py-1.5 shadow-sm hover:border-foreground/40 focus:outline-none focus:ring-2 focus:ring-primary cursor-pointer max-w-[220px] truncate"
+                  className="bg-background border border-border text-foreground text-xs font-medium rounded-md px-2.5 py-1.5 shadow-sm hover:border-foreground/40 focus:outline-none focus:ring-2 focus:ring-primary cursor-pointer max-w-[260px] truncate"
                   title="Jump to any record in this form"
                 >
                   <option value={recordNav.currentIndex} className="font-semibold">
                     📄 {recordNav.currentIndex + 1} / {recordNav.sameFormList.length}
                   </option>
-                  {recordNav.sameFormList.map((r, i) => (
-                    <option key={r.id} value={i}>
-                      {i + 1} — {String(r.serial)}
-                    </option>
-                  ))}
+                  {/* Text records group */}
+                  {recordNav.textSerials.size > 0 && recordNav.pdfSerials.size > 0 && (
+                    <optgroup label="📝 Text Records">
+                      {recordNav.sameFormList.map((r, i) => {
+                        if (recordNav.pdfSerials.has(String(r.serial))) return null;
+                        return <option key={r.id} value={i}>📝 {i + 1} — {String(r.serial)}</option>;
+                      })}
+                    </optgroup>
+                  )}
+                  {/* PDF records group */}
+                  {recordNav.textSerials.size > 0 && recordNav.pdfSerials.size > 0 && (
+                    <optgroup label="📕 PDF Records">
+                      {recordNav.sameFormList.map((r, i) => {
+                        if (!recordNav.pdfSerials.has(String(r.serial))) return null;
+                        return <option key={r.id} value={i}>📕 {i + 1} — {String(r.serial)}</option>;
+                      })}
+                    </optgroup>
+                  )}
+                  {/* Single type — no optgroups */}
+                  {recordNav.textSerials.size === 0 || recordNav.pdfSerials.size === 0 ? (
+                    recordNav.sameFormList.map((r, i) => (
+                      <option key={r.id} value={i}>
+                        {recordNav.pdfSerials.has(String(r.serial)) ? '📕' : '📝'} {i + 1} — {String(r.serial)}
+                      </option>
+                    ))
+                  ) : null}
                 </select>
               )}
 
