@@ -13,6 +13,7 @@ import {
   Calendar, LayoutGrid, List,
 } from 'lucide-react';
 import { FORM_SCHEMAS } from '../data/formSchemas';
+import { PROJECTS } from '../data/projectsData';
 import { isoToDisplay } from '../schemas';
 import { useRecords } from '../hooks/useRecordStorage';
 import { evaluateRulesForRecord, getSeverityColor as getIntSeverityColor, type RuleSeverity, type RecordData } from '../services/ruleEngine';
@@ -85,6 +86,13 @@ const RecordListPage: React.FC = () => {
 
   const availableMonths = useMemo(() => getMonthsFromRecords(records || []), [records]);
 
+  // ── Section filter codes (defined before timelineData uses it) ────
+  const sectionFormCodes = useMemo(() => {
+    if (!urlSection) return null;
+    const sectionNum = parseInt(urlSection, 10);
+    return new Set(FORM_SCHEMAS.filter(f => f.section === sectionNum).map(f => f.code));
+  }, [urlSection]);
+
   // ── Timeline: records grouped by month × formCode ──────────────────
   const timelineData = useMemo(() => {
     if (!records) return [];
@@ -108,12 +116,6 @@ const RecordListPage: React.FC = () => {
       count: codes.length,
     }));
   }, [records, sectionFormCodes, formFilter]);
-
-  const sectionFormCodes = useMemo(() => {
-    if (!urlSection) return null;
-    const sectionNum = parseInt(urlSection, 10);
-    return new Set(FORM_SCHEMAS.filter(f => f.section === sectionNum).map(f => f.code));
-  }, [urlSection]);
 
   useEffect(() => {
     if (urlFormCode) setFormFilter(urlFormCode);
@@ -346,6 +348,18 @@ const RecordListPage: React.FC = () => {
           <option value="">All Months</option>
           {availableMonths.map(m => (
             <option key={m} value={m}>{monthShortLabel(m)}</option>
+          ))}
+        </select>
+
+        {/* Project filter */}
+        <select
+          value={projectFilter}
+          onChange={e => handleProjectChange(e.target.value)}
+          className="input-modern px-4 py-2 text-sm min-w-[160px]"
+        >
+          <option value="">All Projects</option>
+          {PROJECTS.map(p => (
+            <option key={p.id} value={p.id}>{p.name}</option>
           ))}
         </select>
 

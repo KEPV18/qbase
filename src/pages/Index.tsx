@@ -5,8 +5,8 @@
 //           Compliance Radar (gap analysis for ALL recurring forms)
 // ============================================================================
 
-import { useState, useMemo, useEffect, useCallback } from "react";
-import { useNavigate } from "react-router-dom";
+import { useState, useMemo, useEffect } from "react";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { useRecords } from "@/hooks/useRecordStorage";
 import { FORM_SCHEMAS, type FormSchema } from "@/data/formSchemas";
@@ -27,6 +27,7 @@ import {
   getRecordMonth, getAllMissingPeriods, RECURRING_FORMS,
   formatPeriodLabel,
 } from "@/lib/temporalUtils";
+import { PROJECTS } from "@/data/projectsData";
 
 const DEPT_ORDER = [
   "Sales & Customer Service",
@@ -199,6 +200,7 @@ function ComplianceRadarCard({
 
 export default function Index() {
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
   const { user } = useAuth();
   const { data: records, isLoading: recordsLoading } = useRecords();
   const [activeDept, setActiveDept] = useState(() => {
@@ -221,14 +223,27 @@ export default function Index() {
 
   const firstName = (user?.name || "User").split(" ")[0];
 
-  // ── Global month selector ────────────────────────────────────────
+  // ── Global month selector (synced with URL ?month= from Sidebar) ──
   const [globalMonth, setGlobalMonth] = useState(() => localStorage.getItem('qms_globalMonth') || "");
+  const [globalProject, setGlobalProject] = useState(() => localStorage.getItem('qms_globalProject') || "");
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>(() => {
     return (localStorage.getItem('qms_sortOrder') as 'asc' | 'desc') || 'asc';
   });
   const availableMonths = useMemo(() => getMonthsFromRecords(records || []), [records]);
 
+  // URL params from Sidebar filters act as the source of truth when present
+  const urlMonth = searchParams.get('month') || "";
+  const urlProject = searchParams.get('project') || "";
+  const activeMonth = urlMonth || globalMonth;
+  const activeProject = urlProject || globalProject;
+
+  useEffect(() => {
+    if (urlMonth) setGlobalMonth(urlMonth);
+    if (urlProject) setGlobalProject(urlProject);
+  }, [urlMonth, urlProject]);
+
   useEffect(() => { localStorage.setItem('qms_globalMonth', globalMonth); }, [globalMonth]);
+  useEffect(() => { localStorage.setItem('qms_globalProject', globalProject); }, [globalProject]);
   useEffect(() => { localStorage.setItem('qms_sortOrder', sortOrder); }, [sortOrder]);
 
   // ── COMPLIANCE RADAR — Gap analysis for ALL recurring forms ──────
@@ -299,9 +314,9 @@ export default function Index() {
 
   // ── Global totals ────────────────────────────────────────────────
   const monthFilteredRecords = useMemo(() => {
-    if (!globalMonth || !records) return records || [];
-    return records.filter(r => getRecordMonth(r) === globalMonth);
-  }, [records, globalMonth]);
+    if (!activeMonth || !records) return records || [];
+    return records.filter(r => getRecordMonth(r) === activeMonth);
+  }, [records, activeMonth]);
 
   const totalRecords = monthFilteredRecords.length;
   const approvedCount = monthFilteredRecords.filter((r) => r._approvalStatus === "Approved").length || 0;
@@ -325,7 +340,8 @@ export default function Index() {
   const displayedRecords = useMemo(() => {
     if (!records) return [];
     let r = [...records];
-    if (globalMonth) r = r.filter((rec) => getRecordMonth(rec) === globalMonth);
+    if (activeMonth) r = r.filter((rec) => getRecordMonth(rec) === activeMonth);
+    if (activeProject) r = r.filter((rec) => rec.project_id === activeProject);
     if (selectedForm) r = r.filter((rec) => rec.formCode === selectedForm);
     else {
       const deptCodes = FORM_SCHEMAS.filter(f => f.sectionName === activeDept).map(f => f.code);
@@ -333,7 +349,7 @@ export default function Index() {
     }
     const sorted = r.sort((a, b) => String(a.serial || '').localeCompare(String(b.serial || ''), undefined, { numeric: true, sensitivity: 'base' }));
     return sortOrder === 'asc' ? sorted : sorted.reverse();
-  }, [records, globalMonth, selectedForm, activeDept, sortOrder]);
+  }, [records, activeMonth, activeProject, selectedForm, activeDept, sortOrder]);
 
   const handleDeptClick = useMemo(() => (dept: string) => {
     setActiveDept(dept);
@@ -351,13 +367,41 @@ export default function Index() {
             {globalOverdue > 0 && <span className="text-red-500 ml-1">· {globalOverdue} overdue forms</span>}
           </p>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 flex-wrap justify-end">
+          {/* Project selector (synced with Sidebar ?project=) */}
+          <div className="relative">
+            <Folder className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
+            <select
+              value={activeProject}
+              onChange={e => {
+                const val = e.target.value;
+                setGlobalProject(val);
+                setSelectedForm(null);
+                const next = new URLSearchParams(searchParams);
+                if (val) next.set("project", val); else next.delete("project");
+                setSearchParams(next, { replace: true });
+              }}
+              className="pl-9 pr-4 py-2.5 rounded-lg bg-background dark:bg-[#1a1a18] border border-border dark:border-border text-sm text-foreground dark:text-foreground appearance-none cursor-pointer focus:outline-none focus:ring-2 focus:ring-foreground/10"
+            >
+              <option value="">All Projects</option>
+              {PROJECTS.map(p => (
+                <option key={p.id} value={p.id}>{p.name}</option>
+              ))}
+            </select>
+          </div>
           {/* Month selector */}
           <div className="relative">
             <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
             <select
-              value={globalMonth}
-              onChange={e => { setGlobalMonth(e.target.value); setSelectedForm(null); }}
+              value={activeMonth}
+              onChange={e => {
+                const val = e.target.value;
+                setGlobalMonth(val);
+                setSelectedForm(null);
+                const next = new URLSearchParams(searchParams);
+                if (val) next.set("month", val); else next.delete("month");
+                setSearchParams(next, { replace: true });
+              }}
               className="pl-9 pr-4 py-2.5 rounded-lg bg-background dark:bg-[#1a1a18] border border-border dark:border-border text-sm text-foreground dark:text-foreground appearance-none cursor-pointer focus:outline-none focus:ring-2 focus:ring-foreground/10"
             >
               <option value="">All Months</option>
@@ -377,7 +421,7 @@ export default function Index() {
       </div>
 
       {/* COMPLIANCE RADAR — Prominent Gap Alert Card */}
-      {!globalMonth && <ComplianceRadarCard missingPeriodsMap={missingPeriodsMap} />}
+      {!activeMonth && !activeProject && <ComplianceRadarCard missingPeriodsMap={missingPeriodsMap} />}
 
       {/* Department Metric Cards (Executive Row) */}
       <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-7 gap-3">
