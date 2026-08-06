@@ -18,12 +18,21 @@ export interface F11Props {
 interface RowData {
   product: string;
   batch_no: string;
-  plan_completion: string;
-  actual_completion: string;
+  plan_date: string;
+  plan_size: string;
+  plan_status: string;
+  actual_date: string;
+  actual_qty: string;
+  actual_status: string;
   yield_percent: string;
 }
 
-const EMPTY_ROW: RowData = { product: "", batch_no: "", plan_completion: "", actual_completion: "", yield_percent: "" };
+const EMPTY_ROW: RowData = {
+  product: "", batch_no: "",
+  plan_date: "", plan_size: "", plan_status: "",
+  actual_date: "", actual_qty: "", actual_status: "",
+  yield_percent: "",
+};
 
 function parseRows(d: Record<string, unknown>, count: number = 20): RowData[] {
   const raw = d.items;
@@ -145,8 +154,12 @@ export function F11Template({ data, isTemplate = true, editMode = false, onChang
                 <td className="border border-border p-1 text-center text-muted-foreground">{idx + 1}</td>
                 <td className="border border-border p-1">{cellInp(idx, "product", "Product")}</td>
                 <td className="border border-border p-1">{cellInp(idx, "batch_no", "Batch No.")}</td>
-                <td className="border border-border p-1" colSpan={3}>{cellInp(idx, "plan_completion", "Plan Completion")}</td>
-                <td className="border border-border p-1" colSpan={3}>{cellInp(idx, "actual_completion", "Actual Completion")}</td>
+                <td className="border border-border p-1">{cellInp(idx, "plan_date", "Plan date")}</td>
+                <td className="border border-border p-1">{cellInp(idx, "plan_size", "Plan size")}</td>
+                <td className="border border-border p-1">{cellInp(idx, "plan_status", "Plan status")}</td>
+                <td className="border border-border p-1">{cellInp(idx, "actual_date", "Actual date")}</td>
+                <td className="border border-border p-1">{cellInp(idx, "actual_qty", "Actual qty")}</td>
+                <td className="border border-border p-1">{cellInp(idx, "actual_status", "Actual status")}</td>
                 <td className="border border-border p-1 text-center">{cellInp(idx, "yield_percent", "%")}</td>
                 {editMode && (
                   <td className="border border-border p-1 text-center">
