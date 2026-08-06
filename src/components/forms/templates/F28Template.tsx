@@ -67,6 +67,8 @@ export function F28Template({ data, isTemplate = true, editMode = false, onChang
   }, []);
 
   const displayRows = useMemo(() => {
+    // Blank template keeps the DOCX 20-row grid; real records show only rows with actual content.
+    if (!isTemplate) return rows;
     const minRows = 20;
     if (rows.length >= minRows) return rows;
     const padded = [...rows];
@@ -74,7 +76,7 @@ export function F28Template({ data, isTemplate = true, editMode = false, onChang
       padded.push({ sl_no: padded.length + 1, name: "", department: "", id_no: "", date: "", signature: "" });
     }
     return padded;
-  }, [rows]);
+  }, [rows, isTemplate]);
 
   return (
     <FormDocument formCode="F/28" formName="Training Attendance Sheet" serial={val(d, "serial")} sectionName="HR & Training" className={className}>
