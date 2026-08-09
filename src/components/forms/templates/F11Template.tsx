@@ -319,15 +319,23 @@ export function F11Template({ data, isTemplate = true, editMode = false, onChang
               </td>
             </tr>
 
-            {/* ── Row: Signature ── */}
+            {/* ── Row: Signature / Date ── */}
             <tr>
               <td colSpan={5} className="border border-border p-3 text-xs text-center">
                 <div className="min-h-[40px]" />
-                <span className="text-muted-foreground">Signature / Date</span>
+                {val(d, "signature") ? (
+                  <span className="font-medium">{val(d, "signature")}</span>
+                ) : (
+                  <span className="text-muted-foreground">Signature / Date</span>
+                )}
               </td>
               <td colSpan={5} className="border border-border p-3 text-xs text-center">
                 <div className="min-h-[40px]" />
-                <span className="text-muted-foreground">Signature / Date</span>
+                {val(d, "signature") ? (
+                  <span className="font-medium">{val(d, "signature")}</span>
+                ) : (
+                  <span className="text-muted-foreground">Signature / Date</span>
+                )}
               </td>
             </tr>
           </tbody>
