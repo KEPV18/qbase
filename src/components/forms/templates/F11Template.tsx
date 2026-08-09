@@ -1,6 +1,9 @@
 // ============================================================================
 // F/11 — Production Plan
-// 29 rows × 10 columns matching Word document structure exactly.
+// DOCX-faithful: separate Date / # Size / Status / Date / Qty. / Status columns
+// Canonical item keys: product, batch_no, plan_date, plan_size, plan_status,
+//                      actual_date, actual_qty, actual_status, yield_percent
+// Legacy fallback: plan_completion / actual_completion merged strings still render.
 // ============================================================================
 
 import React, { useState, useCallback } from "react";
@@ -28,15 +31,72 @@ interface RowData {
 }
 
 const EMPTY_ROW: RowData = {
-  product: "", batch_no: "",
-  plan_date: "", plan_size: "", plan_status: "",
-  actual_date: "", actual_qty: "", actual_status: "",
+  product: "",
+  batch_no: "",
+  plan_date: "",
+  plan_size: "",
+  plan_status: "",
+  actual_date: "",
+  actual_qty: "",
+  actual_status: "",
   yield_percent: "",
 };
 
-function parseRows(d: Record<string, unknown>, count: number = 20): RowData[] {
+/**
+ * Normalize one raw item row:
+ * - If it has split keys already, use them directly.
+ * - If it has legacy merged keys (plan_completion / actual_completion),
+ *   split "dd/mm/yyyy / size" into plan_date/plan_size and actual_date/actual_qty,
+ *   and infer plan_status/actual_status from yield_percent.
+ */
+function normalizeRow(raw: Record<string, unknown>): RowData {
+  const s = (v: unknown) => (typeof v === "string" ? v : v == null ? "" : String(v));
+  const row: RowData = { ...EMPTY_ROW };
+
+  row.product = s(raw.product);
+  row.batch_no = s(raw.batch_no);
+  row.yield_percent = s(raw.yield_percent);
+
+  if (raw.plan_date !== undefined || raw.plan_size !== undefined) {
+    row.plan_date = s(raw.plan_date);
+    row.plan_size = s(raw.plan_size);
+  } else {
+    const [d, , sz] = (s(raw.plan_completion) + "//").split("/");
+    row.plan_date = d.trim();
+    row.plan_size = sz ? sz.trim() : s(raw.plan_completion).trim();
+  }
+
+  if (raw.actual_date !== undefined || raw.actual_qty !== undefined) {
+    row.actual_date = s(raw.actual_date);
+    row.actual_qty = s(raw.actual_qty);
+  } else {
+    const [d, , q] = (s(raw.actual_completion) + "//").split("/");
+    row.actual_date = d.trim();
+    row.actual_qty = q ? q.trim() : s(raw.actual_completion).trim();
+  }
+
+  row.plan_status = s(raw.plan_status);
+  row.actual_status = s(raw.actual_status);
+  if (!row.plan_status) row.plan_status = inferStatus(row.yield_percent, "plan");
+  if (!row.actual_status) row.actual_status = inferStatus(row.yield_percent, "actual");
+
+  return row;
+}
+
+/** Yield → status mapping consistent with the 2026-08-06 fill logic. */
+function inferStatus(yieldPct: string, kind: "plan" | "actual"): string {
+  const num = parseFloat(yieldPct);
+  if (isNaN(num)) return "";
+  if (num >= 95) return kind === "plan" ? "On Schedule" : "Completed";
+  if (num >= 40) return kind === "plan" ? "Delayed" : "Partially Completed";
+  return kind === "plan" ? "Behind Schedule" : "In Progress";
+}
+
+function parseRows(d: Record<string, unknown>, count: number = 25): RowData[] {
   const raw = d.items;
-  if (Array.isArray(raw) && raw.length > 0 && typeof raw[0] === "object") return raw as RowData[];
+  if (Array.isArray(raw) && raw.length > 0 && typeof raw[0] === "object") {
+    return (raw as Record<string, unknown>[]).map(normalizeRow);
+  }
   return Array.from({ length: count }, () => ({ ...EMPTY_ROW }));
 }
 
@@ -45,16 +105,19 @@ export function F11Template({ data, isTemplate = true, editMode = false, onChang
   const ph = isTemplate && !editMode;
   const [rows, setRows] = useState<RowData[]>(() => parseRows(d));
 
-  const updateRow = useCallback((idx: number, key: keyof RowData, value: string) => {
-    setRows(prev => {
-      const next = [...prev];
-      next[idx] = { ...next[idx], [key]: value };
-      return next;
-    });
-    const updated = [...rows];
-    updated[idx] = { ...updated[idx], [key]: value };
-    onChange?.("items", JSON.stringify(updated));
-  }, [rows, onChange]);
+  const updateRow = useCallback(
+    (idx: number, key: keyof RowData, value: string) => {
+      setRows(prev => {
+        const next = [...prev];
+        next[idx] = { ...next[idx], [key]: value };
+        return next;
+      });
+      const updated = [...rows];
+      updated[idx] = { ...updated[idx], [key]: value };
+      onChange?.("items", JSON.stringify(updated));
+    },
+    [rows, onChange]
+  );
 
   const addRow = useCallback(() => {
     setRows(prev => [...prev, { ...EMPTY_ROW }]);
@@ -130,7 +193,7 @@ export function F11Template({ data, isTemplate = true, editMode = false, onChang
               </td>
             </tr>
 
-            {/* ── Row 4: Column headers ── */}
+            {/* ── Row 4: Column headers (DOCX-faithful; no Status col in DOCX row 4) ── */}
             <tr className="bg-muted font-semibold">
               <th rowSpan={2} className="border border-border p-1 text-center w-[30px]">Sr. No.</th>
               <th rowSpan={2} className="border border-border p-1 text-left">Product</th>
@@ -148,18 +211,18 @@ export function F11Template({ data, isTemplate = true, editMode = false, onChang
               <th className="border border-border p-1 text-center bg-green-50 dark:bg-green-950/30">Status</th>
             </tr>
 
-            {/* ── Rows 5-24: 20 data rows ── */}
+            {/* ── Data rows: each sub-column renders its own key ── */}
             {rows.map((row, idx) => (
               <tr key={idx} className={idx % 2 === 0 ? "bg-background dark:bg-[#1e1d1a]" : "bg-muted/30"}>
                 <td className="border border-border p-1 text-center text-muted-foreground">{idx + 1}</td>
                 <td className="border border-border p-1">{cellInp(idx, "product", "Product")}</td>
                 <td className="border border-border p-1">{cellInp(idx, "batch_no", "Batch No.")}</td>
-                <td className="border border-border p-1">{cellInp(idx, "plan_date", "Plan date")}</td>
-                <td className="border border-border p-1">{cellInp(idx, "plan_size", "Plan size")}</td>
-                <td className="border border-border p-1">{cellInp(idx, "plan_status", "Plan status")}</td>
-                <td className="border border-border p-1">{cellInp(idx, "actual_date", "Actual date")}</td>
-                <td className="border border-border p-1">{cellInp(idx, "actual_qty", "Actual qty")}</td>
-                <td className="border border-border p-1">{cellInp(idx, "actual_status", "Actual status")}</td>
+                <td className="border border-border p-1">{cellInp(idx, "plan_date", "Date")}</td>
+                <td className="border border-border p-1">{cellInp(idx, "plan_size", "# Size")}</td>
+                <td className="border border-border p-1">{cellInp(idx, "plan_status", "Status")}</td>
+                <td className="border border-border p-1">{cellInp(idx, "actual_date", "Date")}</td>
+                <td className="border border-border p-1">{cellInp(idx, "actual_qty", "Qty.")}</td>
+                <td className="border border-border p-1">{cellInp(idx, "actual_status", "Status")}</td>
                 <td className="border border-border p-1 text-center">{cellInp(idx, "yield_percent", "%")}</td>
                 {editMode && (
                   <td className="border border-border p-1 text-center">
@@ -171,7 +234,7 @@ export function F11Template({ data, isTemplate = true, editMode = false, onChang
               </tr>
             ))}
 
-            {/* ── Row 25: Remarks ── */}
+            {/* ── Row: Remarks ── */}
             <tr>
               <td colSpan={10} className="border border-border p-2 text-xs">
                 <span className="font-semibold mr-2">Remarks:</span>
@@ -188,7 +251,7 @@ export function F11Template({ data, isTemplate = true, editMode = false, onChang
               </td>
             </tr>
 
-            {/* ── Row 26: Prepared By ── */}
+            {/* ── Row: Prepared By / Reviewed By ── */}
             <tr>
               <td colSpan={5} className="border border-border p-2 text-xs">
                 <span className="font-semibold mr-2">Prepared By:</span>
@@ -222,7 +285,7 @@ export function F11Template({ data, isTemplate = true, editMode = false, onChang
               </td>
             </tr>
 
-            {/* ── Row 27: Approved By ── */}
+            {/* ── Row: Approved By / Updated Based On Progress ── */}
             <tr>
               <td colSpan={5} className="border border-border p-2 text-xs">
                 <span className="font-semibold mr-2">Approved By:</span>
@@ -256,23 +319,15 @@ export function F11Template({ data, isTemplate = true, editMode = false, onChang
               </td>
             </tr>
 
-            {/* ── Row 28: Signature ── */}
+            {/* ── Row: Signature ── */}
             <tr>
               <td colSpan={5} className="border border-border p-3 text-xs text-center">
                 <div className="min-h-[40px]" />
-                {val(d, "signature") ? (
-                  <span className="font-medium">{val(d, "signature")}</span>
-                ) : (
-                  <span className="text-muted-foreground">Signature / Date</span>
-                )}
+                <span className="text-muted-foreground">Signature / Date</span>
               </td>
               <td colSpan={5} className="border border-border p-3 text-xs text-center">
                 <div className="min-h-[40px]" />
-                {val(d, "signature") ? (
-                  <span className="font-medium">{val(d, "signature")}</span>
-                ) : (
-                  <span className="text-muted-foreground">Signature / Date</span>
-                )}
+                <span className="text-muted-foreground">Signature / Date</span>
               </td>
             </tr>
           </tbody>
@@ -285,7 +340,7 @@ export function F11Template({ data, isTemplate = true, editMode = false, onChang
           onClick={addRow}
           className="w-full border-x border-b border-border py-1.5 text-xs text-muted-foreground hover:text-primary hover:bg-primary/5 transition-colors flex items-center justify-center gap-1"
         >
-          <Plus className="w-3 h-3" /> Add Row
+          <Plus className="w-3 h-3 inline" /> Add Row
         </button>
       )}
     </FormDocument>
