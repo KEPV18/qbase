@@ -353,7 +353,14 @@ export function F11Template({ data, isTemplate = true, editMode = false, onChang
             <tr>
               <td colSpan={5} className="border border-border p-3 text-xs text-center">
                 <div className="min-h-[40px]" />
-                {val(d, "signature") ? (
+                {editMode ? (
+                  <input
+                    className="border-b border-dashed border-foreground/40 bg-transparent text-sm w-3/4 text-center"
+                    value={val(d, "signature")}
+                    onChange={e => onChange?.("signature", e.target.value)}
+                    placeholder="Name / Date"
+                  />
+                ) : val(d, "signature") ? (
                   <span className="font-medium">{val(d, "signature")}</span>
                 ) : (
                   <span className="text-muted-foreground">Signature / Date</span>
@@ -361,7 +368,14 @@ export function F11Template({ data, isTemplate = true, editMode = false, onChang
               </td>
               <td colSpan={5} className="border border-border p-3 text-xs text-center">
                 <div className="min-h-[40px]" />
-                {val(d, "signature") ? (
+                {editMode ? (
+                  <input
+                    className="border-b border-dashed border-foreground/40 bg-transparent text-sm w-3/4 text-center"
+                    value={val(d, "signature")}
+                    onChange={e => onChange?.("signature", e.target.value)}
+                    placeholder="Name / Date"
+                  />
+                ) : val(d, "signature") ? (
                   <span className="font-medium">{val(d, "signature")}</span>
                 ) : (
                   <span className="text-muted-foreground">Signature / Date</span>

@@ -231,7 +231,9 @@ export const F11Schema = z.object({
     notes: OPTIONAL_TEXT,
   })).min(1, 'At least one project is required'),
   prepared_by: SIGNATURE,
+  reviewed_by: SIGNATURE,
   approved_by: SIGNATURE,
+  signature: SIGNATURE,
 });
 export type F11Data = z.infer<typeof F11Schema>;
 
