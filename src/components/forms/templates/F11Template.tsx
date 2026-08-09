@@ -43,6 +43,25 @@ const EMPTY_ROW: RowData = {
 };
 
 /**
+ * Shared date-first parser (MUST stay identical to /tmp/normalize_f11.py).
+ * Matches the COMPLETE date token first (dd[/.-]mm[/.-]yyyy), then treats the
+ * remaining text after the trailing separator as size/qty. Never splits on
+ * every "/" — "29/07/2026 / 4" must yield date="29/07/2026", size="4".
+ */
+const F11_DATE_RE = /^(\d{1,2}[\/.-]\d{1,2}[\/.-]\d{2,4})/;
+
+function splitMergedDateSize(value: unknown): [string, string] {
+  const v = String(value ?? "").trim();
+  const m = F11_DATE_RE.exec(v);
+  if (m) {
+    const date = m[1];
+    const rest = v.slice(m[1].length).trim().replace(/^[/\s]+/, "").trim();
+    return [date, rest];
+  }
+  return [v, ""];
+}
+
+/**
  * Normalize one raw item row:
  * - If it has split keys already, use them directly.
  * - If it has legacy merged keys (plan_completion / actual_completion),
@@ -52,7 +71,6 @@ const EMPTY_ROW: RowData = {
 function normalizeRow(raw: Record<string, unknown>): RowData {
   const s = (v: unknown) => (typeof v === "string" ? v : v == null ? "" : String(v));
   const row: RowData = { ...EMPTY_ROW };
-
   row.product = s(raw.product);
   row.batch_no = s(raw.batch_no);
   row.yield_percent = s(raw.yield_percent);
@@ -61,24 +79,36 @@ function normalizeRow(raw: Record<string, unknown>): RowData {
     row.plan_date = s(raw.plan_date);
     row.plan_size = s(raw.plan_size);
   } else {
-    const [d, , sz] = (s(raw.plan_completion) + "//").split("/");
+    const [d, sz] = splitMergedDateSize(raw.plan_completion);
     row.plan_date = d.trim();
-    row.plan_size = sz ? sz.trim() : s(raw.plan_completion).trim();
+    row.plan_size = sz;
   }
 
   if (raw.actual_date !== undefined || raw.actual_qty !== undefined) {
     row.actual_date = s(raw.actual_date);
     row.actual_qty = s(raw.actual_qty);
   } else {
-    const [d, , q] = (s(raw.actual_completion) + "//").split("/");
+    const [d, q] = splitMergedDateSize(raw.actual_completion);
     row.actual_date = d.trim();
-    row.actual_qty = q ? q.trim() : s(raw.actual_completion).trim();
+    row.actual_qty = q;
   }
 
   row.plan_status = s(raw.plan_status);
   row.actual_status = s(raw.actual_status);
   if (!row.plan_status) row.plan_status = inferStatus(row.yield_percent, "plan");
   if (!row.actual_status) row.actual_status = inferStatus(row.yield_percent, "actual");
+
+  // ── Recurrence guard ──────────────────────────────────────────────────
+  // A partial date (1-2 digits only) or a date fragment inside size/qty is
+  // a data corruption symptom. Normalization must NEVER accept it silently.
+  const dateFragRe = /\d{1,2}\/\d{2,4}|\/\d{1,2}\/\d{2,4}|\d{4}\s*\/\s*\d/;
+  const partialDateRe = /^\d{1,2}$/;
+  if (partialDateRe.test(row.plan_date) || partialDateRe.test(row.actual_date)) {
+    console.warn("[F/11] Partial date detected — data corruption suspected:", raw);
+  }
+  if (dateFragRe.test(row.plan_size) || dateFragRe.test(row.actual_qty)) {
+    console.warn("[F/11] Date fragment inside size/qty — data corruption suspected:", raw);
+  }
 
   return row;
 }
