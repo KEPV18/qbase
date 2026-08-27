@@ -1,6 +1,6 @@
 // ============================================================================
 // QBase — Approval Queue Page
-// Shows all Pending_Approval records.
+// Shows all Pending_Approval records + recent activity (created/approved).
 // Admin sees all. Dept Head sees only their department.
 // ============================================================================
 
@@ -17,7 +17,7 @@ import { approveRecord } from "@/services/recordStorage";
 import type { RecordData } from "@/components/forms/DynamicFormRenderer";
 import {
   CheckCircle, Clock, Shield, Search, ExternalLink,
-  Building2, Tag, FileText, User, Calendar,
+  Building2, Tag, FileText, User, Calendar, History, PlusCircle,
 } from "lucide-react";
 
 const STATUS_CONFIG: Record<string, { label: string; color: string; icon: React.ElementType }> = {
@@ -26,14 +26,18 @@ const STATUS_CONFIG: Record<string, { label: string; color: string; icon: React.
   Approved:         { label: "Approved",          color: "bg-green-100 text-green-700",      icon: CheckCircle },
 };
 
-function ApprovalCard({
+type ViewMode = "pending" | "recent_created" | "recent_approved";
+
+function RecordCard({
   record,
   onApprove,
   canApprove,
+  showApprovedBy = false,
 }: {
   record: RecordData;
   onApprove: (serial: string) => void;
   canApprove: boolean;
+  showApprovedBy?: boolean;
 }) {
   const navigate = useNavigate();
   const serial = String(record.serial ?? "");
@@ -43,6 +47,8 @@ function ApprovalCard({
   const status = String(record._approvalStatus ?? "Pending_Approval");
   const createdBy = String(record._createdBy ?? "Unknown");
   const createdAt = String(record._createdAt ?? "");
+  const lastModifiedBy = String(record._lastModifiedBy ?? "");
+  const lastModifiedAt = String(record._lastModifiedAt ?? "");
   const cfg = STATUS_CONFIG[status] || STATUS_CONFIG.Pending_Approval;
   const Icon = cfg.icon;
 
@@ -54,11 +60,17 @@ function ApprovalCard({
             <Badge variant="outline" className="text-[10px] font-mono">{formCode}</Badge>
             <h3 className="font-semibold text-sm">{formName || serial}</h3>
           </div>
-          <div className="flex items-center gap-3 text-xs text-muted-foreground">
+          <div className="flex items-center gap-3 text-xs text-muted-foreground flex-wrap">
             <span className="flex items-center gap-1"><Tag size={12} /> {serial}</span>
             <span className="flex items-center gap-1"><Building2 size={12} /> {dept}</span>
-            <span className="flex items-center gap-1"><User size={12} /> {createdBy}</span>
+            <span className="flex items-center gap-1"><User size={12} /> Created: {createdBy}</span>
             <span className="flex items-center gap-1"><Calendar size={12} /> {createdAt ? new Date(createdAt).toLocaleDateString() : "—"}</span>
+            {showApprovedBy && lastModifiedBy && (
+              <>
+                <span className="flex items-center gap-1"><CheckCircle size={12} className="text-green-600" /> Approved: {lastModifiedBy}</span>
+                <span className="flex items-center gap-1"><Calendar size={12} /> {lastModifiedAt ? new Date(lastModifiedAt).toLocaleDateString() : "—"}</span>
+              </>
+            )}
           </div>
         </div>
         <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold ${cfg.color}`}>
@@ -95,39 +107,86 @@ export default function ApprovalQueuePage() {
   const [search, setSearch] = useState("");
   const [filterDept, setFilterDept] = useState<string>("all");
   const [processing, setProcessing] = useState<Set<string>>(new Set());
+  const [viewMode, setViewMode] = useState<ViewMode>("pending");
+  const [limit, setLimit] = useState(10);
 
   const isAdmin = user?.role === "admin";
   const userDept = user?.department ?? null;
 
-  // Filter: only pending for queue, plus optional search + dept filter
-  const pendingRecords = useMemo(() => {
+  // Filter records based on view mode
+  const filteredRecords = useMemo(() => {
     if (!allRecords) return [];
-    return allRecords.filter((r: RecordData) => {
-      if (r._approvalStatus !== "Pending_Approval") return false;
-      if (!isAdmin && userDept && r._department !== userDept) return false;
-      if (search) {
-        const term = search.toLowerCase();
+    
+    let base = allRecords;
+    
+    // Department filter (non-admin)
+    if (!isAdmin && userDept) {
+      base = base.filter(r => r._department === userDept);
+    }
+    
+    // Search filter
+    if (search) {
+      const term = search.toLowerCase();
+      base = base.filter(r => {
         const haystack = [
           String(r.serial ?? ""),
           String(r.formName ?? ""),
           String(r.formCode ?? ""),
           String(r._createdBy ?? ""),
+          String(r._lastModifiedBy ?? ""),
         ].join(" ").toLowerCase();
-        if (!haystack.includes(term)) return false;
-      }
-      if (filterDept !== "all" && r._department !== filterDept) return false;
-      return true;
-    });
-  }, [allRecords, isAdmin, userDept, search, filterDept]);
+        return haystack.includes(term);
+      });
+    }
+    
+    // Department dropdown filter
+    if (filterDept !== "all") {
+      base = base.filter(r => r._department === filterDept);
+    }
 
-  // Unique departments from pending records
+    // View mode filter
+    switch (viewMode) {
+      case "pending":
+        return base.filter(r => r._approvalStatus === "Pending_Approval");
+      case "recent_created":
+        return base
+          .sort((a, b) => new Date(b._createdAt ?? 0).getTime() - new Date(a._createdAt ?? 0).getTime())
+          .slice(0, limit);
+      case "recent_approved":
+        return base
+          .filter(r => r._approvalStatus === "Approved")
+          .sort((a, b) => new Date(b._lastModifiedAt ?? 0).getTime() - new Date(a._lastModifiedAt ?? 0).getTime())
+          .slice(0, limit);
+    }
+  }, [allRecords, isAdmin, userDept, search, filterDept, viewMode, limit]);
+
+  // Stats for current view
+  const stats = useMemo(() => {
+    if (!allRecords) return { pending: 0, createdToday: 0, approvedToday: 0, total: 0 };
+    
+    let base = allRecords;
+    if (!isAdmin && userDept) {
+      base = base.filter(r => r._department === userDept);
+    }
+    
+    const today = new Date().toISOString().split('T')[0];
+    
+    return {
+      pending: base.filter(r => r._approvalStatus === "Pending_Approval").length,
+      createdToday: base.filter(r => (r._createdAt ?? "").startsWith(today)).length,
+      approvedToday: base.filter(r => r._approvalStatus === "Approved" && (r._lastModifiedAt ?? "").startsWith(today)).length,
+      total: base.length,
+    };
+  }, [allRecords, isAdmin, userDept]);
+
+  // Unique departments for filter dropdown
   const departments = useMemo(() => {
     const depts = new Set<string>();
-    pendingRecords.forEach((r: RecordData) => {
+    (allRecords ?? []).forEach((r: RecordData) => {
       if (r._department) depts.add(String(r._department));
     });
     return Array.from(depts).sort();
-  }, [pendingRecords]);
+  }, [allRecords]);
 
   const handleApprove = useCallback(async (serial: string) => {
     setProcessing(prev => new Set(prev).add(serial));
@@ -150,6 +209,12 @@ export default function ApprovalQueuePage() {
   if (isLoading) return <StateScreen state="loading" title="Loading approvals…" />;
   if (error)    return <StateScreen state="error" title="Failed to load approvals" message={error.message} />;
 
+  const viewTabs: { id: ViewMode; label: string; icon: React.ElementType; count: number }[] = [
+    { id: "pending", label: "Pending Approval", icon: Clock, count: stats.pending },
+    { id: "recent_created", label: "Recent Created", icon: PlusCircle, count: Math.min(filteredRecords.length, limit) },
+    { id: "recent_approved", label: "Recent Approved", icon: CheckCircle, count: Math.min(filteredRecords.length, limit) },
+  ];
+
   return (
     <div className="space-y-6 px-4 md:px-6 lg:px-8 py-6 max-w-[1400px] mx-auto">
       <PageHeader
@@ -160,34 +225,57 @@ export default function ApprovalQueuePage() {
             ? "Review and approve pending records across all departments."
             : `Review and approve pending records for ${userDept ?? "your department"}.`
         }
-        badge={{ text: `${pendingRecords.length} Pending`, variant: "secondary" }}
+        badge={{ text: `${stats.pending} Pending`, variant: "secondary" }}
       />
 
       {/* Stats row */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-        <StatCard label="Total Pending" value={pendingRecords.length} icon={Clock} />
-        <StatCard label="Your Dept" value={pendingRecords.filter((r: RecordData) => r._department === userDept).length} icon={Building2} />
-        <StatCard label="Avg Age" value={
-          (() => {
-            const ages = pendingRecords.map((r: RecordData) => {
-              const d = new Date(r._createdAt ?? 0);
-              return Date.now() - d.getTime();
-            });
-            if (!ages.length) return "0d";
-            const avgDays = Math.round(ages.reduce((a, b) => a + b, 0) / ages.length / (1000 * 60 * 60 * 24));
-            return `${avgDays}d`;
-          })()
-        } icon={Calendar} />
-        <StatCard label="Oldest" value={
-          (() => {
-            const dates = pendingRecords.map((r: RecordData) => new Date(r._createdAt ?? 0).getTime()).filter(Boolean);
-            if (!dates.length) return "—";
-            const oldest = Math.min(...dates);
-            const days = Math.round((Date.now() - oldest) / (1000 * 60 * 60 * 24));
-            return `${days}d`;
-          })()
-        } icon={Calendar} />
+        <StatCard label="Pending" value={stats.pending} icon={Clock} color="amber" />
+        <StatCard label="Created Today" value={stats.createdToday} icon={PlusCircle} color="blue" />
+        <StatCard label="Approved Today" value={stats.approvedToday} icon={CheckCircle} color="green" />
+        <StatCard label="Total Records" value={stats.total} icon={FileText} color="purple" />
       </div>
+
+      {/* View Tabs */}
+      <div className="flex gap-1 bg-muted p-1 rounded-lg" role="tablist">
+        {viewTabs.map(tab => (
+          <button
+            key={tab.id}
+            role="tab"
+            aria-selected={viewMode === tab.id}
+            onClick={() => setViewMode(tab.id)}
+            className={`flex items-center gap-1.5 px-3 py-2 rounded-md text-sm font-medium transition-all ${
+              viewMode === tab.id
+                ? "bg-background text-primary shadow-sm"
+                : "text-muted-foreground hover:text-foreground"
+            }`}
+          >
+            <tab.icon size={14} />
+            {tab.label}
+            <span className="px-1.5 py-0.5 text-[10px] font-semibold rounded-full bg-muted-foreground/20 text-muted-foreground">
+              {tab.count}
+            </span>
+          </button>
+        ))}
+      </div>
+
+      {/* Limit selector for recent views */}
+      {(viewMode === "recent_created" || viewMode === "recent_approved") && (
+        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+          <span>Show:</span>
+          <select
+            value={limit}
+            onChange={(e) => setLimit(Number(e.target.value))}
+            className="px-2 py-1 border rounded-md text-sm bg-background w-24"
+          >
+            <option value={5}>5</option>
+            <option value={10}>10</option>
+            <option value={20}>20</option>
+            <option value={50}>50</option>
+          </select>
+          <span>records</span>
+        </div>
+      )}
 
       {/* Filters */}
       <div className="flex flex-col sm:flex-row gap-3">
@@ -196,7 +284,7 @@ export default function ApprovalQueuePage() {
           <Input
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            placeholder="Search serial, form, creator…"
+            placeholder="Search serial, form, creator, approver…"
             className="pl-9"
           />
         </div>
@@ -212,21 +300,28 @@ export default function ApprovalQueuePage() {
         )}
       </div>
 
-      {/* Queue */}
-      {pendingRecords.length === 0 ? (
+      {/* Records Grid */}
+      {filteredRecords.length === 0 ? (
         <StateScreen
           state="empty"
-          title="Queue is Clear"
-          message="No records are awaiting approval. Great work!"
+          title={viewMode === "pending" ? "Queue is Clear" : "No Records Found"}
+          message={
+            viewMode === "pending"
+              ? "No records are awaiting approval. Great work!"
+              : viewMode === "recent_created"
+                ? "No recently created records found."
+                : "No recently approved records found."
+          }
         />
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-          {pendingRecords.map((record: RecordData) => (
-            <ApprovalCard
+          {filteredRecords.map((record: RecordData) => (
+            <RecordCard
               key={String(record.serial)}
               record={record}
               onApprove={handleApprove}
               canApprove={isAdmin || record._department === userDept}
+              showApprovedBy={viewMode === "recent_approved"}
             />
           ))}
         </div>
@@ -235,11 +330,20 @@ export default function ApprovalQueuePage() {
   );
 }
 
-function StatCard({ label, value, icon: Icon }: { label: string; value: string | number; icon: React.ElementType }) {
+function StatCard({ label, value, icon: Icon, color = "primary" }: { label: string; value: string | number; icon: React.ElementType; color?: string }) {
+  const colorMap: Record<string, string> = {
+    primary: "bg-primary/10 text-primary",
+    amber: "bg-amber-100 text-amber-700",
+    blue: "bg-blue-100 text-blue-700",
+    green: "bg-green-100 text-green-700",
+    purple: "bg-purple-100 text-purple-700",
+  };
+  const bgColor = colorMap[color] || colorMap.primary;
+
   return (
     <div className="ds-card p-3 flex items-center gap-3">
-      <div className="w-9 h-9 rounded-full bg-primary/10 flex items-center justify-center">
-        <Icon className="w-4 h-4 text-primary" />
+      <div className={`w-9 h-9 rounded-full ${bgColor} flex items-center justify-center`}>
+        <Icon className="w-4 h-4" />
       </div>
       <div>
         <p className="text-lg font-bold">{value}</p>
