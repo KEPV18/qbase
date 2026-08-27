@@ -5,7 +5,8 @@
 // ============================================================================
 import { log } from "@/services/logger";
 
-import { validateFormData, FORM_ZOD_SCHEMAS } from '../schemas/formValidation';
+import { FORM_ZOD_SCHEMAS } from '@/schemas/unifiedSchema';
+import { z } from 'zod';
 import type { RecordData } from '../components/forms/DynamicFormRenderer';
 
 // ============================================================================
@@ -36,6 +37,15 @@ const VALIDATION_LOG: Array<{
   errors: ValidationError[];
   rawPayload: RecordData;
 }> = [];
+
+const MAX_VALIDATION_LOG = 1000;
+
+function pushValidationLog(entry: typeof VALIDATION_LOG[0]) {
+  VALIDATION_LOG.push(entry);
+  if (VALIDATION_LOG.length > MAX_VALIDATION_LOG) {
+    VALIDATION_LOG.splice(0, VALIDATION_LOG.length - MAX_VALIDATION_LOG);
+  }
+}
 
 export function getValidationLog(): typeof VALIDATION_LOG {
   return [...VALIDATION_LOG];
@@ -137,7 +147,7 @@ export function preWriteValidation(
     }
 
     const result: PreWriteResult = { valid: false, errors, sanitizedData: null };
-    VALIDATION_LOG.push({
+    pushValidationLog({
       timestamp: new Date().toISOString(),
       formCode,
       serial,

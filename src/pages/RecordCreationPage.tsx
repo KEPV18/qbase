@@ -17,11 +17,8 @@ import { todayDDMMYYYY } from '../schemas';
 import { MODULE_CONFIG } from '../config/modules';
 import DynamicFormRenderer, { type RecordData } from '../components/forms/DynamicFormRenderer';
 import { SchemaDrivenRecordView } from '../components/forms/SchemaDrivenRecordView';
-import { F28Template } from '@/components/forms/templates/F28Template';
-// ── FORCE VITE INCLUSION ──
-const _FORCE_VITE_INCLUDE: Record<string, React.ComponentType<any>> = {
-  'F/28': F28Template,
-};
+import { getTemplateComponent, TemplateWrapper } from '@/components/templates';
+import { type TemplateComponentProps } from '@/components/templates';
 import { useCreateRecord, useRecords } from '../hooks/useRecordStorage';
 import type { StorageResult } from '../services/recordStorage';
 import { PROJECTS } from '../data/projectsData';
@@ -216,7 +213,7 @@ const RecordCreationPage: React.FC = () => {
           <div className="ds-card p-6 mb-4">
             {(() => {
               const fc = created.code;
-              let TemplateComponent = _FORCE_VITE_INCLUDE[fc] ?? null;
+              const TemplateComponent = _FORCE_VITE_INCLUDE[fc] ?? null;
               if (TemplateComponent) {
                 return <TemplateComponent data={created.data as Record<string, unknown>} isTemplate={false} />;
               }
@@ -261,11 +258,7 @@ const RecordCreationPage: React.FC = () => {
             </button>
           )}
           <h1 className="text-2xl font-bold text-foreground">
-            {gateStep === 'form' && schema && (() => {
-              const fc = selectedCode;
-              let tc = _FORCE_VITE_INCLUDE[fc] ?? null;
-              return tc;
-            })()
+            {gateStep === 'form' && schema && _FORCE_VITE_INCLUDE[selectedCode]
               ? '' : gateStep === 'form' && schema ? `Create ${schema.name}` : 'Create Record'}
           </h1>
           {currentSectionName && gateStep !== 'form' && (
@@ -322,8 +315,7 @@ const RecordCreationPage: React.FC = () => {
       {/* ======== STEP: FORM (Actual Creation) ======== */}
       {gateStep === 'form' && schema && (() => {
         const fc = selectedCode;
-        let TemplateComponent: React.ComponentType<any> | null = null;
-        switch (fc) { case 'F/28': TemplateComponent = F28Template; break; }
+        const TemplateComponent = getTemplateComponent(fc);
         if (TemplateComponent) {
           // Use DOCX-accurate template for form creation
           return (
@@ -351,7 +343,8 @@ const RecordCreationPage: React.FC = () => {
                 </div>
               </div>
               <div className="ds-card p-6">
-                <TemplateComponent
+                <TemplateWrapper
+                  formCode={fc}
                   data={formData}
                   isTemplate={false}
                   editMode={true}

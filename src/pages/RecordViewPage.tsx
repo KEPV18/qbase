@@ -16,7 +16,7 @@ import { getFormSchema, FORM_SCHEMAS } from '../data/formSchemas';
 import { isoToDisplay } from '../schemas';
 import { resolveCoveragePeriod } from '@/lib/temporalUtils';
 import DynamicFormRenderer, { type RecordData } from '../components/forms/DynamicFormRenderer';
-import { getTemplateComponent } from '@/components/templates';
+import { getTemplateComponent, TemplateWrapper } from '@/components/templates';
 import { DocumentView, DocHeader, DocSection, DocField, DocTable } from '@/components/forms/DocumentView';
 import { getAccent } from '@/components/forms/FormKit';
 import { useRecord, useUpdateRecord, useRecords, useDeleteRecord } from '../hooks/useRecordStorage';
@@ -692,10 +692,11 @@ const RecordViewPage: React.FC = () => {
 
             {(() => {
               const fc = originalRecord.formCode as string;
-              let TemplateComponent = getTemplateComponent(fc) ?? null;
+              const TemplateComponent = getTemplateComponent(fc);
               if (TemplateComponent) {
                 return (
-                  <TemplateComponent
+                  <TemplateWrapper
+                    formCode={fc}
                     data={originalRecord as unknown as Record<string, unknown>}
                     isTemplate={false}
                   />
@@ -900,11 +901,12 @@ const RecordViewPage: React.FC = () => {
           )}
           {(() => {
             const fc = originalRecord.formCode as string;
-            let TemplateComponent = getTemplateComponent(fc) ?? null;
+            const TemplateComponent = getTemplateComponent(fc);
             if (TemplateComponent) {
               return (
                 <div className="ds-card p-6">
-                  <TemplateComponent
+                  <TemplateWrapper
+                    formCode={fc}
                     data={editData}
                     isTemplate={false}
                     editMode={true}

@@ -332,7 +332,7 @@ interface FormHeaderProps {
 }
 
 export function FormHeader({ children, className, formCode }: FormHeaderProps) {
-  const a = formCode ? useAccent(formCode) : ACCENT_MAP.blue;
+  const a = useAccent(formCode || 'F/00');
   return (
     <div className={cn(
       "px-4 py-2.5 border-b border-border",
@@ -377,7 +377,7 @@ function isDateField(key: string, label: string): boolean {
 
 export function FormMetaGrid({ fields, data, editMode, onChange, columns = 2, className, formCode }: FormMetaGridProps) {
   const d = data ?? {};
-  const a = formCode ? useAccent(formCode) : ACCENT_MAP.blue;
+  const a = useAccent(formCode || 'F/00');
   const colClass = columns === 4 ? "grid-cols-4" : columns === 3 ? "grid-cols-3" : "grid-cols-2";
 
   return (
@@ -447,7 +447,7 @@ interface FormTableProps {
 }
 
 export function FormTable({ columns, children, striped = true, className, formCode }: FormTableProps) {
-  const a = formCode ? useAccent(formCode) : ACCENT_MAP.blue;
+  const a = useAccent(formCode || 'F/00');
   return (
     <div className={cn("w-full overflow-x-auto", className)}>
       <table className="w-full border-collapse text-[11px] font-[Arial,sans-serif]">
@@ -547,7 +547,7 @@ interface FormSignatureProps {
 
 export function FormSignature({ fields, data, editMode, onChange, columns = 2, className, formCode }: FormSignatureProps) {
   const d = data ?? {};
-  const a = formCode ? useAccent(formCode) : ACCENT_MAP.blue;
+  const a = useAccent(formCode || 'F/00');
   const colClass = columns === 4 ? "grid-cols-4" : columns === 3 ? "grid-cols-3" : columns === 1 ? "flex justify-end" : "grid-cols-2";
   return (
     <div className={cn("px-6 py-5 border-t border-border", className)}>
@@ -584,7 +584,7 @@ interface FormSectionProps {
 }
 
 export function FormSection({ title, className, formCode }: FormSectionProps) {
-  const a = formCode ? useAccent(formCode) : ACCENT_MAP.blue;
+  const a = useAccent(formCode || 'F/00');
   return (
     <div className={cn(
       "px-6 py-2 text-[10px] font-bold uppercase tracking-wider border-x border-t border-border",
@@ -681,7 +681,7 @@ interface InfoCardProps {
 }
 
 export function InfoCard({ title, icon, children, className, formCode, variant = "default" }: InfoCardProps) {
-  const a = formCode ? useAccent(formCode) : ACCENT_MAP.blue;
+  const a = useAccent(formCode || 'F/00');
   return (
     <div className={cn(
       "rounded-md border overflow-hidden",
@@ -727,7 +727,7 @@ interface FieldRowProps {
 }
 
 export function FieldRow({ label, data, fieldKey, editMode, onChange, formCode, fullWidth, isDate, className }: FieldRowProps) {
-  const a = formCode ? useAccent(formCode) : ACCENT_MAP.blue;
+  const a = useAccent(formCode || 'F/00');
   const dateDetected = isDate || isDateField(fieldKey, label);
   const labelCls = dateDetected
     ? "text-amber-600 dark:text-amber-400"
@@ -777,7 +777,7 @@ interface TextBlockProps {
 }
 
 export function TextBlock({ label, data, fieldKey, editMode, onChange, formCode, minHeight = "min-h-[80px]", className }: TextBlockProps) {
-  const a = formCode ? useAccent(formCode) : ACCENT_MAP.blue;
+  const a = useAccent(formCode || 'F/00');
   return (
     <div className={cn("space-y-1", className)}>
       <span className={cn("text-[10px] font-bold uppercase tracking-wide", a.label, a.labelDark)}>{label}</span>
@@ -819,7 +819,7 @@ interface CheckboxGroupProps {
 }
 
 export function CheckboxGroup({ title, items, formCode, onToggle, editMode, className, columns = 3 }: CheckboxGroupProps) {
-  const a = formCode ? useAccent(formCode) : ACCENT_MAP.blue;
+  const a = useAccent(formCode || 'F/00');
   const colClass = columns === 4 ? "grid-cols-4" : columns === 3 ? "grid-cols-3" : "grid-cols-2";
   return (
     <div className={cn("space-y-2", className)}>
@@ -867,7 +867,7 @@ interface StatBadgeProps {
 }
 
 export function StatBadge({ label, value, formCode, className }: StatBadgeProps) {
-  const a = formCode ? useAccent(formCode) : ACCENT_MAP.blue;
+  const a = useAccent(formCode || 'F/00');
   return (
     <div className={cn(
       "inline-flex flex-col items-center justify-center px-4 py-2 rounded-md border",
@@ -914,7 +914,7 @@ interface SectionDividerProps {
 }
 
 export function SectionDivider({ title, formCode, icon, className }: SectionDividerProps) {
-  const a = formCode ? useAccent(formCode) : ACCENT_MAP.blue;
+  const a = useAccent(formCode || 'F/00');
   return (
     <div className={cn("flex items-center gap-2 py-2 mt-2", className)}>
       <div className={cn("h-7 w-7 rounded flex items-center justify-center", a.bg, a.bgDark)}>
@@ -940,7 +940,7 @@ interface TimelineItemProps {
 }
 
 export function TimelineItem({ date, title, description, formCode, isLast, className }: TimelineItemProps) {
-  const a = formCode ? useAccent(formCode) : ACCENT_MAP.blue;
+  const a = useAccent(formCode || 'F/00');
   return (
     <div className={cn("flex gap-3", className)}>
       {/* Timeline line */}

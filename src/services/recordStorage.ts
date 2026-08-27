@@ -13,6 +13,7 @@ import { getNextSerial, isSerialUnique } from '../schemas/serialAndDate';
 import { appendAuditLog, computeDiff } from './auditLog';
 import { log } from './logger';
 import { emitEvent, Events } from './eventBus';
+import { safeEmit } from '@/lib/safeEmit';
 import { restGet } from './userService';
 
 import type { RecordData } from '../components/forms/DynamicFormRenderer';
@@ -208,12 +209,40 @@ function parseRowToRecord(row: DbRecord): RecordData | null {
     ? { ...(row.form_data as Record<string, unknown>) }
     : {};
 
+  // PROTECTED KEYS: These are authoritative DB metadata fields that must NEVER
+  // be overwritten by form_data. If form_data contains these keys (e.g., from
+  // a bad backfill where form_data.serial = "F/40" instead of "F/40-001"),
+  // they are stripped here to preserve DB authority.
+  const PROTECTED_KEYS = new Set([
+    'id', 'serial', 'formCode', 'form_code', 'formName', 'form_name',
+    'project_id', 'projectId',
+    '_createdAt', '_createdBy', '_lastModifiedAt', '_lastModifiedBy',
+    '_deletedAt', '_editCount', '_modificationReason',
+    '_status', '_approvalStatus', '_department',
+    '_section', '_sectionName', '_frequency',
+    'created_at', 'created_by', 'updated_at', 'last_modified_by',
+    'edit_count', 'modification_reason', 'deleted_at',
+    'approval_status', 'department', 'section', 'section_name', 'frequency',
+  ]);
+
+  // Strip any protected keys from form_data to prevent collisions
+  for (const key of PROTECTED_KEYS) {
+    if (key in formData) {
+      log.system.warn('parseRowToRecord:protected_key_stripped', {
+        formCode: row.form_code,
+        serial: row.serial,
+        strippedKey: key,
+        formDataValue: formData[key],
+        dbValue: (row as Record<string, unknown>)[key],
+      });
+      delete formData[key];
+    }
+  }
+
   // Inject system metadata into the record data structure
-  // (FormData contains business fields; metadata is on the row itself)
-  // CRITICAL: Metadata keys must take precedence over form_data to avoid collisions
-  // (e.g., form_data.department would overwrite _department which is the RBAC source of truth)
+  // Metadata keys are authoritative — form_data can never override them
   const recordData: RecordData = {
-    ...formData,  // Business fields from form_data (first, so metadata can override)
+    ...formData,  // Business fields from form_data (protected keys already stripped)
     id: row.id || '',          // Supabase UUID — needed for delete RPC
     serial: row.serial || row.form_code,
     formCode: row.form_code,
@@ -938,12 +967,15 @@ export async function restoreRecord(id: string): Promise<StorageResult> {
     }
 
     logOperation({ timestamp: new Date().toISOString(), operation: 'update', serial: id, formCode: '?', success: true, durationMs: Math.round(performance.now() - startTime) });
-    emitEvent({
-      action: 'restore', category: 'records', priority: 'important',
-      eventType: 'record.restored', title: 'Record Restored',
-      message: `A record was restored from archive (id: ${id.substring(0, 8)}...).`,
-      targetId: id, metadata: { recordId: id },
-    }).catch(() => {});
+    safeEmit(
+      emitEvent({
+        action: 'restore', category: 'records', priority: 'important',
+        eventType: 'record.restored', title: 'Record Restored',
+        message: `A record was restored from archive (id: ${id.substring(0, 8)}...).`,
+        targetId: id, metadata: { recordId: id },
+      }),
+      'emitEvent:record.restored'
+    );
 
     return { success: true };
   } catch (err) {

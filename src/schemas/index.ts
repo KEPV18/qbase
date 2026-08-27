@@ -5,10 +5,8 @@
 
 export { 
   FORM_ZOD_SCHEMAS,
-  PreCreationGateSchema,
   getZodSchema,
   validateFormData,
-  validatePreCreationGate,
   // All individual schemas
   F08Schema, F09Schema, F10Schema, F50Schema,
   F11Schema, F19Schema,
@@ -40,4 +38,5 @@ export {
   checkPreCreationGate,
   getFrequencyWarning,
   type PreCreationAnswers,
+  validatePreCreationGate, // alias for backward compatibility
 } from './serialAndDate';

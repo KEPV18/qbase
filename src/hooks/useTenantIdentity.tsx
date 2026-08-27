@@ -10,6 +10,7 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { restGet } from '@/services/userService';
 import { emitEvent, Events } from '@/services/eventBus';
+import { safeEmit } from '@/lib/safeEmit';
 import { hexToHsl } from '@/lib/utils';
 
 // ============================================================================
@@ -189,13 +190,16 @@ export function useUpdateTenantIdentity() {
     // Invalidate cache to force UI refresh
     invalidate();
 
-    // Emit tenant event (non-blocking)
-    emitEvent(Events.tenantSettingsChanged(
-      'companyName',
-      existing?.company_name || '',
-      updates.companyName || '',
-      undefined
-    )).catch(() => {});
+    // Emit tenant event (non-blocking) - use safeEmit for structured error handling
+    safeEmit(
+      emitEvent(Events.tenantSettingsChanged(
+        'companyName',
+        existing?.company_name || '',
+        updates.companyName || '',
+        undefined
+      )),
+      'emitEvent:tenant.settings.changed'
+    );
   };
 
   return { updateIdentity };

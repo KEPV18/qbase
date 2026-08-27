@@ -7,6 +7,7 @@ import * as React from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { emitEvent } from "@/services/eventBus";
 import { log } from "@/services/logger";
+import { safeEmit } from "@/lib/safeEmit";
 import {
   fetchUserProfile,
   fetchUserRole,
@@ -281,12 +282,15 @@ export function useSupabaseAuth({
         setSupabaseDisabled(false);
         setLoading(false);
 
-        emitEvent({
-          action: 'login', category: 'security', priority: 'important',
-          eventType: 'user.login', title: 'User Login',
-          message: `${newUser.name} logged in (${newUser.role})`, targetId: newUser.id,
-          metadata: { role: newUser.role, backend },
-        }).catch(() => {});
+        safeEmit(
+          emitEvent({
+            action: 'login', category: 'security', priority: 'important',
+            eventType: 'user.login', title: 'User Login',
+            message: `${newUser.name} logged in (${newUser.role})`, targetId: newUser.id,
+            metadata: { role: newUser.role, backend },
+          }),
+          'emitEvent:user.login'
+        );
         loginInProgressRef.current = false;
         return { ok: true, code: "ok", message: "Logged in successfully", user: newUser, backend };
       }
@@ -318,12 +322,15 @@ export function useSupabaseAuth({
       setSupabaseDisabled(false);
       setLoading(false); // <-- CRITICAL: clear loading on SUCCESS
 
-      emitEvent({
-        action: 'login', category: 'security', priority: 'important',
-        eventType: 'user.login', title: 'User Login',
-        message: `${appUser.name} logged in (${appUser.role})`, targetId: appUser.id,
-        metadata: { role: appUser.role, backend },
-      }).catch(() => {});
+      safeEmit(
+        emitEvent({
+          action: 'login', category: 'security', priority: 'important',
+          eventType: 'user.login', title: 'User Login',
+          message: `${appUser.name} logged in (${appUser.role})`, targetId: appUser.id,
+          metadata: { role: appUser.role, backend },
+        }),
+        'emitEvent:user.login'
+      );
 
       loginInProgressRef.current = false;
       return { ok: true, code: "ok", message: "Logged in successfully", user: appUser, backend };

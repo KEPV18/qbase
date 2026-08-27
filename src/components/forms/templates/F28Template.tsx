@@ -27,6 +27,7 @@ interface AttendeeRow {
   id_no: string;
   date: string;
   signature: string;
+  result: string;
 }
 
 function parseAttendees(d: Record<string, unknown>): AttendeeRow[] {
@@ -39,6 +40,7 @@ function parseAttendees(d: Record<string, unknown>): AttendeeRow[] {
       id_no: String(a.id_no ?? a.idNo ?? a.id ?? ""),
       date: String(a.date ?? a.training_date ?? a.trainingDate ?? ""),
       signature: String(a.signature ?? a.signed_by ?? ""),
+      result: String(a.result ?? ""),
     }));
   }
   return [];
@@ -59,7 +61,7 @@ export function F28Template({ data, isTemplate = true, editMode = false, onChang
   }, [rows, onChange]);
 
   const addRow = useCallback(() => {
-    setRows(prev => [...prev, { sl_no: prev.length + 1, name: "", department: "", id_no: "", date: "", signature: "" }]);
+    setRows(prev => [...prev, { sl_no: prev.length + 1, name: "", department: "", id_no: "", date: "", signature: "", result: "" }]);
   }, []);
 
   const removeRow = useCallback((idx: number) => {
@@ -73,7 +75,7 @@ export function F28Template({ data, isTemplate = true, editMode = false, onChang
     if (rows.length >= minRows) return rows;
     const padded = [...rows];
     while (padded.length < minRows) {
-      padded.push({ sl_no: padded.length + 1, name: "", department: "", id_no: "", date: "", signature: "" });
+      padded.push({ sl_no: padded.length + 1, name: "", department: "", id_no: "", date: "", signature: "", result: "" });
     }
     return padded;
   }, [rows, isTemplate]);
@@ -107,6 +109,7 @@ export function F28Template({ data, isTemplate = true, editMode = false, onChang
             { key: "id_no", label: "ID NO.", width: "w-20", align: "center" },
             { key: "date", label: "Training Date", width: "w-28", align: "center" },
             { key: "signature", label: "Signature" },
+            { key: "result", label: "Result", width: "w-24", align: "center" },
           ]}
         >
           {displayRows.map((row, idx) => (
@@ -140,6 +143,11 @@ export function F28Template({ data, isTemplate = true, editMode = false, onChang
                 {editMode ? (
                   <input className="w-full bg-transparent text-xs outline-none border-b border-dashed border-foreground/40" value={row.signature} onChange={e => updateRow(idx, "signature", e.target.value)} placeholder="Signature" />
                 ) : row.signature}
+              </FormTableCell>
+              <FormTableCell align="center">
+                {editMode ? (
+                  <input className="w-20 bg-transparent text-xs text-center outline-none border-b border-dashed border-foreground/40" value={row.result} onChange={e => updateRow(idx, "result", e.target.value)} placeholder="Result" />
+                ) : row.result}
               </FormTableCell>
             </FormTableRow>
           ))}

@@ -6,6 +6,7 @@
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
+import { useAuth } from './useAuth';
 import {
   getRecords,
   getRecord,
@@ -66,6 +67,7 @@ export function useRecord(serial: string | undefined) {
 
 export function useCreateRecord() {
   const queryClient = useQueryClient();
+  const { user } = useAuth();
 
   return useMutation({
     mutationFn: (data: RecordData) => createRecord(data),
@@ -79,10 +81,11 @@ export function useCreateRecord() {
       const previousRecords = queryClient.getQueryData<RecordData[]>(RECORD_KEYS.all);
 
       // Optimistic add — won't have serial yet, but UI shows something
+      const currentUserEmail = user?.email || 'unknown';
       const optimisticRecord: RecordData = {
         ...newData,
         _createdAt: newData._createdAt || new Date().toISOString(),
-        _createdBy: newData._createdBy || 'akh.dev185@gmail.com',
+        _createdBy: newData._createdBy || currentUserEmail,
         _editCount: 0,
         _lastModifiedAt: null,
         _lastModifiedBy: null,
@@ -102,6 +105,8 @@ export function useCreateRecord() {
     onSuccess: (result: StorageResult) => {
       if (result.success && result.record) {
         toast.success(`Record ${result.record.serial} created successfully`);
+        // Invalidate specific form query to update Quick-Jump dropdown immediately
+        queryClient.invalidateQueries({ queryKey: RECORD_KEYS.byForm(result.record.formCode) });
       }
       // Invalidate all record queries (source of truth = Sheets)
       queryClient.invalidateQueries({ queryKey: RECORD_KEYS.all });
@@ -130,6 +135,7 @@ export function useCreateRecord() {
 
 export function useUpdateRecord() {
   const queryClient = useQueryClient();
+  const { user } = useAuth();
 
   return useMutation({
     mutationFn: ({ serial, changes, reason }: {
@@ -148,6 +154,7 @@ export function useUpdateRecord() {
 
       // Optimistic update: merge changes into cached record
       if (previousRecord) {
+        const currentUserEmail = user?.email || 'unknown';
         const optimisticRecord: RecordData = {
           ...previousRecord,
           ...changes,
@@ -160,7 +167,7 @@ export function useUpdateRecord() {
           // Bump tracking
           _editCount: (previousRecord._editCount || 0) + 1,
           _lastModifiedAt: new Date().toISOString(),
-          _lastModifiedBy: 'akh.dev185@gmail.com',
+          _lastModifiedBy: currentUserEmail,
         };
         queryClient.setQueryData(RECORD_KEYS.bySerial(serial), optimisticRecord);
       }

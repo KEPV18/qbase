@@ -682,10 +682,11 @@ function DiagnosticsCard() {
         ...prev,
         supabase: { status: "ok", latency: sbLatency, msg: sessionData.session ? "Session active" : "No session (guest)" },
       }));
-    } catch (err: any) {
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : "Connection failed";
       setChecks((prev) => ({
         ...prev,
-        supabase: { status: "error", msg: err.message || "Connection failed" },
+        supabase: { status: "error", msg },
       }));
     }
 
@@ -701,10 +702,11 @@ function DiagnosticsCard() {
         ...prev,
         db: { status: "ok", latency: dbLatency, msg: `Tables accessible (${count ?? 0} rows)` },
       }));
-    } catch (err: any) {
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : "DB unreachable";
       setChecks((prev) => ({
         ...prev,
-        db: { status: "error", msg: err.message || "DB unreachable" },
+        db: { status: "error", msg },
       }));
     }
 
@@ -718,10 +720,11 @@ function DiagnosticsCard() {
         ...prev,
         auth: { status: "ok", latency: authLatency, msg: userData.user ? `User: ${userData.user.email}` : "Auth API ready" },
       }));
-    } catch (err: any) {
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : "Auth service failed";
       setChecks((prev) => ({
         ...prev,
-        auth: { status: "error", msg: err.message || "Auth service failed" },
+        auth: { status: "error", msg },
       }));
     }
   };

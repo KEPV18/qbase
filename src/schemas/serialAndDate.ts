@@ -158,6 +158,9 @@ export function checkPreCreationGate(
   return { pass: true };
 }
 
+// Backward compatibility alias
+export const validatePreCreationGate = checkPreCreationGate;
+
 /**
  * Get the frequency description for a form code.
  */

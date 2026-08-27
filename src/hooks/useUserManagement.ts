@@ -8,6 +8,7 @@ import { log } from "@/services/logger";
 import * as React from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { emitEvent } from "@/services/eventBus";
+import { safeEmit } from "@/lib/safeEmit";
 import {
   fetchAllUserProfiles,
   mapProfileToAppUser,
@@ -163,12 +164,15 @@ export function useUserManagement({
       } else {
         if (typeof updates.role === "string" && previousRole && updates.role !== previousRole) {
           const targetName = users.find(u => u.id === id)?.name || id;
-          emitEvent({
-            action: 'role_change' as const, category: 'security', priority: 'critical',
-            eventType: 'user.role_changed', title: 'User Role Changed',
-            message: `${targetName}: ${previousRole} → ${updates.role}`,
-            targetId: id, metadata: { previousRole, newRole: updates.role, changedBy: user?.name },
-          }).catch(() => {});
+          safeEmit(
+            emitEvent({
+              action: 'role_change' as const, category: 'security', priority: 'critical',
+              eventType: 'user.role_changed', title: 'User Role Changed',
+              message: `${targetName}: ${previousRole} → ${updates.role}`,
+              targetId: id, metadata: { previousRole, newRole: updates.role, changedBy: user?.name },
+            }),
+            'emitEvent:user.role_changed'
+          );
         }
         await reloadUsers();
       }

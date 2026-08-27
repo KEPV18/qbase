@@ -5,7 +5,7 @@
 
 import { useParams, useNavigate } from "react-router-dom";
 import { getFormSchema, FORM_SCHEMAS } from "@/data/formSchemas";
-import { getTemplateComponent } from "@/components/templates";
+import { getTemplateComponent, type TemplateComponentProps } from "@/components/templates";
 import { AppShell } from "@/components/layout/AppShell";
 import { DocHeader, DocSection } from "@/components/forms/DocumentView";
 import { ArrowLeft, ArrowRight, FileText, FilePlus, AlertTriangle, CalendarCheck, User, UserCheck, Clock, Edit3, ChevronLeft, ChevronRight } from "lucide-react";
@@ -59,7 +59,7 @@ export default function FormTemplatePreview() {
     { label: code },
   ];
 
-  let TemplateComponent: React.ComponentType<any> | null = getTemplateComponent(code) ?? null;
+  const TemplateComponent: React.ComponentType<TemplateComponentProps> | null = getTemplateComponent(code) ?? null;
 
   return (
     <AppShell breadcrumbs={breadcrumbs}>

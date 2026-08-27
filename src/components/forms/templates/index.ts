@@ -39,6 +39,7 @@ import { F45Template } from "./F45Template";
 import { F46Template } from "./F46Template";
 import { F47Template } from "./F47Template";
 import { F48Template } from "./F48Template";
+import { F49Template } from "./F49Template";
 import { F50Template } from "./F50Template";
 
 export interface FormTemplateProps {
@@ -86,9 +87,10 @@ const TEMPLATE_MAP: Record<string, FormTemplateComponent> = {
   "F/46": F46Template,
   "F/47": F47Template,
   "F/48": F48Template,
+  "F/49": F49Template,
   "F/50": F50Template,
   // Fallback: F/25 (Objectives) uses dedicated template now
-  // Forms using SchemaDrivenRecordView fallback: NONE — all 35 forms now have templates
+  // Forms using SchemaDrivenRecordView fallback: NONE — all 36 forms now have templates
 };
 
 /**
@@ -105,5 +107,5 @@ export {
   F20Template, F21Template, F22Template, F23Template, F24Template, F25Template,
   F28Template, F29Template, F30Template, F32Template, F34Template, F35Template,
   F37Template, F40Template, F41Template, F42Template, F43Template, F44Template,
-  F45Template, F46Template, F47Template, F48Template, F50Template,
+  F45Template, F46Template, F47Template, F48Template, F49Template, F50Template,
 };

@@ -55,12 +55,12 @@ export function F34Template({ data, isTemplate = true, editMode = false, onChang
       <div className={cn("whitespace-pre-wrap text-xs", minH)}>{val(d, key) || (ph ? "___" : "")}</div>
     );
 
-  const cellInp = (idx: number, subKey: string, label: string) => {
+  const cellInp = (idx: number, subKey: keyof VerifItem, label: string) => {
     const item = items[idx] || { input: "", output: "" };
     return editMode ? (
       <input
         className="w-full bg-transparent text-[10px] px-0.5 border-none outline-none"
-        value={(item as any)[subKey] || ""}
+        value={item[subKey] || ""}
         onChange={e => {
           const updated = [...items];
           updated[idx] = { ...updated[idx], [subKey]: e.target.value };
@@ -69,7 +69,7 @@ export function F34Template({ data, isTemplate = true, editMode = false, onChang
         placeholder={label}
       />
     ) : (
-      <span className="text-[10px]">{(item as any)[subKey] || ""}</span>
+      <span className="text-[10px]">{item[subKey] || ""}</span>
     );
   };
 

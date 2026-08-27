@@ -48,7 +48,7 @@ const EMPTY_ROW: RowData = {
  * remaining text after the trailing separator as size/qty. Never splits on
  * every "/" — "29/07/2026 / 4" must yield date="29/07/2026", size="4".
  */
-const F11_DATE_RE = /^(\d{1,2}[\/.-]\d{1,2}[\/.-]\d{2,4})/;
+const F11_DATE_RE = /^(\d{1,2}[/.-]\d{1,2}[/.-]\d{2,4})/;
 
 function splitMergedDateSize(value: unknown): [string, string] {
   const v = String(value ?? "").trim();

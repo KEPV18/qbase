@@ -57,7 +57,7 @@ export function F35Template({ data, isTemplate = true, editMode = false, onChang
     return editMode ? (
       <input
         className="w-full bg-transparent text-[9px] px-0.5 border-none outline-none"
-        value={(item as any)[subKey] || ""}
+        value={item[subKey] || ""}
         onChange={e => {
           const updated = [...items];
           updated[idx] = { ...updated[idx], [subKey]: e.target.value };
@@ -66,7 +66,7 @@ export function F35Template({ data, isTemplate = true, editMode = false, onChang
         placeholder={label}
       />
     ) : (
-      <span className="text-[9px] leading-tight block">{(item as any)[subKey] || ""}</span>
+      <span className="text-[9px] leading-tight block">{item[subKey] || ""}</span>
     );
   };
 

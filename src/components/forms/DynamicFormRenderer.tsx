@@ -529,13 +529,14 @@ const DynamicFormRenderer: React.FC<DynamicFormRendererProps> = ({
     setErrors({});
     setSubmitted(false);
     setIsSubmitting(false);
-    if (editMode) {
+    // Always reset gatePassed when formCode changes unless we have specific initialData (edit mode for existing record)
+    if (editMode && initialData) {
       setGatePassed(true);
     } else {
       setGatePassed(false);
     }
     setGateAnswers(null);
-  }, [formCode, editMode]);
+  }, [formCode, editMode, initialData]);
 
   const handleFormSelect = (code: string) => {
     if (!gatePassed && code !== selectedCode) {
@@ -593,13 +594,8 @@ const DynamicFormRenderer: React.FC<DynamicFormRendererProps> = ({
     const result = validateFormData(selectedCode, dataToValidate);
     if (result.success) {
       setIsSubmitting(true);
-      if (schema) {
-        schema.fields.forEach(field => {
-          if (field.type === 'date' && result.data[field.key]) {
-            result.data[field.key] = isoToDisplay(result.data[field.key] as string);
-          }
-        });
-      }
+      // NOTE: preWriteValidation handles DD/MM/YYYY ↔ ISO conversion automatically.
+      // Do NOT convert dates here — let the server-side validation canonicalize.
       onSubmit({ ...result.data, formCode: selectedCode } as RecordData);
     } else {
       setErrors(result.errors);

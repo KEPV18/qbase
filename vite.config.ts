@@ -28,8 +28,14 @@ export default defineConfig(({ mode }) => ({
     rollupOptions: {
       output: {
         manualChunks(id: string) {
-          // Force F28Template into the same chunk as RecordViewPage
-          if (id.includes('F28Template') || id.includes('RecordViewPage')) {
+          // Template chunks - each form template gets its own chunk (lazy loaded)
+          if (id.includes('/components/forms/templates/') && id.endsWith('Template.tsx')) {
+            const match = id.match(/\/F(\d+)Template\.tsx$/);
+            if (match) return `template-F${match[1]}`;
+            if (id.includes('FormTemplateKit')) return 'template-kit';
+          }
+          // RecordViewPage + F28Template (used in RecordCreationPage)
+          if (id.includes('RecordViewPage') || id.includes('F28Template')) {
             return 'record-view';
           }
           // Vendor chunks for better caching
