@@ -74,69 +74,38 @@ interface CurrentUserSnapshot {
   department: Department | null;
 }
 
-/** Get current user for RBAC (lightweight, cached) */
+/** Module-level cached user snapshot (populated by AuthProvider on login/session restore) */
+let currentUserSnapshot: CurrentUserSnapshot | null = null;
+
+/** Set the cached user snapshot (called by AuthProvider) */
+export function setCurrentUserSnapshot(snapshot: CurrentUserSnapshot | null): void {
+  currentUserSnapshot = snapshot;
+}
+
+/** Get the cached user snapshot — no network calls */
+export function getCurrentUserSnapshot(): CurrentUserSnapshot | null {
+  return currentUserSnapshot;
+}
+
+/** Clear the cached user snapshot (called on logout) */
+export function clearCurrentUserSnapshot(): void {
+  currentUserSnapshot = null;
+}
+
+/** Get current user for RBAC — now synchronous, reads from AuthProvider's cache */
+/** @deprecated Use getCurrentUserSnapshot() from AuthContext instead */
 async function getCurrentUser(): Promise<CurrentUserSnapshot | null> {
-  try {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return null;
-
-    // Fast-path: check localStorage cache
-    const cached = localStorage.getItem('qms_session');
-    if (cached) {
-      try {
-        const s = JSON.parse(cached) as { userId: string; role?: string; department?: string };
-        if (s.userId === user.id) {
-          const role = (s.role?.toLowerCase() || 'user') as string;
-          // Map old role names to approval roles
-          const mappedRole: ApprovalRole =
-            role === 'admin' ? 'admin' :
-            role === 'manager' || role === 'auditor' ? 'dept_head' :
-            'employee';
-          return {
-            userId: user.id,
-            email: user.email || '',
-            role: mappedRole,
-            department: (s.department as Department) || null,
-          };
-        }
-      } catch { /* cache parse error, fall through */ }
-    }
-
-    // Fallback: fetch from DB via raw REST (supabase.from().maybeSingle() hangs on Vercel)
-    const [profileRes, roleRes] = await Promise.all([
-      restGet<{ is_active: boolean | null }>(`/rest/v1/profiles?select=is_active&user_id=eq.${user.id}`),
-      restGet<{ role: string | null; department: string | null }[]>(`/rest/v1/user_roles?select=role,department&user_id=eq.${user.id}`),
-    ]);
-
-    const profile = profileRes.data;
-    const roleRow = Array.isArray(roleRes.data) ? roleRes.data[0] : null;
-
-    if (profile && !(profile.is_active ?? false)) {
-      await supabase.auth.signOut();
-      return null;
-    }
-
-    const rawRole = (roleRow as { role?: string } | null)?.role?.toLowerCase() || 'user';
-    const mappedRole: ApprovalRole =
-      rawRole === 'admin' ? 'admin' :
-      rawRole === 'manager' || rawRole === 'auditor' ? 'dept_head' :
-      'employee';
-
-    return {
-      userId: user.id,
-      email: user.email || '',
-      role: mappedRole,
-      department: ((roleRow as { department?: string } | null)?.department as Department) || null,
-    };
-  } catch {
-    return null;
-  }
+  // Return cached snapshot (no network calls)
+  return getCurrentUserSnapshot();
 }
 
 /** Check if user can access a record's department */
 function canAccessDepartment(user: CurrentUserSnapshot, recordDept: string | null): boolean {
   if (user.role === 'admin') return true;
-  if (!recordDept || !user.department) return false;
+  // If record has no department assigned, allow access (unassigned = no restriction)
+  if (!recordDept) return true;
+  // If user has no department, deny access to department-assigned records
+  if (!user.department) return false;
   return recordDept === user.department;
 }
 
@@ -241,7 +210,10 @@ function parseRowToRecord(row: DbRecord): RecordData | null {
 
   // Inject system metadata into the record data structure
   // (FormData contains business fields; metadata is on the row itself)
+  // CRITICAL: Metadata keys must take precedence over form_data to avoid collisions
+  // (e.g., form_data.department would overwrite _department which is the RBAC source of truth)
   const recordData: RecordData = {
+    ...formData,  // Business fields from form_data (first, so metadata can override)
     id: row.id || '',          // Supabase UUID — needed for delete RPC
     serial: row.serial || row.form_code,
     formCode: row.form_code,
@@ -260,7 +232,6 @@ function parseRowToRecord(row: DbRecord): RecordData | null {
     _section: row.section || 0,
     _sectionName: row.section_name || '',
     _frequency: row.frequency || '',
-    ...formData,  // Business fields from form_data
   };
 
   return recordData;
@@ -326,7 +297,7 @@ async function getCurrentUserId(): Promise<string | null> {
 // ============================================================================
 
 export async function getRecords(formCode?: string): Promise<RecordData[]> {
-  const user = await getCurrentUser();
+  const user = getCurrentUserSnapshot();
   const isAdmin = user?.role === 'admin';
 
   const query = supabase
@@ -363,7 +334,7 @@ export async function getRecords(formCode?: string): Promise<RecordData[]> {
 }
 
 export async function getRecord(serial: string): Promise<RecordData | null> {
-  const user = await getCurrentUser();
+  const user = getCurrentUserSnapshot();
 
   const { data, error } = await supabase
     .from('records')
@@ -506,7 +477,7 @@ export async function createRecord(formData: RecordData): Promise<StorageResult>
   data._status = data._status || 'pending_review';
 
   // === APPROVAL WORKFLOW (Ahmed's Rules) ===
-  const actor = await getCurrentUser();
+  const actor = getCurrentUserSnapshot();
   const recordDept = resolveDepartment(formCode);
   const approvalStatus = actor ? resolveApprovalStatus(actor, recordDept) : 'Pending_Approval';
   data._approvalStatus = approvalStatus;
@@ -570,7 +541,8 @@ export async function createRecord(formData: RecordData): Promise<StorageResult>
     for (const key of allFields) { newFieldValues[key] = data[key]; }
     appendAuditLog(actualSerial, 'create', data._createdBy as string || 'unknown', allFields, {}, newFieldValues, formCode).catch(err => {
       log.audit.failed(actualSerial, String(err));
-      // Audit log failed silently
+      console.error(`[AUDIT LOG FAILED] create ${actualSerial}:`, err);
+      // Audit log failed - log to console for monitoring
     });
     log.validation.passed(formCode, actualSerial);
     log.record.created(formCode, actualSerial, Math.round(performance.now() - startTime));
@@ -579,11 +551,12 @@ export async function createRecord(formData: RecordData): Promise<StorageResult>
     emitEvent(Events.recordCreated(
       actualSerial, formCode, data.formName as string || '', data._createdBy as string
     )).catch(err => {
-      // Event emission failed silently
+      console.error(`[EVENT EMISSION FAILED] create ${actualSerial}:`, err);
     });
 
-    // Update the data object with actual serial for return
+    // Update the data object with actual serial AND id for return
     data.serial = actualSerial;
+    data.id = actualId;
     return { success: true, record: data };
   } catch (err) {
     const errorMsg = err instanceof RecordStorageError ? err.message : `Unexpected error: ${(err as Error).message}`;
@@ -635,7 +608,7 @@ export async function updateRecord(
   }
 
   // 3. Merge
-  const actor = await getCurrentUser();
+  const actor = getCurrentUserSnapshot();
   const recordDept = (currentRow as DbRecord).department || resolveDepartment(formCode);
 
   // Enforce approval workflow: employees can only edit Draft records
@@ -702,7 +675,8 @@ export async function updateRecord(
     if (diff.changedFields.length > 0) {
       appendAuditLog(serial, 'update', merged._lastModifiedBy as string || 'unknown', diff.changedFields, diff.previousValues, diff.newValues, formCode).catch(err => {
         log.audit.failed(serial, String(err));
-        // Audit log failed silently
+        console.error(`[AUDIT LOG FAILED] update ${serial}:`, err);
+        // Audit log failed - log to console for monitoring
       });
     }
 
@@ -713,7 +687,7 @@ export async function updateRecord(
       emitEvent(Events.recordUpdated(
         serial, formCode, merged.formName as string || '', diff.changedFields, merged._lastModifiedBy as string
       )).catch(err => {
-        // Update event emission failed silently
+        console.error(`[EVENT EMISSION FAILED] update ${serial}:`, err);
       });
     }
 
@@ -748,7 +722,9 @@ export async function softDeleteRecord(id: string): Promise<StorageResult> {
       eventType: 'record.deleted', title: 'Record Deleted',
       message: `A record was soft-deleted (id: ${id.substring(0, 8)}...).`,
       targetId: id, metadata: { recordId: id },
-    }).catch(() => {});
+    }).catch(err => {
+      console.error(`[EVENT EMISSION FAILED] delete ${id}:`, err);
+    });
 
     return { success: true };
   } catch (err) {
@@ -829,7 +805,7 @@ export async function approveRecord(
   reason?: string
 ): Promise<StorageResult> {
   const startTime = performance.now();
-  const user = await getCurrentUser();
+  const user = getCurrentUserSnapshot();
 
   if (!user) {
     return { success: false, error: 'Unauthorized: please sign in' };
@@ -877,7 +853,9 @@ export async function approveRecord(
     }
 
     // Audit: approval event
-    appendAuditLog(serial, 'status_change', user.email, ['approval_status'], { approval_status: 'Pending_Approval' }, { approval_status: 'Approved' }, record.formCode as string).catch(() => {});
+    appendAuditLog(serial, 'status_change', user.email, ['approval_status'], { approval_status: 'Pending_Approval' }, { approval_status: 'Approved' }, record.formCode as string).catch(err => {
+      console.error(`[AUDIT LOG FAILED] approve ${serial}:`, err);
+    });
 
     logOperation({ timestamp: new Date().toISOString(), operation: 'update', serial, formCode: record.formCode as string, success: true, durationMs: Math.round(performance.now() - startTime) });
 
@@ -898,7 +876,7 @@ export async function approveRecord(
 export async function approveRecords(
   serials: string[]
 ): Promise<{ success: number; failed: number; errors: string[] }> {
-  const user = await getCurrentUser();
+  const user = getCurrentUserSnapshot();
   if (!user) return { success: 0, failed: serials.length, errors: ['Unauthorized'] };
 
   const results = { success: 0, failed: 0, errors: [] as string[] };
@@ -921,7 +899,7 @@ export async function approveRecords(
 // ============================================================================
 
 export async function getArchivedRecords(): Promise<RecordData[]> {
-  const user = await getCurrentUser();
+  const user = getCurrentUserSnapshot();
   const isAdmin = user?.role === 'admin';
 
   // Before fetching, purge records deleted >30 days ago
