@@ -1,6 +1,7 @@
 // ============================================================================
 // F/13 — Purchase Order
 // 24 rows × 10 columns. Matches Word document structure exactly.
+// Database field names (from DOCX backfill): items_table, vendor_name, logistics_grid, etc.
 // ============================================================================
 
 import React from "react";
@@ -32,7 +33,8 @@ interface Item {
 }
 
 function parseItems(d: Record<string, unknown>): Item[] {
-  const raw = d.items;
+  // Database uses 'items_table' not 'items'
+  const raw = d.items_table;
   if (Array.isArray(raw) && raw.length > 0) {
     return raw.map((r: Record<string, unknown>) => ({
       description: String(r.description ?? ""),
@@ -47,6 +49,14 @@ function parseItems(d: Record<string, unknown>): Item[] {
     rate: "",
     amount: "",
   }));
+}
+
+function parseLogisticsGrid(d: Record<string, unknown>): Record<string, string> {
+  const grid = d.logistics_grid;
+  if (grid && typeof grid === 'object') {
+    return grid as Record<string, string>;
+  }
+  return {};
 }
 
 // ── Shared CSS constants ───────────────────────────────────────────────────
@@ -69,6 +79,7 @@ export function F13Template({
   const d = data ?? {};
   const ph = isTemplate && !editMode;
   const items = parseItems(d);
+  const logistics = parseLogisticsGrid(d);
 
   const placeholder = (v: string) => v || (ph ? "—" : "");
 
@@ -99,7 +110,7 @@ export function F13Template({
         onChange={(e) => {
           const next = [...items];
           next[idx] = { ...next[idx], [key]: e.target.value };
-          onChange?.("items", next as unknown as Record<string, unknown>);
+          onChange?.("items_table", next as unknown as Record<string, unknown>);
         }}
       />
     ) : (
@@ -144,10 +155,10 @@ export function F13Template({
             {/* ── Row 2: To / Date ── */}
             <tr>
               <td colSpan={5} className={cn(TBL, "p-2")}>
-                {ec("supplier_name", val(d, "supplier_name"), { label: "Supplier Name" })}
+                {ec("vendor_name", val(d, "vendor_name"), { label: "Supplier Name" })}
                 <br />
                 <span className="text-[10px]">
-                  {ec("supplier_address", val(d, "supplier_address"), {
+                  {ec("vendor_address", val(d, "vendor_address"), {
                     label: "Supplier Address",
                     className: "text-[10px]",
                   })}
@@ -162,7 +173,7 @@ export function F13Template({
             {/* ── Row 3: Statement ── */}
             <tr>
               <td colSpan={10} className={cn(TBL, "p-2 italic bg-muted/20")}>
-                We Are Pleased To Place An Order For The Following:
+                {val(d, "intro_statement") || "We Are Pleased To Place An Order For The Following:"}
               </td>
             </tr>
 
@@ -207,7 +218,7 @@ export function F13Template({
                 Total
               </td>
               <td colSpan={3} className={cn(TBL, "p-1 text-right")}>
-                {ec("total", val(d, "total"), { label: "Total" })}
+                {ec("total_amount_rs", val(d, "total_amount_rs"), { label: "Total" })}
               </td>
             </tr>
 
@@ -217,8 +228,8 @@ export function F13Template({
                 Delivery Schedule
               </td>
               <td colSpan={7} className={cn(TBL, "p-1.5")}>
-                {ec("delivery_schedule", val(d, "delivery_schedule"), {
-                  label: "Delivery Schedule",
+                {ec("delivery_period", val(d, "delivery_period") || logistics.delivery_period || "", {
+                  label: "Delivery Period",
                 })}
               </td>
             </tr>
@@ -229,7 +240,7 @@ export function F13Template({
                 Payment Terms
               </td>
               <td colSpan={7} className={cn(TBL, "p-1.5")}>
-                {ec("payment_terms", val(d, "payment_terms"), {
+                {ec("payment_terms", val(d, "payment_terms") || logistics.payment_terms || "", {
                   label: "Payment Terms",
                 })}
               </td>
@@ -241,7 +252,7 @@ export function F13Template({
                 Remarks
               </td>
               <td colSpan={7} className={cn(TBL, "p-1.5")}>
-                {ec("remarks", val(d, "remarks"), { label: "Remarks" })}
+                {ec("remarks", val(d, "remarks") || "", { label: "Remarks" })}
               </td>
             </tr>
 
@@ -251,11 +262,40 @@ export function F13Template({
                 Authorised Signatory
               </td>
               <td colSpan={7} className={cn(TBL, "p-1.5")}>
-                {ec("authorised_signatory", val(d, "authorised_signatory"), {
+                {ec("reviewed_and_approved_by", val(d, "reviewed_and_approved_by"), {
                   label: "Authorised Signatory",
                 })}
               </td>
             </tr>
+
+            {/* ── Disclaimers ── */}
+            {(() => {
+              const disclaimers = d.disclaimers;
+              if (Array.isArray(disclaimers) && disclaimers.length > 0) {
+                return (
+                  <tr>
+                    <td colSpan={10} className={cn(TBL, "p-2 text-[10px]")}>
+                      <strong>Disclaimers:</strong>
+                      <ul className="list-disc list-inside mt-1 space-y-0.5">
+                        {disclaimers.map((disc: string, i: number) => (
+                          <li key={i}>{disc}</li>
+                        ))}
+                      </ul>
+                    </td>
+                  </tr>
+                );
+              }
+              return null;
+            })()}
+
+            {/* ── Supplies Notice ── */}
+            {val(d, "supplies_notice") && (
+              <tr>
+                <td colSpan={10} className={cn(TBL, "p-2 text-[10px] italic")}>
+                  {val(d, "supplies_notice")}
+                </td>
+              </tr>
+            )}
           </tbody>
         </table>
       </div>
@@ -273,11 +313,11 @@ export function F13Template({
         </div>
         <div>
           <span className="font-semibold">Supplier: </span>
-          {val(d, "supplier_name") || "—"}
+          {val(d, "vendor_name") || "—"}
         </div>
         <div>
           <span className="font-semibold">Address: </span>
-          {val(d, "supplier_address") || "—"}
+          {val(d, "vendor_address") || "—"}
         </div>
         <div className="mt-2 space-y-2">
           <p className="font-semibold">Items:</p>
@@ -296,15 +336,15 @@ export function F13Template({
         </div>
         <div>
           <span className="font-semibold">Total: </span>
-          {val(d, "total") || "—"}
+          {val(d, "total_amount_rs") || "—"}
         </div>
         <div>
           <span className="font-semibold">Delivery: </span>
-          {val(d, "delivery_schedule") || "—"}
+          {val(d, "delivery_period") || logistics.delivery_period || "—"}
         </div>
         <div>
           <span className="font-semibold">Payment: </span>
-          {val(d, "payment_terms") || "—"}
+          {val(d, "payment_terms") || logistics.payment_terms || "—"}
         </div>
         <div>
           <span className="font-semibold">Remarks: </span>
@@ -312,7 +352,7 @@ export function F13Template({
         </div>
         <div>
           <span className="font-semibold">Signatory: </span>
-          {val(d, "authorised_signatory") || "—"}
+          {val(d, "reviewed_and_approved_by") || "—"}
         </div>
       </div>
     </FormDocument>

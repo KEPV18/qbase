@@ -1,6 +1,7 @@
 // ============================================================================
 // F/09 — Customer Complaint Report
 // EXACT MATCH of the Word document — 16 rows × 12 columns
+// Database field names (from DOCX backfill): client_name, project_name, product_type, etc.
 // ============================================================================
 
 import React, { useMemo } from "react";
@@ -33,13 +34,13 @@ function todayDDMMYYYY(): string {
 export function F09Template({ data, isTemplate = true, editMode = false, onChange, className }: F09Props) {
   const d = data ?? {};
   const ph = isTemplate || !editMode;
+  // Database uses 'serial' field
   const serialValue = val(d, "serial") || val(d, "formCode") || "";
 
   const natureChecks = useMemo(() => ({
     serious: val(d, "complaint_nature") === "SERIOUS",
     major: val(d, "complaint_nature") === "MAJOR",
     minor: val(d, "complaint_nature") === "MINOR",
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   }), [val(d, "complaint_nature")]);
 
   const inp = (key: string, placeholder?: string, width?: string) => {
@@ -145,35 +146,35 @@ export function F09Template({ data, isTemplate = true, editMode = false, onChang
             </td>
           </tr>
 
-          {/* ROW 5: Customer Name */}
+          {/* ROW 5: Customer Name (DB: client_name) */}
           <tr>
             <td className={`${labelClass}`}>Customer Name</td>
             <td colSpan={11} className={cellClass}>
-              {inp("customer_name", "Customer name")}
+              {inp("client_name", "Customer name")}
             </td>
           </tr>
 
-          {/* ROW 6: Customer Address */}
+          {/* ROW 6: Customer Address (DB: project_name) */}
           <tr>
             <td className={`${labelClass}`}>Customer Address</td>
             <td colSpan={11} className={cellClass}>
-              {inp("customer_address", "Address")}
+              {inp("project_name", "Address")}
             </td>
           </tr>
 
-          {/* ROW 7: Contact Person */}
+          {/* ROW 7: Contact Person (DB: product_type) */}
           <tr>
             <td className={`${labelClass}`}>Contact Person</td>
             <td colSpan={11} className={cellClass}>
-              {inp("contact_person", "Contact person")}
+              {inp("product_type", "Contact person")}
             </td>
           </tr>
 
-          {/* ROW 8: Tel / Fax No. */}
+          {/* ROW 8: Tel / Fax No. (DB: clientplatform_confirmation) */}
           <tr>
             <td className={`${labelClass}`}>Tel / Fax No.</td>
             <td colSpan={11} className={cellClass}>
-              {inp("tel_fax", "Phone / Fax")}
+              {inp("clientplatform_confirmation", "Phone / Fax")}
             </td>
           </tr>
 
@@ -208,7 +209,7 @@ export function F09Template({ data, isTemplate = true, editMode = false, onChang
                     value="MAJOR"
                     checked={natureChecks.major}
                     onChange={() => onChange?.("complaint_nature", "MAJOR")}
-                    className="accent-blue-600"
+                    className="accent-amber-600"
                   />
                 ) : natureChecks.major ? (
                   <span className="text-lg">✓</span>
@@ -227,7 +228,7 @@ export function F09Template({ data, isTemplate = true, editMode = false, onChang
                     value="MINOR"
                     checked={natureChecks.minor}
                     onChange={() => onChange?.("complaint_nature", "MINOR")}
-                    className="accent-blue-600"
+                    className="accent-green-600"
                   />
                 ) : natureChecks.minor ? (
                   <span className="text-lg">✓</span>
@@ -237,72 +238,98 @@ export function F09Template({ data, isTemplate = true, editMode = false, onChang
                 <span className="font-semibold">MINOR</span>
               </label>
             </td>
-            <td className={cellClass} />
-          </tr>
-
-          {/* ROW 10: Details Of Complaint */}
-          <tr>
-            <td className={`${labelClass} align-top`}>Details Of Complaint</td>
-            <td colSpan={11} className={`${cellClass} min-h-[4rem]`}>
-              {textarea("complaint_details", "Describe the complaint...", 4)}
+            <td colSpan={3} className={cellClass}>
+              <strong>Complaint Type</strong> 🡪&nbsp;&nbsp;{inp("complaint_type", "Type")}
             </td>
           </tr>
 
-          {/* ROW 11: Product Name + Qty. + Batch No. */}
+          {/* ROW 10: Details of Product */}
           <tr>
-            <td className={`${labelClass}`}>Product Name</td>
-            <td colSpan={5} className={cellClass}>
-              {inp("product_name", "Product name")}
-            </td>
-            <td colSpan={2} className={`${cellClass} text-center`}>
-              <span className="font-semibold text-foreground">Qty.</span>{" "}
-              {inp("qty", "Qty")}
-            </td>
-            <td colSpan={4} className={`${cellClass} text-center`}>
-              <span className="font-semibold text-foreground">Batch No.</span>{" "}
-              {inp("batch_no", "Batch no.")}
+            <td className={`${labelClass}`}>Details of Product</td>
+            <td colSpan={11} className={cellClass}>
+              {textarea("details_of_product", "Product details", 2)}
             </td>
           </tr>
 
-          {/* ROW 12: Investigation Done By + Verified By */}
+          {/* ROW 11: Description of Complaint (DB: description) */}
           <tr>
-            <td className={`${labelClass} align-top`}>Investigation Done By</td>
-            <td colSpan={5} className={`${cellClass} min-h-[3rem]`}>
-              {textarea("investigation_by", "Name & findings", 2)}
-            </td>
-            <td colSpan={6} className={`${cellClass} align-top`}>
-              <span className="font-semibold text-foreground">Verified By</span>
-              <div className="mt-1">{inp("verified_by", "Name & Signature")}</div>
+            <td className={`${labelClass}`}>Description of Complaint</td>
+            <td colSpan={11} className={cellClass}>
+              {textarea("description", "Complaint description", 3)}
             </td>
           </tr>
 
-          {/* ROW 13: Root Cause Analysis */}
+          {/* ROW 12: Investigation / Analysis (DB: actions_proposed + analysed_by) */}
           <tr>
-            <td className={`${labelClass} align-top`}>Root Cause Analysis</td>
-            <td colSpan={11} className={`${cellClass} min-h-[4rem]`}>
-              {textarea("root_cause", "Root cause analysis...", 3)}
+            <td className={`${labelClass}`}>Investigation / Analysis</td>
+            <td colSpan={11} className={cellClass}>
+              <div className="space-y-1">
+                <div>
+                  <span className="font-semibold">Analysed By: </span>
+                  {inp("analysed_by", "Analyst name")}
+                </div>
+                <div>
+                  <span className="font-semibold">Proposed Actions: </span>
+                  {textarea("actions_proposed", "Investigation details", 3)}
+                </div>
+              </div>
             </td>
           </tr>
 
-          {/* ROW 14: Action Taken */}
+          {/* ROW 13: Root Cause (DB: corrective_action) */}
           <tr>
-            <td className={`${labelClass} align-top`}>Action Taken</td>
-            <td colSpan={11} className={`${cellClass} min-h-[4rem]`}>
-              {textarea("action_taken", "Actions taken...", 3)}
+            <td className={`${labelClass}`}>Root Cause</td>
+            <td colSpan={11} className={cellClass}>
+              {textarea("corrective_action", "Root cause analysis", 3)}
             </td>
           </tr>
 
-          {/* ROW 15: Reviewed By / Approved By */}
+          {/* ROW 14: Corrective Action (DB: result_of_action) */}
           <tr>
-            <td colSpan={6} className={`${cellClass}`}>
-              <span className="font-semibold text-foreground">Reviewed By</span>
-              <div className="mt-1">{inp("reviewed_by", "Name & Signature")}</div>
-            </td>
-            <td colSpan={6} className={`${cellClass}`}>
-              <span className="font-semibold text-foreground">Approved By</span>
-              <div className="mt-1">{inp("approved_by", "Name & Signature")}</div>
+            <td className={`${labelClass}`}>Corrective Action</td>
+            <td colSpan={11} className={cellClass}>
+              {textarea("result_of_action", "Corrective action taken", 3)}
             </td>
           </tr>
+
+          {/* ROW 15: Preventive Action (DB: customer_informed_date, clientplatform_confirmation_date) */}
+          <tr>
+            <td className={`${labelClass}`}>Preventive Action</td>
+            <td colSpan={11} className={cellClass}>
+              <div className="space-y-1">
+                <div>
+                  <span className="font-semibold">Customer Informed Date: </span>
+                  {inp("customer_informed_date", "DD/MM/YYYY")}
+                </div>
+                <div>
+                  <span className="font-semibold">Confirmation Date: </span>
+                  {inp("clientplatform_confirmation_date", "DD/MM/YYYY")}
+                </div>
+                <div>
+                  <span className="font-semibold">Customer Informed Vide: </span>
+                  {inp("customer_informed_vide", "Vide reference")}
+                </div>
+              </div>
+            </td>
+          </tr>
+
+          {/* ROW 16: Status / Closure */}
+          <tr>
+            <td className={`${labelClass}`}>Status / Closure</td>
+            <td colSpan={11} className={cellClass}>
+              <div className="space-y-1">
+                <div>
+                  <span className="font-semibold">Closed By: </span>
+                  {inp("closed_by", "Name")}
+                </div>
+                <div>
+                  <span className="font-semibold">Closed Date: </span>
+                  {inp("closed_date", "DD/MM/YYYY")}
+                </div>
+              </div>
+            </td>
+          </tr>
+
         </tbody>
       </table>
     </FormDocument>
