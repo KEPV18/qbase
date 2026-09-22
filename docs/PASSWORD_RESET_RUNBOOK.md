@@ -17,16 +17,15 @@ same Supabase project**:
 Because the project is shared, a change made for one application is a change
 made for **both**. There is no per-app auth configuration.
 
-> ⚠️ **Both origins must stay in `uri_allow_list`.**
-> Removing `https://qms-forge.vercel.app/**` silently breaks QMS Forge login and
-> password recovery. Removing `https://qbase-sable.vercel.app/**` silently
-> breaks QBase the same way. Editing this list is always a two-app decision.
+> ⚠️ **Both origins must stay in `uri_allow_list`.** Removing either one
+> silently breaks that app's login and password recovery, so editing this list
+> is always a two-app decision.
 
 ### `site_url` vs `uri_allow_list`
 
-- **`site_url`** — the default landing origin. Recovery and confirmation links
-  are generated against it unless a specific redirect is supplied. If it points
-  at the other application, every recovery link lands on the **wrong app**.
+- **`site_url`** — the default landing origin for recovery/confirmation links.
+  If it points at the other application, every recovery link lands on the
+  **wrong app**.
 - **`uri_allow_list`** — the allow-list of redirect targets. A redirect to an
   origin missing from this list is **rejected** by Supabase.
 
@@ -77,10 +76,9 @@ a production change: get approval first, and never run it during an audit.
 
 ## 4. The `/reset-password` route contract
 
-- Route path: **`/reset-password`**.
-- It must be a **public route, mounted OUTSIDE `RequireAuth`**. A recovery link
-  arrives on a session-less browser; behind the auth guard the user is bounced
-  to login and the recovery token is lost.
+- Route path: **`/reset-password`**. It must be a **public route, mounted OUTSIDE
+  `RequireAuth`** — a recovery link arrives on a session-less browser, and behind
+  the auth guard the user is bounced to login and the recovery token is lost.
 - It reads the recovery token from the URL (Supabase places it in the fragment,
   e.g. `#access_token=...&type=recovery`), calls `updateUser` to set the new
   password, then redirects to the login page.
@@ -101,14 +99,21 @@ EXPECTED_SITE_URL=https://wrong.example.com \
   SUPABASE_ACCESS_TOKEN=sbp_... ./scripts/check-auth-redirect.sh
 ```
 
-The script is **GET-only**: it never sends email, never mutates remote state,
-and never hard-codes the token. It asserts two things and prints one line:
-
+The script is **GET-only**: it never sends email, never mutates remote state, and
+never hard-codes the token. It asserts three things:
 1. `site_url` equals the expected QBase origin.
-2. the expected QBase origin appears in `uri_allow_list`.
+2. the expected QBase origin is an **exact** entry in `uri_allow_list`.
+3. the sibling QMS Forge origin is still an exact entry there (shared project).
 
-Exit codes: `0` = PASS, `1` = misconfiguration, `2` = environment/tooling
-problem (missing token, no `curl`, no `python3`).
+Matching is **exact-origin, never substring**: each comma-separated entry has its
+path stripped (`.../**` → origin) and whitespace trimmed first, so
+`https://qbase-sable.vercel.app.evil.com/**` does not satisfy the check for
+`https://qbase-sable.vercel.app`.
+
+Exit codes: `0` = PASS; `1` = misconfiguration (origin mismatch or missing
+allow-list entry); `2` = environment/tooling problem — missing token, no `curl`,
+no `python3`, non-2xx response, or an unparseable body. A `2` is never a silent
+pass: it prints `FAIL [env]`, `FAIL [api]`, or `FAIL [parse]`, never a raw traceback.
 
 **Run this after any Supabase auth change, and whenever a password-recovery link
 misbehaves.** A non-zero exit is a real defect, not a warning.
