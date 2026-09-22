@@ -27,6 +27,31 @@ interface UseSupabaseAuthProps {
   setSupabaseDisabled: React.Dispatch<React.SetStateAction<boolean>>;
 }
 
+/* ── Password-recovery redirect detection ─────────────────────────────────── */
+
+/**
+ * True when the current URL carries a Supabase password-recovery redirect
+ * (`#access_token=...&type=recovery` for the implicit flow, `?type=recovery`
+ * for PKCE). Evaluated ONCE at module load, which happens after
+ * `integrations/supabase/client.ts` is imported but before its async
+ * `_getSessionFromURL()` finishes and erases the fragment — so the marker is
+ * still readable here. Reading it later (inside an effect) would be unreliable.
+ */
+const RECOVERY_REDIRECT_DETECTED = (() => {
+  if (typeof window === "undefined") return false;
+  // Defensive: some environments (SSR shims, test runners, hardened embeds)
+  // expose a `location` without `hash`/`search`. A throw here would happen at
+  // module-evaluation time and take down the entire bundle, so never assume
+  // these are strings.
+  const hash = window.location?.hash;
+  const search = window.location?.search;
+  const marker = "type=recovery";
+  return (
+    (typeof hash === "string" && hash.includes(marker)) ||
+    (typeof search === "string" && search.includes(marker))
+  );
+})();
+
 export function useSupabaseAuth({
   setUser,
   setUsers,
@@ -39,6 +64,13 @@ export function useSupabaseAuth({
   // Guards against SIGNED_IN event racing with login() — prevents
   // syncUserProfile from wiping user state set by login().
   const loginInProgressRef = React.useRef<boolean>(false);
+  // A password-recovery redirect carries a REAL Supabase session, but the user
+  // is NOT an app user yet: they must first choose a new password on
+  // /reset-password. While this flag is set we must never run syncUserProfile
+  // (that would auto-provision a profile and hand the recovery user the app).
+  // The flag is latched once from the redirect URL and cleared on login() /
+  // SIGNED_OUT, i.e. as soon as the recovery flow is abandoned or completed.
+  const recoveryModeRef = React.useRef<boolean>(false);
 
   /* ── Profile Sync ───────────────────────────────────────────────────────── */
 
@@ -130,6 +162,9 @@ export function useSupabaseAuth({
     if (bootstrapInitializedRef.current) return;
     bootstrapInitializedRef.current = true;
 
+    // Latch recovery mode from the redirect marker (see RECOVERY_REDIRECT_DETECTED).
+    if (RECOVERY_REDIRECT_DETECTED) recoveryModeRef.current = true;
+
     let mounted = true;
     let loadingCleared = false;
 
@@ -149,7 +184,12 @@ export function useSupabaseAuth({
         const { data } = await supabase.auth.getSession();
         const session = data?.session;
 
-        if (mounted && session) {
+        if (recoveryModeRef.current) {
+          // Recovery redirect: a session exists but it is NOT an app session.
+          // Never sync a profile here — the user must set a new password first.
+          setUser(null);
+          saveSession(null);
+        } else if (mounted && session) {
           // Session found immediately — sync profile
           await syncUserProfile(session as { user: { id: string; email?: string } });
         } else {
@@ -168,6 +208,31 @@ export function useSupabaseAuth({
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
       if (!mounted) return;
+
+      if (event === 'PASSWORD_RECOVERY') {
+        // User arrived via a password-reset link. This event fires INSTEAD of
+        // SIGNED_IN for a recovery redirect, but supabase-js may also emit
+        // SIGNED_IN right after — so latch recovery mode and return early to
+        // keep the recovery session away from syncUserProfile (which would
+        // auto-provision a profile and sign the user into the app).
+        recoveryModeRef.current = true;
+        setUser(null);
+        saveSession(null);
+        clearLoading();
+        return;
+      }
+
+      if (recoveryModeRef.current) {
+        // Still mid-recovery (or the user abandoned the flow on /reset-password):
+        // swallow every auth event that would otherwise start a profile sync.
+        if (event === 'SIGNED_OUT') {
+          recoveryModeRef.current = false;
+        }
+        setUser(null);
+        saveSession(null);
+        clearLoading();
+        return;
+      }
 
       if (event === 'INITIAL_SESSION') {
         if (session) {
@@ -217,6 +282,8 @@ export function useSupabaseAuth({
 
   const login = React.useCallback(async (email: string, password: string) => {
     const backend = "supabase" as const;
+    // An explicit sign-in attempt always abandons any pending recovery flow.
+    recoveryModeRef.current = false;
     if (!email.trim()) {
       setLoading(false);
       return { ok: false, code: "email_empty", message: "Email is required", backend };
@@ -379,7 +446,9 @@ export function useSupabaseAuth({
   const resetPassword = React.useCallback(async (email: string) => {
     try {
       const { error } = await supabase.auth.resetPasswordForEmail(email, {
-        redirectTo: `${window.location.origin}/login`,
+        // Recovery links must land on the in-app Set-New-Password page, not on
+        // /login — the user arrives with a recovery session and needs the form.
+        redirectTo: `${window.location.origin}/reset-password`,
       });
       if (error) return { ok: false, message: error.message };
       return { ok: true, message: `Password reset link sent to ${email}` };

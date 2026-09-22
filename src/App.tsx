@@ -22,6 +22,7 @@ const DataSanitizer = lazy(() => import("./pages/admin/DataSanitizer"));
 const Login = lazy(() => import("./pages/Login"));
 const Register = lazy(() => import("./pages/Register"));
 const AuthCallback = lazy(() => import("./pages/AuthCallback"));
+const ResetPassword = lazy(() => import("./pages/ResetPassword"));
 const ActivityPage = lazy(() => import("./pages/ActivityPage"));
 const ProceduresPage = lazy(() => import("./pages/ProceduresPage"));
 const ISOManualPage = lazy(() => import("./pages/ISOManualPage"));
@@ -91,6 +92,9 @@ const App = () => {
                     <Route path="/login" element={<PageBoundary><Login /></PageBoundary>} />
                     <Route path="/register" element={<PageBoundary><Register /></PageBoundary>} />
                     <Route path="/auth/callback" element={<PageBoundary><AuthCallback /></PageBoundary>} />
+                    {/* Password recovery — user is not an app user yet, so it must stay
+                        OUTSIDE RequireAuth (same as /login and /auth/callback). */}
+                    <Route path="/reset-password" element={<PageBoundary><ResetPassword /></PageBoundary>} />
 
                     {/* Core app routes — all Supabase-connected */}
                     <Route element={<RequireAuth><DashboardLayout><Outlet /></DashboardLayout></RequireAuth>}>
