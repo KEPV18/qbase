@@ -52,6 +52,68 @@ const RECOVERY_REDIRECT_DETECTED = (() => {
   );
 })();
 
+/* ── Persisted recovery marker ────────────────────────────────────────────── */
+
+/**
+ * sessionStorage key that keeps "a password recovery is in flight" alive across
+ * a page reload (F5).
+ *
+ * The in-memory `recoveryModeRef` alone is NOT enough: the Supabase client
+ * (`detectSessionInUrl: true`) consumes the `#...type=recovery` fragment and
+ * erases it, then stores the recovery session in localStorage. On F5 there is
+ * no fragment, no fresh `PASSWORD_RECOVERY` event, and a brand-new hook with
+ * `recoveryModeRef === false` — while `getSession()` still returns the stored
+ * recovery session. Without a durable marker the session would fall through to
+ * `syncUserProfile` → `createProfile` + `createUserRole`, i.e. the user gets
+ * handed the app before choosing a new password.
+ *
+ * `sessionStorage` (not localStorage) is deliberate: it is per-tab and dies
+ * with the tab, so an abandoned recovery flow cannot lock a user out forever.
+ */
+export const RECOVERY_PENDING_KEY = "qbase:recovery-pending";
+
+/**
+ * Reads the persisted recovery marker. Never assume `sessionStorage` exists —
+ * SSR shims, hardened embeds and test runners may omit it or throw on access
+ * (Safari private mode quota errors). A throw here would happen during module
+ * evaluation or inside the auth bootstrap and take down the whole bundle /
+ * hang the UI, so every access is guarded.
+ */
+export function readRecoveryPending(): boolean {
+  try {
+    if (typeof window === "undefined") return false;
+    const store = window.sessionStorage;
+    if (!store) return false;
+    return store.getItem(RECOVERY_PENDING_KEY) === "1";
+  } catch {
+    return false;
+  }
+}
+
+/** Persists the recovery marker. Best-effort — a failure must never break auth. */
+export function writeRecoveryPending(): void {
+  try {
+    if (typeof window === "undefined") return;
+    const store = window.sessionStorage;
+    if (!store) return;
+    store.setItem(RECOVERY_PENDING_KEY, "1");
+  } catch {
+    // Ignore: storage unavailable (private mode / quota / sandboxed iframe).
+  }
+}
+
+/** Clears the persisted recovery marker. Best-effort, same rationale as above. */
+export function clearRecoveryPending(): void {
+  try {
+    if (typeof window === "undefined") return;
+    const store = window.sessionStorage;
+    if (!store) return;
+    store.removeItem(RECOVERY_PENDING_KEY);
+  } catch {
+    // Ignore: storage unavailable.
+  }
+}
+
 export function useSupabaseAuth({
   setUser,
   setUsers,
@@ -68,8 +130,11 @@ export function useSupabaseAuth({
   // is NOT an app user yet: they must first choose a new password on
   // /reset-password. While this flag is set we must never run syncUserProfile
   // (that would auto-provision a profile and hand the recovery user the app).
-  // The flag is latched once from the redirect URL and cleared on login() /
-  // SIGNED_OUT, i.e. as soon as the recovery flow is abandoned or completed.
+  // It is latched from the redirect URL / PASSWORD_RECOVERY event AND mirrored
+  // into sessionStorage (RECOVERY_PENDING_KEY) so it survives an F5 reload —
+  // the URL fragment is gone by then while the recovery session persists in
+  // localStorage. Cleared on login(), on PASSWORD_RECOVERY completion
+  // (USER_UPDATED) and on SIGNED_OUT.
   const recoveryModeRef = React.useRef<boolean>(false);
 
   /* ── Profile Sync ───────────────────────────────────────────────────────── */
@@ -162,8 +227,16 @@ export function useSupabaseAuth({
     if (bootstrapInitializedRef.current) return;
     bootstrapInitializedRef.current = true;
 
-    // Latch recovery mode from the redirect marker (see RECOVERY_REDIRECT_DETECTED).
-    if (RECOVERY_REDIRECT_DETECTED) recoveryModeRef.current = true;
+    // Latch recovery mode. Three sources, in order of reliability:
+    //   1. the persisted sessionStorage marker (survives an F5 reload — the
+    //      Supabase client has already consumed/erased the URL fragment);
+    //   2. the module-load fragment marker (first arrival on the redirect);
+    //   3. the in-memory ref (already latched by a PASSWORD_RECOVERY event).
+    if (readRecoveryPending() || RECOVERY_REDIRECT_DETECTED || recoveryModeRef.current) {
+      recoveryModeRef.current = true;
+      // Re-persist so the guard is still armed after the *next* reload.
+      writeRecoveryPending();
+    }
 
     let mounted = true;
     let loadingCleared = false;
@@ -216,6 +289,7 @@ export function useSupabaseAuth({
         // keep the recovery session away from syncUserProfile (which would
         // auto-provision a profile and sign the user into the app).
         recoveryModeRef.current = true;
+        writeRecoveryPending();
         setUser(null);
         saveSession(null);
         clearLoading();
@@ -226,7 +300,11 @@ export function useSupabaseAuth({
         // Still mid-recovery (or the user abandoned the flow on /reset-password):
         // swallow every auth event that would otherwise start a profile sync.
         if (event === 'SIGNED_OUT') {
+          // Recovery finished (ResetPassword calls signOut after updateUser) or
+          // was abandoned — release the guard everywhere so the next sign-in is
+          // a normal one and the user is not locked out.
           recoveryModeRef.current = false;
+          clearRecoveryPending();
         }
         setUser(null);
         saveSession(null);
@@ -254,6 +332,7 @@ export function useSupabaseAuth({
           await syncUserProfile(session as { user: { id: string; email?: string } });
         }
       } else if (event === 'SIGNED_OUT') {
+        clearRecoveryPending();
         setUser(null);
         saveSession(null);
       }
@@ -284,6 +363,7 @@ export function useSupabaseAuth({
     const backend = "supabase" as const;
     // An explicit sign-in attempt always abandons any pending recovery flow.
     recoveryModeRef.current = false;
+    clearRecoveryPending();
     if (!email.trim()) {
       setLoading(false);
       return { ok: false, code: "email_empty", message: "Email is required", backend };

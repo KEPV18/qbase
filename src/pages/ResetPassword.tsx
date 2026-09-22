@@ -34,6 +34,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
+import { clearRecoveryPending } from "@/hooks/useSupabaseAuth";
 import { log } from "@/services/logger";
 import {
   KeyRound,
@@ -139,11 +140,14 @@ export default function ResetPassword() {
 
       // Clear the recovery session so /login renders its form instead of
       // bouncing an already-authenticated recovery user straight into the app.
+      // The auth hook also clears the persisted recovery marker on SIGNED_OUT;
+      // clearing it here too keeps the two in sync even if that event is lost.
       try {
         await supabase.auth.signOut();
       } catch {
         // Non-fatal: the password change already succeeded.
       }
+      clearRecoveryPending();
       log.auth.logout();
       setPassword("");
       setConfirmPassword("");
