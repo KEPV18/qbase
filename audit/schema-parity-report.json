@@ -1,0 +1,548 @@
+{
+  "generatedFrom": {
+    "root": "/home/kepv/qbase-remediation",
+    "openapi": "/tmp/ghq/prod_openapi.json",
+    "productionTables": 17,
+    "productionRpcs": 24,
+    "sourceFilesScanned": 238,
+    "entryPoints": [
+      "src/main.tsx",
+      "api/auth/callback.js",
+      "api/auth/index.js",
+      "api/token.js",
+      "api/users.js",
+      "server/local.js"
+    ],
+    "reachableFiles": 175
+  },
+  "summary": {
+    "bySeverity": {
+      "P4": 8,
+      "P1": 6
+    },
+    "totalFindings": 14,
+    "tablesReferencedButAbsent": []
+  },
+  "findings": [
+    {
+      "table": null,
+      "column": "p_approval_status+p_department",
+      "kind": "rpc_arg_unknown",
+      "rpc": "create_record_validated",
+      "file": "src/services/recordStorage.ts",
+      "line": 532,
+      "isTest": false,
+      "via": "object-literal",
+      "detail": [
+        "p_approval_status",
+        "p_department"
+      ],
+      "reachable": true,
+      "severity": "P1"
+    },
+    {
+      "table": "records",
+      "column": "form_type",
+      "kind": "column_missing",
+      "method": "insert",
+      "via": "object-literal",
+      "file": "src/services/importService.ts",
+      "line": 141,
+      "isTest": false,
+      "reachable": true,
+      "severity": "P1"
+    },
+    {
+      "table": "records",
+      "column": "revision_no",
+      "kind": "column_missing",
+      "method": "insert",
+      "via": "object-literal",
+      "file": "src/services/importService.ts",
+      "line": 141,
+      "isTest": false,
+      "reachable": true,
+      "severity": "P1"
+    },
+    {
+      "table": "records",
+      "column": "approval_status",
+      "kind": "column_missing",
+      "method": "update",
+      "via": "bracket-assign",
+      "file": "src/services/recordStorage.ts",
+      "line": 686,
+      "isTest": false,
+      "reachable": true,
+      "severity": "P1"
+    },
+    {
+      "table": "records",
+      "column": "department",
+      "kind": "column_missing",
+      "method": "update",
+      "via": "bracket-assign",
+      "file": "src/services/recordStorage.ts",
+      "line": 687,
+      "isTest": false,
+      "reachable": true,
+      "severity": "P1"
+    },
+    {
+      "table": "records",
+      "column": "approval_status",
+      "kind": "column_missing",
+      "method": "update",
+      "via": "object-literal",
+      "file": "src/services/recordStorage.ts",
+      "line": 873,
+      "isTest": false,
+      "reachable": true,
+      "severity": "P1"
+    },
+    {
+      "table": null,
+      "column": null,
+      "kind": "rpc_missing",
+      "rpc": "lock_record_for_edit",
+      "file": "src/hooks/useRecordEditor.ts",
+      "line": 72,
+      "isTest": false,
+      "reachable": false,
+      "severity": "P4"
+    },
+    {
+      "table": null,
+      "column": null,
+      "kind": "rpc_missing",
+      "rpc": "unlock_record",
+      "file": "src/hooks/useRecordEditor.ts",
+      "line": 88,
+      "isTest": false,
+      "reachable": false,
+      "severity": "P4"
+    },
+    {
+      "table": null,
+      "column": null,
+      "kind": "rpc_missing",
+      "rpc": "save_record_version",
+      "file": "src/hooks/useRecordEditor.ts",
+      "line": 127,
+      "isTest": false,
+      "reachable": false,
+      "severity": "P4"
+    },
+    {
+      "table": null,
+      "column": null,
+      "kind": "rpc_missing",
+      "rpc": "unlock_record",
+      "file": "src/hooks/useRecordEditor.ts",
+      "line": 140,
+      "isTest": false,
+      "reachable": false,
+      "severity": "P4"
+    },
+    {
+      "table": null,
+      "column": null,
+      "kind": "rpc_missing",
+      "rpc": "get_record_version_history",
+      "file": "src/hooks/useRecordEditor.ts",
+      "line": 158,
+      "isTest": false,
+      "reachable": false,
+      "severity": "P4"
+    },
+    {
+      "table": null,
+      "column": null,
+      "kind": "rpc_missing",
+      "rpc": "restore_record_version",
+      "file": "src/hooks/useRecordEditor.ts",
+      "line": 175,
+      "isTest": false,
+      "reachable": false,
+      "severity": "P4"
+    },
+    {
+      "table": "records",
+      "column": "locked_by",
+      "kind": "column_missing",
+      "method": "select",
+      "via": "chain",
+      "file": "src/hooks/useRecordEditor.ts",
+      "line": 42,
+      "isTest": false,
+      "reachable": false,
+      "severity": "P4"
+    },
+    {
+      "table": "records",
+      "column": "locked_at",
+      "kind": "column_missing",
+      "method": "select",
+      "via": "chain",
+      "file": "src/hooks/useRecordEditor.ts",
+      "line": 42,
+      "isTest": false,
+      "reachable": false,
+      "severity": "P4"
+    }
+  ],
+  "typesDrift": [
+    {
+      "table": "profiles",
+      "kind": "present_in_production_but_undeclared",
+      "columns": [
+        "department"
+      ],
+      "severity": "P3"
+    },
+    {
+      "table": "records",
+      "kind": "present_in_production_but_undeclared",
+      "columns": [
+        "project_id"
+      ],
+      "severity": "P3"
+    },
+    {
+      "table": "retention_summary",
+      "kind": "table_declared_but_absent_from_production",
+      "columns": [
+        "approval_date",
+        "approval_status",
+        "approver_id",
+        "approver_name",
+        "archival_date",
+        "author_id",
+        "author_name",
+        "bucket_id",
+        "change_description",
+        "change_reason",
+        "checksum",
+        "classification",
+        "created_at",
+        "created_by",
+        "department",
+        "description",
+        "document_number",
+        "file_size",
+        "form_code",
+        "id",
+        "iso_clause",
+        "keywords",
+        "mime_type",
+        "parent_document_id",
+        "previous_version",
+        "process_id",
+        "record_type",
+        "related_documents",
+        "retention_status",
+        "retention_until",
+        "retention_years",
+        "review_date",
+        "reviewer_id",
+        "reviewer_name",
+        "revision_date",
+        "storage_path",
+        "title",
+        "updated_at",
+        "updated_by",
+        "version"
+      ],
+      "severity": "P3"
+    },
+    {
+      "table": "upcoming_reviews",
+      "kind": "table_declared_but_absent_from_production",
+      "columns": [
+        "completed_at",
+        "created_at",
+        "department",
+        "document_id",
+        "document_number",
+        "form_code",
+        "id",
+        "review_notes",
+        "review_status",
+        "reviewed_by",
+        "scheduled_date",
+        "title"
+      ],
+      "severity": "P3"
+    }
+  ],
+  "unreferencedProductionColumns": {
+    "swot_strategies": [
+      "id",
+      "strategy_id",
+      "kind",
+      "combat",
+      "adj",
+      "action",
+      "created_at",
+      "updated_at"
+    ],
+    "capas": [
+      "id",
+      "status",
+      "effectiveness",
+      "verification_date",
+      "created_at"
+    ],
+    "records": [
+      "updated_at",
+      "form_name",
+      "modification_reason",
+      "section",
+      "section_name",
+      "frequency",
+      "project_id"
+    ],
+    "process_interactions": [
+      "id",
+      "source_process_id",
+      "target_process_id",
+      "interaction_type",
+      "description",
+      "created_at"
+    ],
+    "document_reviews": [
+      "id",
+      "document_id",
+      "scheduled_date",
+      "reviewed_by",
+      "review_status",
+      "review_notes",
+      "completed_at",
+      "created_at"
+    ],
+    "audit_log": [
+      "id",
+      "action",
+      "changed_fields",
+      "previous_values",
+      "new_values",
+      "performed_by",
+      "action_type",
+      "form_code",
+      "serial",
+      "user_email"
+    ],
+    "profiles": [
+      "password"
+    ],
+    "error_reports": [
+      "id",
+      "version",
+      "user_email",
+      "page_url",
+      "error_message",
+      "error_stack",
+      "context",
+      "browser_info",
+      "created_at",
+      "resolved",
+      "resolved_at",
+      "resolution_notes"
+    ],
+    "risks": [
+      "id",
+      "risk_score",
+      "status",
+      "created_at"
+    ],
+    "projects": [
+      "id",
+      "name",
+      "description",
+      "status",
+      "start_date",
+      "team_allocation",
+      "created_at",
+      "updated_at"
+    ],
+    "swot_items": [
+      "id",
+      "item_id",
+      "quadrant",
+      "text",
+      "category",
+      "risk_level",
+      "source",
+      "action_plan",
+      "responsible",
+      "target_date",
+      "iso_clause",
+      "linked_to",
+      "is_custom",
+      "display_order",
+      "created_at",
+      "updated_at",
+      "created_by"
+    ],
+    "tenant_settings": [
+      "company_name",
+      "company_logo_url",
+      "theme_color",
+      "updated_at",
+      "updated_by"
+    ],
+    "user_roles": [
+      "department"
+    ],
+    "processes": [
+      "category",
+      "owner",
+      "inputs",
+      "outputs",
+      "resources",
+      "competence_needed",
+      "controls",
+      "effectiveness",
+      "status",
+      "created_at"
+    ],
+    "document_versions": [
+      "id",
+      "document_id",
+      "version",
+      "storage_path",
+      "change_reason",
+      "change_description",
+      "changed_by",
+      "changed_by_name",
+      "created_at",
+      "checksum"
+    ],
+    "document_metadata": [
+      "id",
+      "storage_path",
+      "bucket_id",
+      "document_number",
+      "version",
+      "previous_version",
+      "revision_date",
+      "author_id",
+      "author_name",
+      "reviewer_id",
+      "reviewer_name",
+      "approver_id",
+      "approver_name",
+      "approval_date",
+      "approval_status",
+      "classification",
+      "department",
+      "process_id",
+      "retention_years",
+      "retention_until",
+      "review_date",
+      "archival_date",
+      "created_at",
+      "updated_at",
+      "created_by",
+      "updated_by",
+      "parent_document_id",
+      "related_documents",
+      "title",
+      "description",
+      "keywords",
+      "checksum",
+      "file_size",
+      "mime_type",
+      "iso_clause",
+      "form_code",
+      "record_type",
+      "change_reason",
+      "change_description"
+    ],
+    "notifications": [
+      "title",
+      "message",
+      "type",
+      "link",
+      "data",
+      "created_by",
+      "category",
+      "priority",
+      "event_type",
+      "actor_id",
+      "target_id"
+    ]
+  },
+  "rpcsCalledButAbsent": [
+    {
+      "rpc": "lock_record_for_edit",
+      "sites": [
+        {
+          "file": "src/hooks/useRecordEditor.ts",
+          "line": 72
+        }
+      ]
+    },
+    {
+      "rpc": "unlock_record",
+      "sites": [
+        {
+          "file": "src/hooks/useRecordEditor.ts",
+          "line": 88
+        },
+        {
+          "file": "src/hooks/useRecordEditor.ts",
+          "line": 140
+        }
+      ]
+    },
+    {
+      "rpc": "save_record_version",
+      "sites": [
+        {
+          "file": "src/hooks/useRecordEditor.ts",
+          "line": 127
+        }
+      ]
+    },
+    {
+      "rpc": "get_record_version_history",
+      "sites": [
+        {
+          "file": "src/hooks/useRecordEditor.ts",
+          "line": 158
+        }
+      ]
+    },
+    {
+      "rpc": "restore_record_version",
+      "sites": [
+        {
+          "file": "src/hooks/useRecordEditor.ts",
+          "line": 175
+        }
+      ]
+    }
+  ],
+  "prodRpcsNeverCalled": [
+    "_validate_form_required_fields",
+    "create_notification",
+    "current_user_department",
+    "emit_event",
+    "get_empty_records",
+    "get_next_serial",
+    "get_record_by_serial",
+    "get_record_count",
+    "has_role",
+    "is_admin",
+    "is_manager",
+    "jsonb_has_any_text",
+    "jsonb_has_user_content",
+    "notify_admins",
+    "notify_leadership",
+    "purge_all_empty_records",
+    "purge_empty_record",
+    "rls_auto_enable",
+    "update_record_with_lock"
+  ]
+}

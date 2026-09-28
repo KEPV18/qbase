@@ -1,0 +1,89 @@
+{
+  "probeKeySent": "p_qbase_probe_zzz_not_a_real_param",
+  "results": {
+    "create_record_validated": {
+      "status": 404,
+      "code": "PGRST202",
+      "message": "Could not find the function public.create_record_validated(p_qbase_probe_zzz_not_a_real_param) in the schema cache",
+      "hint": null
+    },
+    "append_audit_log": {
+      "status": 404,
+      "code": "PGRST202",
+      "message": "Could not find the function public.append_audit_log(p_qbase_probe_zzz_not_a_real_param) in the schema cache",
+      "hint": null
+    },
+    "create_notifications_batch": {
+      "status": 404,
+      "code": "PGRST202",
+      "message": "Could not find the function public.create_notifications_batch(p_qbase_probe_zzz_not_a_real_param) in the schema cache",
+      "hint": null
+    },
+    "admin_list_users": {
+      "status": 404,
+      "code": "PGRST202",
+      "message": "Could not find the function public.admin_list_users(p_qbase_probe_zzz_not_a_real_param) in the schema cache",
+      "hint": null
+    },
+    "soft_delete_record": {
+      "status": 404,
+      "code": "PGRST202",
+      "message": "Could not find the function public.soft_delete_record(p_qbase_probe_zzz_not_a_real_param) in the schema cache",
+      "hint": null
+    },
+    "update_record_with_lock": {
+      "status": 404,
+      "code": "PGRST202",
+      "message": "Could not find the function public.update_record_with_lock(p_qbase_probe_zzz_not_a_real_param) in the schema cache",
+      "hint": null
+    },
+    "get_next_serial": {
+      "status": 404,
+      "code": "PGRST202",
+      "message": "Could not find the function public.get_next_serial(p_qbase_probe_zzz_not_a_real_param) in the schema cache",
+      "hint": null
+    },
+    "has_role": {
+      "status": 404,
+      "code": "PGRST202",
+      "message": "Could not find the function public.has_role(p_qbase_probe_zzz_not_a_real_param) in the schema cache",
+      "hint": null
+    },
+    "lock_record_for_edit": {
+      "status": 404,
+      "code": "PGRST202",
+      "message": "Could not find the function public.lock_record_for_edit(p_qbase_probe_zzz_not_a_real_param) in the schema cache",
+      "hint": "Perhaps you meant to call the function public.get_record_count"
+    },
+    "unlock_record": {
+      "status": 404,
+      "code": "PGRST202",
+      "message": "Could not find the function public.unlock_record(p_qbase_probe_zzz_not_a_real_param) in the schema cache",
+      "hint": "Perhaps you meant to call the function public.soft_delete_record"
+    },
+    "save_record_version": {
+      "status": 404,
+      "code": "PGRST202",
+      "message": "Could not find the function public.save_record_version(p_qbase_probe_zzz_not_a_real_param) in the schema cache",
+      "hint": "Perhaps you meant to call the function public.create_record_validated"
+    },
+    "get_record_history": {
+      "status": 404,
+      "code": "PGRST202",
+      "message": "Could not find the function public.get_record_history(p_qbase_probe_zzz_not_a_real_param) in the schema cache",
+      "hint": "Perhaps you meant to call the function public.get_record_count"
+    },
+    "get_record_version_history": {
+      "status": 404,
+      "code": "PGRST202",
+      "message": "Could not find the function public.get_record_version_history(p_qbase_probe_zzz_not_a_real_param) in the schema cache",
+      "hint": "Perhaps you meant to call the function public.get_record_count"
+    },
+    "restore_record_version": {
+      "status": 404,
+      "code": "PGRST202",
+      "message": "Could not find the function public.restore_record_version(p_qbase_probe_zzz_not_a_real_param) in the schema cache",
+      "hint": "Perhaps you meant to call the function public.create_record_validated"
+    }
+  }
+}
