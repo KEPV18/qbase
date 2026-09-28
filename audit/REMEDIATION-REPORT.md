@@ -52,7 +52,7 @@ Every fix was verified by `npx tsc -p tsconfig.app.json --noEmit`, `npx vite bui
 ## 5. Database changes (Phases 5–6)
 
 - **None.** Zero production mutations. Every mismatch was resolved on the **code side**, per the rule "never assume the database is wrong". No `supabase db push` was run, no migration was created.
-- **Migration reconciliation:** the repo's `supabase/migrations/*` do not fully describe production (e.g. `20250611_enterprise_rbac.sql` was never applied; live has `project_id`, `department`, `update_record_with_lock`, `get_next_serial`, `admin_list_users`, etc.). **Conclusion: migrations are a partial historical record; the live PostgREST schema is authoritative.** `supabase/config.toml`'s `project_id = qvbqzenpxsduhhhikbcx` was confirmed correct against the JWT `ref` claim of the production anon key (the earlier suspicion of a wrong ref is **retracted**).
+- **Migration reconciliation:** the repo's `supabase/migrations/*` do not fully describe production (e.g. `20250611_enterprise_rbac.sql` was never applied; live has `project_id`, `department`, `update_record_with_lock`, `get_next_serial`, `admin_list_users`, etc.). **Conclusion: migrations are a partial historical record; the live PostgREST schema is authoritative.** **Project-ref correction (post-deployment verification, 2026-09-29):** the *deployed production bundle* (pre-remediation and post-remediation alike) embeds the Supabase host `iouuikteroixnsqazznc.supabase.co`, whose anon-key JWT `ref` claim is `iouuikteroixnsqazznc` — the same project the backup env and every audit capture (`audit/rpc-args.json`) point to. The anon key redacted from `docs/LINEAR_ISSUES.md` decoded to ref `qvbqzenpxsduhhhikbcx` — a *different (legacy) project's* key, matching `supabase/config.toml`; it is **not** the key production ships. Earlier text treating that doc key as "the production anon key" is hereby corrected: the remediation evidence base (schema snapshot, forensics, parity) was captured from the correct, live production project.
 - Residual P3 drift in `src/integrations/supabase/types.ts` **fixed additively**: `records.project_id` (Row + Insert + Update) and `profiles.department` declared (both verified live); `retention_summary`/`upcoming_reviews` **removed** from types per owner decision 5 — the final parity scan returns **zero findings at every severity** (`findings by severity: {}`).
 
 ## 6. RLS / RPC / Auth status
@@ -112,9 +112,9 @@ Deploying this branch removes 15 confirmed runtime-breaking defects from product
 
 | Gate | Result |
 |---|---|
-| TypeScript (`tsc -p tsconfig.app.json --noEmit`) | **PASS — 0 errors** |
-| Tests (`vitest run`) | **30 / 30 passed** (4 files), 0 failed, 0 skipped |
-| Build (`vite build`) | **PASS** (5.96 s; only chunk-size warning) |
+| TypeScript (`tsc -p tsconfig.app.json --noEmit`) | **PASS — 0 errors** (re-run on the merge result `a4cf115`: 0 errors) |
+| Tests (`vitest run`) | **30 / 30 passed** (4 files), 0 failed, 0 skipped (re-run on merge: 30/30) |
+| Build (`vite build`) | **PASS** (5.96 s / 6.43 s on merge; only chunk-size warning) |
 | Schema parity (`audit/schema-parity.mjs`, 236 source files / 174 reachable) | **PASS — `findings by severity: {}` (zero findings)** |
 | Security scan (repo-wide JWT + service-role grep, `audit/` excluded only for the known-clean env-loader scripts) | **PASS — 0 embedded JWTs, 0 secret literals; service-role references are fail-closed env reads only** |
 | 10-term re-scan | 5 RPC names + `record_versions` + `retention_summary`/`upcoming_reviews` = **0 hits**; `approval_status` = F46 form field + real `document_metadata` column + comments/defensive strip; `revision_no` = parse-only in importService (never sent to PostgREST); `.password` = comments + in-memory local fallback + Login form validation |
@@ -128,3 +128,10 @@ Deploying this branch removes 15 confirmed runtime-breaking defects from product
 2. `api/auth/*` OAuth setup flow lacks an OAuth `state` parameter (P3, CSRF on a dev-only admin setup utility; prepared fix available).
 3. `profiles.password` remains as an unused legacy column in production (decision: not dropped now).
 4. `TOKEN_API_KEY` must exist in the Vercel environment before the gated `api/token.js` deploys (the new code fails closed if unset).
+
+## 14. Deployment record (executed 2026-09-29, per owner authorization)
+
+- **GitHub:** remediation merged into the disjoint GitHub main history via merge commit `a4cf115` (all 50 add/add conflicts resolved to the remediation side; the two deliberate deletions `api/users.js` and `useRecordEditor.ts` removed from the merge result again; result tree == remediation tip tree `86bec4a7`). Push was a fast-forward `503fb8b..a4cf115`; GitHub `main` verified at `a4cf115` via API.
+- **Vercel:** automatic GitHub→Vercel production deployment `dpl_GJaaGo1EVJs6UtR2EYTn783K43Sf`, target `production`, **READY** in 28 s. Production aliases: `qbase-sable.vercel.app`, `qbase-kepv18s-projects.vercel.app`, `qbase-git-main-kepv18s-projects.vercel.app`. No manual `vercel deploy` was run.
+- **Production smoke tests (unauthenticated-scope, no production mutation):** index 200 with correct title; all 10 referenced assets 200; SPA fallback `/login` 200; GoTrue healthy (v2.197.0) and processes logins end-to-end (`400 invalid_credentials` on a nonexistent account); PostgREST reachable and RLS denies anon reads on `records` (42501); `POST /api/token` without the shared secret → **403 fail-closed**; `GET /api/users` → **404** (the P0 plaintext-password endpoint is gone from production); bundle verified to embed the production project ref `iouuikteroixnsqazznc` (same project the audit covered — see §5 correction).
+- **Authenticated flows** (dashboard data, record creation/editing, status update, user/profile ops, import) require real credentials; per the "never use production as the testing environment" constraint no records were created or mutated for testing. All write paths were verified against the live schema (parity scan: 0 findings) and are exercised by the same RPCs/columns production already uses; a logged-in manual pass is the remaining owner-side verification.
