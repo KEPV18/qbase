@@ -1,0 +1,16 @@
+Title,Description,Priority,Labels,Estimation
+"CRITICAL: Hardcoded Supabase credentials","The Supabase anon key is hardcoded in src/integrations/supabase/client.ts\n\nMove to environment variables and rotate key immediately.",Critical,"security,critical",2h
+"CRITICAL: Remove TypeScript 'as any' Assertions","47 instances of 'as any' bypassing type safety. Define proper interfaces and enable strict TypeScript.",Critical,"typescript,quality",8h
+"CRITICAL: Add React Error Boundaries","No error boundaries - app crashes on component errors. Create ErrorBoundary and wrap routes.",Critical,"react,stability",4h
+"CRITICAL: Implement Input Validation","No input validation on forms/API. Add Zod schemas and sanitize inputs.",Critical,"security,validation",12h
+"HIGH: Refactor Large Components","RecordCard (350 lines), QuickActions (430 lines), ModulePage (600 lines) need splitting.",High,"refactoring,architecture",16h
+"HIGH: Fix useEffect Dependencies","12 instances of missing dependencies causing stale closures.",High,"react,bugs",6h
+"HIGH: Add Loading States","Components show blank screens during data fetch. Add skeletons and spinners.",High,"ui,ux",8h
+"HIGH: Implement API Retry Logic","No retry on network errors. Add exponential backoff.",High,"api,reliability",6h
+"HIGH: Add React Query","Replace manual fetching with TanStack Query for caching and better UX.",High,"react,data-fetching",16h
+"HIGH: Improve Accessibility","Missing aria-labels, form labels, keyboard nav. Fix a11y violations.",High,"accessibility",12h
+"MEDIUM: Remove Console.log Statements","34 console.log in production code. Clean up and add proper logging.",Medium,"cleanup",2h
+"MEDIUM: Clean Up Unused Imports","23 unused imports. Run eslint --fix and configure auto-removal.",Medium,"cleanup",1h
+"MEDIUM: Add Unit Tests","Current coverage: 0%. Setup Vitest and target 70% coverage.",Medium,"testing",24h
+"MEDIUM: Implement Code Splitting","No lazy loading. Add React.lazy and reduce bundle size.",Medium,"performance",8h
+"MEDIUM: Add Prettier + ESLint Config","Inconsistent formatting. Setup Prettier and strict ESLint rules.",Medium,"tooling",4h

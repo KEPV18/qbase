@@ -1,0 +1,324 @@
+// ============================================================================
+// F/08 — Order Form / Order Confirmation (Company Ongoing Services)
+// EXACT MATCH of the original DOCX template — 17 rows × 14 columns
+// Labels on the left, values filling merged cells to the right
+// As it appears in: 01- Sales Records/F-08 - Order Form/F_08-001.docx
+// ============================================================================
+
+import React, { useCallback, useMemo } from "react";
+import { cn } from "@/lib/utils";
+import { Plus, Trash2 } from "lucide-react";
+import { FormDocument } from "../FormKit";
+import {
+  valAny, val, todayDDMMYYYY,
+  labelCls, valueCls, emptyValueCls,
+  Cell, LabelCell, DateOrTextCell, TextAreaCell,
+  TitleRow, FooterRow,
+  useDynamicRows,
+  type FormTemplateBaseProps,
+  type DynamicRowItem,
+} from "./FormTemplateKit";
+
+export type F08Props = FormTemplateBaseProps;
+
+export function F08Template({ data, isTemplate = true, editMode = false, onChange, className }: F08Props) {
+  const d = data ?? {};
+  const readonly = isTemplate || !editMode;
+
+  // ── Product items via shared dynamic row hook ──────────────────────
+  const { rows: items, addRow: addItem, removeRow: removeItem, updateRowField: updateItem } = useDynamicRows<{
+    product_name: string; specifications: string; qty: string;
+  }>({
+    data: d,
+    field: "items",
+    defaultItem: { product_name: "", specifications: "", qty: "" },
+    editMode,
+    onChange,
+  });
+
+  const serialValue = val(d, "serial");
+
+  return (
+    <FormDocument formCode="F/08" formName="Purchase Order" serial={val(d, "serial")} sectionName="Sales & Customer Service">
+      {/* ====== DESKTOP: Full DOCX-replica table ====== */}
+      <div className="hidden md:block">
+        <table className="w-full border-collapse border border-border">
+          <colgroup>
+            <col className="w-[8%]" /><col className="w-[8%]" /><col className="w-[8%]" />
+            <col className="w-[8%]" /><col className="w-[7%]" /><col className="w-[7%]" />
+            <col className="w-[7%]" /><col className="w-[7%]" /><col className="w-[7%]" />
+            <col className="w-[7%]" /><col className="w-[7%]" /><col className="w-[8%]" />
+            <col className="w-[8%]" /><col className="w-[4%]" />
+          </colgroup>
+
+          <tbody>
+            {/* ROW 0: Title + Form Code */}
+            <tr>
+              <td colSpan={13} className="border border-border px-3 py-2 text-center">
+                <strong className="text-sm uppercase text-foreground">
+                  Order Form / Order Confirmation
+                </strong>
+              </td>
+              <td className="border border-border px-2 py-1 text-[10px] text-gray-500 dark:text-gray-400 text-center leading-tight">
+                F/08<br />Rev No. {serialValue}
+              </td>
+            </tr>
+
+            {/* ROW 1: Sr. No. + Date */}
+            <tr>
+              <td colSpan={8} className="border border-border px-3 py-1.5 text-sm text-foreground">
+                <strong>Sr. No.</strong> 🡪&nbsp;&nbsp;{serialValue}
+              </td>
+              <td colSpan={6} className="border border-border px-3 py-1.5 text-sm text-foreground">
+                <strong>Date</strong> 🡪&nbsp;&nbsp;{val(d, "date") || todayDDMMYYYY()}
+              </td>
+            </tr>
+
+            {/* ROW 2: Customer */}
+            <tr>
+              <td colSpan={2} className="border border-border px-3 py-1.5 text-sm font-semibold text-foreground">
+                Customer
+              </td>
+              <td colSpan={1} className="border border-border"></td>
+              <td colSpan={11} className="border border-border px-3 py-1.5 text-sm text-foreground">
+                {val(d, "client_name") || "--"}
+              </td>
+            </tr>
+
+            {/* ROW 3: Mode Of Receipt */}
+            <tr>
+              <td colSpan={2} className="border border-border px-3 py-1.5 text-sm font-semibold text-foreground">
+                Mode Of Receipt
+              </td>
+              <td colSpan={1} className="border border-border"></td>
+              <td colSpan={11} className="border border-border px-3 py-1.5 text-sm text-foreground">
+                {val(d, "mode_of_receipt") || "--"}
+              </td>
+            </tr>
+
+            {/* ROW 4: Product Table Header */}
+            <tr>
+              <td colSpan={1} className="border border-border px-2 py-1.5 text-sm font-semibold text-foreground">
+                Sr. No.
+              </td>
+              <td colSpan={3} className="border border-border px-2 py-1.5 text-sm font-semibold text-foreground">
+                Product Name
+              </td>
+              <td colSpan={7} className="border border-border px-2 py-1.5 text-sm font-semibold text-foreground">
+                Specifications
+              </td>
+              <td colSpan={3} className="border border-border px-2 py-1.5 text-sm font-semibold text-foreground">
+                Qty.
+              </td>
+            </tr>
+
+            {/* ROWS 5-9: Product Items */}
+            {items.map((item, idx) => (
+              <tr key={idx}>
+                <td className="border border-border px-2 py-1.5 text-sm text-foreground text-center">
+                  {editMode ? (
+                    <input className="w-full text-xs px-1 py-0.5 bg-transparent border-0 border-b border-border focus:outline-none text-center"
+                      value={idx + 1} disabled />
+                  ) : (
+                    idx + 1
+                  )}
+                </td>
+                <td colSpan={3} className="border border-border px-2 py-1.5 text-sm">
+                  {editMode ? (
+                    <input className="w-full text-xs px-1 py-0.5 bg-transparent border-0 border-b border-border focus:outline-none"
+                      value={item.product_name}
+                      onChange={(e) => updateItem(idx, "product_name", e.target.value)}
+                      placeholder="Product name" />
+                  ) : (
+                    <span className="text-foreground">{item.product_name || "--"}</span>
+                  )}
+                </td>
+                <td colSpan={7} className="border border-border px-2 py-1.5 text-sm">
+                  {editMode ? (
+                    <input className="w-full text-xs px-1 py-0.5 bg-transparent border-0 border-b border-border focus:outline-none"
+                      value={item.specifications}
+                      onChange={(e) => updateItem(idx, "specifications", e.target.value)}
+                      placeholder="Specifications" />
+                  ) : (
+                    <span className="text-foreground">{item.specifications || "--"}</span>
+                  )}
+                </td>
+                <td colSpan={3} className="border border-border px-2 py-1.5 text-sm">
+                  {editMode ? (
+                    <input className="w-full text-xs px-1 py-0.5 bg-transparent border-0 border-b border-border focus:outline-none"
+                      value={item.qty}
+                      onChange={(e) => updateItem(idx, "qty", e.target.value)}
+                      placeholder="Qty" />
+                  ) : (
+                    <span className="text-foreground">{item.qty || "--"}</span>
+                  )}
+                  {editMode && (
+                    <button onClick={() => removeItem(idx)} className="ml-1 text-red-500 hover:text-red-700">
+                      <Trash2 size={12} />
+                    </button>
+                  )}
+                </td>
+              </tr>
+            ))}
+
+            {editMode && (
+              <tr>
+                <td colSpan={14} className="border border-border px-2 py-1">
+                  <button onClick={addItem} className="flex items-center gap-1 text-xs text-blue-600 hover:underline">
+                    <Plus size={14} /> Add Product
+                  </button>
+                </td>
+              </tr>
+            )}
+
+            {/* ROW 10: Test Certificate */}
+            <tr>
+              <td colSpan={5} className="border border-border px-3 py-1.5 text-sm font-semibold text-foreground">
+                Requirement Of Test Certificate
+              </td>
+              <td colSpan={2} className="border border-border"></td>
+              <td colSpan={7} className="border border-border px-3 py-1.5 text-sm text-foreground">
+                {editMode ? (
+                  <input className="w-full text-xs px-1 py-0.5 bg-transparent border-0 border-b border-border focus:outline-none"
+                    value={val(d, "test_certificate_required")}
+                    onChange={(e) => onChange && onChange("test_certificate_required", e.target.value)}
+                    placeholder="Yes / No" />
+                ) : (
+                  val(d, "test_certificate_required") || "Yes / No"
+                )}
+              </td>
+            </tr>
+
+            {/* ROW 11: Delivery Schedule */}
+            <tr>
+              <td colSpan={5} className="border border-border px-3 py-1.5 text-sm font-semibold text-foreground">
+                Delivery Schedule
+              </td>
+              <td colSpan={2} className="border border-border"></td>
+              <td colSpan={7} className="border border-border px-3 py-1.5 text-sm text-foreground">
+                {editMode ? (
+                  <input className="w-full text-xs px-1 py-0.5 bg-transparent border-0 border-b border-border focus:outline-none"
+                    value={val(d, "delivery_schedule")}
+                    onChange={(e) => onChange && onChange("delivery_schedule", e.target.value)}
+                    placeholder="Delivery schedule" />
+                ) : (
+                  val(d, "delivery_schedule") || "--"
+                )}
+              </td>
+            </tr>
+
+            {/* ROW 12: Statutory */}
+            <tr>
+              <td colSpan={5} className="border border-border px-3 py-1.5 text-sm font-semibold text-foreground">
+                Statutory And Regulatory Requirements, If Any
+              </td>
+              <td colSpan={2} className="border border-border"></td>
+              <td colSpan={7} className="border border-border px-3 py-1.5 text-sm text-foreground">
+                {editMode ? (
+                  <input className="w-full text-xs px-1 py-0.5 bg-transparent border-0 border-b border-border focus:outline-none"
+                    value={val(d, "complies")}
+                    onChange={(e) => onChange && onChange("complies", e.target.value)}
+                    placeholder="Complies / Does Not Comply" />
+                ) : (
+                  val(d, "complies") || "Complies / Does Not Comply"
+                )}
+              </td>
+            </tr>
+
+            {/* ROW 13: Order Status */}
+            <tr>
+              <td colSpan={5} className="border border-border px-3 py-1.5 text-sm font-semibold text-foreground">
+                Order
+              </td>
+              <td colSpan={2} className="border border-border"></td>
+              <td colSpan={7} className="border border-border px-3 py-1.5 text-sm text-foreground">
+                {editMode ? (
+                  <input className="w-full text-xs px-1 py-0.5 bg-transparent border-0 border-b border-border focus:outline-none"
+                    value={val(d, "order_status")}
+                    onChange={(e) => onChange && onChange("order_status", e.target.value)}
+                    placeholder="— Accepted / Rejected" />
+                ) : (
+                  val(d, "order_status") || "— Accepted / Rejected"
+                )}
+              </td>
+            </tr>
+
+            {/* ROW 14: Remarks + Reviewed By */}
+            <tr>
+              <td colSpan={8} className="border border-border px-3 py-1.5 text-sm text-foreground whitespace-pre-wrap">
+                <strong>Remarks :</strong> {val(d, "remarks") || "--"}
+              </td>
+              <td colSpan={6} className="border border-border px-3 py-1.5 text-sm text-foreground">
+                <strong>Reviewed By : Authorised Person</strong> {val(d, "reviewed_by") || "--"}
+              </td>
+            </tr>
+
+            {/* ROW 15: Bill No. */}
+            <tr>
+              <td colSpan={2} className="border border-border px-3 py-1.5 text-sm font-semibold text-foreground">
+                Bill No.
+              </td>
+              <td colSpan={1} className="border border-border"></td>
+              <td colSpan={3} className="border border-border px-3 py-1.5 text-sm text-foreground">
+                {val(d, "bill_no") || "N/A"}
+              </td>
+              <td colSpan={3} className="border border-border px-3 py-1.5 text-sm text-gray-500 dark:text-gray-400">
+                (Service Contract Based)
+              </td>
+              <td colSpan={1} className="border border-border"></td>
+              <td colSpan={2} className="border border-border"></td>
+              <td colSpan={2} className="border border-border"></td>
+            </tr>
+
+            {/* ROW 16: Despatch Date */}
+            <tr>
+              <td colSpan={2} className="border border-border px-3 py-1.5 text-sm font-semibold text-foreground">
+                Despatch Date
+              </td>
+              <td colSpan={1} className="border border-border"></td>
+              <td colSpan={3} className="border border-border px-3 py-1.5 text-sm text-foreground">
+                {val(d, "despatch_date") || "--"}
+              </td>
+              <td colSpan={3} className="border border-border"></td>
+              <td colSpan={1} className="border border-border"></td>
+              <td colSpan={2} className="border border-border"></td>
+              <td colSpan={2} className="border border-border"></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      {/* ====== MOBILE: Card stack ====== */}
+      <div className="block md:hidden space-y-2">
+        <div className="border border-border rounded-sm p-3 text-center text-sm">
+          <strong>Order Form / Order Confirmation</strong>
+          <div className="text-xs text-muted-foreground mt-1">{serialValue}</div>
+        </div>
+        <div className="border border-border rounded-sm p-3 space-y-2">
+          <div><span className="text-xs font-semibold">Date:</span> {val(d, "date") || todayDDMMYYYY()}</div>
+          <div><span className="text-xs font-semibold">Customer:</span> {val(d, "client_name") || "--"}</div>
+          <div><span className="text-xs font-semibold">Mode Of Receipt:</span> {val(d, "mode_of_receipt") || "--"}</div>
+        </div>
+        {items.map((item, idx) => (
+          <div key={idx} className="border border-border rounded-sm p-3 space-y-1">
+            <div className="text-xs font-semibold">Item {idx + 1}</div>
+            <div className="text-xs"><span className="font-semibold">Product:</span> {item.product_name || "--"}</div>
+            <div className="text-xs"><span className="font-semibold">Specs:</span> {item.specifications || "--"}</div>
+            <div className="text-xs"><span className="font-semibold">Qty:</span> {item.qty || "--"}</div>
+          </div>
+        ))}
+        <div className="border border-border rounded-sm p-3 space-y-1 text-xs">
+          <div><span className="font-semibold">Test Cert:</span> {val(d, "test_certificate_required") || "Yes / No"}</div>
+          <div><span className="font-semibold">Delivery:</span> {val(d, "delivery_schedule") || "--"}</div>
+          <div><span className="font-semibold">Statutory:</span> {val(d, "complies") || "Complies / Does Not Comply"}</div>
+          <div><span className="font-semibold">Order:</span> {val(d, "order_status") || "— Accepted / Rejected"}</div>
+          <div><span className="font-semibold">Remarks:</span> {val(d, "remarks") || "--"}</div>
+          <div><span className="font-semibold">Reviewed By:</span> {val(d, "reviewed_by") || "--"}</div>
+          <div><span className="font-semibold">Bill No.:</span> {val(d, "bill_no") || "N/A"}</div>
+          <div><span className="font-semibold">Despatch Date:</span> {val(d, "despatch_date") || "--"}</div>
+        </div>
+      </div>
+    </FormDocument>
+
+    );
+}

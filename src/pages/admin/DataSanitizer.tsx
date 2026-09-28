@@ -1,0 +1,517 @@
+// ============================================================================
+// QBase — Data Retrofitting & Completion Hub
+// Admin-only page for detecting:
+//   1. Ghost records (empty form_data) — from RPC
+//   2. Incomplete records (missing required fields) — client-side schema check
+// NO deletion — records are preserved for ISO compliance (sequential serial integrity).
+// ============================================================================
+
+import { useState, useEffect, useCallback, useMemo } from "react";
+import { useNavigate } from "react-router-dom";
+import { AppShell } from "@/components/layout/AppShell";
+import { PageHeader } from "@/components/ui/PageHeader";
+import { StatsRow } from "@/components/ui/StatsRow";
+import { StateScreen } from "@/components/ui/StateScreen";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
+import {
+  Table,
+  TableHeader,
+  TableBody,
+  TableHead,
+  TableRow,
+  TableCell,
+} from "@/components/ui/table";
+import {
+  ShieldCheck, RefreshCw, Loader2, AlertTriangle,
+  Database, Ghost, CheckCircle, FileEdit, Archive,
+  Search, X, AlertCircle,
+} from "lucide-react";
+import { toast } from "sonner";
+import { cn } from "@/lib/utils";
+import { restRpc } from "@/services/userService";
+import { isoToDisplay } from "@/schemas";
+import { getDeptTheme, deptBorderStyle, deptAccentStyle } from "@/lib/departmentTheme";
+import { FORM_SCHEMAS } from "@/data/formSchemas";
+import { useRecords } from "@/hooks/useRecordStorage";
+
+// ============================================================================
+// Types
+// ============================================================================
+
+interface GhostRecord {
+  id: string;
+  form_code: string;
+  serial: string;
+  form_name: string;
+  section: number | null;
+  section_name: string | null;
+  created_by: string;
+  created_at: string;
+  updated_at: string;
+  form_data: Record<string, unknown> | null;
+  is_empty: boolean;
+}
+
+interface IncompleteRecord {
+  id: string;
+  form_code: string;
+  serial: string;
+  form_name: string;
+  section: number | null;
+  section_name: string | null;
+  created_by: string;
+  created_at: string;
+  updated_at: string;
+  form_data: Record<string, unknown> | null;
+  empty_fields: string[];
+}
+
+interface ScanSummary {
+  totalRecords: number;
+  ghostCount: number;
+  incompleteCount: number;
+}
+
+// ============================================================================
+// Component
+// ============================================================================
+
+export default function DataSanitizer() {
+  const navigate = useNavigate();
+  const [loading, setLoading] = useState(true);
+  const [scanning, setScanning] = useState(false);
+  const [ghosts, setGhosts] = useState<GhostRecord[]>([]);
+  const [incomplete, setIncomplete] = useState<IncompleteRecord[]>([]);
+  const [summary, setSummary] = useState<ScanSummary>({ totalRecords: 0, ghostCount: 0, incompleteCount: 0 });
+  const [error, setError] = useState<string | null>(null);
+  const [search, setSearch] = useState("");
+  const [departmentFilter, setDepartmentFilter] = useState<string | null>(null);
+  const [activeTab, setActiveTab] = useState<'ghosts' | 'incomplete'>('incomplete');
+
+  // ── Use the existing useRecords hook for all records ──
+  const { data: allRecords, isLoading: recordsLoading } = useRecords();
+
+  // ── Scan: fetch ghost records + total count via RPC, validate client-side ──
+  const scan = useCallback(async () => {
+    setScanning(true);
+    setError(null);
+    try {
+      const [ghostResult, countResult] = await Promise.all([
+        restRpc<GhostRecord[]>("get_empty_records"),
+        restRpc<number>("get_record_count"),
+      ]);
+
+      if (ghostResult.error) throw new Error(ghostResult.error);
+      if (countResult.error) throw new Error(countResult.error);
+
+      const ghostData = ghostResult.data || [];
+      const total = countResult.data || 0;
+
+      // Client-side: check ALL records for empty required fields using schema
+      // Note: parseRowToRecord() spreads form_data into top-level keys,
+      // so business fields are at rec.nc_description, not rec.form_data.nc_description
+      const incompleteRecords: IncompleteRecord[] = [];
+      if (allRecords) {
+        for (const rec of allRecords) {
+          const schema = FORM_SCHEMAS.find(s => s.code === rec.formCode);
+          if (!schema) continue;
+
+          const emptyFields: string[] = [];
+
+          for (const field of schema.fields) {
+            if (!field.required) continue;
+            const val = rec[field.key];
+            // Deep array enforcement: table/array fields must have >0 items
+            if (field.type === 'table' || field.type === 'array') {
+              if (!Array.isArray(val) || val.length === 0) {
+                emptyFields.push(field.key);
+              }
+            } else if (val === null || val === undefined || val === '') {
+              emptyFields.push(field.key);
+            }
+          }
+
+          if (emptyFields.length > 0) {
+            incompleteRecords.push({
+              id: rec.id || '',
+              form_code: rec.formCode || '',
+              serial: rec.serial || '',
+              form_name: rec.formName || '',
+              section: rec._section || null,
+              section_name: rec._sectionName || null,
+              created_by: rec._createdBy || '',
+              created_at: rec._createdAt || '',
+              updated_at: rec._lastModifiedAt || '',
+              form_data: rec.form_data || {},
+              empty_fields: emptyFields,
+            });
+          }
+        }
+      }
+
+      setGhosts(ghostData);
+      setIncomplete(incompleteRecords);
+      setSummary({
+        totalRecords: total,
+        ghostCount: ghostData.length,
+        incompleteCount: incompleteRecords.length,
+      });
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "Scan failed";
+      setError(msg);
+      toast.error(`Scan failed: ${msg}`);
+    } finally {
+      setScanning(false);
+      setLoading(false);
+    }
+  }, [allRecords]);
+
+  // ── Initial scan on mount ────────────────────────────────────────────────
+  useEffect(() => { scan(); }, [scan]);
+
+  // ── Navigate to record edit page ────────────────────────────────────────
+  const populateRecord = (record: GhostRecord | IncompleteRecord) => {
+    navigate(`/records/${encodeURIComponent(record.serial)}?edit=true`);
+  };
+
+  // ── Derived ──────────────────────────────────────────────────────────────
+  const currentList = activeTab === 'ghosts' ? ghosts : incomplete;
+
+  const departments = useMemo(() => {
+    const deps = [...new Set(currentList.map(g => g.section_name).filter(Boolean))] as string[];
+    return deps.sort();
+  }, [currentList]);
+
+  const filteredList = useMemo(() => {
+    let result = currentList;
+    if (search) {
+      const q = search.toLowerCase();
+      result = result.filter(g =>
+        g.serial.toLowerCase().includes(q) ||
+        g.form_code.toLowerCase().includes(q) ||
+        (g.form_name || "").toLowerCase().includes(q) ||
+        (g.section_name || "").toLowerCase().includes(q) ||
+        (g.created_by || "").toLowerCase().includes(q)
+      );
+    }
+    if (departmentFilter) {
+      result = result.filter(g => g.section_name === departmentFilter);
+    }
+    return result;
+  }, [currentList, search, departmentFilter]);
+
+  const healthScore = summary.totalRecords > 0
+    ? Math.round(((summary.totalRecords - summary.ghostCount - summary.incompleteCount) / summary.totalRecords) * 100)
+    : 100;
+
+  // ── Loading state (initial mount) ───────────────────────────────────────
+  if (loading && !error) {
+    return (
+      <AppShell breadcrumbs={[{ label: "Admin", path: "/admin/accounts" }, { label: "Data Retrofitting" }]}>
+        <StateScreen state="loading" title="Scanning records…" />
+      </AppShell>
+    );
+  }
+
+  // ── Error state (initial load failed, no data) ──────────────────────────
+  if (error && ghosts.length === 0 && incomplete.length === 0) {
+    return (
+      <AppShell breadcrumbs={[{ label: "Admin", path: "/admin/accounts" }, { label: "Data Retrofitting" }]}>
+        <StateScreen
+          state="error"
+          title="Scan failed"
+          message={error}
+          action={{ label: "Retry", onClick: scan }}
+        />
+      </AppShell>
+    );
+  }
+
+  // ── Render ───────────────────────────────────────────────────────────────
+  return (
+    <AppShell breadcrumbs={[{ label: "Admin", path: "/admin/accounts" }, { label: "Data Retrofitting" }]}>
+      <div className="space-y-6 animate-fade-in">
+
+        {/* ── Header ── */}
+        <PageHeader
+          icon={Archive}
+          title="Data Retrofitting & Completion Hub"
+          description="Detect ghost records and incomplete records. Serial integrity preserved for ISO compliance."
+          action={
+            <Button variant="outline" size="sm" onClick={scan} disabled={scanning}>
+              {scanning ? (
+                <Loader2 className="w-4 h-4 animate-spin mr-2" />
+              ) : (
+                <RefreshCw className="w-4 h-4 mr-2" />
+              )}
+              {scanning ? "Scanning..." : "Rescan"}
+            </Button>
+          }
+        />
+
+        {/* ── Error Banner (post-initial-load) ── */}
+        {error && (
+          <div className="flex items-start gap-3 p-4 bg-destructive/10 border border-destructive/30 rounded-md">
+            <AlertTriangle className="w-5 h-5 text-destructive shrink-0 mt-0.5" />
+            <div className="text-xs text-destructive">
+              <p className="font-medium mb-0.5">Scan error</p>
+              <p>{error}</p>
+            </div>
+          </div>
+        )}
+
+        {/* ── Summary Stats ── */}
+        <StatsRow
+          stats={[
+            { icon: Database, value: summary.totalRecords.toLocaleString(), label: "Total System Records" },
+            { icon: Ghost, value: summary.ghostCount.toLocaleString(), label: "Ghost Records", variant: summary.ghostCount > 0 ? "warning" : "success" },
+            { icon: AlertCircle, value: summary.incompleteCount.toLocaleString(), label: "Incomplete Records", variant: summary.incompleteCount > 0 ? "destructive" : "success" },
+            { icon: ShieldCheck, value: `${healthScore}%`, label: "Integrity Score", variant: healthScore >= 95 ? "success" : healthScore >= 80 ? "warning" : "destructive" },
+          ]}
+          columns={4}
+        />
+
+        {/* ── Tab Switcher ── */}
+        {summary.ghostCount > 0 || summary.incompleteCount > 0 ? (
+          <div className="flex items-center gap-2 border-b border-border/50 pb-2">
+            <button
+              onClick={() => setActiveTab('incomplete')}
+              className={cn(
+                "px-4 py-2 text-sm font-semibold rounded-t-md transition-colors",
+                activeTab === 'incomplete'
+                  ? "bg-foreground text-background"
+                  : "text-muted-foreground hover:text-foreground bg-muted/30"
+              )}
+            >
+              <AlertCircle className="w-4 h-4 inline mr-1.5" />
+              Incomplete Records
+              {summary.incompleteCount > 0 && (
+                <Badge variant="destructive" className="ml-2 text-[10px] px-1.5 py-0">
+                  {summary.incompleteCount}
+                </Badge>
+              )}
+            </button>
+            <button
+              onClick={() => setActiveTab('ghosts')}
+              className={cn(
+                "px-4 py-2 text-sm font-semibold rounded-t-md transition-colors",
+                activeTab === 'ghosts'
+                  ? "bg-foreground text-background"
+                  : "text-muted-foreground hover:text-foreground bg-muted/30"
+              )}
+            >
+              <Ghost className="w-4 h-4 inline mr-1.5" />
+              Ghost Records
+              {summary.ghostCount > 0 && (
+                <Badge variant="secondary" className="ml-2 text-[10px] px-1.5 py-0">
+                  {summary.ghostCount}
+                </Badge>
+              )}
+            </button>
+          </div>
+        ) : null}
+
+        {/* ── All Complete State ── */}
+        {!error && ghosts.length === 0 && incomplete.length === 0 && (
+          <StateScreen
+            state="success"
+            icon={CheckCircle}
+            title="All Records Clean"
+            message={`All ${summary.totalRecords.toLocaleString()} active records have valid form data and all required fields are populated. No retrofitting needed.`}
+          />
+        )}
+
+        {/* ── Records List ── */}
+        {currentList.length > 0 && (
+          <>
+            {/* Department Filter Pills */}
+            {departments.length > 1 && (
+              <div className="flex flex-wrap items-center gap-2">
+                <button
+                  onClick={() => setDepartmentFilter(null)}
+                  className={cn(
+                    "px-3 py-1.5 rounded-md text-xs font-semibold transition-colors",
+                    !departmentFilter
+                      ? "bg-foreground text-background"
+                      : "bg-muted text-muted-foreground hover:text-foreground"
+                  )}
+                >
+                  All Departments
+                </button>
+                {departments.map(dept => (
+                  <button
+                    key={dept}
+                    onClick={() => setDepartmentFilter(departmentFilter === dept ? null : dept)}
+                    className={cn(
+                      "px-3 py-1.5 rounded-md text-xs font-semibold transition-colors",
+                      departmentFilter === dept
+                        ? "bg-foreground text-background"
+                        : "bg-muted text-muted-foreground hover:text-foreground"
+                    )}
+                  >
+                    {dept}
+                  </button>
+                ))}
+              </div>
+            )}
+
+            {/* Search + Table */}
+            <div className="space-y-3">
+              {/* Search Bar */}
+              <div className="relative max-w-sm">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground" />
+                <Input
+                  placeholder="Search by serial, form code, or name…"
+                  value={search}
+                  onChange={e => setSearch(e.target.value)}
+                  className="pl-9 h-9 text-sm bg-background border-border/50"
+                />
+                {search && (
+                  <button
+                    onClick={() => setSearch("")}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                  >
+                    <X className="w-3.5 h-3.5" />
+                  </button>
+                )}
+              </div>
+
+              {/* Table */}
+              <div className="border border-border/50 rounded-md overflow-hidden bg-card/40 backdrop-blur-xl">
+                <Table>
+                  <TableHeader>
+                    <TableRow className="border-b border-border/30 bg-muted/20">
+                      <TableHead className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground w-[140px]">
+                        Serial
+                      </TableHead>
+                      <TableHead className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground w-[70px]">
+                        Form
+                      </TableHead>
+                      <TableHead className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+                        Name
+                      </TableHead>
+                      <TableHead className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground w-[120px]">
+                        Created By
+                      </TableHead>
+                      <TableHead className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground w-[140px]">
+                        Department
+                      </TableHead>
+                      {activeTab === 'incomplete' && (
+                        <TableHead className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground w-[200px]">
+                          Missing Fields
+                        </TableHead>
+                      )}
+                      <TableHead className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground w-[100px]">
+                        Created
+                      </TableHead>
+                      <TableHead className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground w-[130px] text-right">
+                        Action
+                      </TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {filteredList.length === 0 ? (
+                      <TableRow>
+                        <TableCell
+                          colSpan={activeTab === 'incomplete' ? 8 : 7}
+                          className="text-center text-muted-foreground text-sm py-8"
+                        >
+                          No records match your search.
+                        </TableCell>
+                      </TableRow>
+                    ) : filteredList.map((record, i) => {
+                      const deptName = record.section_name || "Management & Documentation";
+                      const rowStyle = deptBorderStyle(deptName);
+                      const deptBadge = deptAccentStyle(deptName);
+                      const isIncomplete = 'empty_fields' in record;
+                      return (
+                      <TableRow
+                        key={record.id}
+                        className="border-b border-border/30 hover:bg-muted/20 transition-colors animate-fade-in"
+                        style={{ ...rowStyle, animationDelay: `${i * 50}ms` }}
+                      >
+                        <TableCell className="font-mono text-xs font-semibold text-foreground py-3">
+                          {record.serial}
+                        </TableCell>
+                        <TableCell className="py-3">
+                          <Badge variant="outline" className="font-mono text-xs">
+                            {record.form_code}
+                          </Badge>
+                        </TableCell>
+                        <TableCell className="text-sm text-foreground py-3">
+                          {record.form_name || <span className="text-muted-foreground italic">—</span>}
+                        </TableCell>
+                        <TableCell className="text-xs text-muted-foreground py-3">
+                          {record.created_by || <span className="italic">Unknown</span>}
+                        </TableCell>
+                        <TableCell className="py-3">
+                          {record.section_name ? (
+                            <span
+                              className="backdrop-blur-sm border rounded-md px-2 py-0.5 text-xs font-medium"
+                              style={deptBadge}
+                            >
+                              {record.section_name}
+                            </span>
+                          ) : (
+                            <span className="text-muted-foreground text-xs italic">—</span>
+                          )}
+                        </TableCell>
+                        {isIncomplete && (
+                          <TableCell className="py-3">
+                            <div className="flex flex-wrap gap-1">
+                              {(record as IncompleteRecord).empty_fields.map(f => (
+                                <Badge key={f} variant="destructive" className="text-[10px] px-1.5 py-0">
+                                  {f}
+                                </Badge>
+                              ))}
+                            </div>
+                          </TableCell>
+                        )}
+                        <TableCell className="text-xs text-muted-foreground py-3">
+                          {record.created_at ? isoToDisplay(record.created_at) : "—"}
+                        </TableCell>
+                        <TableCell className="py-3 text-right">
+                          <Button
+                            variant="default"
+                            size="sm"
+                            onClick={() => populateRecord(record)}
+                          >
+                            <FileEdit className="w-4 h-4 mr-1.5" />
+                            {isIncomplete ? "Fix Fields" : "Complete Data"}
+                          </Button>
+                        </TableCell>
+                      </TableRow>
+                      )})}
+                    </TableBody>
+                </Table>
+                {/* Footer count */}
+                <div className="px-4 py-2 border-t border-border bg-muted/20 text-[10px] text-muted-foreground">
+                  {search || departmentFilter
+                    ? `${filteredList.length} of ${currentList.length} records`
+                    : `${currentList.length} record${currentList.length !== 1 ? "s" : ""} found`
+                  }
+                </div>
+              </div>
+            </div>
+
+            {/* ── Info Banner ── */}
+            <div className="flex items-start gap-3 p-4 bg-card/40 backdrop-blur-xl border border-border/50 rounded-md">
+              <Archive className="w-5 h-5 text-muted-foreground shrink-0 mt-0.5" />
+              <div className="text-xs text-muted-foreground">
+                <p className="font-medium text-foreground mb-1">Retrofitting Workflow</p>
+                <ol className="list-decimal list-inside space-y-0.5">
+                  <li>Click "Fix Fields" or "Complete Data" next to any flagged record.</li>
+                  <li>The record opens in edit mode — Form Code, Serial, Created By, and Department remain locked.</li>
+                  <li>Fill in the missing fields from your offline Word document or source data.</li>
+                  <li>Save — the record is now fully populated and the Integrity Score will improve.</li>
+                </ol>
+              </div>
+            </div>
+          </>
+        )}
+      </div>
+    </AppShell>
+  );
+}
