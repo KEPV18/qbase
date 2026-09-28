@@ -306,13 +306,6 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "document_metadata_parent_document_id_fkey"
-            columns: ["parent_document_id"]
-            isOneToOne: false
-            referencedRelation: "retention_summary"
-            referencedColumns: ["id"]
-          },
-          {
             foreignKeyName: "document_metadata_reviewer_id_fkey"
             columns: ["reviewer_id"]
             isOneToOne: false
@@ -365,13 +358,6 @@ export type Database = {
             columns: ["document_id"]
             isOneToOne: false
             referencedRelation: "document_metadata"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "document_reviews_document_id_fkey"
-            columns: ["document_id"]
-            isOneToOne: false
-            referencedRelation: "retention_summary"
             referencedColumns: ["id"]
           },
           {
@@ -433,13 +419,6 @@ export type Database = {
             columns: ["document_id"]
             isOneToOne: false
             referencedRelation: "document_metadata"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "document_versions_document_id_fkey"
-            columns: ["document_id"]
-            isOneToOne: false
-            referencedRelation: "retention_summary"
             referencedColumns: ["id"]
           },
         ]
@@ -632,6 +611,9 @@ export type Database = {
           password: string | null
           updated_at: string | null
           user_id: string
+          // Verified present in production via the live PostgREST OpenAPI
+          // document (audit/rpc-args.json) — was missing from this generated file.
+          department: string | null
         }
         Insert: {
           created_at?: string | null
@@ -675,6 +657,10 @@ export type Database = {
           deleted_at: string | null
           created_at: string
           updated_at: string
+          // Verified present in production via the live PostgREST OpenAPI
+          // document (audit/rpc-args.json snapshot 2026-09-28) — this file
+          // predated the column and was missing it.
+          project_id: string | null
         }
         Insert: {
           id?: string
@@ -693,6 +679,9 @@ export type Database = {
           deleted_at?: string | null
           created_at?: string
           updated_at?: string
+          // Verified present in production via the live PostgREST OpenAPI
+          // document (audit/rpc-args.json) — was missing from this generated file.
+          project_id?: string | null
         }
         Update: {
           id?: string
@@ -711,6 +700,7 @@ export type Database = {
           deleted_at?: string | null
           created_at?: string
           updated_at?: string
+          project_id?: string | null
         }
         Relationships: []
       }
@@ -794,224 +784,6 @@ export type Database = {
       }
     }
     Views: {
-      retention_summary: {
-        Row: {
-          approval_date: string | null
-          approval_status: string | null
-          approver_id: string | null
-          approver_name: string | null
-          archival_date: string | null
-          author_id: string | null
-          author_name: string | null
-          bucket_id: string | null
-          change_description: string | null
-          change_reason: string | null
-          checksum: string | null
-          classification: string | null
-          created_at: string | null
-          created_by: string | null
-          department: string | null
-          description: string | null
-          document_number: string | null
-          file_size: number | null
-          form_code: string | null
-          id: string | null
-          iso_clause: string | null
-          keywords: string[] | null
-          mime_type: string | null
-          parent_document_id: string | null
-          previous_version: string | null
-          process_id: string | null
-          record_type: string | null
-          related_documents: string[] | null
-          retention_status: string | null
-          retention_until: string | null
-          retention_years: number | null
-          review_date: string | null
-          reviewer_id: string | null
-          reviewer_name: string | null
-          revision_date: string | null
-          storage_path: string | null
-          title: string | null
-          updated_at: string | null
-          updated_by: string | null
-          version: string | null
-        }
-        Insert: {
-          approval_date?: string | null
-          approval_status?: string | null
-          approver_id?: string | null
-          approver_name?: string | null
-          archival_date?: string | null
-          author_id?: string | null
-          author_name?: string | null
-          bucket_id?: string | null
-          change_description?: string | null
-          change_reason?: string | null
-          checksum?: string | null
-          classification?: string | null
-          created_at?: string | null
-          created_by?: string | null
-          department?: string | null
-          description?: string | null
-          document_number?: string | null
-          file_size?: number | null
-          form_code?: string | null
-          id?: string | null
-          iso_clause?: string | null
-          keywords?: string[] | null
-          mime_type?: string | null
-          parent_document_id?: string | null
-          previous_version?: string | null
-          process_id?: string | null
-          record_type?: string | null
-          related_documents?: string[] | null
-          retention_status?: never
-          retention_until?: string | null
-          retention_years?: number | null
-          review_date?: string | null
-          reviewer_id?: string | null
-          reviewer_name?: string | null
-          revision_date?: string | null
-          storage_path?: string | null
-          title?: string | null
-          updated_at?: string | null
-          updated_by?: string | null
-          version?: string | null
-        }
-        Update: {
-          approval_date?: string | null
-          approval_status?: string | null
-          approver_id?: string | null
-          approver_name?: string | null
-          archival_date?: string | null
-          author_id?: string | null
-          author_name?: string | null
-          bucket_id?: string | null
-          change_description?: string | null
-          change_reason?: string | null
-          checksum?: string | null
-          classification?: string | null
-          created_at?: string | null
-          created_by?: string | null
-          department?: string | null
-          description?: string | null
-          document_number?: string | null
-          file_size?: number | null
-          form_code?: string | null
-          id?: string | null
-          iso_clause?: string | null
-          keywords?: string[] | null
-          mime_type?: string | null
-          parent_document_id?: string | null
-          previous_version?: string | null
-          process_id?: string | null
-          record_type?: string | null
-          related_documents?: string[] | null
-          retention_status?: never
-          retention_until?: string | null
-          retention_years?: number | null
-          review_date?: string | null
-          reviewer_id?: string | null
-          reviewer_name?: string | null
-          revision_date?: string | null
-          storage_path?: string | null
-          title?: string | null
-          updated_at?: string | null
-          updated_by?: string | null
-          version?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "document_metadata_approver_id_fkey"
-            columns: ["approver_id"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["user_id"]
-          },
-          {
-            foreignKeyName: "document_metadata_author_id_fkey"
-            columns: ["author_id"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["user_id"]
-          },
-          {
-            foreignKeyName: "document_metadata_created_by_fkey"
-            columns: ["created_by"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["user_id"]
-          },
-          {
-            foreignKeyName: "document_metadata_parent_document_id_fkey"
-            columns: ["parent_document_id"]
-            isOneToOne: false
-            referencedRelation: "document_metadata"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "document_metadata_parent_document_id_fkey"
-            columns: ["parent_document_id"]
-            isOneToOne: false
-            referencedRelation: "retention_summary"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "document_metadata_reviewer_id_fkey"
-            columns: ["reviewer_id"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["user_id"]
-          },
-          {
-            foreignKeyName: "document_metadata_updated_by_fkey"
-            columns: ["updated_by"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["user_id"]
-          },
-        ]
-      }
-      upcoming_reviews: {
-        Row: {
-          completed_at: string | null
-          created_at: string | null
-          department: string | null
-          document_id: string | null
-          document_number: string | null
-          form_code: string | null
-          id: string | null
-          review_notes: string | null
-          review_status: string | null
-          reviewed_by: string | null
-          scheduled_date: string | null
-          title: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "document_reviews_document_id_fkey"
-            columns: ["document_id"]
-            isOneToOne: false
-            referencedRelation: "document_metadata"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "document_reviews_document_id_fkey"
-            columns: ["document_id"]
-            isOneToOne: false
-            referencedRelation: "retention_summary"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "document_reviews_reviewed_by_fkey"
-            columns: ["reviewed_by"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["user_id"]
-          },
-        ]
-      }
     }
     Functions: {
       append_audit_log: {

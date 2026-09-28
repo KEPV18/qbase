@@ -223,6 +223,15 @@ export function useAccent(formCode: string) {
   return ACCENT_MAP[accentName];
 }
 
+/**
+ * Get the full accent style object for a form code, as a plain function.
+ * `useAccent` cannot be called from inside a loop or a callback, so renderers
+ * that resolve an accent per form inside a `.map()` need this form.
+ */
+export function getAccentStyles(formCode: string): (typeof ACCENT_MAP)[FormAccent] {
+  return ACCENT_MAP[getAccent(formCode)];
+}
+
 // ════════════════════════════════════════════════════════════════════════
 // 1. FORM DOCUMENT — the main page wrapper (unified for all 35 templates)
 //    Full-width page with VEZLOO header (big, gradient), title bar, content, footer.

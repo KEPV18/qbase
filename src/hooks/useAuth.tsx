@@ -29,7 +29,10 @@ export type AuthContextValue = {
   currentUserSnapshot: CurrentUserSnapshot | null;
   login: (email: string, password: string) => Promise<{ ok: boolean; code: string; message: string; user?: AppUser; backend: "supabase" | "local" }>;
   logout: () => void;
-  addUser: (user: Omit<AppUser, "id">) => Promise<void>;
+  // Resolves false when the profile/role inserts failed and the optimistic add
+  // was reverted, so callers can surface the failure instead of toasting a
+  // success for a row that was never written.
+  addUser: (user: Omit<AppUser, "id">) => Promise<boolean>;
   updateUser: (id: string, updates: Partial<AppUser>) => Promise<void>;
   removeUser: (id: string) => Promise<void>;
   resetPassword: (email: string) => Promise<{ ok: boolean; message: string }>;

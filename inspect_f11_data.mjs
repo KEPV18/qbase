@@ -1,9 +1,32 @@
 import { createClient } from '@supabase/supabase-js';
+import { readFileSync, existsSync } from 'node:fs';
+import { join } from 'node:path';
+import { homedir } from 'node:os';
 
-const supabase = createClient(
-  'https://iouuikteroixnsqazznc.supabase.co',
-  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImlvdXVpa3Rlcm9peG5zcWF6em5jIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3NDg2ODc2MCwiZXhwIjoyMDkwNDQ0NzYwfQ.JuLDMQIh97T9wwuZEybXfVXn2e145tME81a1eo8khP8'
-);
+// Credentials are read from the environment, falling back to the operator env
+// file (~/.config/qbase/backup.env). Values are never printed or logged.
+const env = { ...process.env };
+const envFile = join(homedir(), '.config', 'qbase', 'backup.env');
+if (existsSync(envFile)) {
+  for (const line of readFileSync(envFile, 'utf8').split('\n')) {
+    const m = /^\s*(?:export\s+)?([A-Za-z_][A-Za-z0-9_]*)\s*=\s*(.*)$/.exec(line);
+    if (!m) continue;
+    let v = m[2].trim();
+    if ((v.startsWith('"') && v.endsWith('"')) || (v.startsWith("'") && v.endsWith("'"))) v = v.slice(1, -1);
+    env[m[1]] = v;
+  }
+}
+const missing = [];
+if (!env.SUPABASE_URL) missing.push('SUPABASE_URL');
+if (!env.SUPABASE_SERVICE_ROLE_KEY) missing.push('SUPABASE_SERVICE_ROLE_KEY');
+if (missing.length) {
+  console.error('Missing ' + missing.join(' / ') + '. Nothing read.');
+  process.exit(1);
+}
+const SUPABASE_URL = env.SUPABASE_URL;
+const SUPABASE_SERVICE_KEY = env.SUPABASE_SERVICE_ROLE_KEY;
+
+const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY);
 
 (async () => {
   const { data, error } = await supabase

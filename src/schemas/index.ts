@@ -3,18 +3,10 @@
 // Central import point for all validation logic
 // ============================================================================
 
-export { 
+export {
   FORM_ZOD_SCHEMAS,
   getZodSchema,
   validateFormData,
-  // All individual schemas
-  F08Schema, F09Schema, F10Schema, F50Schema,
-  F11Schema, F19Schema,
-  F12Schema, F17Schema, F18Schema, F22Schema, F25Schema, F47Schema, F48Schema,
-  F13Schema, F14Schema, F15Schema, F16Schema,
-  F28Schema, F29Schema, F30Schema, F40Schema, F41Schema, F42Schema, F43Schema, F44Schema,
-  F32Schema, F34Schema, F35Schema, F37Schema,
-  F20Schema, F21Schema, F23Schema, F24Schema, F45Schema, F46Schema,
   // Types
   type F08Data, type F09Data, type F10Data, type F50Data,
   type F11Data, type F19Data,
@@ -23,8 +15,13 @@ export {
   type F28Data, type F29Data, type F30Data, type F40Data, type F41Data, type F42Data, type F43Data, type F44Data,
   type F32Data, type F34Data, type F35Data, type F37Data,
   type F20Data, type F21Data, type F23Data, type F24Data, type F45Data, type F46Data,
-  type PreCreationGateData,
 } from './formValidation';
+
+// NOTE: this barrel used to re-export F08Schema … F50Schema from
+// './formValidation'. formValidation.ts never exported them and nothing in the
+// repository imported them, so through this barrel they resolved to `undefined`
+// at runtime and to TS2305 at compile time. The usable entry points are
+// FORM_ZOD_SCHEMAS / getZodSchema (values) and the per-form F##Data types above.
 
 export {
   isoToDisplay,
@@ -38,5 +35,7 @@ export {
   checkPreCreationGate,
   getFrequencyWarning,
   type PreCreationAnswers,
+  type PreCreationGateData,
+  type PreCreationField,
   validatePreCreationGate, // alias for backward compatibility
 } from './serialAndDate';

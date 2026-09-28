@@ -184,8 +184,13 @@ export default function DataSanitizer() {
     return deps.sort();
   }, [currentList]);
 
-  const filteredList = useMemo(() => {
-    let result = currentList;
+  const filteredList = useMemo<(GhostRecord | IncompleteRecord)[]>(() => {
+    // `currentList` is `GhostRecord[] | IncompleteRecord[]` (the two tabs share
+    // 10 fields but differ in `is_empty` vs `empty_fields`), so filtering it
+    // yields `(GhostRecord | IncompleteRecord)[]`, which is not assignable back
+    // to the union of array types. The filters only touch the shared fields,
+    // so the element union is the honest type for both tabs.
+    let result: (GhostRecord | IncompleteRecord)[] = currentList;
     if (search) {
       const q = search.toLowerCase();
       result = result.filter(g =>

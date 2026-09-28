@@ -11,10 +11,10 @@ import {
   FileText, Search, CheckCircle, XCircle, ArrowLeft, Loader2,
   ChevronRight, Layers, Building2, FolderKanban,
 } from 'lucide-react';
-import { FORM_SCHEMAS, getFormSchema, getFormSections, getFormsBySection } from '../data/formSchemas';
+import { FORM_SCHEMAS, getFormSchema, getFormsBySection } from '../data/formSchemas';
 import { getNextSerial } from '../schemas';
 import { todayDDMMYYYY } from '../schemas';
-import { MODULE_CONFIG } from '../config/modules';
+import { MODULE_CONFIG, getModuleForSection } from '../config/modules';
 import DynamicFormRenderer, { type RecordData } from '../components/forms/DynamicFormRenderer';
 import { SchemaDrivenRecordView } from '../components/forms/SchemaDrivenRecordView';
 import { getTemplateComponent, TemplateWrapper } from '@/components/templates';
@@ -60,7 +60,28 @@ const RecordCreationPage: React.FC = () => {
 
   const { data: allRecords } = useRecords();
 
-  const sections = getFormSections();
+  // Each entry carries the section number, its display name and its form count.
+  // This used to be `getFormSections()`, which returns bare section NUMBERS — so
+  // sec.number / sec.name / sec.count were all `undefined` at runtime: headings
+  // rendered blank, the count read "undefined forms available", and clicking a
+  // section called setActiveSection(undefined), which made the filter match no
+  // form at all. The name comes from the canonical module config.
+  const sections = useMemo(() => {
+    const bySection = new Map<number, { number: number; name: string; count: number }>();
+    for (const form of FORM_SCHEMAS) {
+      const existing = bySection.get(form.section);
+      if (existing) {
+        existing.count += 1;
+      } else {
+        bySection.set(form.section, {
+          number: form.section,
+          name: getModuleForSection(form.section)?.name || form.sectionName,
+          count: 1,
+        });
+      }
+    }
+    return [...bySection.values()].sort((a, b) => a.number - b.number);
+  }, []);
   const schema = selectedCode ? getFormSchema(selectedCode) : null;
 
   // Template form data for DOCX-accurate form editing
@@ -81,7 +102,9 @@ const RecordCreationPage: React.FC = () => {
     }
   }, [gateStep, selectedCode]);
 
-  const handleTemplateFieldChange = useCallback((field: string, value: string | Record<string, unknown>) => {
+  // Templates that render a table emit the whole row array for one field key
+  // (e.g. "items"), so the value domain includes arrays of row objects.
+  const handleTemplateFieldChange = useCallback((field: string, value: string | Record<string, unknown> | Array<Record<string, unknown>>) => {
     setFormData(prev => ({ ...prev, [field]: value }));
   }, []);
 
@@ -94,7 +117,9 @@ const RecordCreationPage: React.FC = () => {
     }
     data.formCode = selectedCode;
     data._createdAt = new Date().toISOString();
-    data._createdBy = 'Ahmed Khaled';
+    // _createdBy is NOT set here: createRecord attributes the record to the
+    // authenticated session (recordStorage.ts resolve-currentUser fallback).
+    // The previous hardcode attributed every record to a single person.
     // Auto-capture frequency scope for compliance tracking (Phase 8)
     data._frequency = schema.frequency || '';
     // Add scope and project_id
@@ -212,10 +237,18 @@ const RecordCreationPage: React.FC = () => {
           {/* Form-Formatted Record View */}
           <div className="ds-card p-6 mb-4">
             {(() => {
+              // `_FORCE_VITE_INCLUDE` is not defined anywhere — it was a leftover
+              // from the template-registry refactor, and reading it threw
+              // ReferenceError, so this success screen crashed after every create.
+              // `getTemplateComponent` is the registry the rest of the page uses
+              // (and is already imported above). TemplateWrapper supplies the
+              // Suspense boundary the lazy template needs.
               const fc = created.code;
-              const TemplateComponent = _FORCE_VITE_INCLUDE[fc] ?? null;
+              const TemplateComponent = getTemplateComponent(fc);
               if (TemplateComponent) {
-                return <TemplateComponent data={created.data as Record<string, unknown>} isTemplate={false} />;
+                return (
+                  <TemplateWrapper formCode={fc} data={created.data as Record<string, unknown>} isTemplate={false} />
+                );
               }
               return <SchemaDrivenRecordView formCode={created.code} data={created.data} showMeta={true} />;
             })()}
@@ -258,7 +291,7 @@ const RecordCreationPage: React.FC = () => {
             </button>
           )}
           <h1 className="text-2xl font-bold text-foreground">
-            {gateStep === 'form' && schema && _FORCE_VITE_INCLUDE[selectedCode]
+            {gateStep === 'form' && schema && getTemplateComponent(selectedCode)
               ? '' : gateStep === 'form' && schema ? `Create ${schema.name}` : 'Create Record'}
           </h1>
           {currentSectionName && gateStep !== 'form' && (

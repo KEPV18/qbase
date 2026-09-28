@@ -6,6 +6,7 @@
 import { log } from "@/services/logger";
 
 import { FORM_ZOD_SCHEMAS } from '@/schemas/unifiedSchema';
+import { validateFormData } from '@/schemas/formValidation';
 import { z } from 'zod';
 import type { RecordData } from '../components/forms/DynamicFormRenderer';
 
@@ -63,13 +64,15 @@ export function getValidationLog(): typeof VALIDATION_LOG {
  * @param data - the record data to validate
  * @param operation - 'create' or 'update'
  * @param serial - for updates, the existing serial
+ * @param actorEmail - the authenticated actor, used to attribute a new record
  * @returns PreWriteResult with validity, errors, and sanitized data
  */
 export function preWriteValidation(
   formCode: string,
   data: RecordData,
   operation: 'create' | 'update',
-  serial?: string
+  serial?: string,
+  actorEmail?: string
 ): PreWriteResult {
   const errors: ValidationError[] = [];
 
@@ -125,21 +128,24 @@ export function preWriteValidation(
   // 2. Run Zod validation via the same function the UI uses
   const zodResult = validateFormData(formCode, normalizedData);
 
-  if (!zodResult.success) {
-    // Convert Zod errors to our ValidationError format
-    const zodErrors = zodResult.errors;
-    for (const [field, message] of Object.entries(zodErrors)) {
-      // Determine error code from message content
+  if (!zodResult.valid) {
+    // validateFormData already returns { field, message, code }; it reports every
+    // Zod failure as 'custom', so derive the more specific code from the message.
+    for (const zodError of zodResult.errors) {
+      const field = String(zodError.field ?? '');
+      const message = String(zodError.message ?? '');
+      const lower = message.toLowerCase();
+
       let code: ValidationError['code'] = 'custom';
-      if (message.toLowerCase().includes('required') || message.toLowerCase().includes('cannot be empty')) {
+      if (lower.includes('required') || lower.includes('cannot be empty')) {
         code = 'required';
-      } else if (message.toLowerCase().includes('format') || message.toLowerCase().includes('invalid date') || message.toLowerCase().includes('dd/mm/yyyy')) {
+      } else if (lower.includes('format') || lower.includes('invalid date') || lower.includes('dd/mm/yyyy')) {
         code = 'format';
-      } else if (message.toLowerCase().includes('must be one of') || message.toLowerCase().includes('enum')) {
+      } else if (lower.includes('must be one of') || lower.includes('enum')) {
         code = 'enum';
-      } else if (message.toLowerCase().includes('must be') || message.toLowerCase().includes('minimum') || message.toLowerCase().includes('maximum')) {
+      } else if (lower.includes('must be') || lower.includes('minimum') || lower.includes('maximum')) {
         code = 'range';
-      } else if (message.toLowerCase().includes('must be a') || message.toLowerCase().includes('expected')) {
+      } else if (lower.includes('must be a') || lower.includes('expected')) {
         code = 'type';
       }
 
@@ -159,7 +165,8 @@ export function preWriteValidation(
   }
 
   // 3. Additional pre-write checks beyond Zod
-  const validatedData = zodResult.data as RecordData;
+  // validateFormData returns sanitizedData only on success, which is this branch.
+  const validatedData = zodResult.sanitizedData as RecordData;
 
   // 3a. Re-merge metadata that Zod stripped during safeParse
   // Zod form schemas only validate form fields — metadata keys are stripped from result.data
@@ -212,13 +219,16 @@ export function preWriteValidation(
     }
   }
 
-  // 3d. For creates, auto-fill metadata if missing
+  // 3d. For creates, auto-fill metadata if missing.
+  // The creator is the authenticated actor the caller passes in. This used to be a
+  // hardcoded personal address, which attributed every created record in the audit
+  // trail to one person no matter who actually created it.
   if (operation === 'create') {
     if (!validatedData._createdAt) {
       validatedData._createdAt = new Date().toISOString();
     }
     if (!validatedData._createdBy) {
-      validatedData._createdBy = 'akh.dev185@gmail.com';
+      validatedData._createdBy = actorEmail || '';
     }
   }
 

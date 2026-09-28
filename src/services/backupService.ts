@@ -33,7 +33,10 @@ export interface EncryptedBackup {
 // Crypto primitives
 /* -------------------------------------------------------------------------- */
 
-async function deriveKey(password: string, salt: Uint8Array): Promise<CryptoKey> {
+// `Uint8Array<ArrayBuffer>` is required by the WebCrypto BufferSource overloads
+// under TS 5.7+ typed-array generics; the bare `Uint8Array` alias defaults to
+// ArrayBufferLike (which admits SharedArrayBuffer) and is rejected.
+async function deriveKey(password: string, salt: Uint8Array<ArrayBuffer>): Promise<CryptoKey> {
   const encoder = new TextEncoder();
   const keyMaterial = await crypto.subtle.importKey(
     "raw", encoder.encode(password), { name: "PBKDF2" }, false, ["deriveKey"]
@@ -73,14 +76,18 @@ async function decrypt(payload: { salt: string; iv: string; ciphertext: string }
   return new TextDecoder().decode(decrypted);
 }
 
-function arrayBufferToBase64(buffer: ArrayBuffer): string {
+  // Accepts both raw ArrayBuffers and the ArrayBuffer-backed Uint8Arrays that
+  // crypto.getRandomValues / base64ToArrayBuffer produce here.
+  function arrayBufferToBase64(buffer: ArrayBuffer | Uint8Array<ArrayBuffer>): string {
   const bytes = new Uint8Array(buffer);
   let binary = "";
   for (let i = 0; i < bytes.byteLength; i++) binary += String.fromCharCode(bytes[i]);
   return btoa(binary);
 }
 
-function base64ToArrayBuffer(base64: string): Uint8Array {
+// Returns an ArrayBuffer-backed view so the result satisfies WebCrypto's
+// BufferSource overloads (see deriveKey note above).
+function base64ToArrayBuffer(base64: string): Uint8Array<ArrayBuffer> {
   const binary = atob(base64);
   const bytes = new Uint8Array(binary.length);
   for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);

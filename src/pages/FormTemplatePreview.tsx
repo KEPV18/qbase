@@ -13,7 +13,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import { FORMS_REGISTRY } from "@/data/formsRegistry";
-import { getAccent } from "@/components/forms/FormKit";
+import { getAccentStyles } from "@/components/forms/FormKit";
 
 // Format ISO date
 function formatDate(iso: string | null | undefined): string {
@@ -157,7 +157,7 @@ export default function FormTemplatePreview() {
             {TemplateComponent ? (
               <TemplateComponent isTemplate={true} />
             ) : (() => {
-              const accent = getAccent(code);
+              const accent = getAccentStyles(code);
               return (
               <div className="w-full bg-card text-foreground border border-border rounded-sm shadow-sm overflow-hidden">
                 {/* VEZLOO header — gradient accent */}

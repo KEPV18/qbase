@@ -1,0 +1,382 @@
+{
+  "readAt": "2026-09-28T17:25:17.921Z",
+  "readOnly": true,
+  "openapiVersion": "2.0",
+  "tableCount": 17,
+  "tables": {
+    "audit_log": [
+      "id",
+      "record_id",
+      "action",
+      "changed_fields",
+      "previous_values",
+      "new_values",
+      "performed_by",
+      "created_at",
+      "action_type",
+      "form_code",
+      "serial",
+      "user_email"
+    ],
+    "capas": [
+      "id",
+      "capa_id",
+      "source_of_capa",
+      "type",
+      "description",
+      "reference",
+      "root_cause_analysis",
+      "corrective_action",
+      "preventive_action",
+      "responsible_person",
+      "target_completion_date",
+      "status",
+      "related_risk",
+      "effectiveness",
+      "verification_date",
+      "created_at",
+      "updated_at"
+    ],
+    "document_metadata": [
+      "id",
+      "storage_path",
+      "bucket_id",
+      "document_number",
+      "version",
+      "previous_version",
+      "revision_date",
+      "author_id",
+      "author_name",
+      "reviewer_id",
+      "reviewer_name",
+      "approver_id",
+      "approver_name",
+      "approval_date",
+      "approval_status",
+      "classification",
+      "department",
+      "process_id",
+      "retention_years",
+      "retention_until",
+      "review_date",
+      "archival_date",
+      "created_at",
+      "updated_at",
+      "created_by",
+      "updated_by",
+      "parent_document_id",
+      "related_documents",
+      "title",
+      "description",
+      "keywords",
+      "checksum",
+      "file_size",
+      "mime_type",
+      "iso_clause",
+      "form_code",
+      "record_type",
+      "change_reason",
+      "change_description"
+    ],
+    "document_reviews": [
+      "id",
+      "document_id",
+      "scheduled_date",
+      "reviewed_by",
+      "review_status",
+      "review_notes",
+      "completed_at",
+      "created_at"
+    ],
+    "document_versions": [
+      "id",
+      "document_id",
+      "version",
+      "storage_path",
+      "change_reason",
+      "change_description",
+      "changed_by",
+      "changed_by_name",
+      "created_at",
+      "checksum"
+    ],
+    "error_reports": [
+      "id",
+      "version",
+      "user_email",
+      "page_url",
+      "error_message",
+      "error_stack",
+      "context",
+      "browser_info",
+      "created_at",
+      "resolved",
+      "resolved_at",
+      "resolution_notes"
+    ],
+    "notifications": [
+      "id",
+      "user_id",
+      "title",
+      "message",
+      "type",
+      "link",
+      "data",
+      "read",
+      "created_by",
+      "created_at",
+      "category",
+      "priority",
+      "event_type",
+      "actor_id",
+      "target_id"
+    ],
+    "process_interactions": [
+      "id",
+      "source_process_id",
+      "target_process_id",
+      "interaction_type",
+      "description",
+      "created_at"
+    ],
+    "processes": [
+      "id",
+      "process_id",
+      "process_name",
+      "category",
+      "owner",
+      "inputs",
+      "outputs",
+      "resources",
+      "competence_needed",
+      "controls",
+      "effectiveness",
+      "status",
+      "created_at",
+      "updated_at"
+    ],
+    "profiles": [
+      "id",
+      "user_id",
+      "email",
+      "display_name",
+      "password",
+      "is_active",
+      "last_login",
+      "created_at",
+      "updated_at",
+      "department"
+    ],
+    "projects": [
+      "id",
+      "name",
+      "description",
+      "status",
+      "start_date",
+      "team_allocation",
+      "created_at",
+      "updated_at"
+    ],
+    "records": [
+      "id",
+      "created_at",
+      "updated_at",
+      "form_code",
+      "serial",
+      "form_name",
+      "form_data",
+      "status",
+      "created_by",
+      "last_modified_by",
+      "edit_count",
+      "modification_reason",
+      "section",
+      "section_name",
+      "frequency",
+      "deleted_at",
+      "project_id"
+    ],
+    "risks": [
+      "id",
+      "risk_id",
+      "process_department",
+      "risk_description",
+      "cause",
+      "likelihood",
+      "impact",
+      "risk_score",
+      "action_control",
+      "owner",
+      "status",
+      "review_date",
+      "linked_capa",
+      "created_at",
+      "updated_at"
+    ],
+    "swot_items": [
+      "id",
+      "item_id",
+      "quadrant",
+      "text",
+      "category",
+      "risk_level",
+      "source",
+      "action_plan",
+      "responsible",
+      "target_date",
+      "iso_clause",
+      "linked_to",
+      "is_custom",
+      "display_order",
+      "created_at",
+      "updated_at",
+      "created_by"
+    ],
+    "swot_strategies": [
+      "id",
+      "strategy_id",
+      "kind",
+      "combat",
+      "adj",
+      "action",
+      "created_at",
+      "updated_at"
+    ],
+    "tenant_settings": [
+      "id",
+      "company_name",
+      "company_logo_url",
+      "theme_color",
+      "updated_at",
+      "updated_by"
+    ],
+    "user_roles": [
+      "id",
+      "user_id",
+      "role",
+      "created_at",
+      "department"
+    ]
+  },
+  "rpcs": {
+    "create_record_validated": {
+      "present": true,
+      "parameters": [
+        "p_created_by",
+        "p_form_code",
+        "p_form_data",
+        "p_form_name",
+        "p_frequency",
+        "p_section",
+        "p_section_name",
+        "p_serial",
+        "p_status"
+      ],
+      "required": [
+        "p_form_code",
+        "p_form_name",
+        "p_form_data"
+      ],
+      "takesNoArguments": false
+    },
+    "append_audit_log": {
+      "present": true,
+      "parameters": [
+        "p_action",
+        "p_changed_fields",
+        "p_form_code",
+        "p_new_values",
+        "p_performed_by",
+        "p_previous_values",
+        "p_record_id",
+        "p_serial"
+      ],
+      "required": [
+        "p_record_id",
+        "p_action"
+      ],
+      "takesNoArguments": false
+    },
+    "create_notifications_batch": {
+      "present": true,
+      "parameters": [
+        "p_actor_id",
+        "p_category",
+        "p_created_by",
+        "p_data",
+        "p_event_type",
+        "p_link",
+        "p_message",
+        "p_priority",
+        "p_target_id",
+        "p_title",
+        "p_user_ids"
+      ],
+      "required": [
+        "p_user_ids",
+        "p_title",
+        "p_message"
+      ],
+      "takesNoArguments": false
+    },
+    "admin_list_users": {
+      "present": true,
+      "parameters": null,
+      "required": null,
+      "takesNoArguments": false
+    },
+    "soft_delete_record": {
+      "present": true,
+      "parameters": [
+        "p_id"
+      ],
+      "required": [
+        "p_id"
+      ],
+      "takesNoArguments": false
+    },
+    "update_record_with_lock": {
+      "present": true,
+      "parameters": [
+        "p_expected_edit_count",
+        "p_form_data",
+        "p_id",
+        "p_last_modified_by",
+        "p_modification_reason",
+        "p_status"
+      ],
+      "required": [
+        "p_id",
+        "p_form_data",
+        "p_expected_edit_count"
+      ],
+      "takesNoArguments": false
+    },
+    "get_next_serial": {
+      "present": true,
+      "parameters": [
+        "p_form_code"
+      ],
+      "required": [
+        "p_form_code"
+      ],
+      "takesNoArguments": false
+    },
+    "has_role": {
+      "present": true,
+      "parameters": [
+        "required_role"
+      ],
+      "required": [
+        "required_role"
+      ],
+      "takesNoArguments": false
+    },
+    "get_record_count": {
+      "present": true,
+      "parameters": null,
+      "required": null,
+      "takesNoArguments": false
+    }
+  }
+}

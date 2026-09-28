@@ -1,6 +1,32 @@
-import axios from 'axios';
 import fs from 'fs';
 import path from 'path';
+
+// Minimal axios-compatible JSON POST built on the global fetch API.
+// fetch resolves on non-2xx responses, so we throw explicitly (as axios does)
+// with `error.response.data` populated, keeping the existing catch block intact.
+async function postJson(url, payload) {
+    const response = await fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+    });
+
+    const text = await response.text();
+    let data;
+    try {
+        data = text ? JSON.parse(text) : undefined;
+    } catch {
+        data = text;
+    }
+
+    if (!response.ok) {
+        const error = new Error(`Request failed with status code ${response.status}`);
+        error.response = { status: response.status, data };
+        throw error;
+    }
+
+    return { data };
+}
 
 export default async function handler(req, res) {
     const { code } = req.query;
@@ -38,7 +64,7 @@ export default async function handler(req, res) {
     }
 
     try {
-        const response = await axios.post('https://oauth2.googleapis.com/token', {
+        const response = await postJson('https://oauth2.googleapis.com/token', {
             client_id: GOOGLE_CLIENT_ID,
             client_secret: GOOGLE_CLIENT_SECRET,
             code,

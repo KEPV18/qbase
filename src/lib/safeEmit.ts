@@ -21,8 +21,10 @@ export async function safeEmit<T>(
     return await promise;
   } catch (error) {
     // Log but don't throw - event emission failures are non-critical
-    log.system.warn('safeEmit:event_emission_failed', {
-      context,
+    // log.system.warn is (context, msg, meta). This passed the object as the
+    // message, which is a type error and printed nothing useful; the detail
+    // belongs in meta, where it is preserved in full.
+    log.system.warn('safeEmit:event_emission_failed', context, {
       error: error instanceof Error ? error.message : String(error),
       stack: error instanceof Error ? error.stack : undefined,
     });

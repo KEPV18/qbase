@@ -128,6 +128,7 @@ export async function fetchAllUserProfiles(): Promise<{ profiles: ProfileRow[]; 
         password: "",
         is_active: item.is_active as boolean,
         last_login: item.last_login as string | null,
+        department: (item.department as string | null) ?? null,
         created_at: item.created_at as string,
         updated_at: item.updated_at as string,
       }));
@@ -197,7 +198,9 @@ export async function createProfile(payload: {
   user_id: string;
   display_name: string;
   email: string;
-  password?: string;
+  // NOTE: no `password` here — passwords live exclusively in Supabase Auth
+  // (GoTrue). profiles.password is a legacy, write-only column that nothing
+  // reads; writing password material to it is forbidden (decision 2026-09-28).
   is_active: boolean;
   last_login?: string | null;
 }): Promise<{ ok: boolean; error?: string }> {

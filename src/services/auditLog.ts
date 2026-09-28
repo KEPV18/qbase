@@ -88,13 +88,24 @@ export async function appendAuditLog(
   formCode?: string
 ): Promise<{ success: boolean; id: string }> {
   // Find the record_id for this serial using new schema column
-  const { data: record } = await supabase
+  const { data: record, error: lookupError } = await supabase
     .from('records')
     .select('id')
     .eq('serial', serial)
     .maybeSingle();
 
-  const recordId = record?.id || crypto.randomUUID();
+  if (lookupError) {
+    log.system.error('auditLog:record_lookup_failed', lookupError.message);
+    return { success: false, id: '' };
+  }
+  if (!record?.id) {
+    // No row exists for this serial. The previous `|| crypto.randomUUID()`
+    // fallback fabricated a record id the audit entry could never point back
+    // to, corrupting the append-only trail; refuse instead.
+    log.system.error('auditLog:record_not_found', `no record row for serial ${serial}`);
+    return { success: false, id: '' };
+  }
+  const recordId = record.id;
 
   // Use RPC — now passes form_code and serial directly
   const { error } = await supabase.rpc('append_audit_log', {

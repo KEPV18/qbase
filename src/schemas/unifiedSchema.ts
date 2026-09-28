@@ -31,7 +31,8 @@ export type UnifiedFieldType =
   | "table"
   | "signature"
   | "heading"
-  | "array"; // complex nested data (e.g., evaluation_matrix)
+  | "array" // complex nested data (e.g., evaluation_matrix)
+  | "object"; // nested object carried by a zod.custom override (e.g. NC source details)
 
 export interface UnifiedField {
   key: string;
@@ -1219,7 +1220,7 @@ function toZodSchema(u: UnifiedFormSchema): z.ZodObject<Record<string, z.ZodType
           break;
         case "number":
           zodField = f.required
-            ? z.number({ invalid_type_error: 'Must be a number' }).min(f.validation?.min ?? -Infinity).max(f.validation?.max ?? Infinity)
+            ? z.number({ error: 'Must be a number' }).min(f.validation?.min ?? -Infinity).max(f.validation?.max ?? Infinity)
             : z.number().optional().default(0);
           break;
         case "date":
@@ -1292,8 +1293,9 @@ export const FORM_ZOD_SCHEMAS: Record<string, z.ZodType> = Object.fromEntries(
 );
 
 // Type exports
+// (UnifiedFormSchema and UnifiedField are declared `export interface` above —
+// re-exporting them here conflicted with those declarations.)
 export type FormSchema = ReturnType<typeof toFormSchema>;
-export type { UnifiedFormSchema, UnifiedField };
 
 // ============================================================================
 // Helper functions
@@ -1316,5 +1318,10 @@ export function getFormSections() {
 }
 
 export function getFormsBySection(section: number) {
-  return UNIFIED_SCHEMAS.filter(f => f.section === section);
+  // Derived from FORM_SCHEMAS, not UNIFIED_SCHEMAS, so this returns the same
+  // representation as getFormSchema(). Returning the raw source objects made the
+  // two shapes incompatible: a consumer that mixed them (RecordCreationPage
+  // groups search results from here with FORM_SCHEMAS) got a union type whose
+  // members could not be assigned to each other.
+  return FORM_SCHEMAS.filter(f => f.section === section);
 }

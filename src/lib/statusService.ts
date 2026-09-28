@@ -78,7 +78,15 @@ interface StatusRecord {
 }
 
 /**
- * Update a record's status in Supabase via formData._status field.
+ * Update a record's status in Supabase.
+ *
+ * The authoritative state is the `records.status` column
+ * (`record_status_enum: draft | pending_review | approved | rejected`); the
+ * previous implementation wrote a `form_data._status` key that no other
+ * consumer reads. The transition is validated first. There are currently no
+ * production callers (the live workflow runs through recordStorage +
+ * `update_record_with_lock`), so this stays aligned with the schema for any
+ * future caller.
  */
 export async function updateRecordStatus(
     record: StatusRecord,
@@ -88,27 +96,25 @@ export async function updateRecordStatus(
     const identifier = record.recordId || record.serial;
     const matchField = record.recordId ? 'id' : 'serial';
 
-    // Fetch current formData
+    // Fetch current row (status + editor tracking)
     const { data: row, error: fetchErr } = await supabase
         .from('records')
-        .select('id, form_data')
+        .select('id, status, last_modified_by')
         .eq(matchField, identifier)
         .single();
 
     if (fetchErr || !row) return false;
 
-    const formData = row.form_data || {};
-    const updatedFormData = {
-        ...formData,
-        _status: newStatus,
-        _statusUpdatedAt: new Date().toISOString(),
-        ...(reviewedBy ? { _reviewedBy: reviewedBy } : {}),
-        ...((newStatus === 'approved' || newStatus === 'rejected') ? { _reviewedAt: new Date().toISOString() } : {}),
-    };
+    if (!isValidTransition((row.status || 'draft') as RecordStatus, newStatus)) {
+        return false;
+    }
 
     const { error: updateErr } = await supabase
         .from('records')
-        .update({ form_data: updatedFormData })
+        .update({
+            status: newStatus,
+            last_modified_by: reviewedBy || row.last_modified_by,
+        })
         .eq('id', row.id);
 
     return !updateErr;

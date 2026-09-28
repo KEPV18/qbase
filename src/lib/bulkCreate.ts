@@ -39,9 +39,13 @@ export async function bulkCreateMissingMonths(
           coverage_period: month,
           record_month: month,
         },
-        _section: schema?.section ?? null,
-        _sectionName: schema?.sectionName || null,
-        _frequency: schema?.frequency || null,
+        // These three are optional (undefined) on RecordData; `null` is not
+        // assignable. The values reach create_record_validated as
+        // `(data._section as number) || schema?.section || null`, where null and
+        // undefined are both falsy, so this is behaviour-preserving.
+        _section: schema?.section,
+        _sectionName: schema?.sectionName || undefined,
+        _frequency: schema?.frequency || undefined,
         _status: 'pending_review',
         _createdAt: new Date().toISOString(),
         _createdBy: userId,

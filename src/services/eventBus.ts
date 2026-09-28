@@ -111,20 +111,31 @@ let _cachedLeadershipIds: string[] | null = null;
 
 async function getAdminUserIds(): Promise<string[]> {
   if (_cachedAdminIds) return _cachedAdminIds;
-  const { data } = await supabase
+  const { data, error } = await supabase
     .from('user_roles')
     .select('user_id')
     .eq('role', 'admin');
+  if (error) {
+    // Do NOT cache the failure: an empty list cached here made every
+    // subsequent critical event silently skip its admin audience until the
+    // module was reloaded. (This call runs through safeEmit upstream.)
+    log.system.warn('eventBus:admin_ids_query_failed', error.message);
+    return [];
+  }
   _cachedAdminIds = (data || []).map(r => r.user_id);
   return _cachedAdminIds!;
 }
 
 async function getLeadershipUserIds(): Promise<string[]> {
   if (_cachedLeadershipIds) return _cachedLeadershipIds;
-  const { data } = await supabase
+  const { data, error } = await supabase
     .from('user_roles')
     .select('user_id')
     .in('role', ['admin', 'manager']);
+  if (error) {
+    log.system.warn('eventBus:leadership_ids_query_failed', error.message);
+    return [];
+  }
   _cachedLeadershipIds = (data || []).map(r => r.user_id);
   return _cachedLeadershipIds!;
 }

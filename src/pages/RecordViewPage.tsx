@@ -18,7 +18,7 @@ import { resolveCoveragePeriod } from '@/lib/temporalUtils';
 import DynamicFormRenderer, { type RecordData } from '../components/forms/DynamicFormRenderer';
 import { getTemplateComponent, TemplateWrapper } from '@/components/templates';
 import { DocumentView, DocHeader, DocSection, DocField, DocTable } from '@/components/forms/DocumentView';
-import { getAccent } from '@/components/forms/FormKit';
+import { getAccentStyles } from '@/components/forms/FormKit';
 import { useRecord, useUpdateRecord, useRecords, useDeleteRecord } from '../hooks/useRecordStorage';
 import { useAuditLog } from '../hooks/useAuditLog';
 import { useAuth } from '../hooks/useAuth';
@@ -704,7 +704,7 @@ const RecordViewPage: React.FC = () => {
               }
               // Fallback: schema-driven render inside VEZLOO doc (accent-themed)
               const schema = getFormSchema(fc);
-              const a = getAccent(fc);
+              const a = getAccentStyles(fc);
               return (
                 <div className="w-full bg-card text-foreground border border-border rounded-sm shadow-sm overflow-hidden">
                   {/* VEZLOO header — gradient accent */}

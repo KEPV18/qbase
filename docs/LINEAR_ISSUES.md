@@ -15,7 +15,7 @@ The Supabase anon key is hardcoded in `src/integrations/supabase/client.ts` whic
 
 **Current Code:**
 ```typescript
-const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InF2YnF6ZW5weHNkdWhoaGlrYmN4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzA0MTU4NjUsImV4cCI6MjA4NTk5MTg2NX0.QegWahbjFcbopke8fnnUbvrZa7Lrcc6WKQVWN3vDiNw"
+const SUPABASE_ANON_KEY = "[REDACTED: production anon-key JWT removed from docs — public-by-design (ships in the client bundle), rotation not required]"
 ```
 
 **Acceptance Criteria:**

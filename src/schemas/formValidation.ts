@@ -85,15 +85,18 @@ export function validateFormData(formCode: string, data: Record<string, unknown>
 
   const result = schema.safeParse(data);
   if (!result.success) {
-    const errors: ValidationError[] = result.error.errors.map(e => ({
+    // Zod v4 exposes the failure list as `.issues`; the v3 `.errors` alias does
+    // not exist on a ZodError at runtime, so reading it threw a TypeError here on
+    // every failed validation instead of returning the field errors.
+    const errors: ValidationError[] = result.error.issues.map((e) => ({
       field: e.path.join('.'),
       message: e.message,
-      code: 'custom',
+      code: 'custom' as const,
     }));
     return { valid: false, errors, sanitizedData: null };
   }
 
-  return { valid: true, errors: [], sanitizedData: result.data };
+  return { valid: true, errors: [], sanitizedData: (result.data ?? null) as Record<string, unknown> | null };
 }
 
 // Type exports for each form (for backward compatibility with existing imports)

@@ -125,35 +125,57 @@ export interface PreCreationAnswers {
 }
 
 /**
+ * The answers the gate collects, as the form component holds them.
+ * `frequencyCheck` is the raw checkbox value ('yes' when ticked).
+ */
+export interface PreCreationGateData {
+  needReason: string;
+  businessEvent: string;
+  frequencyCheck: string;
+}
+
+/**
+ * Which question a reason belongs to. `reasons` is sparse — only failing
+ * questions push an entry — so a consumer cannot map reasons to form fields by
+ * index. `fields` is pushed in lockstep with `reasons` to carry that identity.
+ */
+export type PreCreationField = 'needReason' | 'businessEvent' | 'frequencyConfirmed';
+
+/**
  * Pre-Creation Gate — 3 mandatory questions before creating ANY record.
  * Born from the F/16-002 lesson: NEVER create a blank/unnecessary record.
- * 
- * Returns { pass: true } or { pass: false, reasons: string[] }
+ *
+ * Returns { pass: true } or { pass: false, reasons: string[], fields: PreCreationField[] }
+ * where fields[i] names the question that produced reasons[i].
  */
 export function checkPreCreationGate(
   formCode: string,
   frequency: string,
   answers: PreCreationAnswers
-): { pass: boolean; reasons?: string[] } {
+): { pass: boolean; reasons?: string[]; fields?: PreCreationField[] } {
   const reasons: string[] = [];
-  
+  const fields: PreCreationField[] = [];
+
   // Q1: Why is this record needed?
   if (!answers.needReason || answers.needReason.trim().length < 10) {
     reasons.push('Explain why this record is needed (minimum 10 characters)');
+    fields.push('needReason');
   }
-  
+
   // Q2: What business event triggers this record?
   if (!answers.businessEvent || answers.businessEvent.trim().length < 5) {
     reasons.push('Specify the business event that triggers this record (minimum 5 characters)');
+    fields.push('businessEvent');
   }
-  
+
   // Q3: Confirm this record is needed per its frequency schedule
   if (!answers.frequencyConfirmed) {
     reasons.push('Confirm this record is needed per its frequency schedule');
+    fields.push('frequencyConfirmed');
   }
-  
+
   if (reasons.length > 0) {
-    return { pass: false, reasons };
+    return { pass: false, reasons, fields };
   }
   return { pass: true };
 }

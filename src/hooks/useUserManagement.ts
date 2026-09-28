@@ -7,7 +7,7 @@ import { log } from "@/services/logger";
 
 import * as React from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { emitEvent } from "@/services/eventBus";
+import { emitEvent, invalidateRoleCache } from "@/services/eventBus";
 import { safeEmit } from "@/lib/safeEmit";
 import {
   fetchAllUserProfiles,
@@ -71,40 +71,69 @@ export function useUserManagement({
 
   /* ── Add User ───────────────────────────────────────────────────────────── */
 
-  const addUser = React.useCallback(async (userInput: Omit<AppUser, "id">) => {
+  // Legacy hash scheme — used ONLY by the no-Supabase local fallback of
+  // changePassword, over in-memory/localStorage state. The profiles.password
+  // column is never read or written: passwords live exclusively in Supabase
+  // Auth (GoTrue), and storing temporary passwords in the database is
+  // forbidden (decision 2026-09-28).
+  const hashLegacyPassword = React.useCallback(async (plain: string): Promise<string> => {
+    const salt = (typeof import.meta !== 'undefined' && import.meta.env?.VITE_AUTH_SALT as string) || "qms-salt-2026-v1";
+    const digest = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(plain + salt));
+    return Array.from(new Uint8Array(digest)).map(b => b.toString(16).padStart(2, "0")).join("");
+  }, []);
+
+  const addUser = React.useCallback(async (userInput: Omit<AppUser, "id">): Promise<boolean> => {
     const newUser: AppUser = { ...userInput, id: crypto.randomUUID() };
+    const previousUsers = [...users];
     const updated = [...users, newUser];
     setUsers(updated);
     if (!AUTH_LOCAL_DISABLED) saveUsersLocal(updated);
 
     if (supabase) {
-      // Profile
+      let failed = false;
+
+      // Profile. No password is written: passwords live in Supabase Auth
+      // (GoTrue); the temp password is communicated to the admin out of band.
       const profileRes = await createProfile({
         id: newUser.id,
         user_id: newUser.id,
         display_name: newUser.name,
         email: newUser.email,
-        password: newUser.password,
         is_active: !!newUser.active,
         last_login: null,
       });
       if (!profileRes.ok) {
         log.system.error("useUserManagement:addUser_profile_failed", String(profileRes.error));
+        failed = true;
       }
 
       // Role
-      const roleRes = await createUserRole({
-        id: crypto.randomUUID(),
-        user_id: newUser.id,
-        role: newUser.role,
-      });
-      if (!roleRes.ok) {
-        log.system.error("useUserManagement:addUser_role_failed", String(roleRes.error));
+      if (!failed) {
+        const roleRes = await createUserRole({
+          id: crypto.randomUUID(),
+          user_id: newUser.id,
+          role: newUser.role,
+        });
+        if (!roleRes.ok) {
+          log.system.error("useUserManagement:addUser_role_failed", String(roleRes.error));
+          failed = true;
+        }
       }
 
+      if (failed) {
+        log.system.error("useUserManagement:addUser_revert", "optimistic add reverted");
+        setUsers(previousUsers);
+        if (!AUTH_LOCAL_DISABLED) saveUsersLocal(previousUsers);
+        return false;
+      }
+
+      // The new user's role enters the admin/leadership audience caches.
+      invalidateRoleCache();
       await reloadUsers();
     }
-  }, [users, reloadUsers]);
+
+    return true;
+  }, [users, reloadUsers, hashLegacyPassword]);
 
   /* ── Update User ────────────────────────────────────────────────────────── */
 
@@ -164,6 +193,8 @@ export function useUserManagement({
       } else {
         if (typeof updates.role === "string" && previousRole && updates.role !== previousRole) {
           const targetName = users.find(u => u.id === id)?.name || id;
+          // The role change alters the admin/leadership audience caches.
+          invalidateRoleCache();
           safeEmit(
             emitEvent({
               action: 'role_change' as const, category: 'security', priority: 'critical',
@@ -182,6 +213,8 @@ export function useUserManagement({
   /* ── Remove User ────────────────────────────────────────────────────────── */
 
   const removeUser = React.useCallback(async (id: string) => {
+    const previousUsers = [...users];
+    const previousUser = user ? { ...user } : null;
     const updated = users.filter(u => u.id !== id);
     setUsers(updated);
     if (!AUTH_LOCAL_DISABLED) saveUsersLocal(updated);
@@ -192,12 +225,33 @@ export function useUserManagement({
     }
 
     if (supabase) {
+      let failed = false;
+
       const roleRes = await deleteUserRole(id);
-      if (!roleRes.ok) log.system.error("useUserManagement:removeUser_role_delete_failed", String(roleRes.error));
+      if (!roleRes.ok) {
+        log.system.error("useUserManagement:removeUser_role_delete_failed", String(roleRes.error));
+        failed = true;
+      }
 
       const profRes = await deleteUserProfile(id);
-      if (!profRes.ok) log.system.error("useUserManagement:removeUser_profile_delete_failed", String(profRes.error));
+      if (!profRes.ok) {
+        log.system.error("useUserManagement:removeUser_profile_delete_failed", String(profRes.error));
+        failed = true;
+      }
 
+      if (failed) {
+        log.system.error("useUserManagement:removeUser_revert", "optimistic removal reverted");
+        setUsers(previousUsers);
+        if (!AUTH_LOCAL_DISABLED) saveUsersLocal(previousUsers);
+        if (previousUser && user?.id === id) {
+          setUser(previousUser);
+          saveSession(previousUser.id, previousUser.role, previousUser.name);
+        }
+        throw new Error("Remove failed on server. The user was not deleted.");
+      }
+
+      // The removed user's role may have been in the admin/leadership caches.
+      invalidateRoleCache();
       await reloadUsers();
     }
   }, [users, user, reloadUsers]);
@@ -207,21 +261,29 @@ export function useUserManagement({
   const changePassword = React.useCallback(async (id: string, oldPass: string, newPass: string): Promise<boolean> => {
     const u = users.find(x => x.id === id);
     if (!u) return false;
-    // Note: In production, password changes should go through Supabase Auth admin API
-    // This local-only fallback is kept for backward compatibility
-    const encoder = new TextEncoder();
-    const salt = (typeof import.meta !== 'undefined' && import.meta.env?.VITE_AUTH_SALT as string) || "qms-salt-2026-v1";
-    const hash = await crypto.subtle.digest("SHA-256", encoder.encode(oldPass + salt));
-    const hashedOld = Array.from(new Uint8Array(hash)).map(b => b.toString(16).padStart(2, "0")).join("");
 
+    if (supabase) {
+      // Passwords live in Supabase Auth (GoTrue). profiles.password is a
+      // write-only legacy column the client never reads (userService always
+      // maps it to ""), so the previous SHA-256 comparison against u.password
+      // compared against "" and changePassword always failed in production.
+      // Verify the current password by re-authenticating, then update. Only
+      // the session's own password may be changed this way.
+      if (user && user.id !== id) return false;
+      const { error: verifyErr } = await supabase.auth.signInWithPassword({ email: u.email, password: oldPass });
+      if (verifyErr) return false;
+      const { error: updateErr } = await supabase.auth.updateUser({ password: newPass });
+      if (updateErr) return false;
+      return true;
+    }
+
+    // Local fallback (no Supabase): the legacy hash comparison.
+    const hashedOld = await hashLegacyPassword(oldPass);
     if (hashedOld !== u.password) return false;
-
-    const hashNew = await crypto.subtle.digest("SHA-256", encoder.encode(newPass + salt));
-    const hashedNew = Array.from(new Uint8Array(hashNew)).map(b => b.toString(16).padStart(2, "0")).join("");
-
+    const hashedNew = await hashLegacyPassword(newPass);
     await updateUser(id, { password: hashedNew });
     return true;
-  }, [users, updateUser]);
+  }, [users, user, updateUser, hashLegacyPassword]);
 
   return {
     reloadUsers,

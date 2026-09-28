@@ -4,10 +4,10 @@
 // Supports JSON (array of records) and structured CSV formats.
 // =============================================================================
 
-import { z } from "zod";
-import { supabase } from "@/integrations/supabase/client";
 import { getFormSchema } from "@/data/formSchemas";
 import { validateFormData } from "@/schemas/formValidation";
+import { createRecord } from "@/services/recordStorage";
+import type { RecordData } from "@/components/forms/DynamicFormRenderer";
 import { toast } from "sonner";
 
 export interface ImportOptions {
@@ -16,6 +16,11 @@ export interface ImportOptions {
   onProgress?: (processed: number, total: number) => void;
 }
 
+/**
+ * A row as it appears in an import file. `form_type` is the import-file header
+ * name (also accepted as `formType`); it is the form code — e.g. "F/08" — and is
+ * mapped to the `form_code` column at write time.
+ */
 export interface ImportRow {
   serial?: string;
   form_type: string;
@@ -110,19 +115,21 @@ async function processRows(
     const row = rows[i];
     onProgress?.(i + 1, rows.length);
 
-    const formSchema = getFormSchema(row.form_type);
+    const formCode = row.form_type;
+    const formSchema = getFormSchema(formCode);
     if (!formSchema) {
-      result.errors.push({ row: i + 1, serial: row.serial || "N/A", error: `Unknown form type: ${row.form_type}` });
+      result.errors.push({ row: i + 1, serial: row.serial || "N/A", error: `Unknown form type: ${formCode}` });
       result.failed++;
       if (!skipInvalidRows) result.success = false;
       continue;
     }
 
-    // Validate against Zod
-    const validation = validateFormData(row.form_type, row.form_data);
+    // Validate against Zod. `errors` is a list of { field, message, code }, not a
+    // map, so it must be mapped rather than passed to Object.entries.
+    const validation = validateFormData(formCode, row.form_data);
 
-    if (!validation.success) {
-      const issues = Object.entries(validation.errors).map(([path, msg]) => `${path}: ${msg}`).join("; ");
+    if (!validation.valid) {
+      const issues = validation.errors.map(e => `${e.field}: ${e.message}`).join("; ");
       result.errors.push({ row: i + 1, serial: row.serial || "N/A", error: `Validation: ${issues}` });
       result.failed++;
       if (!skipInvalidRows) result.success = false;
@@ -134,20 +141,26 @@ async function processRows(
       continue;
     }
 
-    // Generate serial if not provided
-    const serial = row.serial || await generateNextSerial(row.form_type);
+    // Write through the same validated path as the UI (create_record_validated).
+    // The previous implementation inserted directly with `form_type` and
+    // `revision_no` — neither is a column on `records` — and a `status` of
+    // "active", which is not a member of record_status_enum. PostgREST rejected
+    // every row with PGRST204 / an invalid enum value, so no import could ever
+    // succeed. Routing through createRecord also means imports cannot bypass
+    // preWriteValidation, the auth check, or server-side serial allocation.
+    const write = await createRecord({
+      ...(validation.sanitizedData ?? row.form_data),
+      formCode,
+      formName: formSchema.name,
+      serial: row.serial || "auto",
+    } as unknown as RecordData);
 
-    // Insert
-    const { error } = await supabase.from("records").insert({
-      serial,
-      form_type: row.form_type,
-      revision_no: row.revision_no || "A",
-      status: row.status || "active",
-      form_data: validation.data,
-    });
-
-    if (error) {
-      result.errors.push({ row: i + 1, serial, error: `DB insert: ${error.message}` });
+    if (!write.success) {
+      result.errors.push({
+        row: i + 1,
+        serial: (write.record?.serial as string) || row.serial || "N/A",
+        error: write.error || "Write failed",
+      });
       result.failed++;
       result.success = false;
     } else {
@@ -176,10 +189,18 @@ function normalizeRow(raw: unknown): ImportRow {
   const r = raw as Record<string, unknown>;
   return {
     serial: (r.serial || r.Serial || "") as string,
-    form_type: (r.form_type || r.formType || r.formType || "") as string,
+    // `r.formType` was tested twice here, so a file using the snake_case
+    // `form_code` header produced an empty form type and every row was rejected
+    // as "Unknown form type".
+    form_type: (r.form_type || r.formType || r.form_code || r.formCode || "") as string,
     form_data: (r.form_data || r.formData || r) as Record<string, unknown>,
+    // Not a column on `records` (production has no revision_no; there is no
+    // versioning table either) and not a parameter of create_record_validated, so
+    // this value is read for file-format compatibility and is NOT persisted.
     revision_no: (r.revision_no || r.revisionNo || "A") as string,
-    status: (r.status || "active") as string,
+    // Likewise read-only here: the workflow, not the import file, decides the
+    // initial status, and "active" was never a member of record_status_enum.
+    status: ((r.status as string) || "") as string,
   };
 }
 
@@ -202,24 +223,15 @@ function parseCsvLine(line: string): string[] {
   return result;
 }
 
-async function generateNextSerial(formType: string): Promise<string> {
-  const prefix = formType.toUpperCase().replace(/\//g, "-");
-  const { data } = await supabase
-    .from("records")
-    .select("serial")
-    .like("serial", `${prefix}-%`)
-    .order("serial", { ascending: false })
-    .limit(1);
-
-  const last = data?.[0]?.serial;
-  let num = 1;
-  if (last) {
-    const parts = last.split("-");
-    const n = parseInt(parts[parts.length - 1], 10);
-    if (!isNaN(n)) num = n + 1;
-  }
-  return `${prefix}-${String(num).padStart(3, "0")}`;
-}
+// REMOVED: generateNextSerial().
+//
+// It built the prefix by replacing "/" with "-" (so "F/08" became "F-08") and
+// then queried `serial LIKE 'F-08-%'`. Production serials are "F/08-001" (slash,
+// see SERIAL_FORMAT and the 318 distinct production serials), so the pattern
+// never matched, `last` was always undefined, and it always returned "F-08-001"
+// — both a duplicate of an existing record and in the wrong format. Serial
+// allocation belongs to the server: create_record_validated takes p_serial (with
+// 'auto' as the sentinel) and returns out_serial.
 
 /* -------------------------------------------------------------------------- */
 // Validation preview (for wizard UI)
@@ -247,10 +259,11 @@ export async function previewImport(
       headers.forEach((h, idx) => { obj[h] = values[idx] ?? ""; });
       sample.push({
         serial: obj.serial || "",
-        form_type: obj.form_type || obj.formType || "",
+        form_type: obj.form_type || obj.formType || obj.form_code || "",
         form_data: obj,
         revision_no: obj.revision_no || "A",
-        status: obj.status || "active",
+        // Preview only — the workflow decides the initial status at write time.
+        status: obj.status || "",
       });
     }
     return { type: "csv", rows: lines.length - 1, sample };

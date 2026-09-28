@@ -184,7 +184,12 @@ function ComplianceRadarCard({
               <div>
                 <p className="text-xs font-medium text-amber-700 dark:text-amber-300">
                   ⚠️ Compliance Gap: {code} ({def.name}) — Missing for{' '}
-                  {missing.map(formatPeriodLabel).join(', ')}
+                  {/* Array.map passes (value, index, array), so passing the function
+                      straight to map handed the array INDEX to `frequency`, which is
+                      never 'quarterly'/'semi-annual'/'annual' — every label fell
+                      through to the monthly branch. The form's real frequency is in
+                      scope here. */}
+                  {missing.map(ym => formatPeriodLabel(ym, def.frequency)).join(', ')}
                 </p>
                 <p className="text-[10px] text-amber-600/70 dark:text-amber-400/70 mt-0.5">
                   {freqLabel} form — expected {missing.length} period{missing.length > 1 ? 's' : ''} in 2026

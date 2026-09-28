@@ -11,7 +11,7 @@ export interface F49Props {
   data?: Record<string, unknown>;
   isTemplate?: boolean;
   editMode?: boolean;
-  onChange?: (field: string, value: string) => void;
+  onChange?: (field: string, value: string | Record<string, unknown> | Array<Record<string, unknown>>) => void;
   className?: string;
 }
 
@@ -33,7 +33,16 @@ export function F49Template({ data, isTemplate = true, editMode = false, onChang
       </span>
     );
 
-  const items = val(d, "items") as Array<Record<string, unknown>> || [];
+  // Read the row array directly from the data. This previously went through
+  // val(), which stringifies anything that is not a string — so for a record that
+  // had items saved, this returned "[object Object],[object Object]", and
+  // `[...items]` below then spread that STRING into an array of characters. Each
+  // edit wrote an array of single-character-spread objects back into
+  // form_data.items, corrupting the row data. Other templates read the array
+  // directly (see parseRows in F14Template); this one now does the same.
+  const items: Array<Record<string, unknown>> = Array.isArray(d.items)
+    ? d.items as Array<Record<string, unknown>>
+    : [];
 
   return (
     <FormDocument formCode="F/49" formName="Document Master List" serial={val(d, "serial")} sectionName="Document Control & Records">

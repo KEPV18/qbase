@@ -5,11 +5,22 @@
 
 import React, { Suspense, lazy } from "react";
 
+/**
+ * The value a template field can carry. Templates that render a table emit the
+ * whole row array under one field key (see the `items` fields), so an array of
+ * row objects is a first-class field value — `form_data` stores it as JSONB
+ * alongside plain strings.
+ */
+export type TemplateFieldValue =
+  | string
+  | Record<string, unknown>
+  | Array<Record<string, unknown>>;
+
 export interface TemplateComponentProps {
   data?: Record<string, unknown>;
   isTemplate?: boolean;
   editMode?: boolean;
-  onChange?: (field: string, value: string) => void;
+  onChange?: (field: string, value: TemplateFieldValue) => void;
   className?: string;
 }
 

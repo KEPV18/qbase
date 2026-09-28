@@ -14,7 +14,7 @@ import {
 } from '../../data/formSchemas';
 import {
   validateFormData,
-  validatePreCreationGate,
+  checkPreCreationGate,
   getNextSerial,
   getFrequencyWarning,
   isoToDisplay,
@@ -40,18 +40,42 @@ export interface RecordData {
   _editCount?: number;
   _modificationReason?: string | null;
   _status?: string;
-  _approvalStatus?: 'Draft' | 'Pending_Approval' | 'Approved';
+  /**
+   * Derived display label for the record's workflow state. It is a projection of
+   * the `records.status` enum, which also carries `rejected`, so this union must
+   * be able to represent every value the column can hold.
+   */
+  _approvalStatus?: 'Draft' | 'Pending_Approval' | 'Approved' | 'Rejected';
   _department?: string | null;
   _section?: number;
   _sectionName?: string;
   _frequency?: string;
   project_id?: string;
   scope?: 'company-wide' | 'project-specific';
-  [key: string]: string | number | boolean | RecordData[] | Record<string, unknown> | null | undefined;
+  // Template components (e.g. F14's "items" rows) legitimately write arrays of
+  // row objects into arbitrary form fields, so the value union must include
+  // them — otherwise every template edit cannot be typed as a RecordData.
+  [key: string]: string | number | boolean | RecordData[] | Record<string, unknown> | Record<string, unknown>[] | null | undefined;
 }
 
 export interface FormErrors {
   [key: string]: string;
+}
+
+/**
+ * validateFormData reports a flat list of { field, message, code }; the form
+ * renders errors keyed by field name. Collapse the list, keeping the first
+ * message per field so a field never silently swallows its error.
+ */
+function toFormErrors(errors: ReadonlyArray<{ field?: string; message?: string }>): FormErrors {
+  const mapped: FormErrors = {};
+  for (const error of errors) {
+    const field = String(error?.field ?? '');
+    const message = String(error?.message ?? '');
+    if (!field || !message) continue;
+    if (!(field in mapped)) mapped[field] = message;
+  }
+  return mapped;
 }
 
 interface DynamicFormRendererProps {
@@ -82,12 +106,25 @@ const PreCreationGate: React.FC<{
   const warning = getFrequencyWarning(formCode, frequency);
 
   const handlePass = () => {
-    const result = validatePreCreationGate({ needReason, businessEvent, frequencyCheck: confirmed ? 'yes' : '' });
-    if (result.success) {
-      onPass(result.data);
-    } else {
-      setErrors(result.errors);
+    const result = checkPreCreationGate(formCode, frequency, {
+      needReason,
+      businessEvent,
+      frequencyConfirmed: confirmed,
+    });
+    if (result.pass) {
+      onPass({ needReason, businessEvent, frequencyCheck: confirmed ? 'yes' : '' });
+      return;
     }
+    // `reasons` is sparse — only failing questions push an entry — so a reason
+    // cannot be mapped to its question by index. `fields` is pushed in lockstep
+    // with `reasons` and carries that identity.
+    const nextErrors: Record<string, string> = {};
+    const failingFields = result.fields ?? [];
+    (result.reasons ?? []).forEach((reason, i) => {
+      const field = failingFields[i];
+      if (field) nextErrors[field] = reason;
+    });
+    setErrors(nextErrors);
   };
 
   return (
@@ -150,6 +187,7 @@ const PreCreationGate: React.FC<{
               />
               3. I confirm this record is needed per its frequency schedule
             </label>
+            {errors.frequencyConfirmed && <p className="text-destructive text-xs mt-1">{errors.frequencyConfirmed}</p>}
           </div>
         </div>
 
@@ -568,11 +606,11 @@ const DynamicFormRenderer: React.FC<DynamicFormRendererProps> = ({
       dataToValidate.serial = getNextSerial(selectedCode);
     }
     const result = validateFormData(selectedCode, dataToValidate);
-    if (result.success) {
+    if (result.valid) {
       setErrors({});
       return true;
     }
-    setErrors(result.errors);
+    setErrors(toFormErrors(result.errors));
     setSubmitted(true);
     return false;
   }, [schema, selectedCode, formData]);
@@ -587,18 +625,27 @@ const DynamicFormRenderer: React.FC<DynamicFormRendererProps> = ({
     }
 
     dataToValidate._createdAt = new Date().toISOString();
-    dataToValidate._createdBy = 'Ahmed Khaled';
+    // _createdBy is NOT set here: createRecord attributes the record to the
+    // authenticated session (recordStorage.ts resolve-currentUser fallback).
+    // The previous hardcode attributed every record to a single person.
     dataToValidate._creationReason = gateAnswers?.needReason || '';
     dataToValidate._businessEvent = gateAnswers?.businessEvent || '';
 
     const result = validateFormData(selectedCode, dataToValidate);
-    if (result.success) {
+    if (result.valid) {
       setIsSubmitting(true);
       // NOTE: preWriteValidation handles DD/MM/YYYY ↔ ISO conversion automatically.
       // Do NOT convert dates here — let the server-side validation canonicalize.
-      onSubmit({ ...result.data, formCode: selectedCode } as RecordData);
+      // Zod's parsed output contains form fields only (safeParse strips unknown
+      // keys), so merge it over the validated input to keep the metadata set above
+      // — the same re-merge preWriteValidation performs for the keys Zod drops.
+      onSubmit({
+        ...dataToValidate,
+        ...(result.sanitizedData ?? {}),
+        formCode: selectedCode,
+      } as RecordData);
     } else {
-      setErrors(result.errors);
+      setErrors(toFormErrors(result.errors));
       setSubmitted(true);
     }
   };

@@ -16,7 +16,7 @@ export interface F23Props {
   data?: Record<string, unknown>;
   isTemplate?: boolean;
   editMode?: boolean;
-  onChange?: (field: string, value: string | Record<string, unknown>) => void;
+  onChange?: (field: string, value: string | Record<string, unknown> | Array<Record<string, unknown>> | RowData[]) => void;
   className?: string;
 }
 

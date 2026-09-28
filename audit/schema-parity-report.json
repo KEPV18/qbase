@@ -4,277 +4,23 @@
     "openapi": "/tmp/ghq/prod_openapi.json",
     "productionTables": 17,
     "productionRpcs": 24,
-    "sourceFilesScanned": 238,
+    "sourceFilesScanned": 236,
     "entryPoints": [
       "src/main.tsx",
       "api/auth/callback.js",
       "api/auth/index.js",
       "api/token.js",
-      "api/users.js",
       "server/local.js"
     ],
-    "reachableFiles": 175
+    "reachableFiles": 174
   },
   "summary": {
-    "bySeverity": {
-      "P4": 8,
-      "P1": 6
-    },
-    "totalFindings": 14,
+    "bySeverity": {},
+    "totalFindings": 0,
     "tablesReferencedButAbsent": []
   },
-  "findings": [
-    {
-      "table": null,
-      "column": "p_approval_status+p_department",
-      "kind": "rpc_arg_unknown",
-      "rpc": "create_record_validated",
-      "file": "src/services/recordStorage.ts",
-      "line": 532,
-      "isTest": false,
-      "via": "object-literal",
-      "detail": [
-        "p_approval_status",
-        "p_department"
-      ],
-      "reachable": true,
-      "severity": "P1"
-    },
-    {
-      "table": "records",
-      "column": "form_type",
-      "kind": "column_missing",
-      "method": "insert",
-      "via": "object-literal",
-      "file": "src/services/importService.ts",
-      "line": 141,
-      "isTest": false,
-      "reachable": true,
-      "severity": "P1"
-    },
-    {
-      "table": "records",
-      "column": "revision_no",
-      "kind": "column_missing",
-      "method": "insert",
-      "via": "object-literal",
-      "file": "src/services/importService.ts",
-      "line": 141,
-      "isTest": false,
-      "reachable": true,
-      "severity": "P1"
-    },
-    {
-      "table": "records",
-      "column": "approval_status",
-      "kind": "column_missing",
-      "method": "update",
-      "via": "bracket-assign",
-      "file": "src/services/recordStorage.ts",
-      "line": 686,
-      "isTest": false,
-      "reachable": true,
-      "severity": "P1"
-    },
-    {
-      "table": "records",
-      "column": "department",
-      "kind": "column_missing",
-      "method": "update",
-      "via": "bracket-assign",
-      "file": "src/services/recordStorage.ts",
-      "line": 687,
-      "isTest": false,
-      "reachable": true,
-      "severity": "P1"
-    },
-    {
-      "table": "records",
-      "column": "approval_status",
-      "kind": "column_missing",
-      "method": "update",
-      "via": "object-literal",
-      "file": "src/services/recordStorage.ts",
-      "line": 873,
-      "isTest": false,
-      "reachable": true,
-      "severity": "P1"
-    },
-    {
-      "table": null,
-      "column": null,
-      "kind": "rpc_missing",
-      "rpc": "lock_record_for_edit",
-      "file": "src/hooks/useRecordEditor.ts",
-      "line": 72,
-      "isTest": false,
-      "reachable": false,
-      "severity": "P4"
-    },
-    {
-      "table": null,
-      "column": null,
-      "kind": "rpc_missing",
-      "rpc": "unlock_record",
-      "file": "src/hooks/useRecordEditor.ts",
-      "line": 88,
-      "isTest": false,
-      "reachable": false,
-      "severity": "P4"
-    },
-    {
-      "table": null,
-      "column": null,
-      "kind": "rpc_missing",
-      "rpc": "save_record_version",
-      "file": "src/hooks/useRecordEditor.ts",
-      "line": 127,
-      "isTest": false,
-      "reachable": false,
-      "severity": "P4"
-    },
-    {
-      "table": null,
-      "column": null,
-      "kind": "rpc_missing",
-      "rpc": "unlock_record",
-      "file": "src/hooks/useRecordEditor.ts",
-      "line": 140,
-      "isTest": false,
-      "reachable": false,
-      "severity": "P4"
-    },
-    {
-      "table": null,
-      "column": null,
-      "kind": "rpc_missing",
-      "rpc": "get_record_version_history",
-      "file": "src/hooks/useRecordEditor.ts",
-      "line": 158,
-      "isTest": false,
-      "reachable": false,
-      "severity": "P4"
-    },
-    {
-      "table": null,
-      "column": null,
-      "kind": "rpc_missing",
-      "rpc": "restore_record_version",
-      "file": "src/hooks/useRecordEditor.ts",
-      "line": 175,
-      "isTest": false,
-      "reachable": false,
-      "severity": "P4"
-    },
-    {
-      "table": "records",
-      "column": "locked_by",
-      "kind": "column_missing",
-      "method": "select",
-      "via": "chain",
-      "file": "src/hooks/useRecordEditor.ts",
-      "line": 42,
-      "isTest": false,
-      "reachable": false,
-      "severity": "P4"
-    },
-    {
-      "table": "records",
-      "column": "locked_at",
-      "kind": "column_missing",
-      "method": "select",
-      "via": "chain",
-      "file": "src/hooks/useRecordEditor.ts",
-      "line": 42,
-      "isTest": false,
-      "reachable": false,
-      "severity": "P4"
-    }
-  ],
-  "typesDrift": [
-    {
-      "table": "profiles",
-      "kind": "present_in_production_but_undeclared",
-      "columns": [
-        "department"
-      ],
-      "severity": "P3"
-    },
-    {
-      "table": "records",
-      "kind": "present_in_production_but_undeclared",
-      "columns": [
-        "project_id"
-      ],
-      "severity": "P3"
-    },
-    {
-      "table": "retention_summary",
-      "kind": "table_declared_but_absent_from_production",
-      "columns": [
-        "approval_date",
-        "approval_status",
-        "approver_id",
-        "approver_name",
-        "archival_date",
-        "author_id",
-        "author_name",
-        "bucket_id",
-        "change_description",
-        "change_reason",
-        "checksum",
-        "classification",
-        "created_at",
-        "created_by",
-        "department",
-        "description",
-        "document_number",
-        "file_size",
-        "form_code",
-        "id",
-        "iso_clause",
-        "keywords",
-        "mime_type",
-        "parent_document_id",
-        "previous_version",
-        "process_id",
-        "record_type",
-        "related_documents",
-        "retention_status",
-        "retention_until",
-        "retention_years",
-        "review_date",
-        "reviewer_id",
-        "reviewer_name",
-        "revision_date",
-        "storage_path",
-        "title",
-        "updated_at",
-        "updated_by",
-        "version"
-      ],
-      "severity": "P3"
-    },
-    {
-      "table": "upcoming_reviews",
-      "kind": "table_declared_but_absent_from_production",
-      "columns": [
-        "completed_at",
-        "created_at",
-        "department",
-        "document_id",
-        "document_number",
-        "form_code",
-        "id",
-        "review_notes",
-        "review_status",
-        "reviewed_by",
-        "scheduled_date",
-        "title"
-      ],
-      "severity": "P3"
-    }
-  ],
+  "findings": [],
+  "typesDrift": [],
   "unreferencedProductionColumns": {
     "swot_strategies": [
       "id",
@@ -296,6 +42,7 @@
     "records": [
       "updated_at",
       "form_name",
+      "created_by",
       "modification_reason",
       "section",
       "section_name",
@@ -473,57 +220,7 @@
       "target_id"
     ]
   },
-  "rpcsCalledButAbsent": [
-    {
-      "rpc": "lock_record_for_edit",
-      "sites": [
-        {
-          "file": "src/hooks/useRecordEditor.ts",
-          "line": 72
-        }
-      ]
-    },
-    {
-      "rpc": "unlock_record",
-      "sites": [
-        {
-          "file": "src/hooks/useRecordEditor.ts",
-          "line": 88
-        },
-        {
-          "file": "src/hooks/useRecordEditor.ts",
-          "line": 140
-        }
-      ]
-    },
-    {
-      "rpc": "save_record_version",
-      "sites": [
-        {
-          "file": "src/hooks/useRecordEditor.ts",
-          "line": 127
-        }
-      ]
-    },
-    {
-      "rpc": "get_record_version_history",
-      "sites": [
-        {
-          "file": "src/hooks/useRecordEditor.ts",
-          "line": 158
-        }
-      ]
-    },
-    {
-      "rpc": "restore_record_version",
-      "sites": [
-        {
-          "file": "src/hooks/useRecordEditor.ts",
-          "line": 175
-        }
-      ]
-    }
-  ],
+  "rpcsCalledButAbsent": [],
   "prodRpcsNeverCalled": [
     "_validate_form_required_fields",
     "create_notification",

@@ -9,7 +9,7 @@
 import { supabase } from '@/integrations/supabase/client';
 import { preWriteValidation } from './preWriteValidation';
 import { getFormSchema } from '../data/formSchemas';
-import { getNextSerial, isSerialUnique } from '../schemas/serialAndDate';
+import { getNextSerial, isSerialUnique, registerSerials } from '../schemas/serialAndDate';
 import { appendAuditLog, computeDiff } from './auditLog';
 import { log } from './logger';
 import { emitEvent, Events } from './eventBus';
@@ -19,7 +19,12 @@ import { restGet } from './userService';
 import type { RecordData } from '../components/forms/DynamicFormRenderer';
 
 // ============================================================================
-// Database row type — mirrors the new schema exactly
+// Database row type — mirrors the production `records` table exactly.
+// Column list verified against the live PostgREST OpenAPI document
+// (GET /rest/v1/ → definitions.records.properties); 17 columns, and there is
+// deliberately NO `approval_status` and NO `department` column on `records`.
+// The generated src/integrations/supabase/types.ts is STALE — it is missing
+// `project_id` — so it is not used as the source of truth here.
 // ============================================================================
 
 interface DbRecord {
@@ -28,9 +33,8 @@ interface DbRecord {
   serial: string;
   form_name: string;
   project_id: string | null;
+  /** records.status — Postgres enum: draft | pending_review | approved | rejected */
   status: string;
-  approval_status: 'Draft' | 'Pending_Approval' | 'Approved';
-  department: string | null;
   form_data: Record<string, unknown>;
   section: number | null;
   section_name: string;
@@ -42,6 +46,51 @@ interface DbRecord {
   deleted_at: string | null;
   created_at: string;
   updated_at: string;
+}
+
+// ============================================================================
+// Status vocabulary — ONE source of truth
+// ============================================================================
+// The workflow state lives in the `records.status` column. The UI historically
+// read a parallel `_approvalStatus` field, so that field is kept as a *derived
+// label* rather than as independent state — two writable copies of one fact is
+// what produced the drift being repaired here. The label spelling is preserved
+// because ApprovalQueuePage and Index filter on these exact strings.
+
+/** The production `record_status_enum` values, verbatim. */
+export type RecordStatusEnum = 'draft' | 'pending_review' | 'approved' | 'rejected';
+
+/** UI-facing label for a `records.status` value. */
+export type ApprovalLabel = 'Draft' | 'Pending_Approval' | 'Approved' | 'Rejected';
+
+/** records.status → UI label. Unknown values read as Draft, never as Approved. */
+export function statusToApprovalLabel(status: string | null | undefined): ApprovalLabel {
+  switch (String(status ?? '').trim().toLowerCase()) {
+    case 'approved': return 'Approved';
+    case 'pending_review': return 'Pending_Approval';
+    case 'rejected': return 'Rejected';
+    case 'draft': return 'Draft';
+    default: return 'Draft';
+  }
+}
+
+/** UI label → records.status. */
+export function approvalLabelToStatus(label: string | null | undefined): RecordStatusEnum {
+  switch (String(label ?? '').trim()) {
+    case 'Approved': return 'approved';
+    case 'Pending_Approval': return 'pending_review';
+    case 'Rejected': return 'rejected';
+    case 'Draft': return 'draft';
+    default: return 'draft';
+  }
+}
+
+/** Coerce an arbitrary string to a valid records.status value. */
+export function toRecordStatusEnum(value: string | null | undefined): RecordStatusEnum {
+  const v = String(value ?? '').trim().toLowerCase();
+  return (v === 'draft' || v === 'pending_review' || v === 'approved' || v === 'rejected')
+    ? v
+    : 'draft';
 }
 
 // ============================================================================
@@ -119,14 +168,17 @@ function canAccessDepartment(user: CurrentUserSnapshot, recordDept: string | nul
  * Rule A: Admin/GM → auto Approved
  * Rule B: Dept Head acting within own dept → auto Approved
  * Rule C: Employee → Pending_Approval
+ *
+ * Returns a `records.status` enum value (the single workflow column), not a
+ * label. Use statusToApprovalLabel() for display.
  */
 export function resolveApprovalStatus(
   user: CurrentUserSnapshot,
   targetDepartment: string | null
-): 'Draft' | 'Pending_Approval' | 'Approved' {
-  if (user.role === 'admin') return 'Approved';                      // Rule A
-  if (user.role === 'dept_head' && targetDepartment === user.department) return 'Approved'; // Rule B
-  return 'Pending_Approval';                                         // Rule C
+): RecordStatusEnum {
+  if (user.role === 'admin') return 'approved';                      // Rule A
+  if (user.role === 'dept_head' && targetDepartment === user.department) return 'approved'; // Rule B
+  return 'pending_review';                                           // Rule C
 }
 
 /**
@@ -228,13 +280,15 @@ function parseRowToRecord(row: DbRecord): RecordData | null {
   // Strip any protected keys from form_data to prevent collisions
   for (const key of PROTECTED_KEYS) {
     if (key in formData) {
-      log.system.warn('parseRowToRecord:protected_key_stripped', {
+      // log.system.warn takes (event, message:string) — the object was being passed
+      // as the message, which the logger cannot render.
+      log.system.warn('parseRowToRecord:protected_key_stripped', JSON.stringify({
         formCode: row.form_code,
         serial: row.serial,
         strippedKey: key,
         formDataValue: formData[key],
-        dbValue: (row as Record<string, unknown>)[key],
-      });
+        dbValue: (row as unknown as Record<string, unknown>)[key],
+      }));
       delete formData[key];
     }
   }
@@ -255,9 +309,12 @@ function parseRowToRecord(row: DbRecord): RecordData | null {
     _deletedAt: row.deleted_at || '',
     _editCount: row.edit_count || 0,
     _modificationReason: row.modification_reason || '',
-    _status: row.status || 'draft',
-    _approvalStatus: row.approval_status || 'Approved',
-    _department: row.department || '',
+    _status: toRecordStatusEnum(row.status),
+    // Derived from the status column — records has no `approval_status` column.
+    _approvalStatus: statusToApprovalLabel(row.status),
+    // Derived from the form code — records has no `department` column.
+    // FORM_DEPT_MAP is documented as the canonical form→department mapping.
+    _department: resolveDepartment(row.form_code) || '',
     _section: row.section || 0,
     _sectionName: row.section_name || '',
     _frequency: row.frequency || '',
@@ -286,15 +343,14 @@ function recordToRow(data: RecordData): Omit<DbRecord, 'id' | 'created_at' | 'up
   const formCode = String(data.formCode ?? '');
   const formSchema = getFormSchema(formCode);
 
-  const recordDept = resolveDepartment(formCode);
   return {
     form_code: formCode,
     serial: String(data.serial ?? ''),
     form_name: String(data.formName ?? formSchema?.name ?? ''),
     project_id: (data.project_id as string) || null,
-    status: String(data._status ?? 'draft'),
-    approval_status: (data._approvalStatus as 'Draft' | 'Pending_Approval' | 'Approved') || 'Approved',
-    department: recordDept || (data._department as string) || null,
+    // The only writable workflow column. `_approvalStatus` is a derived label
+    // for the UI and is deliberately NOT written anywhere.
+    status: toRecordStatusEnum(data._status),
     form_data: formData,
     section: Number(data._section ?? formSchema?.section ?? 0),
     section_name: String(data._sectionName ?? formSchema?.sectionName ?? ''),
@@ -335,10 +391,10 @@ export async function getRecords(formCode?: string): Promise<RecordData[]> {
     .is('deleted_at', null)  // Only active records
     .order('form_code', { ascending: true });
 
-  // For non-admins: add department filter at query level
-  if (!isAdmin && user?.department) {
-    query.eq('department', user.department);
-  }
+  // NOTE: `records` has no `department` column (verified against the live
+  // PostgREST schema). A query-level `.eq('department', …)` here made the entire
+  // read fail with PGRST204 for any user who had a department, so department
+  // scoping is applied in memory below instead.
 
   const { data, error } = await query;
 
@@ -358,6 +414,22 @@ export async function getRecords(formCode?: string): Promise<RecordData[]> {
   if (formCode) {
     records = records.filter(r => r.formCode === formCode);
   }
+
+  // Feed the serial cache so getNextSerial() proposes a number beyond what
+  // already exists. Nothing ever called registerSerials() before, so the cache
+  // stayed empty forever and getNextSerial() always proposed F/XX-001, which
+  // collides with the form's first record and fails createRecord's duplicate
+  // check. The double-check inside createRecord still guards against a race.
+  const serialsByForm = new Map<string, string[]>();
+  for (const r of records) {
+    const serial = r.serial;
+    const code = r.formCode;
+    if (!serial || !code) continue;
+    const list = serialsByForm.get(code);
+    if (list) list.push(serial);
+    else serialsByForm.set(code, [serial]);
+  }
+  for (const [code, list] of serialsByForm) registerSerials(code, list);
 
   return records;
 }
@@ -380,8 +452,9 @@ export async function getRecord(serial: string): Promise<RecordData | null> {
   const record = parseRowToRecord(data as DbRecord);
   if (!record) return null;
 
-  // RBAC: check if user can view this record
-  if (user && !canAccessDepartment(user, (data as DbRecord).department)) {
+  // RBAC: check if user can view this record.
+  // `records` has no department column — use the form→department mapping.
+  if (user && !canAccessDepartment(user, resolveDepartment((data as DbRecord).form_code))) {
     throw new RecordStorageError(
       `Access denied: you do not have permission to view record ${serial}`,
       'NOT_FOUND'
@@ -427,7 +500,7 @@ export async function createRecord(formData: RecordData): Promise<StorageResult>
   }
 
   // 1. Pre-write validation
-  const validation = preWriteValidation(formCode, formData, 'create');
+  const validation = preWriteValidation(formCode, formData, 'create', undefined, currentUser);
   if (!validation.valid || !validation.sanitizedData) {
     log.validation.rejected(formCode, validation.errors.map(e => e.field));
     log.record.failed(formCode, '?', `Validation: ${validation.errors.map(e => e.message).join('; ')}`);
@@ -440,76 +513,49 @@ export async function createRecord(formData: RecordData): Promise<StorageResult>
 
   const data = validation.sanitizedData;
 
-  // 2. Generate serial with atomic claim-and-verify (retry loop)
-  let serial = '';
+  // 2. Serial allocation.
+  // The server owns serial allocation: create_record_validated takes p_serial and
+  // returns out_serial, and production also exposes a dedicated get_next_serial
+  // RPC. The previous implementation ran a "claim and verify" retry loop here
+  // whose result was then discarded — the RPC call below always sent
+  // p_serial: 'auto' — so it spent 1-5 extra queries per create and logged
+  // collisions it never acted on. 'auto' is the sentinel this codebase already
+  // uses (see AUTO_SERIAL in the Zod schema and preWriteValidation).
   const providedSerial = String(data.serial ?? '');
-  if (providedSerial && providedSerial !== 'auto') {
-    serial = providedSerial;
-  } else {
-    // Atomic serial generation: attempt to generate, verify no one took it, retry if collision
-    const MAX_ATTEMPTS = 5;
-    let attempt = 0;
-    let claimed = false;
+  const hasExplicitSerial = !!providedSerial && providedSerial !== 'auto';
 
-    while (attempt < MAX_ATTEMPTS && !claimed) {
-      attempt++;
-      const existingSerials = await getExistingSerials(formCode);
-      const candidate = getNextSerial(formCode);
-
-      // Atomically verify uniqueness via Supabase check just before insert
-      const { data: collision, error: checkErr } = await supabase
-        .from('records')
-        .select('id')
-        .eq('serial', candidate)
-        .limit(1);
-
-      if (checkErr) {
-        log.system.error("createRecord:serialCheck_failed", `Attempt ${attempt}: ${checkErr.message}`);
-        continue;
-      }
-
-      if (!collision || collision.length === 0) {
-        serial = candidate;
-        claimed = true;
-      } else {
-        log.system.error("createRecord:serialCheck_collision", `Collision on ${candidate}, retrying...`);
-        await new Promise(r => setTimeout(r, 50 + Math.random() * 100)); // jittered backoff
-      }
-    }
-
-    if (!claimed) {
-      return {
-        success: false,
-        error: `Cannot generate unique serial for ${formCode} after ${MAX_ATTEMPTS} attempts. Please try again.`,
-        duplicateSerial: true,
-      };
-    }
-  }
-
-  // 3. Final uniqueness check for user-provided serials
-  if (providedSerial && providedSerial !== 'auto') {
+  // 3. Uniqueness check for a caller-supplied serial. Not a substitute for a
+  // server-side constraint — the server re-checks — but it turns the common case
+  // into a clear error instead of a failed round trip.
+  if (hasExplicitSerial) {
     const existingSerials = await getExistingSerials(formCode);
-    if (existingSerials.includes(serial)) {
-      return { success: false, error: `Serial ${serial} already exists for ${formCode}.`, duplicateSerial: true };
+    if (existingSerials.includes(providedSerial)) {
+      return { success: false, error: `Serial ${providedSerial} already exists for ${formCode}.`, duplicateSerial: true };
     }
   }
-  data.serial = serial;
+  data.serial = hasExplicitSerial ? providedSerial : 'auto';
   data.formCode = formCode;
   const formSchema = getFormSchema(formCode);
   data.formName = formSchema?.name || '';
   data._createdAt = data._createdAt || new Date().toISOString();
-  data._createdBy = data._createdBy || 'unknown';
+  // Attribute the record to the authenticated user. currentUser was resolved
+  // above for the auth gate; preWriteValidation fills _createdBy from the actor
+  // it is handed, so this is the last-resort fallback.
+  data._createdBy = (data._createdBy as string) || currentUser;
   data._lastModifiedAt = null;
   data._lastModifiedBy = null;
   data._editCount = 0;
   data._modificationReason = null;
-  data._status = data._status || 'pending_review';
 
   // === APPROVAL WORKFLOW (Ahmed's Rules) ===
+  // The workflow is authoritative here: a caller must not be able to choose an
+  // arbitrary starting status. Previously `p_status` was taken straight from the
+  // client payload, so an employee could create a record already marked approved.
   const actor = getCurrentUserSnapshot();
   const recordDept = resolveDepartment(formCode);
-  const approvalStatus = actor ? resolveApprovalStatus(actor, recordDept) : 'Pending_Approval';
-  data._approvalStatus = approvalStatus;
+  const initialStatus: RecordStatusEnum = actor ? resolveApprovalStatus(actor, recordDept) : 'pending_review';
+  data._status = initialStatus;
+  data._approvalStatus = statusToApprovalLabel(initialStatus);
   data._department = recordDept || '';
 
   // 6. Insert via validated RPC (server-side enforcement)
@@ -529,17 +575,24 @@ export async function createRecord(formData: RecordData): Promise<StorageResult>
       }
     }
 
+    // Parameter set copied from the live function signature (verified from the
+    // PostgREST OpenAPI document: paths./rpc/create_record_validated.post
+    // .parameters[in=body].schema). The previous call ALSO sent p_approval_status
+    // and p_department. Neither is a parameter of this function, and PostgREST
+    // resolves a named-argument call by matching the supplied key set against the
+    // function's parameter names — so the key set never matched, the function was
+    // never found, and EVERY record create failed with PGRST202 before the body
+    // ran. p_created_by was a real parameter that was never sent.
     const { data: rpcResult, error } = await supabase.rpc('create_record_validated', {
+      p_created_by: String(data._createdBy ?? ''),
       p_form_code: formCode,
-      p_form_name: data.formName as string || formSchema?.name || '',
+      p_form_name: (data.formName as string) || formSchema?.name || '',
       p_form_data: businessData,
-      p_status: (data._status as string || 'draft') as unknown,
-      p_serial: 'auto',
-      p_section: data._section as number || formSchema?.section || null,
-      p_section_name: data._sectionName as string || formSchema?.sectionName || null,
-      p_frequency: data._frequency as string || formSchema?.frequency || null,
-      p_approval_status: approvalStatus,
-      p_department: recordDept,
+      p_status: data._status,
+      p_serial: hasExplicitSerial ? providedSerial : 'auto',
+      p_section: (data._section as number) || formSchema?.section || null,
+      p_section_name: (data._sectionName as string) || formSchema?.sectionName || null,
+      p_frequency: (data._frequency as string) || formSchema?.frequency || null,
     });
 
     if (error) {
@@ -557,10 +610,21 @@ export async function createRecord(formData: RecordData): Promise<StorageResult>
       throw new RecordStorageError(`Failed to create record: ${msg}`, 'NETWORK', error);
     }
 
-    // Extract the actual serial from RPC result
+    // Extract the server-assigned serial. Prefer the documented out_serial field,
+    // then a returned row's own serial, then a caller-supplied serial that was
+    // sent verbatim. If none is present we must NOT report success with a serial
+    // we guessed — that is the "write-loss" class this codebase has been bitten
+    // by, where a write is reported as succeeded and the record is not findable.
     const resultRow = Array.isArray(rpcResult) ? rpcResult[0] : rpcResult;
-    const actualSerial = resultRow?.out_serial || serial;
-    const actualId = resultRow?.out_id;
+    const actualSerial = resultRow?.out_serial || resultRow?.serial || (hasExplicitSerial ? providedSerial : '');
+    const actualId = resultRow?.out_id || resultRow?.id;
+    if (!actualSerial) {
+      throw new RecordStorageError(
+        'Record creation was not confirmed: the server returned no serial for the new record.',
+        'UNKNOWN',
+        rpcResult,
+      );
+    }
 
     logOperation({ timestamp: new Date().toISOString(), operation: 'create', serial: actualSerial, formCode, success: true, durationMs: Math.round(performance.now() - startTime) });
 
@@ -589,7 +653,7 @@ export async function createRecord(formData: RecordData): Promise<StorageResult>
     return { success: true, record: data };
   } catch (err) {
     const errorMsg = err instanceof RecordStorageError ? err.message : `Unexpected error: ${(err as Error).message}`;
-    logOperation({ timestamp: new Date().toISOString(), operation: 'create', serial, formCode, success: false, error: errorMsg, durationMs: Math.round(performance.now() - startTime) });
+    logOperation({ timestamp: new Date().toISOString(), operation: 'create', serial: String(data.serial ?? ''), formCode, success: false, error: errorMsg, durationMs: Math.round(performance.now() - startTime) });
     if (err instanceof RecordStorageError) return { success: false, error: err.message };
     return { success: false, error: `Unexpected error: ${(err as Error).message}` };
   }
@@ -638,11 +702,12 @@ export async function updateRecord(
 
   // 3. Merge
   const actor = getCurrentUserSnapshot();
-  const recordDept = (currentRow as DbRecord).department || resolveDepartment(formCode);
+  // `records` has no department column — the form→department map is authoritative.
+  const recordDept = resolveDepartment(formCode);
+  const currentStatus = toRecordStatusEnum((currentRow as DbRecord).status);
 
   // Enforce approval workflow: employees can only edit Draft records
-  const currentApproval = (currentRow as DbRecord).approval_status || 'Approved';
-  if (actor?.role === 'employee' && currentApproval !== 'Draft') {
+  if (actor?.role === 'employee' && currentStatus !== 'draft') {
     return {
       success: false,
       error: 'Employees can only edit records in Draft status. Please contact your department head.',
@@ -653,9 +718,9 @@ export async function updateRecord(
   const isSignificantChange = Object.keys(changes).some(k =>
     !k.startsWith('_') && k !== 'id' && k !== 'serial' && k !== 'formCode'
   );
-  const newApprovalStatus = (actor && isSignificantChange)
+  const newStatus: RecordStatusEnum = (actor && isSignificantChange)
     ? resolveApprovalStatus(actor, recordDept)
-    : currentApproval;
+    : currentStatus;
 
   const merged: RecordData = {
     ...currentRecord,
@@ -669,7 +734,10 @@ export async function updateRecord(
     _lastModifiedBy: actor?.email || await getCurrentUserId() || 'unknown',
     _editCount: currentEditCount + 1,
     _modificationReason: modificationReason || null,
-    _approvalStatus: newApprovalStatus,
+    // `status` is the single writable workflow field; the label is derived from it
+    // so the two can never disagree.
+    _status: newStatus,
+    _approvalStatus: statusToApprovalLabel(newStatus),
     _department: recordDept || '',
   };
 
@@ -682,19 +750,32 @@ export async function updateRecord(
   // 5. Update in Supabase — using ID (not serial) for precise targeting
   try {
     const updateData = recordToRow(validation.sanitizedData);
-    // Ensure approval_status is explicitly set
-    (updateData as Record<string, unknown>)['approval_status'] = merged._approvalStatus as string;
-    (updateData as Record<string, unknown>)['department'] = merged._department as string;
+    // NOTE: there is deliberately no approval_status / department assignment here.
+    // Neither column exists on `records` (verified against the live PostgREST
+    // schema), so supplying them made PostgREST reject the entire UPDATE with
+    // PGRST204 and every save of an existing record failed. The workflow state is
+    // carried by `status`, which recordToRow writes.
     // Remove id from update payload — we don't update the primary key
     const { id: _id, ...updateFields } = updateData as DbRecord & { id?: string };
 
-    const { error: updateError } = await supabase
+    // .select() is required to observe the outcome: PostgREST answers a 0-row
+    // UPDATE with HTTP 200 and no error, so without reading the affected rows back
+    // we would report success for a write that changed nothing (including an
+    // UPDATE silently refused by RLS).
+    const { data: updatedRows, error: updateError } = await supabase
       .from('records')
       .update(updateFields)
-      .eq('id', (currentRow as DbRecord).id);
+      .eq('id', (currentRow as DbRecord).id)
+      .select('id');
 
     if (updateError) {
       throw new RecordStorageError(`Failed to update record: ${updateError.message}`, 'NETWORK', updateError);
+    }
+    if (!updatedRows || updatedRows.length === 0) {
+      throw new RecordStorageError(
+        `Record ${serial} was not updated: no row matched id ${(currentRow as DbRecord).id}.`,
+        'NOT_FOUND',
+      );
     }
 
     logOperation({ timestamp: new Date().toISOString(), operation: 'update', serial, formCode, success: true, durationMs: Math.round(performance.now() - startTime) });
@@ -800,23 +881,41 @@ export async function changeRecordStatus(
   const previousStatus = currentRecord._status;
   const formCode = String(currentRecord.formCode);
 
+  // Validate against the real enum before writing. Passing an unknown value would
+  // otherwise reach Postgres and fail there as 22P02 with a less useful message.
+  const targetStatus = String(newStatus ?? '').trim().toLowerCase();
+  if (targetStatus !== 'draft' && targetStatus !== 'pending_review' && targetStatus !== 'approved' && targetStatus !== 'rejected') {
+    return {
+      success: false,
+      error: `Invalid status "${newStatus}". Expected one of: draft, pending_review, approved, rejected.`,
+    };
+  }
+
   try {
-    const { error: updateError } = await supabase
+    const { data: statusRows, error: updateError } = await supabase
       .from('records')
-      .update({ status: newStatus, edit_count: ((currentRow as DbRecord).edit_count ?? 0) + 1, last_modified_by: currentUser })
-      .eq('id', (currentRow as DbRecord).id);
+      .update({ status: targetStatus, edit_count: ((currentRow as DbRecord).edit_count ?? 0) + 1, last_modified_by: currentUser })
+      .eq('id', (currentRow as DbRecord).id)
+      .select('id');
 
     if (updateError) {
       throw new RecordStorageError(`Failed to update status: ${updateError.message}`, 'NETWORK', updateError);
     }
+    // A 0-row UPDATE returns 200 with no error — verify the row was actually changed.
+    if (!statusRows || statusRows.length === 0) {
+      throw new RecordStorageError(
+        `Status for ${serial} was not changed: no row matched id ${(currentRow as DbRecord).id}.`,
+        'NOT_FOUND',
+      );
+    }
 
     // Audit status change
-    appendAuditLog(serial, 'status_change', currentUser, ['status'], { status: previousStatus }, { status: newStatus }).catch(err => {
-      // Status audit log failed silently
+    appendAuditLog(serial, 'status_change', currentUser, ['status'], { status: previousStatus }, { status: targetStatus }).catch(err => {
+      log.audit.failed(serial, `status_change: ${String(err)}`);
     });
 
     logOperation({ timestamp: new Date().toISOString(), operation: 'update', serial, formCode, success: true, durationMs: Math.round(performance.now() - startTime) });
-    return { success: true, record: { ...currentRecord, _status: newStatus } };
+    return { success: true, record: { ...currentRecord, _status: targetStatus, _approvalStatus: statusToApprovalLabel(targetStatus) } };
   } catch (err) {
     const errorMsg = err instanceof RecordStorageError ? err.message : `Unexpected error: ${(err as Error).message}`;
     logOperation({ timestamp: new Date().toISOString(), operation: 'update', serial, formCode, success: false, error: errorMsg, durationMs: Math.round(performance.now() - startTime) });
@@ -854,12 +953,12 @@ export async function approveRecord(
   const record = parseRowToRecord(currentRow as DbRecord);
   if (!record) return { success: false, error: `Failed to parse record ${serial}.` };
 
-  const recordDept = (currentRow as DbRecord).department;
-  const currentApproval = (currentRow as DbRecord).approval_status || 'Draft';
+  const recordDept = resolveDepartment(String((currentRow as DbRecord).form_code || ''));
+  const currentStatus = toRecordStatusEnum((currentRow as DbRecord).status);
 
-  // Only Pending_Approval records can be approved
-  if (currentApproval !== 'Pending_Approval') {
-    return { success: false, error: `Record ${serial} is not pending approval (current: ${currentApproval}).` };
+  // Only a record awaiting review can be approved
+  if (currentStatus !== 'pending_review') {
+    return { success: false, error: `Record ${serial} is not pending review (current status: ${currentStatus}).` };
   }
 
   // RBAC: check if user can approve this department
@@ -868,29 +967,39 @@ export async function approveRecord(
   }
 
   try {
-    const { error: updateError } = await supabase
+    // The approval decision is written to `status` — the only workflow column that
+    // exists on `records`. It previously wrote an `approval_status` column that does
+    // not exist, so the approval never persisted.
+    const { data: approvedRows, error: updateError } = await supabase
       .from('records')
       .update({
-        approval_status: 'Approved',
+        status: 'approved',
         last_modified_by: user.email,
         edit_count: ((currentRow as DbRecord).edit_count ?? 0) + 1,
       })
-      .eq('id', (currentRow as DbRecord).id);
+      .eq('id', (currentRow as DbRecord).id)
+      .select('id');
 
     if (updateError) {
       throw new RecordStorageError(`Failed to approve record: ${updateError.message}`, 'NETWORK', updateError);
     }
+    if (!approvedRows || approvedRows.length === 0) {
+      throw new RecordStorageError(
+        `Approval of ${serial} was not applied: no row matched id ${(currentRow as DbRecord).id}.`,
+        'NOT_FOUND',
+      );
+    }
 
     // Audit: approval event
-    appendAuditLog(serial, 'status_change', user.email, ['approval_status'], { approval_status: 'Pending_Approval' }, { approval_status: 'Approved' }, record.formCode as string).catch(err => {
-      console.error(`[AUDIT LOG FAILED] approve ${serial}:`, err);
+    appendAuditLog(serial, 'status_change', user.email, ['status'], { status: 'pending_review' }, { status: 'approved' }, record.formCode as string).catch(err => {
+      log.audit.failed(serial, `approve: ${String(err)}`);
     });
 
     logOperation({ timestamp: new Date().toISOString(), operation: 'update', serial, formCode: record.formCode as string, success: true, durationMs: Math.round(performance.now() - startTime) });
 
     return {
       success: true,
-      record: { ...record, _approvalStatus: 'Approved', _lastModifiedBy: user.email },
+      record: { ...record, _status: 'approved', _approvalStatus: 'Approved', _lastModifiedBy: user.email },
     };
   } catch (err) {
     const errorMsg = err instanceof RecordStorageError ? err.message : `Unexpected error: ${(err as Error).message}`;
@@ -931,45 +1040,64 @@ export async function getArchivedRecords(): Promise<RecordData[]> {
   const user = getCurrentUserSnapshot();
   const isAdmin = user?.role === 'admin';
 
-  // Before fetching, purge records deleted >30 days ago
-  await purgeOldArchives();
-
+  // NOTE: this used to call purgeOldArchives() before reading, and that function
+  // permanently DELETEs every record soft-deleted more than 30 days ago. That made
+  // merely opening the archive page — a read — destroy data, with no confirmation,
+  // no audit entry and no recovery except a backup. Retention enforcement needs to
+  // be an explicit, scheduled, audited job rather than a side effect of a read, so
+  // it is no longer invoked from here. purgeOldArchives() is left intact for that job.
   const query = supabase
     .from('records')
     .select('*')
     .not('deleted_at', 'is', null)
     .order('deleted_at', { ascending: false });
 
-  if (!isAdmin && user?.department) {
-    query.eq('department', user.department);
-  }
+  // Same as getRecords: `records.department` does not exist, so no query-level
+  // department filter. The in-memory filter below is the actual scoping.
 
   const { data, error } = await query;
   if (error) {
     throw new RecordStorageError(`Failed to fetch archived records: ${error.message}`, 'NETWORK', error);
   }
 
-  return (data as DbRecord[])
+  let archived = (data as DbRecord[])
     .map(row => parseRowToRecord(row))
-    .filter(Boolean) as RecordData[];
+    .filter((r): r is RecordData => r !== null);
+
+  if (!isAdmin && user) {
+    archived = archived.filter(r => canAccessDepartment(user, (r._department as string) || null));
+  }
+
+  return archived;
 }
 
 export async function restoreRecord(id: string): Promise<StorageResult> {
   const startTime = performance.now();
   try {
-    const { error } = await supabase
+    const { data: restored, error } = await supabase
       .from('records')
       .update({ deleted_at: null })
-      .eq('id', id);
+      .eq('id', id)
+      .select('id');
 
     if (error) {
       throw new RecordStorageError(`Failed to restore record: ${error.message}`, 'NETWORK', error);
+    }
+    // Without .select() a 0-row UPDATE reports 200 and we would claim a restore
+    // that never happened (missing row, or an UPDATE refused by RLS).
+    if (!restored || restored.length === 0) {
+      throw new RecordStorageError(
+        `Record ${id} was not restored: no row matched that id.`,
+        'NOT_FOUND',
+      );
     }
 
     logOperation({ timestamp: new Date().toISOString(), operation: 'update', serial: id, formCode: '?', success: true, durationMs: Math.round(performance.now() - startTime) });
     safeEmit(
       emitEvent({
-        action: 'restore', category: 'records', priority: 'important',
+        // EventAction has no 'restore' member; a restore is an update of deleted_at.
+        // The distinct eventType below still records what actually happened.
+        action: 'update', category: 'records', priority: 'important',
         eventType: 'record.restored', title: 'Record Restored',
         message: `A record was restored from archive (id: ${id.substring(0, 8)}...).`,
         targetId: id, metadata: { recordId: id },

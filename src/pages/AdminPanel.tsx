@@ -145,12 +145,19 @@ function AccountsTab() {
     toast.success("Refreshed", { description: "User list has been updated." });
   };
 
-  const handleAdd = () => {
+  const handleAdd = async () => {
     if (!newUser.name || !newUser.email) return;
     const tempPassword = crypto.randomUUID().slice(0, 12).replace(/-/g, "");
-    addUser({ name: newUser.name, email: newUser.email, role: newUser.role, password: tempPassword, department: null, active: user?.role === "admin", needsApprovalNotification: false });
+    // addUser now returns false and reverts when the profile/role inserts fail,
+    // so the temp password is only revealed for a row that actually exists.
+    const { name, email, role } = newUser;
+    const ok = await addUser({ name, email, role, password: tempPassword, department: null, active: user?.role === "admin", needsApprovalNotification: false });
+    if (!ok) {
+      toast.error("Account not created", { description: "The user could not be saved. Check your permissions and try again." });
+      return;
+    }
     setNewUser({ name: "", email: "", role: "employee" });
-    toast.success("Account Created", { description: `${newUser.name} created. Temporary password: ${tempPassword}` });
+    toast.success("Account Created", { description: `${name} created. Temporary password: ${tempPassword}` });
   };
 
   const handleRowEdit = (userId: string, field: keyof AppUser, value: AppUser[keyof AppUser]) => {
@@ -254,7 +261,7 @@ function AccountsTab() {
                 <Button size="sm" variant="outline" onClick={() => updateUser(u.id, { active: true })} className="h-7 text-xs">
                   <CheckCircle className="w-3 h-3 mr-1" /> Approve
                 </Button>
-                <Button size="sm" variant="destructive" onClick={() => removeUser(u.id)} className="h-7 text-xs">
+                <Button size="sm" variant="destructive" onClick={() => removeUser(u.id).catch(err => toast.error("Remove failed", { description: err.message }))} className="h-7 text-xs">
                   <XCircle className="w-3 h-3 mr-1" /> Reject
                 </Button>
               </div>
@@ -429,7 +436,7 @@ function AccountsTab() {
                             {resettingPw[u.id] ? <Loader2 className="w-3 h-3 animate-spin" /> : <KeyRound className="w-3 h-3" />}
                           </Button>
                           <Button size="sm" variant="ghost" className="h-7 text-xs text-[#c44] hover:text-[#a33]" onClick={() => {
-                            if (confirm(`Remove ${u.name}? This cannot be undone.`)) removeUser(u.id);
+                            if (confirm(`Remove ${u.name}? This cannot be undone.`)) removeUser(u.id).catch(err => toast.error("Remove failed", { description: err.message }));
                           }}>
                             <Trash2 className="w-3 h-3" />
                           </Button>

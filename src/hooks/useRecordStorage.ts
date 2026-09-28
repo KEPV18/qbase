@@ -105,8 +105,13 @@ export function useCreateRecord() {
     onSuccess: (result: StorageResult) => {
       if (result.success && result.record) {
         toast.success(`Record ${result.record.serial} created successfully`);
-        // Invalidate specific form query to update Quick-Jump dropdown immediately
-        queryClient.invalidateQueries({ queryKey: RECORD_KEYS.byForm(result.record.formCode) });
+        // Invalidate specific form query to update Quick-Jump dropdown immediately.
+        // formCode is optional on RecordData, so it must be narrowed before use as
+        // a query key.
+        const createdFormCode = result.record.formCode;
+        if (createdFormCode) {
+          queryClient.invalidateQueries({ queryKey: RECORD_KEYS.byForm(createdFormCode) });
+        }
       }
       // Invalidate all record queries (source of truth = Sheets)
       queryClient.invalidateQueries({ queryKey: RECORD_KEYS.all });
