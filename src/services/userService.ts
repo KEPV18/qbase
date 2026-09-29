@@ -106,7 +106,16 @@ export async function restRpc<T>(
       const txt = await res.text().catch(() => "");
       return { data: null, error: `HTTP ${res.status}: ${txt.substring(0, 200)}` };
     }
-    const data = await res.json();
+    // Void RPCs return 204/empty bodies — only parse JSON when content exists.
+    const txt = await res.text().catch(() => "");
+    let data: unknown = null;
+    if (txt) {
+      try {
+        data = JSON.parse(txt);
+      } catch {
+        data = txt;
+      }
+    }
     return { data: data as T, error: null };
   } catch (err: unknown) {
     return { data: null, error: (err as Error)?.message || String(err) };
@@ -193,29 +202,58 @@ export async function fetchUserDepartment(userId: string): Promise<string | null
 
 /* ─── Mutations ───────────────────────────────────────────────────────────── */
 
-export async function createProfile(payload: {
-  id: string;
-  user_id: string;
-  display_name: string;
-  email: string;
-  // NOTE: no `password` here — passwords live exclusively in Supabase Auth
-  // (GoTrue). profiles.password is a legacy, write-only column that nothing
-  // reads; writing password material to it is forbidden (decision 2026-09-28).
-  is_active: boolean;
-  last_login?: string | null;
-}): Promise<{ ok: boolean; error?: string }> {
-  const { error } = await supabase.from("profiles").insert(payload);
-  if (error) return { ok: false, error: error.message };
+// ============================================================================
+// PRIME SPINE CUTOVER (D1): every privileged write rides a SECURITY DEFINER
+// RPC (authorization enforced server-side on every action — Prime §13–14).
+// The browser never inserts/updates/deletes user_roles or profiles rows
+// directly anymore; all spine RPCs raise 42501 when the caller is not an
+// admin server-side.
+// ============================================================================
+
+// First-signup self-provisioning: creates the caller's OWN profile (email is
+// derived from auth.users server-side, never client-asserted) and self-assigns
+// the employee-class 'user' role server-side on first provisioning only.
+export async function selfProvisionProfile(
+  displayName?: string,
+  department?: string | null,
+): Promise<{ ok: boolean; error?: string }> {
+  const { error } = await restRpc<string | null>("self_provision_profile", {
+    p_display_name: displayName ?? null,
+    p_department: department ?? null,
+  });
+  if (error) return { ok: false, error };
   return { ok: true };
 }
 
-export async function createUserRole(payload: {
-  id: string;
+export async function createProfile(payload: {
   user_id: string;
-  role: string;
+  display_name: string;
+  email: string;
+  department?: string | null;
+  is_active?: boolean;
 }): Promise<{ ok: boolean; error?: string }> {
-  const { error } = await supabase.from("user_roles").insert(payload);
-  if (error) return { ok: false, error: error.message };
+  const { error } = await restRpc<string | null>("admin_create_profile", {
+    p_user_id: payload.user_id,
+    p_email: payload.email,
+    p_display_name: payload.display_name,
+    p_department: payload.department ?? null,
+    p_is_active: payload.is_active ?? true,
+  });
+  if (error) return { ok: false, error };
+  return { ok: true };
+}
+
+export async function createUserRole(
+  userId: string,
+  role: string,
+  department?: string | null,
+): Promise<{ ok: boolean; error?: string }> {
+  const { error } = await restRpc<void>("admin_upsert_user_role", {
+    p_user_id: userId,
+    p_role: role,
+    p_department: department ?? null,
+  });
+  if (error) return { ok: false, error };
   return { ok: true };
 }
 
@@ -223,12 +261,17 @@ export async function updateProfile(
   userId: string,
   payload: Record<string, unknown>
 ): Promise<{ ok: boolean; error?: string }> {
-  const { error } = await supabase.from("profiles").update(payload).eq("user_id", userId);
-  if (error) {
-    // Fallback to id column
-    const { error: err2 } = await supabase.from("profiles").update(payload).eq("id", userId);
-    if (err2) return { ok: false, error: err2.message };
-  }
+  // Only fields known to the spine are forwarded; role changes ride
+  // admin_upsert_user_role (separate).
+  const body: Record<string, unknown> = { p_user_id: userId };
+  if (typeof payload.email === "string") body.p_email = payload.email;
+  if (typeof payload.display_name === "string") body.p_display_name = payload.display_name;
+  if (payload.department !== undefined) body.p_department = payload.department;
+  if (typeof payload.is_active === "boolean") body.p_is_active = payload.is_active;
+  if (typeof payload.last_login === "string") body.p_last_login = payload.last_login;
+
+  const { error } = await restRpc<void>("admin_update_profile", body);
+  if (error) return { ok: false, error };
   return { ok: true };
 }
 
@@ -236,35 +279,27 @@ export async function upsertUserRole(
   userId: string,
   role: string
 ): Promise<{ ok: boolean; error?: string }> {
-  const { error } = await supabase
-    .from("user_roles")
-    .upsert({ user_id: userId, role }, { onConflict: "user_id" });
-
-  if (error) {
-    // Fallback: delete + insert
-    await supabase.from("user_roles").delete().eq("user_id", userId);
-    const { error: insErr } = await supabase.from("user_roles").insert({
-      user_id: userId,
-      role,
-      id: crypto.randomUUID(),
-    });
-    if (insErr) return { ok: false, error: insErr.message };
-  }
+  // The server upserts on user_id; there is NO delete-then-insert fallback —
+  // that legacy fallback existed to slip past RLS and is gone.
+  const { error } = await restRpc<void>("admin_upsert_user_role", {
+    p_user_id: userId,
+    p_role: role,
+  });
+  if (error) return { ok: false, error };
   return { ok: true };
 }
 
 export async function deleteUserRole(userId: string): Promise<{ ok: boolean; error?: string }> {
-  const { error } = await supabase.from("user_roles").delete().eq("user_id", userId);
-  if (error) return { ok: false, error: error.message };
+  const { error } = await restRpc<void>("admin_delete_user_role", { p_user_id: userId });
+  if (error) return { ok: false, error };
   return { ok: true };
 }
 
-export async function deleteUserProfile(userId: string): Promise<{ ok: boolean; error?: string }> {
-  const { error } = await supabase.from("profiles").delete().eq("user_id", userId);
-  if (error) {
-    const { error: err2 } = await supabase.from("profiles").delete().eq("id", userId);
-    if (err2) return { ok: false, error: err2.message };
-  }
+// "Remove user" = deactivate through the spine (Prime data-preservation rule:
+// the production profile row is never hard-DELETEd from the browser).
+export async function deactivateUserProfile(userId: string): Promise<{ ok: boolean; error?: string }> {
+  const { error } = await restRpc<void>("admin_deactivate_profile", { p_user_id: userId });
+  if (error) return { ok: false, error };
   return { ok: true };
 }
 

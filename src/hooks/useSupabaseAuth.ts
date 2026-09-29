@@ -13,8 +13,7 @@ import {
   fetchUserRole,
   fetchUserDepartment,
   mapProfileToAppUser,
-  createProfile,
-  createUserRole,
+  selfProvisionProfile,
 } from "@/services/userService";
 import type { AppUser } from "@/services/userService";
 import { saveSession } from "./useAuthUtils";
@@ -176,23 +175,14 @@ export function useSupabaseAuth({
         saveSession(appUser.id, appUser.role, appUser.name, appUser.department);
         setUsers(prev => prev.some(u => u.id === appUser.id) ? prev : [appUser, ...prev]);
       } else {
-        // No profile — auto-create one so bootstrap completes and the user is usable.
-        // Create profile + role in parallel (non-blocking; failures fall back to basic user).
+        // No profile — self-provision through the Prime spine: the RPC derives
+        // the email from auth.users server-side (never client-asserted) and
+        // self-assigns the employee-class 'user' role server-side. Failures
+        // fall back to the basic-user path below (non-fatal by design).
         const emailName = email.split("@")[0] || "User";
         try {
-          await Promise.all([
-            createProfile({
-              id: crypto.randomUUID(),
-              user_id: authUserId,
-              display_name: emailName,
-              email,
-              is_active: true,
-              last_login: new Date().toISOString(),
-            }),
-            createUserRole({ id: crypto.randomUUID(), user_id: authUserId, role: "user" }),
-          ]);
+          await selfProvisionProfile(emailName);
         } catch {
-          // Non-fatal: profile creation may be blocked by RLS; fall back to basic user.
           log.auth.unauthorized("profile_autocreate_failed", authUserId);
         }
         // Set minimal user so UI doesn't hang; setLoading guaranteed in finally below.
@@ -399,19 +389,10 @@ export function useSupabaseAuth({
       lastSyncTimestampRef.current = Date.now();
 
       if (!profile) {
-        // Create profile + role in parallel if missing
-        const newProfileId = crypto.randomUUID();
-        await Promise.all([
-          createProfile({
-            id: newProfileId,
-            user_id: authUserId,
-            display_name: emailName,
-            email,
-            is_active: true,
-            last_login: new Date().toISOString(),
-          }),
-          createUserRole({ id: crypto.randomUUID(), user_id: authUserId, role: "user" }),
-        ]);
+        // Self-provision through the Prime spine (email derived server-side;
+        // 'user' role self-assigned server-side). The AppUser below is
+        // optimistic — the next sync re-reads server truth.
+        await selfProvisionProfile(emailName);
         // Construct AppUser directly — no re-fetch needed
         const newUser: AppUser = {
           id: authUserId,

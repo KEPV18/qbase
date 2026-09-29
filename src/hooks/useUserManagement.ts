@@ -17,7 +17,7 @@ import {
   updateProfile,
   upsertUserRole,
   deleteUserRole,
-  deleteUserProfile,
+  deactivateUserProfile,
   isValidRole,
 } from "@/services/userService";
 import type { AppUser, Role } from "@/services/userService";
@@ -92,28 +92,24 @@ export function useUserManagement({
     if (supabase) {
       let failed = false;
 
-      // Profile. No password is written: passwords live in Supabase Auth
-      // (GoTrue); the temp password is communicated to the admin out of band.
+      // Profile: created through the Prime spine (admin-authorized server-side).
+      // No password is written: passwords live in Supabase Auth (GoTrue); the
+      // temp password is communicated to the admin out of band.
       const profileRes = await createProfile({
-        id: newUser.id,
         user_id: newUser.id,
         display_name: newUser.name,
         email: newUser.email,
+        department: newUser.department,
         is_active: !!newUser.active,
-        last_login: null,
       });
       if (!profileRes.ok) {
         log.system.error("useUserManagement:addUser_profile_failed", String(profileRes.error));
         failed = true;
       }
 
-      // Role
+      // Role rides the admin spine RPC (server-validated vocabulary).
       if (!failed) {
-        const roleRes = await createUserRole({
-          id: crypto.randomUUID(),
-          user_id: newUser.id,
-          role: newUser.role,
-        });
+        const roleRes = await createUserRole(newUser.id, newUser.role, newUser.department);
         if (!roleRes.ok) {
           log.system.error("useUserManagement:addUser_role_failed", String(roleRes.error));
           failed = true;
@@ -227,15 +223,17 @@ export function useUserManagement({
     if (supabase) {
       let failed = false;
 
+      // "Remove" rides the spine: role revoked server-side, profile kept as a
+      // deactivated row (Prime data-preservation rule — no production DELETE).
       const roleRes = await deleteUserRole(id);
       if (!roleRes.ok) {
         log.system.error("useUserManagement:removeUser_role_delete_failed", String(roleRes.error));
         failed = true;
       }
 
-      const profRes = await deleteUserProfile(id);
+      const profRes = await deactivateUserProfile(id);
       if (!profRes.ok) {
-        log.system.error("useUserManagement:removeUser_profile_delete_failed", String(profRes.error));
+        log.system.error("useUserManagement:removeUser_profile_deactivate_failed", String(profRes.error));
         failed = true;
       }
 
