@@ -30,10 +30,11 @@ insert into public.user_roles (user_id, role, department) values
  ('44444444-4444-4444-4444-444444444444', 'employee',   'Sales'),
  ('55555555-5555-5555-5555-555555555555', 'employee',   'HR');
 
-insert into public.records (id, form_code, serial, status, edit_count, created_by, form_data) values
- ('aaaaaaaa-0000-0000-0000-000000000001', 'F/09', 'F/09-001', 'draft',          0, 'emp.sales@fixture.test', '{"field_a":"old_a"}'),
- ('aaaaaaaa-0000-0000-0000-000000000002', 'F/09', 'F/09-002', 'pending_review', 0, 'emp.sales@fixture.test', '{"field_a":"old_b"}'),
- ('aaaaaaaa-0000-0000-0000-000000000003', 'F/17', 'F/17-001', 'draft',          0, 'emp.sales@fixture.test', '{"field_c":"cross_dept"}');
+insert into public.records (id, form_code, serial, status, edit_count, created_by, form_data, deleted_at) values
+ ('aaaaaaaa-0000-0000-0000-000000000001', 'F/09', 'F/09-001', 'draft',          0, 'emp.sales@fixture.test', '{"field_a":"old_a"}', null),
+ ('aaaaaaaa-0000-0000-0000-000000000002', 'F/09', 'F/09-002', 'pending_review', 0, 'emp.sales@fixture.test', '{"field_a":"old_b"}', null),
+ ('aaaaaaaa-0000-0000-0000-000000000003', 'F/17', 'F/17-001', 'draft',          0, 'emp.sales@fixture.test', '{"field_c":"cross_dept"}', null),
+ ('aaaaaaaa-0000-0000-0000-000000000004', 'F/09', 'F/09-004', 'approved',       1, 'emp.sales@fixture.test', '{"field_a":"archived"}', now());
 
 insert into public.tenant_settings (company_name) values ('Fixture Co');
 insert into public.error_reports (id) values ('aaaaaaaa-9999-0000-0000-000000000001');
@@ -526,6 +527,30 @@ begin;
   set local role authenticated;
   select pg_temp.expect_ok('H3 admin hard DELETE permitted',
     $$delete from public.records where id = 'aaaaaaaa-0000-0000-0000-000000000003'::uuid$$);
+rollback;
+
+-- ══ I. Archive restore (Prime §6 — record_restore) ══════════════════════════
+begin;
+  select set_config('request.jwt.claim.sub','44444444-4444-4444-4444-444444444444', true);
+  set local role authenticated;
+  select pg_temp.expect_error('I1 employee restore denied', '42501',
+    $$select public.record_restore('aaaaaaaa-0000-0000-0000-000000000004'::uuid)$$);
+rollback;
+
+begin;
+  select set_config('request.jwt.claim.sub','22222222-2222-2222-2222-222222222222', true);
+  set local role authenticated;
+  select pg_temp.expect_ok('I2 owning dept_head restores archived record',
+    $$select public.record_restore('aaaaaaaa-0000-0000-0000-000000000004'::uuid)$$);
+  do $$ begin
+    if (select count(*) from public.audit_log
+         where record_id = 'aaaaaaaa-0000-0000-0000-000000000004'::uuid
+           and action = 'restore' and performed_by = 'head.sales@fixture.test') <> 1 then
+      perform pg_temp.record_result ('I3 restore audited (actor server-derived)', false, 'no/extra audit row or forged actor');
+    else
+      perform pg_temp.record_result ('I3 restore audited', true, '1 row, actor server-derived');
+    end if;
+  end $$;
 rollback;
 
 -- ══ report ═══════════════════════════════════════════════════════════════════

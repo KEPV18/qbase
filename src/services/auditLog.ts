@@ -77,11 +77,18 @@ export function computeDiff(
  * Append an audit log entry to the Supabase audit_log table.
  * This is append-only — never edit or delete log entries.
  * Non-blocking: errors are logged but don't fail the main operation.
+ *
+ * Attribution: the actor is derived server-side from auth.uid()
+ * (audit_log_server_append) and can never be forged by the client, so the
+ * legacy `user` argument below is kept ONLY for call-site compatibility and
+ * is deliberately not sent. The legacy client-callable RPC
+ * (append_audit_log, with its forgeable p_performed_by) is revoked by the
+ * Prime authz spine migration.
  */
 export async function appendAuditLog(
   serial: string,
   action: 'create' | 'update' | 'delete' | 'status_change',
-  user: string,
+  _userIgnored: string,
   changedFields: string[],
   previousValues: Record<string, unknown>,
   newValues: Record<string, unknown>,
@@ -107,15 +114,15 @@ export async function appendAuditLog(
   }
   const recordId = record.id;
 
-  // Use RPC — now passes form_code and serial directly
-  const { error } = await supabase.rpc('append_audit_log', {
+  // The only client-callable audit append: actor derived from auth.uid()
+  // server-side (Prime §15 — no forged attribution).
+  const { error, data: appendedId } = await supabase.rpc('audit_log_server_append', {
     p_record_id: recordId,
     p_action: action,
     p_changed_fields: changedFields,
     p_previous_values: previousValues,
     p_new_values: newValues,
-    p_performed_by: user,
-    p_form_code: formCode || '',
+    p_form_code: formCode || null,
     p_serial: serial,
   });
 
@@ -124,7 +131,7 @@ export async function appendAuditLog(
     return { success: false, id: '' };
   }
 
-  return { success: true, id: recordId };
+  return { success: true, id: (appendedId as string) || recordId };
 }
 
 // ─── Read Audit Log ─────────────────────────────────────────────────────────

@@ -46,12 +46,36 @@ language sql security definer stable set search_path = '' as $$
   );
 $$;
 
+-- Form → department ownership map. Single authority shared by the workflow
+-- engine (record_transition), the versioned update path (update_record_versioned)
+-- and record_restore, so the map can never disagree with the client's
+-- FORM_DEPT_MAP in one engine but agree in another.
+create or replace function public.prime_record_department(p_form_code text)
+returns text
+language sql immutable set search_path = '' as $$
+  select case p_form_code
+    when 'F/08' then 'Sales' when 'F/09' then 'Sales' when 'F/10' then 'Sales' when 'F/50' then 'Sales'
+    when 'F/28' then 'HR' when 'F/29' then 'HR' when 'F/30' then 'HR' when 'F/40' then 'HR'
+    when 'F/41' then 'HR' when 'F/42' then 'HR' when 'F/43' then 'HR' when 'F/44' then 'HR'
+    when 'F/11' then 'Operations' when 'F/12' then 'Operations' when 'F/13' then 'Operations'
+    when 'F/14' then 'Operations' when 'F/15' then 'Operations' when 'F/16' then 'Operations'
+    when 'F/18' then 'Operations' when 'F/19' then 'Operations' when 'F/22' then 'Operations'
+    when 'F/24' then 'Operations' when 'F/25' then 'Operations'
+    when 'F/17' then 'Quality' when 'F/47' then 'Quality'
+    when 'F/32' then 'RD' when 'F/34' then 'RD' when 'F/35' then 'RD' when 'F/37' then 'RD'
+    when 'F/20' then 'Management' when 'F/21' then 'Management' when 'F/23' then 'Management'
+    when 'F/45' then 'Management' when 'F/46' then 'Management' when 'F/48' then 'Management'
+    else null end;
+$$;
+
 revoke execute on function public.prime_user_role(uuid) from public, anon;
 revoke execute on function public.prime_is_admin() from public, anon;
 revoke execute on function public.prime_is_manager_or_admin() from public, anon;
+revoke execute on function public.prime_record_department(text) from public, anon;
 grant execute on function public.prime_user_role(uuid) to authenticated;
 grant execute on function public.prime_is_admin() to authenticated;
 grant execute on function public.prime_is_manager_or_admin() to authenticated;
+grant execute on function public.prime_record_department(text) to authenticated;
 
 -- ── privileged operation RPCs (server-side authorization) ──────────────────
 
@@ -272,6 +296,19 @@ begin
 end;
 $$;
 
+-- The LEGACY client-callable audit RPC accepts a forgeable p_performed_by —
+-- with it, any authenticated session could attribute audit rows to an
+-- arbitrary identity (Prime §15: no forgery). Withhold it from every role:
+-- audit rows get written by the engine paths themselves and, where a client
+-- must append (e.g. legacy create flow), by audit_log_server_append, which
+-- derives the actor from auth.uid() alone. Signature verified against the
+-- production OpenAPI document before revoking.
+do $$ begin
+  revoke execute on function public.append_audit_log(uuid, text, jsonb, jsonb, jsonb, text, text, text)
+    from public, anon, authenticated;
+exception when undefined_function then null;  -- legacy RPC not present here
+end $$;
+
 -- Workflow transition engine (Prime §6) — the single authority for status
 -- changes. Validates the transition against permitted state edges and the
 -- actor's server-derived role; writes the audit row itself.
@@ -311,19 +348,7 @@ begin
   end if;
 
   -- Form→department mapping kept in sync with the client's FORM_DEPT_MAP.
-  v_record_dept := case v_form_code
-    when 'F/08' then 'Sales' when 'F/09' then 'Sales' when 'F/10' then 'Sales' when 'F/50' then 'Sales'
-    when 'F/28' then 'HR' when 'F/29' then 'HR' when 'F/30' then 'HR' when 'F/40' then 'HR'
-    when 'F/41' then 'HR' when 'F/42' then 'HR' when 'F/43' then 'HR' when 'F/44' then 'HR'
-    when 'F/11' then 'Operations' when 'F/12' then 'Operations' when 'F/13' then 'Operations'
-    when 'F/14' then 'Operations' when 'F/15' then 'Operations' when 'F/16' then 'Operations'
-    when 'F/18' then 'Operations' when 'F/19' then 'Operations' when 'F/22' then 'Operations'
-    when 'F/24' then 'Operations' when 'F/25' then 'Operations'
-    when 'F/17' then 'Quality' when 'F/47' then 'Quality'
-    when 'F/32' then 'RD' when 'F/34' then 'RD' when 'F/35' then 'RD' when 'F/37' then 'RD'
-    when 'F/20' then 'Management' when 'F/21' then 'Management' when 'F/23' then 'Management'
-    when 'F/45' then 'Management' when 'F/46' then 'Management' when 'F/48' then 'Management'
-    else null end;
+  v_record_dept := public.prime_record_department(v_form_code);
 
   if p_target_status not in ('draft', 'pending_review', 'approved', 'rejected') then
     raise exception 'Invalid target status: %', p_target_status using errcode = '22P02';
@@ -381,7 +406,10 @@ begin
      jsonb_build_object('status', true),
      jsonb_build_object('status', v_current),
      jsonb_build_object('status', p_target_status),
-     coalesce(v_actor_name, auth.uid()::text),
+     -- performed_by is the stable profile email (server-derived), never a
+     -- client-supplied display name; convention shared with
+     -- audit_log_server_append (Prime §15).
+     coalesce((select email from public.profiles where user_id = auth.uid()), auth.uid()::text),
      'workflow', v_form_code, null);
 
   return (select r from public.records r where r.id = p_record_id);

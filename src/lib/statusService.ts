@@ -91,15 +91,16 @@ interface StatusRecord {
 export async function updateRecordStatus(
     record: StatusRecord,
     newStatus: RecordStatus,
-    reviewedBy?: string,
+    _reviewedByIgnored?: string,
 ): Promise<boolean> {
     const identifier = record.recordId || record.serial;
     const matchField = record.recordId ? 'id' : 'serial';
 
-    // Fetch current row (status + editor tracking)
+    // Fetch current row to resolve the uuid (the engine takes an id) and
+    // pre-validate the edge client-side.
     const { data: row, error: fetchErr } = await supabase
         .from('records')
-        .select('id, status, last_modified_by')
+        .select('id, status')
         .eq(matchField, identifier)
         .single();
 
@@ -109,15 +110,13 @@ export async function updateRecordStatus(
         return false;
     }
 
-    const { error: updateErr } = await supabase
-        .from('records')
-        .update({
-            status: newStatus,
-            last_modified_by: reviewedBy || row.last_modified_by,
-        })
-        .eq('id', row.id);
+    const { error: transitionError } = await supabase.rpc('record_transition', {
+        p_record_id: row.id,
+        p_target_status: newStatus,
+        p_reason: null,
+    });
 
-    return !updateErr;
+    return !transitionError;
 }
 
 /**

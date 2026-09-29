@@ -234,6 +234,9 @@ export interface StorageResult {
   error?: string;
   conflict?: boolean;
   duplicateSerial?: boolean;
+  /** Set when the primary write succeeded but a follow-up was refused
+   * (e.g. the workflow engine refused a status move). Never swallowed. */
+  warning?: string;
 }
 
 export class RecordStorageError extends Error {
@@ -747,52 +750,89 @@ export async function updateRecord(
     return { success: false, error: `Validation failed: ${validation.errors.map(e => `${e.field}: ${e.message}`).join('; ')}` };
   }
 
-  // 5. Update in Supabase — using ID (not serial) for precise targeting
+  // 5. Write through the server-side engine — NO direct table writes.
+  // update_record_versioned owns the concurrent-safe write, the before-write
+  // version snapshot (non-drafts), the audit row and edit_count bump;
+  // record_transition is the single authority for workflow state (Prime §5/§6).
   try {
-    const updateData = recordToRow(validation.sanitizedData);
-    // NOTE: there is deliberately no approval_status / department assignment here.
-    // Neither column exists on `records` (verified against the live PostgREST
-    // schema), so supplying them made PostgREST reject the entire UPDATE with
-    // PGRST204 and every save of an existing record failed. The workflow state is
-    // carried by `status`, which recordToRow writes.
-    // Remove id from update payload — we don't update the primary key
-    const { id: _id, ...updateFields } = updateData as DbRecord & { id?: string };
+    const rowShape = recordToRow(validation.sanitizedData);
+    // form_data carries the business fields exactly like the create path does;
+    // metadata columns are handled by the engine from the row itself.
+    const businessData: Record<string, unknown> = {};
+    for (const [key, value] of Object.entries(validation.sanitizedData)) {
+      if (key === 'id' || key === 'formCode' || key === 'formName' || key === 'serial' ||
+          key.startsWith('_')) continue;
+      businessData[key] = value;
+    }
 
-    // .select() is required to observe the outcome: PostgREST answers a 0-row
-    // UPDATE with HTTP 200 and no error, so without reading the affected rows back
-    // we would report success for a write that changed nothing (including an
-    // UPDATE silently refused by RLS).
-    const { data: updatedRows, error: updateError } = await supabase
-      .from('records')
-      .update(updateFields)
-      .eq('id', (currentRow as DbRecord).id)
-      .select('id');
+    // NOTE: neither approval_status nor department is sent — neither column
+    // exists on `records` (verified against the live PostgREST schema). The
+    // workflow state is carried by `status` and moves only via record_transition.
+    const { data: rpcRows, error: updateError } = await supabase.rpc('update_record_versioned', {
+      p_id: (currentRow as DbRecord).id,
+      p_form_data: businessData,
+      // The count was read moments ago; the server re-checks it under the row
+      // lock, so any concurrent modification is still caught there.
+      p_expected_edit_count: currentEditCount,
+      p_last_modified_by: merged._lastModifiedBy ?? null,
+      p_modification_reason: modificationReason ?? null,
+      p_section: (Number(validation.sanitizedData._section) || null) as number | null,
+      p_section_name: (validation.sanitizedData._sectionName as string) || null,
+      p_frequency: (validation.sanitizedData._frequency as string) || null,
+      p_change_summary: modificationReason || 'edit',
+    });
 
     if (updateError) {
       throw new RecordStorageError(`Failed to update record: ${updateError.message}`, 'NETWORK', updateError);
     }
-    if (!updatedRows || updatedRows.length === 0) {
+    const updatedRow = Array.isArray(rpcRows) ? rpcRows[0] : rpcRows;
+    if (!updatedRow || !updatedRow.id) {
       throw new RecordStorageError(
-        `Record ${serial} was not updated: no row matched id ${(currentRow as DbRecord).id}.`,
+        `Record ${serial} was not updated: the server returned no row for id ${(currentRow as DbRecord).id}.`,
         'NOT_FOUND',
+        rpcRows,
       );
+    }
+
+    // If the save implies a workflow move (Ahmed's Rules: Rule A/B actors land
+    // their significant edits as approved, employees submit to review), the
+    // state change goes through record_transition — the engine validates the
+    // edge and the actor's server-derived role. A refused edge (e.g. a
+    // rejected record may only return to Draft for rework) leaves the saved
+    // data in its current state and is surfaced as a warning, never hidden.
+    let finalRecord: RecordData = {
+      ...validation.sanitizedData,
+      _status: currentStatus,
+      _approvalStatus: statusToApprovalLabel(currentStatus),
+    };
+    let warning: string | undefined;
+    if (newStatus !== currentStatus) {
+      const { data: transitionRow, error: transitionError } = await supabase.rpc('record_transition', {
+        p_record_id: (currentRow as DbRecord).id,
+        p_target_status: newStatus,
+        p_reason: modificationReason || `edit: ${currentStatus} → ${newStatus}`,
+      });
+      if (transitionError) {
+        warning = `Saved, but the status change to ${newStatus} was refused by the workflow engine: ${transitionError.message}`;
+        log.system.warn('RecordStorage:transition_refused', warning);
+      } else {
+        const row = Array.isArray(transitionRow) ? transitionRow[0] : transitionRow;
+        if (row?.id) {
+          const mapped = parseRowToRecord(row as DbRecord);
+          if (mapped) finalRecord = mapped;
+        }
+      }
     }
 
     logOperation({ timestamp: new Date().toISOString(), operation: 'update', serial, formCode, success: true, durationMs: Math.round(performance.now() - startTime) });
 
-    // 6. Audit log
+    // Field-level diff detail for the in-memory operation log and events. The
+    // authoritative audit row is written server-side by update_record_versioned.
     const diff = computeDiff(currentRecord, validation.sanitizedData);
-    if (diff.changedFields.length > 0) {
-      appendAuditLog(serial, 'update', merged._lastModifiedBy as string || 'unknown', diff.changedFields, diff.previousValues, diff.newValues, formCode).catch(err => {
-        log.audit.failed(serial, String(err));
-        console.error(`[AUDIT LOG FAILED] update ${serial}:`, err);
-        // Audit log failed - log to console for monitoring
-      });
-    }
 
     log.record.updated(formCode, serial, Math.round(performance.now() - startTime), undefined, { changedFields: diff.changedFields });
 
-    // 7. Event emission (non-blocking)
+    // Event emission (non-blocking)
     if (diff.changedFields.length > 0) {
       emitEvent(Events.recordUpdated(
         serial, formCode, merged.formName as string || '', diff.changedFields, merged._lastModifiedBy as string
@@ -801,7 +841,7 @@ export async function updateRecord(
       });
     }
 
-    return { success: true, record: validation.sanitizedData };
+    return { success: true, record: finalRecord, warning };
   } catch (err) {
     const errorMsg = err instanceof RecordStorageError ? err.message : `Unexpected error: ${(err as Error).message}`;
     logOperation({ timestamp: new Date().toISOString(), operation: 'update', serial, formCode, success: false, error: errorMsg, durationMs: Math.round(performance.now() - startTime) });
@@ -892,30 +932,47 @@ export async function changeRecordStatus(
   }
 
   try {
-    const { data: statusRows, error: updateError } = await supabase
-      .from('records')
-      .update({ status: targetStatus, edit_count: ((currentRow as DbRecord).edit_count ?? 0) + 1, last_modified_by: currentUser })
-      .eq('id', (currentRow as DbRecord).id)
-      .select('id');
+    // The workflow engine is the single authority for status changes: it
+    // validates the transition edge against the server-side state graph and
+    // the actor's server-derived role, bumps edit_count and writes the audit
+    // row itself. The previous direct-table UPDATE let any authenticated
+    // session set any status (no permission check, no state validation).
+    const { data: transitionRows, error: transitionError } = await supabase.rpc('record_transition', {
+      p_record_id: (currentRow as DbRecord).id,
+      p_target_status: targetStatus,
+      p_reason: reason ?? null,
+    });
 
-    if (updateError) {
-      throw new RecordStorageError(`Failed to update status: ${updateError.message}`, 'NETWORK', updateError);
+    if (transitionError) {
+      const msg = transitionError.message || '';
+      if (msg.includes('is not permitted') || msg.includes('23514')) {
+        return { success: false, error: `That status change is not allowed by the workflow: ${msg}` };
+      }
+      if (msg.includes('Insufficient role') || msg.includes('Access denied') || msg.includes('42501')) {
+        return { success: false, error: 'You do not have permission to make this status change.' };
+      }
+      throw new RecordStorageError(`Failed to update status: ${msg}`, 'NETWORK', transitionError);
     }
-    // A 0-row UPDATE returns 200 with no error — verify the row was actually changed.
-    if (!statusRows || statusRows.length === 0) {
+    // PostgREST answers an RPC that matched no row with an empty set — treat
+    // that as a failed write, never a success.
+    const transitionRow = Array.isArray(transitionRows) ? transitionRows[0] : transitionRows;
+    if (!transitionRow || !transitionRow.id) {
       throw new RecordStorageError(
-        `Status for ${serial} was not changed: no row matched id ${(currentRow as DbRecord).id}.`,
+        `Status for ${serial} was not changed: the server returned no row for id ${(currentRow as DbRecord).id}.`,
         'NOT_FOUND',
+        transitionRows,
       );
     }
 
-    // Audit status change
-    appendAuditLog(serial, 'status_change', currentUser, ['status'], { status: previousStatus }, { status: targetStatus }).catch(err => {
-      log.audit.failed(serial, `status_change: ${String(err)}`);
-    });
-
     logOperation({ timestamp: new Date().toISOString(), operation: 'update', serial, formCode, success: true, durationMs: Math.round(performance.now() - startTime) });
-    return { success: true, record: { ...currentRecord, _status: targetStatus, _approvalStatus: statusToApprovalLabel(targetStatus) } };
+
+    const transitioned = parseRowToRecord(transitionRow as DbRecord);
+    return {
+      success: true,
+      record: transitioned
+        ? transitioned
+        : { ...currentRecord, _status: targetStatus, _approvalStatus: statusToApprovalLabel(targetStatus) },
+    };
   } catch (err) {
     const errorMsg = err instanceof RecordStorageError ? err.message : `Unexpected error: ${(err as Error).message}`;
     logOperation({ timestamp: new Date().toISOString(), operation: 'update', serial, formCode, success: false, error: errorMsg, durationMs: Math.round(performance.now() - startTime) });
@@ -967,39 +1024,45 @@ export async function approveRecord(
   }
 
   try {
-    // The approval decision is written to `status` — the only workflow column that
-    // exists on `records`. It previously wrote an `approval_status` column that does
-    // not exist, so the approval never persisted.
-    const { data: approvedRows, error: updateError } = await supabase
-      .from('records')
-      .update({
-        status: 'approved',
-        last_modified_by: user.email,
-        edit_count: ((currentRow as DbRecord).edit_count ?? 0) + 1,
-      })
-      .eq('id', (currentRow as DbRecord).id)
-      .select('id');
+    // The approval is a workflow transition through the engine (Prime §6):
+    // record_transition validates the pending_review → approved edge and the
+    // actor's server-derived role (admin, or a dept_head of the owning
+    // department), bumps edit_count and writes the audit row itself. The
+    // previous direct-table UPDATE had no server-side permission check —
+    // any authenticated session could write `status: approved` directly.
+    const { data: approvedRows, error: updateError } = await supabase.rpc('record_transition', {
+      p_record_id: (currentRow as DbRecord).id,
+      p_target_status: 'approved',
+      p_reason: reason ?? null,
+    });
 
     if (updateError) {
-      throw new RecordStorageError(`Failed to approve record: ${updateError.message}`, 'NETWORK', updateError);
+      const msg = updateError.message || '';
+      if (msg.includes('Insufficient role') || msg.includes('Access denied') || msg.includes('42501')) {
+        return { success: false, error: 'You do not have permission to approve this record.' };
+      }
+      if (msg.includes('is not permitted') || msg.includes('23514')) {
+        return { success: false, error: `Approval is not an allowed status change: ${msg}` };
+      }
+      throw new RecordStorageError(`Failed to approve record: ${msg}`, 'NETWORK', updateError);
     }
-    if (!approvedRows || approvedRows.length === 0) {
+    const approvedRow = Array.isArray(approvedRows) ? approvedRows[0] : approvedRows;
+    if (!approvedRow || !approvedRow.id) {
       throw new RecordStorageError(
-        `Approval of ${serial} was not applied: no row matched id ${(currentRow as DbRecord).id}.`,
+        `Approval of ${serial} was not applied: the server returned no row for id ${(currentRow as DbRecord).id}.`,
         'NOT_FOUND',
+        approvedRows,
       );
     }
 
-    // Audit: approval event
-    appendAuditLog(serial, 'status_change', user.email, ['status'], { status: 'pending_review' }, { status: 'approved' }, record.formCode as string).catch(err => {
-      log.audit.failed(serial, `approve: ${String(err)}`);
-    });
-
     logOperation({ timestamp: new Date().toISOString(), operation: 'update', serial, formCode: record.formCode as string, success: true, durationMs: Math.round(performance.now() - startTime) });
 
+    const approved = parseRowToRecord(approvedRow as DbRecord);
     return {
       success: true,
-      record: { ...record, _status: 'approved', _approvalStatus: 'Approved', _lastModifiedBy: user.email },
+      record: approved
+        ? approved
+        : { ...record, _status: 'approved', _approvalStatus: 'Approved', _lastModifiedBy: user.email },
     };
   } catch (err) {
     const errorMsg = err instanceof RecordStorageError ? err.message : `Unexpected error: ${(err as Error).message}`;
@@ -1074,21 +1137,37 @@ export async function getArchivedRecords(): Promise<RecordData[]> {
 export async function restoreRecord(id: string): Promise<StorageResult> {
   const startTime = performance.now();
   try {
-    const { data: restored, error } = await supabase
-      .from('records')
-      .update({ deleted_at: null })
-      .eq('id', id)
-      .select('id');
+    // Restores ride the engine (record_restore): manager-class actor scoped to
+    // the record's department (admin bypasses), audited server-side. The
+    // previous direct-table UPDATE on deleted_at had no permission check and
+    // no audit trail.
+    const { data: restoredRows, error } = await supabase.rpc('record_restore', {
+      p_record_id: id,
+    });
 
     if (error) {
-      throw new RecordStorageError(`Failed to restore record: ${error.message}`, 'NETWORK', error);
+      const msg = error.message || '';
+      if (error.code === '23514' || msg.includes('not archived')) {
+        throw new RecordStorageError('Record is not archived.', 'VALIDATION', error);
+      }
+      if (msg.includes('Insufficient role') || msg.includes('42501')) {
+        return { success: false, error: 'You do not have permission to restore records.' };
+      }
+      if (msg.includes('Record not found') || error.code === 'P0002') {
+        throw new RecordStorageError(
+          `Record ${id} was not restored: no row matched that id.`,
+          'NOT_FOUND',
+          error,
+        );
+      }
+      throw new RecordStorageError(`Failed to restore record: ${msg}`, 'NETWORK', error);
     }
-    // Without .select() a 0-row UPDATE reports 200 and we would claim a restore
-    // that never happened (missing row, or an UPDATE refused by RLS).
-    if (!restored || restored.length === 0) {
+    const restoredRow = Array.isArray(restoredRows) ? restoredRows[0] : restoredRows;
+    if (!restoredRow || !restoredRow.id) {
       throw new RecordStorageError(
-        `Record ${id} was not restored: no row matched that id.`,
+        `Record ${id} was not restored: the server returned no row.`,
         'NOT_FOUND',
+        restoredRows,
       );
     }
 

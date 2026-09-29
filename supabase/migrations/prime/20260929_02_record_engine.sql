@@ -50,23 +50,11 @@ begin
     raise exception 'Record not found' using errcode = 'P0002';
   end if;
 
-  -- Server-side department authorization (form→department map, kept in sync
-  -- with the client's FORM_DEPT_MAP; admin bypasses).
+  -- Server-side department authorization (authority map lives in the spine's
+  -- prime_record_department; admin bypasses).
   select role, department into v_actor_role, v_actor_dept
     from public.prime_user_role(auth.uid());
-  v_record_dept := case v_current.form_code
-    when 'F/08' then 'Sales' when 'F/09' then 'Sales' when 'F/10' then 'Sales' when 'F/50' then 'Sales'
-    when 'F/28' then 'HR' when 'F/29' then 'HR' when 'F/30' then 'HR' when 'F/40' then 'HR'
-    when 'F/41' then 'HR' when 'F/42' then 'HR' when 'F/43' then 'HR' when 'F/44' then 'HR'
-    when 'F/11' then 'Operations' when 'F/12' then 'Operations' when 'F/13' then 'Operations'
-    when 'F/14' then 'Operations' when 'F/15' then 'Operations' when 'F/16' then 'Operations'
-    when 'F/18' then 'Operations' when 'F/19' then 'Operations' when 'F/22' then 'Operations'
-    when 'F/24' then 'Operations' when 'F/25' then 'Operations'
-    when 'F/17' then 'Quality' when 'F/47' then 'Quality'
-    when 'F/32' then 'RD' when 'F/34' then 'RD' when 'F/35' then 'RD' when 'F/37' then 'RD'
-    when 'F/20' then 'Management' when 'F/21' then 'Management' when 'F/23' then 'Management'
-    when 'F/45' then 'Management' when 'F/46' then 'Management' when 'F/48' then 'Management'
-    else null end;
+  v_record_dept := public.prime_record_department(v_current.form_code);
 
   if v_actor_role is null then
     raise exception 'Insufficient role: no role assigned' using errcode = '42501';
@@ -136,7 +124,9 @@ begin
         'status', v_current.status is distinct from v_updated.status),
      jsonb_build_object('form_data', to_jsonb(v_current)->'form_data'),
      jsonb_build_object('form_data', to_jsonb(v_updated)->'form_data'),
-     coalesce(p_last_modified_by, v_actor_name, auth.uid()::text),
+     -- performed_by is the stable profile email (server-derived), matching
+     -- audit_log_server_append (Prime §15).
+     coalesce((select email from public.profiles where user_id = auth.uid()), auth.uid()::text),
      'edit', v_current.form_code, v_current.serial);
 
   return v_updated;
@@ -218,15 +208,88 @@ begin
 end;
 $$;
 
+-- record_restore — resurrect an archived (soft-deleted) record. The archive
+-- read page can no longer write `records.deleted_at` directly (all record
+-- writes ride the engine); restore is a manager-class action, scoped to the
+-- record's department for non-admins, and audited.
+create or replace function public.record_restore(p_record_id uuid)
+returns records
+language plpgsql security definer set search_path = '' as $$
+declare
+  v_current public.records;
+  v_actor_role text;
+  v_actor_dept text;
+  v_record_dept text;
+  v_updated public.records;
+begin
+  if auth.uid() is null then
+    raise exception 'Unauthorized' using errcode = '42501';
+  end if;
+
+  select * into v_current from public.records
+    where id = p_record_id for update;
+  if not found then
+    raise exception 'Record not found' using errcode = 'P0002';
+  end if;
+  if v_current.deleted_at is null then
+    raise exception 'Record is not archived' using errcode = '23514';
+  end if;
+
+  select role, department into v_actor_role, v_actor_dept
+    from public.prime_user_role(auth.uid());
+  if v_actor_role is null then
+    raise exception 'Insufficient role: no role assigned' using errcode = '42501';
+  end if;
+  if v_actor_role in ('employee', 'user') then
+    raise exception 'Insufficient role: manager or admin required to restore records'
+      using errcode = '42501';
+  end if;
+  -- dept_head/manager restore only records their department owns; admin bypasses.
+  v_record_dept := public.prime_record_department(v_current.form_code);
+  if v_actor_role <> 'admin'
+     and (v_record_dept is null or v_record_dept <> coalesce(v_actor_dept, '')) then
+    raise exception 'Access denied: record belongs to department %',
+      coalesce(v_record_dept, 'UNASSIGNED') using errcode = '42501';
+  end if;
+
+  update public.records
+     set deleted_at = null,
+         updated_at = now()
+   where id = p_record_id
+   returning * into v_updated;
+  if not found then
+    raise exception 'Restore did not apply: no row matched (id %)', p_record_id
+      using errcode = 'P0002';
+  end if;
+
+  insert into public.audit_log
+    (record_id, action, changed_fields, previous_values, new_values,
+     performed_by, action_type, form_code, serial)
+  values
+    (p_record_id, 'restore',
+     jsonb_build_object('deleted_at', true),
+     jsonb_build_object('deleted_at', to_jsonb(v_current.deleted_at)),
+     jsonb_build_object('deleted_at', null),
+     -- performed_by is the stable profile email (server-derived), matching
+     -- audit_log_server_append (Prime §15).
+     coalesce((select email from public.profiles where user_id = auth.uid()), auth.uid()::text),
+     'workflow', v_current.form_code, v_current.serial);
+
+  return v_updated;
+end;
+$$;
+
 revoke execute on function
   public.update_record_versioned(uuid, jsonb, integer, text, text, integer, text, text, text),
   public.record_draft_autosave(uuid, jsonb, integer, text, text),
-  public.record_discard_draft(uuid)
+  public.record_discard_draft(uuid),
+  public.record_restore(uuid)
   from public, anon;
 grant execute on function
   public.update_record_versioned(uuid, jsonb, integer, text, text, integer, text, text, text),
   public.record_draft_autosave(uuid, jsonb, integer, text, text),
-  public.record_discard_draft(uuid)
+  public.record_discard_draft(uuid),
+  public.record_restore(uuid)
   to authenticated;
 
 commit;
