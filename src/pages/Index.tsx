@@ -14,8 +14,9 @@ import { cn } from "@/lib/utils";
 import {
   FileText, Folder, Search, ChevronRight, Plus,
   AlertTriangle, CheckCircle, Clock, ShieldAlert, Calendar,
-  Radar, ArrowUpAZ, ArrowDownAZ,
+  Radar, ArrowUpAZ, ArrowDownAZ, XCircle, Loader2,
 } from "lucide-react";
+import { toast } from "sonner";
 import type { RecordData } from "@/components/forms/DynamicFormRenderer";
 import {
   parseFrequency, applyFrequency, getUrgencyText, getLastFiledText,
@@ -28,6 +29,7 @@ import {
   formatPeriodLabel,
 } from "@/lib/temporalUtils";
 import { PROJECTS } from "@/data/projectsData";
+import { discardRecordDraft } from "@/services/recordStorage";
 
 const DEPT_ORDER = [
   "Sales & Customer Service",
@@ -361,6 +363,25 @@ export default function Index() {
     setSelectedForm(null);
   }, []);
 
+  // ── Continue drafts (Prime §D4) — unsent server-side drafts resurface here ──
+  const myDrafts = useMemo(() => {
+    if (!records || !user?.email) return [];
+    return records.filter(r => r._status === "draft" && r._createdBy === user.email);
+  }, [records, user?.email]);
+
+  const [discardingSerial, setDiscardingSerial] = useState<string | null>(null);
+  const handleDiscardDraft = async (id: string, serial: string) => {
+    setDiscardingSerial(serial);
+    const result = await discardRecordDraft(id);
+    setDiscardingSerial(null);
+    if (!result.success) {
+      // Never hide a refusal — the draft stays so nothing is silently lost.
+      toast.error(`Could not discard draft ${serial}: ${result.error}`);
+      return;
+    }
+    toast.success(`Draft ${serial} discarded`);
+  };
+
   return (
     <div className="space-y-6">
       {/* Welcome + Global Month Selector */}
@@ -424,6 +445,44 @@ export default function Index() {
           </button>
         </div>
       </div>
+
+      {/* Continue drafts (Prime §D4) — abandoned unsent drafts resurface here */}
+      {myDrafts.length > 0 && (
+        <div className="bg-card border border-border rounded-xl p-4">
+          <div className="flex items-center justify-between mb-2">
+            <h2 className="text-sm font-heading font-bold text-foreground dark:text-foreground">Continue drafts</h2>
+            <span className="text-[11px] text-muted-foreground">{myDrafts.length} unsent</span>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            {myDrafts.map(d => (
+              <div
+                key={String(d.id)}
+                className="flex items-center gap-2 pl-3 pr-1.5 py-1.5 rounded-lg border border-border bg-background text-sm"
+              >
+                <button
+                  onClick={() => navigate(`/create?formCode=${encodeURIComponent(String(d.formCode))}`)}
+                  className="flex items-center gap-2 hover:text-primary transition-colors"
+                  title="Resume this draft"
+                >
+                  <FileText className="w-3.5 h-3.5 text-muted-foreground" />
+                  <span className="font-medium">{String(d.formName || d.formCode)}</span>
+                  <span className="font-mono text-[10px] text-muted-foreground">{String(d.serial)}</span>
+                </button>
+                <button
+                  onClick={() => handleDiscardDraft(String(d.id), String(d.serial))}
+                  disabled={discardingSerial === d.serial}
+                  title="Discard draft"
+                  className="p-1 rounded hover:bg-muted/50 text-muted-foreground hover:text-destructive transition-colors disabled:opacity-50"
+                >
+                  {discardingSerial === d.serial
+                    ? <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                    : <XCircle className="w-3.5 h-3.5" />}
+                </button>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* COMPLIANCE RADAR — Prominent Gap Alert Card */}
       {!activeMonth && !activeProject && <ComplianceRadarCard missingPeriodsMap={missingPeriodsMap} />}

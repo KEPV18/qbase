@@ -60,6 +60,8 @@ apply_and_verify() {
   $PS -f ../../supabase/migrations/prime/20260929_01_authz_spine.sql || return 1
   echo "== apply prime migration 02 (record engine) =="
   $PS -f ../../supabase/migrations/prime/20260929_02_record_engine.sql || return 1
+  echo "== apply prime migration 03 (draft creation) =="
+  $PS -f ../../supabase/migrations/prime/20260929_03_record_drafts.sql || return 1
   echo "== apply supabase-default privilege layer (test replica) =="
   $PS -f 01b_replica_grants.sql || return 1
   echo "== run verification battery =="

@@ -203,6 +203,24 @@ begin
      and not public.prime_is_admin() then
     raise exception 'Access denied: not your draft' using errcode = '42501';
   end if;
+
+  -- Tombstone: the draft's trail ends with its discard, attributed to the
+  -- discarder (Prime §15 — no silent loss; this row is append-only like the
+  -- rest of the trail). serial/form_code are denormalized into the audit row
+  -- so the event stays interpretable after the draft row itself is gone.
+  insert into public.audit_log
+    (record_id, action, changed_fields, previous_values, new_values,
+     performed_by, action_type, form_code, serial)
+  values
+    (p_draft_id, 'discard',
+     jsonb_build_object('status', true),
+     jsonb_build_object('status', 'draft'),
+     jsonb_build_object('status', null),
+     coalesce((select email from public.profiles where user_id = auth.uid()), auth.uid()::text),
+     'workflow',
+     (select form_code from public.records where id = p_draft_id),
+     (select serial from public.records where id = p_draft_id));
+
   delete from public.record_versions where record_id = p_draft_id;
   delete from public.records where id = p_draft_id;
 end;

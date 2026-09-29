@@ -1,26 +1,40 @@
 // ============================================================================
-// QBase — Record Creation Page (Section-First Flow)
-// When navigated from a module: auto-filters to that section's forms.
-// When navigated directly (/create): shows section picker first.
-// No more dumping all 50 forms at once.
+// QBase — Record Creation Page (Section-First Flow, Prime §D4)
+// Flow: section → form → one-screen form → success. No informational gate
+// step. Opening a form immediately creates (or resumes) a SERVER-SIDE draft
+// (record_draft_create), kept current by debounced record_draft_autosave and
+// finalized at submit through the record_transition workflow engine — so
+// Ahmed's Rules are enforced server-side and the browser never writes tables.
+// Serials come from the server at draft creation (allocated across archived
+// rows too, never from a client-side guess); abandoned drafts resurface on
+// the dashboard "Continue drafts" strip.
 // ============================================================================
 
-import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import {
   FileText, Search, CheckCircle, XCircle, ArrowLeft, Loader2,
-  ChevronRight, Layers, Building2, FolderKanban,
+  ChevronRight, Layers, Building2, FolderKanban, CloudUpload, AlertTriangle,
 } from 'lucide-react';
+import { useQueryClient } from '@tanstack/react-query';
 import { FORM_SCHEMAS, getFormSchema, getFormsBySection } from '../data/formSchemas';
-import { getNextSerial } from '../schemas';
 import { todayDDMMYYYY } from '../schemas';
 import { MODULE_CONFIG, getModuleForSection } from '../config/modules';
 import DynamicFormRenderer, { type RecordData } from '../components/forms/DynamicFormRenderer';
 import { SchemaDrivenRecordView } from '../components/forms/SchemaDrivenRecordView';
 import { getTemplateComponent, TemplateWrapper } from '@/components/templates';
 import { type TemplateComponentProps } from '@/components/templates';
-import { useCreateRecord, useRecords } from '../hooks/useRecordStorage';
-import type { StorageResult } from '../services/recordStorage';
+import { useSubmitDraft } from '../hooks/useRecordStorage';
+import {
+  createDraftRecord,
+  autosaveRecordDraft,
+  discardRecordDraft,
+  getCurrentUserSnapshot,
+  resolveApprovalStatus,
+  resolveDepartment,
+  type RecordStatusEnum,
+} from '../services/recordStorage';
+import { preWriteValidation, type ValidationError } from '../services/preWriteValidation';
 import { PROJECTS } from '../data/projectsData';
 import { AppShell } from '@/components/layout/AppShell';
 import { cn } from '@/lib/utils';
@@ -34,9 +48,16 @@ Object.values(MODULE_CONFIG).forEach(m => {
   SECTION_META[m.section] = { id: m.id, icon: m.icon, color: m.moduleClass };
 });
 
+const AUTOSAVE_DEBOUNCE_MS = 1200;
+
 // ============================================================================
 // Record Creation Page
 // ============================================================================
+
+interface DraftRef {
+  id: string;
+  serial: string;
+}
 
 const RecordCreationPage: React.FC = () => {
   const navigate = useNavigate();
@@ -45,20 +66,40 @@ const RecordCreationPage: React.FC = () => {
   const urlSection = searchParams.get('section');
   const urlSectionNum = urlSection ? parseInt(urlSection, 10) : null;
 
-  const createMutation = useCreateRecord();
+  const queryClient = useQueryClient();
+  const submitDraft = useSubmitDraft();
 
   const [selectedCode, setSelectedCode] = useState<string>(urlFormCode || '');
   const [activeSection, setActiveSection] = useState<number | null>(urlSectionNum);
   const [created, setCreated] = useState<{ code: string; serial: string; data: RecordData } | null>(null);
   const [search, setSearch] = useState('');
-  const [gateStep, setGateStep] = useState<'select' | 'gate' | 'form' | 'success'>(
-    urlFormCode ? 'gate' : 'select'
-  );
+  // Single submit path — no gate step: select → form → success.
+  const [step, setStep] = useState<'select' | 'form'>(urlFormCode ? 'form' : 'select');
   const [createError, setCreateError] = useState<string | null>(null);
+  const [validationErrors, setValidationErrors] = useState<ValidationError[]>([]);
   const [scope, setScope] = useState<'company-wide' | 'project-specific'>('company-wide');
   const [selectedProjectId, setSelectedProjectId] = useState<string>('');
 
-  const { data: allRecords } = useRecords();
+  // ── Server-side draft state (Prime §D4) ──
+  const [draft, setDraft] = useState<DraftRef | null>(null);
+  const [draftBusy, setDraftBusy] = useState(false);
+  const [resumedContent, setResumedContent] = useState<Record<string, unknown> | null>(null);
+  const [dirty, setDirty] = useState(false);
+  const [autosaveError, setAutosaveError] = useState<string | null>(null);
+  const [submitPending, setSubmitPending] = useState(false);
+  const draftRetry = useRef(0); // bumped to re-run draft creation after a failure
+
+  // Template form data for DOCX-accurate form editing
+  const [formData, setFormData] = useState<Record<string, unknown>>({});
+
+  // Autosave plumbing: one shared debounce per content source (page state for
+  // the template path; renderer events for the fallback path). The latest
+  // content always lives in a ref so a pending debounce never races a re-render.
+  const autosaveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const rendererAutosaveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const latestContentRef = useRef<Record<string, unknown>>({});
+
+  const schema = selectedCode ? getFormSchema(selectedCode) : null;
 
   // Each entry carries the section number, its display name and its form count.
   // This used to be `getFormSections()`, which returns bare section NUMBERS — so
@@ -82,68 +123,133 @@ const RecordCreationPage: React.FC = () => {
     }
     return [...bySection.values()].sort((a, b) => a.number - b.number);
   }, []);
-  const schema = selectedCode ? getFormSchema(selectedCode) : null;
 
-  // Template form data for DOCX-accurate form editing
-  const [formData, setFormData] = useState<Record<string, unknown>>({});
-
-  // Initialize defaults when entering form step
-  useEffect(() => {
-    if (gateStep === 'form' && selectedCode) {
-      const serial = getNextSerial(selectedCode);
-      const today = todayDDMMYYYY();
-      setFormData(prev => ({
-        ...prev,
-        serial: prev.serial || serial,
-        date: prev.date || today,
-        despatch_date: prev.despatch_date || today,
-        bill_no: prev.bill_no || serial,
-      }));
+  const clearAutosaveTimer = useCallback((which: 'template' | 'renderer') => {
+    const timer = which === 'template' ? autosaveTimer : rendererAutosaveTimer;
+    if (timer.current) {
+      clearTimeout(timer.current);
+      timer.current = null;
     }
-  }, [gateStep, selectedCode]);
-
-  // Templates that render a table emit the whole row array for one field key
-  // (e.g. "items"), so the value domain includes arrays of row objects.
-  const handleTemplateFieldChange = useCallback((field: string, value: string | Record<string, unknown> | Array<Record<string, unknown>>) => {
-    setFormData(prev => ({ ...prev, [field]: value }));
   }, []);
 
-  const handleFormSubmit = useCallback(() => {
-    if (!schema || !selectedCode) return;
-    // Build RecordData from template form data
-    const data = { ...formData } as RecordData;
-    if (!data.serial || data.serial === 'auto') {
-      data.serial = getNextSerial(selectedCode);
-    }
-    data.formCode = selectedCode;
-    data._createdAt = new Date().toISOString();
-    // _createdBy is NOT set here: createRecord attributes the record to the
-    // authenticated session (recordStorage.ts resolve-currentUser fallback).
-    // The previous hardcode attributed every record to a single person.
-    // Auto-capture frequency scope for compliance tracking (Phase 8)
-    data._frequency = schema.frequency || '';
-    // Add scope and project_id
-    data.scope = scope;
-    if (scope === 'project-specific' && selectedProjectId) {
-      data.project_id = selectedProjectId;
-    }
-    // Convert dates from display format (DD/MM/YYYY) to display format (already DD/MM/YYYY from template)
-    // No conversion needed — DateOrTextCell stores values as-is
-    createMutation.mutate(data, {
-      onSuccess: (result: StorageResult) => {
-        // Check if the mutation actually succeeded
-        if (!result.success) {
-          setCreateError(result.error || 'Failed to create record');
-          return;
-        }
-        const serial = result.record?.serial || data.serial || '';
-        setCreated({ code: selectedCode, serial: serial as string, data });
-      },
-      onError: (err: Error) => {
-        setCreateError(err.message || 'Failed to create record');
-      },
-    });
-  }, [schema, selectedCode, formData, createMutation]);
+  // ── Server-side draft: created the moment the form opens; resumed if the
+  // user already has an unfinished draft for this form (server-side idempotent
+  // per creator+form — record_draft_create returns that same draft again).
+  useEffect(() => {
+    if (step !== 'form' || !selectedCode || created) return;
+    let cancelled = false;
+    setDraftBusy(true);
+    setDraft(null);
+    (async () => {
+      const s = getFormSchema(selectedCode);
+      const result = await createDraftRecord(
+        selectedCode,
+        { date: todayDDMMYYYY(), despatch_date: todayDDMMYYYY() },
+        {
+          formName: s?.name || '',
+          section: s?.section ?? undefined,
+          sectionName: s?.sectionName ?? undefined,
+          frequency: s?.frequency ?? undefined,
+        },
+      );
+      if (cancelled) return;
+      setDraftBusy(false);
+      if (!result.success) {
+        setCreateError(result.error || 'Could not open a draft for this form.');
+        return;
+      }
+      // A resumed draft carries previously saved content — hand it to the
+      // form so the user sees what they already had ('serial' alone = fresh).
+      setResumedContent(Object.keys(result.savedData).length > 1 ? result.savedData : null);
+      setDraft({ id: result.id, serial: result.serial });
+    })();
+    return () => { cancelled = true; };
+  }, [step, selectedCode, draftRetry.current, created]);
+
+  // ── Template-path content: seeded from the resumed draft (or fresh
+  // defaults) with the server-allocated serial. ──
+  useEffect(() => {
+    if (step !== 'form' || !selectedCode) return;
+    const today = todayDDMMYYYY();
+    const seed: Record<string, unknown> = {
+      date: today,
+      despatch_date: today,
+      despatch_no: '',
+      bill_no: '',
+      ...(resumedContent || {}),
+    };
+    if (draft) seed.serial = draft.serial;
+    setFormData(seed);
+    latestContentRef.current = seed;
+  }, [step, selectedCode, draft]);
+
+  // ── Debounced server-side autosave (template path — content in page state;
+  // scope/selectedProject ride along so the draft always persists them too). ──
+  useEffect(() => {
+    if (step !== 'form' || !draft || !getTemplateComponent(selectedCode)) return;
+    if (!dirty) return;
+    const t = setTimeout(async () => {
+      const result = await autosaveRecordDraft(draft.id, latestContentRef.current);
+      if (result.success) {
+        setDirty(false);
+        setAutosaveError(null);
+      } else {
+        // Never hide an autosave failure: the beforeunload guard stays armed
+        // (dirty remains true) until content is actually on the server.
+        setAutosaveError(`Autosave failed: ${result.error}. Your changes are still in the form.`);
+      }
+    }, AUTOSAVE_DEBOUNCE_MS);
+    autosaveTimer.current = t;
+    return () => clearTimeout(t);
+  }, [formData, scope, selectedProjectId, draft, step, dirty]);
+
+  // Template-path field change: keep the latest content fresh + schedule save.
+  const handleTemplateFieldChange = useCallback(
+    (field: string, value: string | Record<string, unknown> | Array<Record<string, unknown>>) => {
+      setFormData(prev => {
+        const next = { ...prev, [field]: value };
+        latestContentRef.current = {
+          ...next,
+          scope,
+          project_id: scope === 'project-specific' ? selectedProjectId : undefined,
+        };
+        return next;
+      });
+      setDirty(true);
+      // The debounced effect above fires off `formData`; scope/project changes
+      // are captured because they are deps of that effect too.
+    },
+    [scope, selectedProjectId],
+  );
+
+  // Renderer (fallback) path: the schema-driven form holds its own content and
+  // streams changes out for the same server-side autosave.
+  const handleRendererFieldChange = useCallback((data: RecordData) => {
+    latestContentRef.current = data as Record<string, unknown>;
+    setDirty(true);
+    if (rendererAutosaveTimer.current) clearTimeout(rendererAutosaveTimer.current);
+    const d = draft;
+    rendererAutosaveTimer.current = setTimeout(async () => {
+      const result = await autosaveRecordDraft(d?.id || '', data as Record<string, unknown>);
+      if (result.success) {
+        setDirty(false);
+        setAutosaveError(null);
+      } else {
+        setAutosaveError(`Autosave failed: ${result.error}. Your changes are still in the form.`);
+      }
+    }, AUTOSAVE_DEBOUNCE_MS);
+  }, [draft]);
+
+  // ── beforeunload guard: warn when unsaved changes would be lost (Prime §D4) ──
+  useEffect(() => {
+    if (!dirty) return;
+    const handler = (e: BeforeUnloadEvent) => {
+      e.preventDefault();
+      e.returnValue = '';
+    };
+    window.addEventListener('beforeunload', handler);
+    return () => window.removeEventListener('beforeunload', handler);
+  }, [dirty]);
 
   // Filter forms based on active section
   const filteredForms = useMemo(() => {
@@ -174,37 +280,17 @@ const RecordCreationPage: React.FC = () => {
 
   const handleFormSelect = (code: string) => {
     setSelectedCode(code);
-    setGateStep('gate');
-  };
-
-  const handleGatePass = () => {
-    setGateStep('form');
-  };
-
-  const handleSubmit = (data: RecordData) => {
-    if (!schema) return;
-    setCreateError(null);
-
-    createMutation.mutate(data, {
-      onSuccess: (result) => {
-        if (result.success && result.record) {
-          setCreated({ code: schema.code, serial: result.record.serial as string, data: result.record });
-          setGateStep('success');
-        } else {
-          setCreateError(result.error || 'Failed to create record.');
-        }
-      },
-      onError: (err: Error) => {
-        setCreateError(err.message || 'Failed to create record.');
-      },
-    });
+    setStep('form');
   };
 
   const resetToSelect = () => {
     setCreated(null);
     setSelectedCode('');
-    setGateStep('select');
+    setStep('select');
     setCreateError(null);
+    setValidationErrors([]);
+    setAutosaveError(null);
+    setResumedContent(null);
     setSearch('');
   };
 
@@ -214,7 +300,114 @@ const RecordCreationPage: React.FC = () => {
     return sec?.name || null;
   }, [activeSection, sections]);
 
-  // ─── Success ──────────────────────────────────────────────────────────
+  // ─────────────────────────────────────────────────────────────────────
+  // Single submit path: both UI paths (DOCX template + schema renderer)
+  // finalize through submitRecordDraft — one final server-side save, then ONE
+  // record_transition whose engine enforces Ahmed's Rules server-side.
+  // Completeness is validated client-side (the canonical preWriteValidation
+  // wrapper) immediately before, for both paths.
+  // ─────────────────────────────────────────────────────────────────────
+  const finalizeDraft = useCallback((content: Record<string, unknown>, withScope: boolean) => {
+    if (!draft || !selectedCode || !schema || submitPending) return;
+    clearAutosaveTimer('template');
+    clearAutosaveTimer('renderer');
+    setSubmitPending(true);
+    setCreateError(null);
+    setValidationErrors([]);
+
+    const data: Record<string, unknown> = { ...content };
+    if (withScope) {
+      data.scope = scope;
+      if (scope === 'project-specific' && selectedProjectId) {
+        data.project_id = selectedProjectId;
+      }
+    }
+    data._createdAt = data._createdAt || new Date().toISOString();
+    // _frequency rides the form-data metadata set like every other create.
+    data._frequency = schema.frequency || '';
+    // _createdBy is NOT set here: the draft row already carries the
+    // server-derived author (record_draft_create), and the workflow engine
+    // attributes every transition itself. No client-side attribution.
+    data.serial = draft.serial;
+
+    const actorEmail = getCurrentUserSnapshot()?.email || '';
+    const validation = preWriteValidation(selectedCode, data as RecordData, 'create', undefined, actorEmail);
+    if (!validation.valid || !validation.sanitizedData) {
+      setValidationErrors(validation.errors);
+      setSubmitPending(false);
+      return;
+    }
+
+    // Ahmed's Rules resolved client-side for UX; the authoritative check is
+    // the record_transition engine (draft → approved requires admin or owning
+    // dept_head; employees land on pending_review).
+    const snapshot = getCurrentUserSnapshot();
+    const recordDept = resolveDepartment(selectedCode);
+    const target: RecordStatusEnum = snapshot ? resolveApprovalStatus(snapshot, recordDept) : 'pending_review';
+
+    submitDraft.mutate(
+      {
+        id: draft.id,
+        content: validation.sanitizedData as Record<string, unknown>,
+        formCode: selectedCode,
+        targetStatus: target,
+      },
+      {
+        onSuccess: (result) => {
+          setSubmitPending(false);
+          if (!result.success || !result.record) {
+            setCreateError(result.error || 'Failed to submit the draft.');
+            return;
+          }
+          setDirty(false);
+          setCreated({ code: selectedCode, serial: result.record.serial as string, data: result.record });
+        },
+        onError: (err: Error) => {
+          setSubmitPending(false);
+          setCreateError(err.message || 'Failed to submit the draft.');
+        },
+      },
+    );
+  }, [draft, selectedCode, schema, scope, selectedProjectId, submitPending, submitDraft, clearAutosaveTimer]);
+
+  // Template path (DOCX-accurate templates): shared submit path with
+  // client-side completeness validation.
+  const handleFormSubmit = useCallback(() => {
+    if (!schema || !selectedCode || !draft) return;
+    finalizeDraft(
+      { ...formData, scope, project_id: scope === 'project-specific' ? selectedProjectId : undefined },
+      false,
+    );
+  }, [schema, selectedCode, draft, formData, scope, selectedProjectId, finalizeDraft]);
+
+  // Renderer (fallback) path: the renderer validates internally, then funnels
+  // through the SAME finalize path.
+  const handleSubmit = useCallback((data: RecordData) => {
+    if (!schema || !draft) return;
+    finalizeDraft(data as Record<string, unknown>, false);
+  }, [schema, draft, finalizeDraft]);
+
+  const discardDraft = useCallback(async () => {
+    if (!draft) return;
+    clearAutosaveTimer('template');
+    clearAutosaveTimer('renderer');
+    const result = await discardRecordDraft(draft.id);
+    if (!result.success) {
+      // Never hide a refusal — the draft stays so nothing is silently lost.
+      setCreateError(result.error || 'Could not discard the draft.');
+      return;
+    }
+    queryClient.invalidateQueries({ queryKey: ['forge-records'] });
+    resetToSelect();
+  }, [draft, clearAutosaveTimer, queryClient]);
+
+  const retryDraft = () => {
+    setCreateError(null);
+    draftRetry.current += 1;
+    setDraft(d => d); // force a re-render pass; the effect re-runs on draftRetry
+  };
+
+  // ── Success ──────────────────────────────────────────────────────────
   if (created) {
     return (
       <AppShell breadcrumbs={[
@@ -282,19 +475,19 @@ const RecordCreationPage: React.FC = () => {
       {/* Header */}
       <div className="flex items-center justify-between mb-6">
         <div className="flex items-center gap-3">
-          {activeSection !== null && (
+          {activeSection !== null && step === 'select' && (
             <button
-              onClick={() => { setActiveSection(null); setSelectedCode(''); setGateStep('select'); setSearch(''); }}
+              onClick={() => { setActiveSection(null); setSelectedCode(''); setSearch(''); }}
               className="p-1.5 rounded-sm hover:bg-muted/50 text-muted-foreground hover:text-foreground transition-colors"
             >
               <ArrowLeft className="w-4 h-4" />
             </button>
           )}
           <h1 className="text-2xl font-bold text-foreground">
-            {gateStep === 'form' && schema && getTemplateComponent(selectedCode)
-              ? '' : gateStep === 'form' && schema ? `Create ${schema.name}` : 'Create Record'}
+            {step === 'form' && schema && getTemplateComponent(selectedCode)
+              ? '' : step === 'form' && schema ? `Create ${schema.name}` : 'Create Record'}
           </h1>
-          {currentSectionName && gateStep !== 'form' && (
+          {currentSectionName && step !== 'form' && (
             <span className="text-sm text-muted-foreground font-medium px-2 py-0.5 bg-muted/30 rounded-sm">
               {currentSectionName}
             </span>
@@ -306,71 +499,83 @@ const RecordCreationPage: React.FC = () => {
       </div>
 
       {/* Error */}
-      {createError && (
-        <div className="mb-4 p-4 rounded-sm bg-destructive/10 border border-destructive/20">
-          <p className="text-sm text-destructive">{createError}</p>
-        </div>
-      )}
-
-      {/* ======== STEP: GATE (Pre-Creation Check) ======== */}
-      {gateStep === 'gate' && schema && (
-        <div className="max-w-lg mx-auto">
-          <div className="ds-card p-6 space-y-4">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-sm bg-primary/10 flex items-center justify-center">
-                <FileText className="w-5 h-5 text-primary" />
+      {(createError || autosaveError) && (
+        <div className="mb-4 p-4 rounded-sm bg-destructive/10 border border-destructive/20 flex items-start gap-2">
+          <AlertTriangle className="w-4 h-4 text-destructive mt-0.5 shrink-0" />
+          <div className="flex-1">
+            <p className="text-sm text-destructive">{createError || autosaveError}</p>
+            {createError && step === 'form' && (
+              <div className="mt-1.5 flex gap-3">
+                <button onClick={retryDraft} className="text-xs text-destructive underline">
+                  Retry
+                </button>
+                <button onClick={resetToSelect} className="text-xs text-muted-foreground underline">
+                  Back to form list
+                </button>
               </div>
-              <div>
-                <h2 className="text-lg font-semibold">{schema.name}</h2>
-                <p className="text-xs text-muted-foreground font-mono">{schema.code} · Section {schema.section}</p>
-              </div>
-            </div>
-            <div className="text-sm text-muted-foreground space-y-1">
-              <p>Before creating a new <strong>{schema.name}</strong>, verify:</p>
-              <ul className="list-disc list-inside space-y-0.5 text-xs">
-                <li>This form requires a business event (not creating for the sake of count).</li>
-                <li>Per {schema.frequency || 'event-based'} frequency — no duplicate exists.</li>
-                <li>All required data is available before submission.</li>
-              </ul>
-            </div>
-            <div className="flex gap-3 pt-2">
-              <button onClick={() => { setSelectedCode(''); setGateStep('select'); }} className="ds-press px-4 py-2 bg-secondary text-secondary-foreground rounded-sm text-sm">
-                Back
-              </button>
-              <button onClick={handleGatePass} className="ds-press ds-focus-ring px-6 py-2 bg-primary text-primary-foreground rounded-sm text-sm font-medium">
-                Continue
-              </button>
-            </div>
+            )}
           </div>
         </div>
       )}
 
-      {/* ======== STEP: FORM (Actual Creation) ======== */}
-      {gateStep === 'form' && schema && (() => {
+      {/* Validation errors (single error surface for both paths) */}
+      {validationErrors.length > 0 && step === 'form' && (
+        <div className="mb-4 p-4 rounded-sm bg-destructive/10 border border-destructive/20">
+          <p className="text-sm font-medium text-destructive mb-2">Fix the following before submitting:</p>
+          <ul className="list-disc list-inside space-y-0.5 text-xs text-destructive">
+            {validationErrors.map(err => (
+              <li key={err.field}><span className="font-mono">{err.field}</span> — {err.message}</li>
+            ))}
+          </ul>
+        </div>
+      )}
+
+      {/* ======== STEP: FORM (one-screen creation) ======== */}
+      {step === 'form' && schema && (() => {
         const fc = selectedCode;
         const TemplateComponent = getTemplateComponent(fc);
+        if (draftBusy) {
+          return (
+            <div className="max-w-lg mx-auto ds-card p-10 text-center text-muted-foreground">
+              <Loader2 className="w-6 h-6 animate-spin mx-auto mb-3 text-primary" />
+              <p className="text-sm">Opening draft…</p>
+            </div>
+          );
+        }
+        if (!draft) return null;
         if (TemplateComponent) {
-          // Use DOCX-accurate template for form creation
+          // DOCX-accurate template for form creation — content lives in page
+          // state (debounced server-side autosave above).
           return (
             <div className="max-w-4xl mx-auto">
               <div className="mb-4 flex items-center justify-between">
                 <div>
                   <h1 className="text-2xl font-bold text-foreground">Create {schema.name}</h1>
-                  <p className="text-sm text-muted-foreground mt-1">Fill in the form below. Fields marked with * are required.</p>
+                  <p className="text-sm text-muted-foreground mt-1">
+                    Fill in the form below. Fields marked with * are required.
+                    <span className="ml-2 font-mono text-xs text-muted-foreground">{draft.serial}</span>
+                    {resumedContent && (
+                      <span className="ml-2 text-xs text-[#b1922d] dark:text-[#e8c84a]">resumed draft</span>
+                    )}
+                  </p>
+                  <p className="text-xs text-muted-foreground mt-1 flex items-center gap-1">
+                    <CloudUpload className="w-3 h-3" />
+                    {dirty ? 'Autosaving…' : 'All changes saved'}
+                  </p>
                 </div>
                 <div className="flex gap-2">
                   <button
-                    onClick={() => { setGateStep('select'); setSelectedCode(''); }}
-                    className="ds-press ds-focus-ring px-4 py-2 text-sm bg-secondary text-secondary-foreground border border-border rounded-sm hover:bg-accent transition-colors"
+                    onClick={discardDraft}
+                    className="ds-press px-4 py-2 text-sm bg-secondary text-secondary-foreground border border-border rounded-sm hover:bg-accent transition-colors"
                   >
-                    Cancel
+                    Discard draft
                   </button>
                   <button
                     onClick={handleFormSubmit}
-                    disabled={createMutation.isPending}
+                    disabled={submitPending}
                     className="ds-press ds-focus-ring px-6 py-2 text-sm bg-primary text-primary-foreground rounded-sm font-medium hover:bg-primary/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
                   >
-                    {createMutation.isPending && <Loader2 className="w-4 h-4 animate-spin" />}
+                    {submitPending && <Loader2 className="w-4 h-4 animate-spin" />}
                     Create Record
                   </button>
                 </div>
@@ -439,21 +644,48 @@ const RecordCreationPage: React.FC = () => {
             </div>
           );
         }
-        // Fallback: schema-driven form
+        // Fallback: schema-driven form (renderer holds its own content and
+        // autosaves through handleRendererFieldChange).
         return (
           <div className="max-w-2xl mx-auto">
+            <div className="mb-4 flex items-center justify-between">
+              <div>
+                <h1 className="text-2xl font-bold text-foreground">Create {schema.name}</h1>
+                <p className="text-sm text-muted-foreground mt-1">Fill in the form below. Fields marked with * are required.</p>
+                <p className="text-xs text-muted-foreground mt-1 flex items-center gap-1">
+                  <CloudUpload className="w-3 h-3" />
+                  {dirty ? 'Autosaving…' : 'All changes saved'}
+                </p>
+              </div>
+              <div className="flex gap-2">
+                <button
+                  onClick={discardDraft}
+                  className="ds-press px-4 py-2 text-sm bg-secondary text-secondary-foreground border border-border rounded-sm hover:bg-accent transition-colors"
+                >
+                  Discard draft
+                </button>
+                <button
+                  onClick={() => { setStep('select'); setSelectedCode(''); }}
+                  className="ds-press px-4 py-2 text-sm bg-secondary text-secondary-foreground border border-border rounded-sm hover:bg-accent transition-colors"
+                >
+                  Cancel
+                </button>
+              </div>
+            </div>
             <DynamicFormRenderer
               formCode={selectedCode}
+              initialData={(resumedContent || {}) as RecordData}
               onSubmit={handleSubmit}
-              onCancel={() => { setGateStep('select'); setSelectedCode(''); }}
-              isSubmitting={createMutation.isPending}
+              onFieldChange={handleRendererFieldChange}
+              onCancel={() => { setStep('select'); setSelectedCode(''); }}
+              isSubmitting={submitPending}
             />
           </div>
         );
       })()}
 
       {/* ======== STEP: SELECT (Section picker or form list) ======== */}
-      {gateStep === 'select' && (
+      {step === 'select' && (
         <>
           {/* Search */}
           <div className="relative mb-5 max-w-md">

@@ -82,6 +82,10 @@ interface DynamicFormRendererProps {
   formCode?: string;
   initialData?: RecordData;
   onSubmit: (data: RecordData) => void;
+  /** Called with the full internal form data on every field change — the
+   * Prime §D4 autosave-draft flow uses this to keep a server-side draft
+   * current. Additive optional prop, so existing callers are unaffected. */
+  onFieldChange?: (data: RecordData) => void;
   onCancel?: () => void;
   readOnly?: boolean;
   editMode?: boolean;
@@ -535,6 +539,7 @@ const DynamicFormRenderer: React.FC<DynamicFormRendererProps> = ({
   formCode,
   initialData,
   onSubmit,
+  onFieldChange,
   onCancel,
   readOnly = false,
   editMode = false,
@@ -590,6 +595,10 @@ const DynamicFormRenderer: React.FC<DynamicFormRendererProps> = ({
 
   const handleFieldChange = useCallback((key: string, value: string | number | boolean | Record<string, unknown> | RecordData[]) => {
     setFormData(prev => ({ ...prev, [key]: value }));
+    // Prime §D4: stream the merged content out (additive optional prop) so a
+    // caller can keep a server-side draft current per field change. Deliberately
+    // OUTSIDE the state updater — updaters can run twice under StrictMode.
+    onFieldChange?.({ ...formData, [key]: value } as RecordData);
     if (submitted) {
       setErrors(prev => {
         const next = { ...prev };
@@ -597,7 +606,7 @@ const DynamicFormRenderer: React.FC<DynamicFormRendererProps> = ({
         return next;
       });
     }
-  }, [submitted]);
+  }, [submitted, onFieldChange, formData]);
 
   const validate = useCallback((): boolean => {
     if (!schema || !selectedCode) return false;

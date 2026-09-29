@@ -662,6 +662,172 @@ export async function createRecord(formData: RecordData): Promise<StorageResult>
   }
 }
 
+// ============================================================================
+// Public API — Draft operations (Prime §D4 autosave-draft flow)
+//
+// A draft row is created server-side the moment a user opens a creation form
+// (record_draft_create: idempotent per creator+form, server-allocated serial),
+// kept current by debounced record_draft_autosave calls, and finalized at
+// submit by record_transition, which enforces Ahmed's Rules server-side.
+// The browser never writes tables directly.
+// ============================================================================
+
+/** Shared error mapping for the engine RPCs (permission / edge / not-found). */
+function mapEngineError(msg: string): string {
+  if (msg.includes('Insufficient role') || msg.includes('Access denied')) {
+    return 'You do not have permission to perform this action.';
+  }
+  if (msg.includes('is not permitted') || msg.includes('Invalid target status')) {
+    return 'This status change is not allowed by the workflow.';
+  }
+  if (msg.includes('not found') || msg.includes('P0002')) {
+    return 'This record no longer exists.';
+  }
+  if (msg.includes('not a draft') || msg.includes('Only draft')) {
+    return 'This draft was already submitted or no longer exists.';
+  }
+  return msg;
+}
+
+/** Result of a draft operation that must confirm the server-side row. */
+export interface DraftResult {
+  id: string;
+  serial: string;
+  /** Business content already saved on the draft (non-empty when resuming). */
+  savedData: Record<string, unknown>;
+}
+
+/**
+ * Create — or resume — the caller's server-side draft for a form.
+ * Idempotent per (creator, form): the RPC returns the caller's existing
+ * unfinished draft instead of forking a duplicate, so opening a form twice
+ * (or retrying after a network blip) can never multiply drafts. The serial is
+ * allocated server-side across ALL rows (archived included), never client-side.
+ */
+export async function createDraftRecord(
+  formCode: string,
+  initialData: Record<string, unknown>,
+  meta: { formName?: string; section?: number; sectionName?: string; frequency?: string } = {},
+): Promise<DraftResult & { error?: string; success: boolean }> {
+  const currentUser = await getCurrentUserId();
+  if (!currentUser) {
+    return { id: '', serial: '', savedData: {}, success: false, error: 'Unauthorized: please sign in to create records' };
+  }
+
+  const { data: rpcResult, error } = await supabase.rpc('record_draft_create', {
+    p_form_code: formCode,
+    p_form_data: initialData ?? {},
+    p_form_name: meta.formName ?? null,
+    p_section: meta.section ?? null,
+    p_section_name: meta.sectionName ?? null,
+    p_frequency: meta.frequency ?? null,
+  });
+
+  if (error) {
+    log.system.error('recordStorage:draft_create_failed', `${formCode}: ${error.message}`);
+    return { id: '', serial: '', savedData: {}, success: false, error: error.message };
+  }
+
+  const row = Array.isArray(rpcResult) ? rpcResult[0] : rpcResult;
+  if (!row?.id || !row?.serial) {
+    // Same write-loss class as createRecord: never report success without a
+    // server-confirmed identity.
+    log.system.error('recordStorage:draft_create_unconfirmed', `${formCode}: no row returned`);
+    return { id: '', serial: '', savedData: {}, success: false, error: 'Draft creation was not confirmed by the server.' };
+  }
+
+  // Resumed drafts carry previously saved content; hand it back so the UI can
+  // fill the form with what the user had.
+  const savedBusiness = ((row as DbRecord).form_data as Record<string, unknown>) || {};
+  logOperation({ timestamp: new Date().toISOString(), operation: 'create', serial: String(row.serial), formCode, success: true, durationMs: 0 });
+  return {
+    id: String(row.id),
+    serial: String(row.serial),
+    savedData: { ...savedBusiness, serial: String(row.serial) },
+    success: true,
+  };
+}
+
+/** Debounced per-field autosave target: refresh the draft's form_data. */
+export async function autosaveRecordDraft(
+  draftId: string,
+  formContent: Record<string, unknown>,
+): Promise<StorageResult> {
+  const { error } = await supabase.rpc('record_draft_autosave', {
+    p_draft_id: draftId,
+    p_form_data: formContent ?? {},
+  });
+  if (error) {
+    log.system.error('recordStorage:draft_autosave_failed', error.message);
+    return { success: false, error: error.message };
+  }
+  return { success: true };
+}
+
+/** Discard only the caller's own unsent draft (tombstone-audited server-side). */
+export async function discardRecordDraft(draftId: string): Promise<StorageResult> {
+  const { error } = await supabase.rpc('record_discard_draft', { p_draft_id: draftId });
+  if (error) {
+    const msg = (error as Error)?.message || String(error);
+    log.system.error('recordStorage:draft_discard_failed', msg);
+    return { success: false, error: mapEngineError(msg) };
+  }
+  return { success: true };
+}
+
+/**
+ * Finalize a draft: one server-side final autosave, then ONE workflow
+ * transition to the actor's resolved status (admin / owning dept_head →
+ * approved; employee → pending_review — the engine enforces these rules
+ * server-side and refuses unauthorized transitions before anything commits).
+ *
+ * Schema completeness (required fields) is enforced client-side immediately
+ * before this call — the same trust boundary the live update path has
+ * (update_record_versioned performs no Zod validation server-side); the
+ * server remains the authority for identity, permissions and workflow.
+ */
+export async function submitRecordDraft(
+  draftId: string,
+  finalContent: Record<string, unknown>,
+  targetStatus: RecordStatusEnum,
+): Promise<StorageResult> {
+  const currentUser = await getCurrentUserId();
+  if (!currentUser) {
+    return { success: false, error: 'Unauthorized: please sign in to create records' };
+  }
+
+  // Final save first: the form content lands even if the transition is then
+  // refused, so nothing the user typed is lost.
+  const saveResult = await autosaveRecordDraft(draftId, finalContent);
+  if (!saveResult.success) {
+    return { success: false, error: `Final save failed: ${saveResult.error}` };
+  }
+
+  const { data: transitionRows, error: transitionError } = await supabase.rpc(
+    'record_transition',
+    {
+      p_record_id: draftId,
+      p_target_status: targetStatus,
+      p_reason: 'created from draft',
+    } as never,
+  );
+  if (transitionError) {
+    const msg = (transitionError as Error)?.message || String(transitionError);
+    log.system.error('recordStorage:draft_submit_transition_refused', msg);
+    return { success: false, error: mapEngineError(msg) };
+  }
+
+  const row = Array.isArray(transitionRows) ? transitionRows[0] : transitionRows;
+  if (!row?.serial) {
+    return { success: false, error: 'Submission was not confirmed: the server returned no record.' };
+  }
+  const record = parseRowToRecord(row as DbRecord);
+  if (!record) {
+    return { success: false, error: `Failed to parse the submitted record ${row.serial}.` };
+  }
+  return { success: true, record };
+}
+
 export async function updateRecord(
   serial: string,
   changes: RecordData,

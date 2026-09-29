@@ -15,6 +15,7 @@ import {
   softDeleteRecord,
   getArchivedRecords,
   restoreRecord,
+  submitRecordDraft,
   invalidateRowCache,
   type StorageResult,
 } from '../services/recordStorage';
@@ -130,6 +131,40 @@ export function useCreateRecord() {
       } else {
         toast.error(`Create failed: ${message}`);
       }
+    },
+  });
+}
+
+// ============================================================================
+// useSubmitDraft — finalize a server-side draft (Prime §D4)
+// One final server-side save + ONE record_transition (Ahmed's Rules enforced
+// by the engine); invalidates the record caches only after a confirmed write.
+// ============================================================================
+
+export function useSubmitDraft() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ id, content, formCode, targetStatus }: {
+      id: string;
+      content: Record<string, unknown>;
+      formCode: string;
+      targetStatus: 'draft' | 'pending_review' | 'approved' | 'rejected';
+    }) => submitRecordDraft(id, content, targetStatus),
+
+    onSuccess: (result: StorageResult, { formCode }) => {
+      if (result.success && result.record) {
+        toast.success(`Record ${result.record.serial} created successfully`);
+        const createdFormCode = formCode || result.record.formCode;
+        if (createdFormCode) {
+          queryClient.invalidateQueries({ queryKey: RECORD_KEYS.byForm(createdFormCode) });
+        }
+      }
+      queryClient.invalidateQueries({ queryKey: RECORD_KEYS.all });
+    },
+
+    onError: (error: Error) => {
+      toast.error(`Submit failed: ${error.message || 'unknown error'}`);
     },
   });
 }

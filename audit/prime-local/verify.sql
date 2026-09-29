@@ -553,6 +553,127 @@ begin;
   end $$;
 rollback;
 
+-- ══ J. Server-side draft creation (Prime §D4 — record_draft_create) ═════════
+-- Fixture recap: F/09 serials F/09-001 .. F/09-004 exist, with F/09-004
+-- ARCHIVED (deleted_at set) and F/09-001 an UNFINISHED DRAFT owned by
+-- emp.sales — so dept_head (sub 2222, no existing F/09 draft) must receive a
+-- NEW draft with serial F/09-005: allocation spans archived rows, and the
+-- idempotent resume must NOT return another user's draft.
+
+begin;
+  select set_config('request.jwt.claim.sub','22222222-2222-2222-2222-222222222222', true);
+  set local role authenticated;
+  do $$ declare
+    v_row public.records;
+    v_again public.records;
+  begin
+    select * into v_row from public.record_draft_create(
+      'F/09', '{"field_a":""}'::jsonb, 'Test Form', 9, 'Section Nine', 'Monthly');
+    if v_row.status = 'draft'
+       and v_row.serial = 'F/09-005'
+       and v_row.created_by = 'head.sales@fixture.test'
+       and v_row.form_name = 'Test Form'
+       and v_row.frequency = 'Monthly' then
+      perform pg_temp.record_result ('J1 draft created (server-allocated serial incl. archived, draft status)',
+        true, format('serial=%s by=%s', v_row.serial, v_row.created_by));
+    else
+      perform pg_temp.record_result ('J1 draft created (server-allocated serial incl. archived, draft status)',
+        false, format('status=%s serial=%s by=%s', v_row.status, v_row.serial,
+                      coalesce(v_row.created_by, 'null')));
+    end if;
+
+    -- Idempotent reopen: same (creator, form) returns the SAME draft —
+    -- even though the reopened payload differs (reopening resumes content,
+    -- it does not fork a second draft).
+    select * into v_again from public.record_draft_create('F/09', '{"field_a":"newer"}'::jsonb);
+    if v_again.id = v_row.id then
+      perform pg_temp.record_result ('J2 reopen resumes own draft (no duplicate)', true, v_again.serial);
+    else
+      perform pg_temp.record_result ('J2 reopen resumes own draft (no duplicate)', false,
+        format('new id %s serial %s', v_again.id, v_again.serial));
+    end if;
+
+    if (select count(*) from public.audit_log
+         where record_id = v_row.id and action = 'create'
+           and performed_by = 'head.sales@fixture.test') = 1 then
+      perform pg_temp.record_result ('J3 draft creation audited (actor server-derived)',
+        true, '1 row');
+    else
+      perform pg_temp.record_result ('J3 draft creation audited (actor server-derived)', false,
+        format('%s rows', (select count(*) from public.audit_log where record_id = v_row.id)));
+    end if;
+  end $$;
+rollback;
+
+begin;
+  set local role anon;
+  select pg_temp.expect_error('J4 anon cannot create draft', '42501',
+    $$select public.record_draft_create('F/09', '{}'::jsonb)$$);
+rollback;
+
+begin;
+  select set_config('request.jwt.claim.sub','44444444-4444-4444-4444-444444444444', true);
+  set local role authenticated;
+  do $$ declare
+    v_row public.records;
+  begin
+    select * into v_row from public.record_draft_create('F/17', '{"field_c":""}'::jsonb);
+    begin
+      perform public.record_transition(v_row.id, 'approved');
+      perform pg_temp.record_result ('J5 employee cannot self-approve own draft', false, 'transition succeeded');
+    exception when insufficient_privilege then
+      perform pg_temp.record_result ('J5 employee cannot self-approve own draft',
+        true, 'denied 42501');
+    when others then
+      perform pg_temp.record_result ('J5 employee cannot self-approve own draft', false,
+        'unexpected SQLSTATE ' || SQLSTATE);
+    end;
+  end $$;
+rollback;
+
+begin;
+  select set_config('request.jwt.claim.sub','22222222-2222-2222-2222-222222222222', true);
+  set local role authenticated;
+  do $$ declare
+    v_row public.records;
+    v_gone integer;
+    v_tombstones integer;
+    v_recreated public.records;
+  begin
+    select * into v_row from public.record_draft_create('F/09', '{"field_a":"to_discard"}'::jsonb);
+    perform public.record_discard_draft(v_row.id);
+
+    select count(*) into v_gone from public.records where id = v_row.id;
+    if v_gone = 0 then
+      perform pg_temp.record_result ('J6 own draft discarded (row removed)', true, '0 rows');
+    else
+      perform pg_temp.record_result ('J6 own draft discarded (row removed)', false,
+        format('%s rows remain', v_gone));
+    end if;
+
+    select count(*) into v_tombstones from public.audit_log
+      where record_id = v_row.id and action = 'discard'
+        and performed_by = 'head.sales@fixture.test'
+        and serial = v_row.serial;
+    if v_tombstones = 1 then
+      perform pg_temp.record_result ('J7 discard tombstone audited (no silent loss)', true, '1 row');
+    else
+      perform pg_temp.record_result ('J7 discard tombstone audited (no silent loss)', false,
+        format('%s tombstone rows', v_tombstones));
+    end if;
+
+    -- Serial the discard freed is reusable — allocation sees the freed number
+    -- only after the hard delete, and the next draft takes it again.
+    select * into v_recreated from public.record_draft_create('F/09', '{"field_a":"again"}'::jsonb);
+    if v_recreated.id <> v_row.id and v_recreated.serial = 'F/09-005' then
+      perform pg_temp.record_result ('J8 reallocation after discard', true, v_recreated.serial);
+    else
+      perform pg_temp.record_result ('J8 reallocation after discard', false,
+        format('serial=%s', v_recreated.serial));
+    end if;
+  end $$;
+rollback;
+
 -- ══ report ═══════════════════════════════════════════════════════════════════
 -- Load the rollback-proof verdict stream back into test_results, then report.
 insert into test_results select name, ok, detail from public.verify_results;
