@@ -7,6 +7,7 @@ import { useState } from "react";
 import { Sidebar } from "./Sidebar";
 import { TopNav } from "./TopNav";
 import { MobileBottomNav } from "./MobileBottomNav";
+import { CommandPalette } from "./CommandPalette";
 import { Menu, PanelLeft } from "lucide-react";
 
 export function DashboardLayout({ children }: { children: React.ReactNode }) {
@@ -50,6 +51,7 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
         </div>
       </div>
       <MobileBottomNav onMenuClick={() => setMobileOpen(true)} />
+      <CommandPalette />
     </div>
   );
 }

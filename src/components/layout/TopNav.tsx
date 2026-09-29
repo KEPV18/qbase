@@ -7,6 +7,7 @@ import { useRecords } from "@/hooks/useRecordStorage";
 import { cn } from "@/lib/utils";
 import { useTenantIdentity } from "@/hooks/useTenantIdentity";
 import { useTheme } from "@/hooks/useTheme";
+import { openCommandPalette } from "./CommandPalette";
 import defaultLogo from "@/assets/qms-logo.png";
 import type { RecordData } from "@/components/forms/DynamicFormRenderer";
 
@@ -147,9 +148,15 @@ export function TopNav() {
             onKeyDown={(e) => { if (e.key === 'Escape') setShowSearchDropdown(false); }}
             className="w-full pl-9 pr-10 py-2 rounded-lg bg-background border border-border text-sm text-foreground dark:text-foreground dark:bg-card dark:border-border placeholder:text-muted-foreground/70 focus:outline-none focus:ring-2 focus:ring-foreground/10 focus:border-foreground/20 transition-all"
           />
-            <kbd className="absolute right-3 top-1/2 -translate-y-1/2 hidden lg:inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-md bg-muted dark:bg-muted border border-border dark:border-border text-[10px] font-medium text-muted-foreground/70">
-            ⌘ F
-          </kbd>
+            <button
+              type="button"
+              onClick={() => openCommandPalette()}
+              title="Open command palette (⌘K)"
+              aria-label="Open command palette"
+              className="absolute right-3 top-1/2 -translate-y-1/2 hidden lg:inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-md bg-muted dark:bg-muted border border-border dark:border-border text-[10px] font-medium text-muted-foreground/70 hover:text-foreground transition-colors cursor-pointer"
+            >
+            ⌘ K
+          </button>
           {showSearchDropdown && results.length > 0 && (
             <div className="absolute top-full left-0 right-0 mt-2 bg-card border border-border dark:border-[#3a3834] rounded-lg py-1 max-h-80 overflow-y-auto z-50">
               {results.map(r => (
