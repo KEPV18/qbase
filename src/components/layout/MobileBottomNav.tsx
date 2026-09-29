@@ -3,7 +3,7 @@
 // Shows on mobile only — 5 main tabs + hamburger for full sidebar
 // ============================================================================
 
-import { useNavigate, useLocation } from "react-router-dom";
+import { NavLink, useLocation } from "react-router-dom";
 import {
   LayoutDashboard, FileText, Briefcase, Menu,
 } from "lucide-react";
@@ -16,7 +16,6 @@ const NAV_ITEMS = [
 ];
 
 export function MobileBottomNav({ onMenuClick }: { onMenuClick: () => void }) {
-  const navigate = useNavigate();
   const location = useLocation();
 
   const isActive = (path: string) => {
@@ -25,12 +24,13 @@ export function MobileBottomNav({ onMenuClick }: { onMenuClick: () => void }) {
   };
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 z-50 lg:hidden bg-white dark:bg-[#1a1a18] border-t border-[#e8e3db] dark:border-[#3a3834] safe-area-bottom">
+    <nav aria-label="Primary mobile navigation" className="fixed bottom-0 left-0 right-0 z-50 lg:hidden bg-white dark:bg-[#1a1a18] border-t border-[#e8e3db] dark:border-[#3a3834] safe-area-bottom">
       <div className="flex items-center justify-around h-16 px-2">
         {NAV_ITEMS.map((item) => (
-          <button
+          <NavLink
             key={item.path}
-            onClick={() => navigate(item.path)}
+            to={item.path}
+            aria-current={isActive(item.path) ? "page" : undefined}
             className={cn(
               "flex flex-col items-center justify-center gap-0.5 px-3 py-1.5 rounded-lg min-w-[56px] transition-colors",
               isActive(item.path)
@@ -48,7 +48,7 @@ export function MobileBottomNav({ onMenuClick }: { onMenuClick: () => void }) {
             )}>
               {item.label}
             </span>
-          </button>
+          </NavLink>
         ))}
 
         {/* Menu button — opens the full sidebar drawer */}

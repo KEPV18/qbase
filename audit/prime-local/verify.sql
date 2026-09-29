@@ -816,6 +816,152 @@ begin;
     $$select public.dashboard_stats()$$);
 rollback;
 
+-- ══ L. Approval-decision notifications (Prime §D7, migration 05) ════════════
+-- The decision trigger fires server-side on the pending_review →
+-- approved|rejected edges; the recipient is the record's creator resolved
+-- by profile email; self-decisions notify nobody; creators without a
+-- resolvable profile produce no orphan rows.
+
+-- L1 — approval notifies the creator (exactly one unread notification).
+begin;
+  select set_config('request.jwt.claim.sub','11111111-1111-1111-1111-111111111111', true);
+  set local role authenticated;
+  select public.record_transition('aaaaaaaa-0000-0000-0000-000000000002'::uuid, 'approved', null);
+  reset role;
+  do $$ begin
+    if (select count(*) from public.notifications
+         where user_id = '44444444-4444-4444-4444-444444444444'::uuid
+           and event_type = 'approval_decision' and read = false) <> 1 then
+      perform pg_temp.record_result ('L1 approval decision notifies the creator (1 unread)', false,
+        format('count=%s', (select count(*) from public.notifications)));
+    else
+      perform pg_temp.record_result ('L1 approval decision notifies the creator (1 unread)', true, '1 row');
+    end if;
+  end $$;
+rollback;
+
+-- L2 — the decision envelope is complete and honest.
+begin;
+  select set_config('request.jwt.claim.sub','11111111-1111-1111-1111-111111111111', true);
+  set local role authenticated;
+  select public.record_transition('aaaaaaaa-0000-0000-0000-000000000002'::uuid, 'approved', null);
+  reset role;
+  do $$ begin
+    if (select count(*) from public.notifications
+         where user_id = '44444444-4444-4444-4444-444444444444'::uuid
+           and category = 'records' and priority = 'important'
+           and event_type = 'approval_decision'
+           and title = 'Record approved'
+           and message = 'Record F/09-002 was approved by admin@fixture.test.'
+           and link = '/records/F/09-002'
+           and data->>'from_status' = 'pending_review'
+           and data->>'to_status' = 'approved'
+           and data->>'decided_by' = 'admin@fixture.test'
+           and data->>'serial' = 'F/09-002'
+           and actor_id = '11111111-1111-1111-1111-111111111111'
+           and target_id = 'aaaaaaaa-0000-0000-0000-000000000002'
+           and created_by = 'admin@fixture.test'
+           and read = false) = 1
+    then
+      perform pg_temp.record_result ('L2 decision envelope (category/priority/link/data/actor)', true, 'complete');
+    else
+      perform pg_temp.record_result ('L2 decision envelope (category/priority/link/data/actor)', false,
+        format('matching=%s', (select count(*) from public.notifications)));
+    end if;
+  end $$;
+rollback;
+
+-- L3 — a NON-decision edge (draft → pending_review, by the creator
+-- themselves) inserts nothing.
+begin;
+  select set_config('request.jwt.claim.sub','44444444-4444-4444-4444-444444444444', true);
+  set local role authenticated;
+  select public.record_transition('aaaaaaaa-0000-0000-0000-000000000001'::uuid, 'pending_review', null);
+  reset role;
+  do $$ begin
+    if (select count(*) from public.notifications) <> 0 then
+      perform pg_temp.record_result ('L3 non-decision edge inserts nothing', false,
+        format('count=%s', (select count(*) from public.notifications)));
+    else
+      perform pg_temp.record_result ('L3 non-decision edge inserts nothing', true, '0');
+    end if;
+  end $$;
+rollback;
+
+-- L4 — rejection notifies the HR-department creator with critical priority,
+-- and L5 — RLS read-own: the recipient sees ONLY their own row.
+begin;
+  -- Synthetic HR record awaiting review, created by the HR employee.
+  insert into public.records (id, form_code, serial, status, edit_count, created_by, form_data, deleted_at)
+  values ('aaaaaaaa-0000-0000-0000-000000000005', 'F/28', 'F/28-001', 'pending_review', 0,
+          'emp.hr@fixture.test', '{"l4":"fixture"}', null);
+  select set_config('request.jwt.claim.sub','33333333-3333-3333-3333-333333333333', true);
+  set local role authenticated;
+  select public.record_transition('aaaaaaaa-0000-0000-0000-000000000005'::uuid, 'rejected', 'fixture reject');
+  reset role;
+  do $$ begin
+    if (select count(*) from public.notifications
+         where user_id = '55555555-5555-5555-5555-555555555555'::uuid
+           and event_type = 'approval_decision' and priority = 'critical'
+           and title = 'Record rejected') <> 1 then
+      perform pg_temp.record_result ('L4 rejection notifies the creator (critical)', false,
+        format('count=%s', (select count(*) from public.notifications)));
+    else
+      perform pg_temp.record_result ('L4 rejection notifies the creator (critical)', true, '1 critical row');
+    end if;
+  end $$;
+  -- The recipient's own view: RLS read-own filters other users' rows.
+  select set_config('request.jwt.claim.sub','55555555-5555-5555-5555-555555555555', true);
+  set local role authenticated;
+  do $$ begin
+    if (select count(*) from public.notifications) = 1
+       and (select count(*) from public.notifications
+             where user_id = '55555555-5555-5555-5555-555555555555'::uuid) = 1
+    then
+      perform pg_temp.record_result ('L5 notifications RLS read-own (recipient sees only own row)', true, '1 visible');
+    else
+      perform pg_temp.record_result ('L5 notifications RLS read-own (recipient sees only own row)', false,
+        format('visible=%s', (select count(*) from public.notifications)));
+    end if;
+  end $$;
+rollback;
+
+-- L6 — a self-decision (the approver IS the creator) notifies nobody.
+begin;
+  insert into public.records (id, form_code, serial, status, edit_count, created_by, form_data, deleted_at)
+  values ('aaaaaaaa-0000-0000-0000-000000000006', 'F/09', 'F/09-006', 'pending_review', 0, 'admin@fixture.test', '{"l6":"fixture"}', null);
+  select set_config('request.jwt.claim.sub','11111111-1111-1111-1111-111111111111', true);
+  set local role authenticated;
+  select public.record_transition('aaaaaaaa-0000-0000-0000-000000000006'::uuid, 'approved', null);
+  reset role;
+  do $$ begin
+    if (select count(*) from public.notifications) <> 0 then
+      perform pg_temp.record_result ('L6 self-decision inserts no notification', false,
+        format('count=%s', (select count(*) from public.notifications)));
+    else
+      perform pg_temp.record_result ('L6 self-decision inserts no notification', true, '0');
+    end if;
+  end $$;
+rollback;
+
+-- L7 — a creator with no resolvable profile produces NO orphan row (§15).
+begin;
+  insert into public.records (id, form_code, serial, status, edit_count, created_by, form_data, deleted_at)
+  values ('aaaaaaaa-0000-0000-0000-000000000007', 'F/09', 'F/09-007', 'pending_review', 0, 'ghost@fixture.test', '{"l7":"fixture"}', null);
+  select set_config('request.jwt.claim.sub','11111111-1111-1111-1111-111111111111', true);
+  set local role authenticated;
+  select public.record_transition('aaaaaaaa-0000-0000-0000-000000000007'::uuid, 'approved', null);
+  reset role;
+  do $$ begin
+    if (select count(*) from public.notifications) <> 0 then
+      perform pg_temp.record_result ('L7 unresolvable creator → no orphan notification', false,
+        format('count=%s', (select count(*) from public.notifications)));
+    else
+      perform pg_temp.record_result ('L7 unresolvable creator → no orphan notification', true, '0');
+    end if;
+  end $$;
+rollback;
+
 -- ══ report ═══════════════════════════════════════════════════════════════════
 -- Load the rollback-proof verdict stream back into test_results, then report.
 insert into test_results select name, ok, detail from public.verify_results;

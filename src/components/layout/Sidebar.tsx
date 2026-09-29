@@ -4,7 +4,7 @@
 // ============================================================================
 
 import { useMemo } from "react";
-import { useNavigate, useLocation } from "react-router-dom";
+import { useNavigate, useLocation, NavLink } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { useTenantIdentity } from "@/hooks/useTenantIdentity";
 import { useRecords } from "@/hooks/useRecordStorage";
@@ -69,8 +69,10 @@ function SidebarNavItem({
   onClick: () => void;
 }) {
   return (
-    <button
+    <NavLink
+      to={item.path}
       onClick={onClick}
+      aria-current={isActive ? "page" : undefined}
       className={cn(
         "w-full flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-medium transition-all duration-200",
         isActive
@@ -85,7 +87,7 @@ function SidebarNavItem({
           {item.badge > 9 ? "9+" : item.badge}
         </span>
       ) : null}
-    </button>
+    </NavLink>
   );
 }
 
@@ -101,8 +103,10 @@ function SidebarIconItem({
 }) {
   const Icon = item.icon;
   return (
-    <button
+    <NavLink
+      to={item.path}
       onClick={onClick}
+      aria-current={isActive ? "page" : undefined}
       title={item.label}
       className={cn(
         "w-full flex items-center justify-center px-2 py-2.5 rounded-lg transition-all duration-200",
@@ -112,7 +116,7 @@ function SidebarIconItem({
       )}
     >
       <Icon className={cn("w-[18px] h-[18px]", isActive ? "text-white dark:text-foreground" : "text-muted-foreground/70")} />
-    </button>
+    </NavLink>
   );
 }
 

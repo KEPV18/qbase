@@ -32,6 +32,7 @@ import { PROJECTS } from "@/data/projectsData";
 import { discardRecordDraft } from "@/services/recordStorage";
 import { useDashboardStats } from "@/hooks/useRecordStorage";
 import type { DashboardStats } from "@/services/dashboardStats";
+import { AsyncBoundary } from "@/components/ui/AsyncBoundary";
 
 const DEPT_ORDER = [
   "Sales & Customer Service",
@@ -296,7 +297,7 @@ export default function Index() {
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   const { user } = useAuth();
-  const { data: records, isLoading: recordsLoading } = useRecords();
+  const { data: records, isLoading: recordsLoading, error: recordsError, refetch: refetchRecords } = useRecords();
   const { data: stats, isLoading: statsLoading, error: statsError } = useDashboardStats();
   const [activeDept, setActiveDept] = useState(() => {
     const saved = localStorage.getItem('qms_activeDept');
@@ -671,13 +672,14 @@ export default function Index() {
               )}
             </div>
             <div>
-              {displayedRecords.length === 0 ? (
-                <div className="flex flex-col items-center justify-center py-16">
-                  <Folder className="w-8 h-8 text-[#e8e3db] dark:text-[#3a3834] mb-3" />
-                  <p className="text-sm text-muted-foreground font-medium">No records</p>
-                  <p className="text-xs text-muted-foreground/70 mt-1">Select a form or department to view records.</p>
-                </div>
-              ) : (
+              <AsyncBoundary
+                isLoading={recordsLoading}
+                error={recordsError}
+                onRetry={() => refetchRecords()}
+                isEmpty={displayedRecords.length === 0}
+                emptyTitle="No records"
+                emptyMessage="Select a form or department to view records."
+              >
                 <div>
                   {/* Sort order toggle */}
                   <div className="flex items-center justify-end gap-2 px-5 py-2 border-b border-border dark:border-border/50">
@@ -716,7 +718,7 @@ export default function Index() {
                   ))}
                 </div>
                 </div>
-              )}
+              </AsyncBoundary>
             </div>
           </div>
         </div>
