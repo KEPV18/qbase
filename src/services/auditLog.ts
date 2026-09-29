@@ -87,7 +87,10 @@ export function computeDiff(
  */
 export async function appendAuditLog(
   serial: string,
-  action: 'create' | 'update' | 'delete' | 'status_change',
+  // 'ai_assisted_create' (Prime §D5): provenance tag appended right after the
+  // AI-proposed content was accepted and written through the validated paths.
+  // The audit_log.action column is unconstrained text server-side.
+  action: 'create' | 'update' | 'delete' | 'status_change' | 'ai_assisted_create',
   _userIgnored: string,
   changedFields: string[],
   previousValues: Record<string, unknown>,
