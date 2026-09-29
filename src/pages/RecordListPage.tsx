@@ -16,6 +16,7 @@ import { FORM_SCHEMAS } from '../data/formSchemas';
 import { PROJECTS } from '../data/projectsData';
 import { isoToDisplay } from '../schemas';
 import { useRecords } from '../hooks/useRecordStorage';
+import { approveRecords } from '../services/recordStorage';
 import { evaluateRulesForRecord, getSeverityColor as getIntSeverityColor, type RuleSeverity, type RecordData } from '../services/ruleEngine';
 import { getEditRiskLevel } from '../services/recordUtils';
 import { exportRecordsToDocx } from '../services/docxExport';
@@ -75,6 +76,7 @@ const RecordListPage: React.FC = () => {
   const [sortBy, setSortBy] = useState<'serial' | 'date' | 'edited'>('serial');
   const [page, setPage] = useState(1);
   const [selectedSerials, setSelectedSerials] = useState<Set<string>>(new Set());
+  const [isBulkApproving, setIsBulkApproving] = useState(false);
   const [exportMenuOpen, setExportMenuOpen] = useState(false);
   const [isExporting, setIsExporting] = useState(false);
   const [viewMode, setViewMode] = useState<'list' | 'timeline'>('list');
@@ -184,6 +186,42 @@ const RecordListPage: React.FC = () => {
       setSelectedSerials(new Set());
     } else {
       setSelectedSerials(new Set(pagedRecords.map(r => r.serial as string)));
+    }
+  };
+
+  // ─── Bulk approve — routes through the existing approveRecords service ──
+  // (Prime §D7: bulk actions wired to the existing `approveRecords`.) Only
+  // records currently Pending_Approval are eligible; the server-side engine
+  // enforces authorization per row, and per-row failures are surfaced —
+  // never silent.
+  const handleBulkApprove = async () => {
+    const eligible = (records || []).filter(r =>
+      selectedSerials.has(r.serial as string) &&
+      r._approvalStatus === 'Pending_Approval'
+    );
+    if (eligible.length === 0) {
+      toast.error('None of the selected records are awaiting approval.');
+      return;
+    }
+    setIsBulkApproving(true);
+    try {
+      const result = await approveRecords(eligible.map(r => r.serial as string));
+      if (result.failed > 0) {
+        toast.warning(
+          `Bulk approve: ${result.success} approved, ${result.failed} failed.`,
+          { description: result.errors.slice(0, 5).join(' • ') }
+        );
+      } else {
+        toast.success(`Approved ${result.success} record(s).`);
+      }
+      if (result.success > 0) {
+        setSelectedSerials(new Set());
+        await refetch();
+      }
+    } catch (err) {
+      toast.error('Bulk approve failed: ' + (err as Error).message);
+    } finally {
+      setIsBulkApproving(false);
     }
   };
 
@@ -372,6 +410,18 @@ const RecordListPage: React.FC = () => {
           {viewMode === 'list' ? <LayoutGrid className="w-4 h-4" /> : <List className="w-4 h-4" />}
           {viewMode === 'list' ? 'Timeline' : 'List'}
         </button>
+
+        {selectedSerials.size > 0 && (
+          <button
+            onClick={handleBulkApprove}
+            disabled={isBulkApproving}
+            className="ds-press ds-focus-ring px-3 py-2 text-sm bg-emerald-500/15 text-emerald-400 rounded-sm flex items-center gap-1 hover:bg-emerald-500/25 transition-colors disabled:opacity-50 disabled:pointer-events-none"
+            title="Approve all selected records awaiting review"
+          >
+            {isBulkApproving ? <Loader2 className="w-4 h-4 animate-spin" /> : <CheckCircle className="w-4 h-4" />}
+            Approve ({selectedSerials.size})
+          </button>
+        )}
 
         {selectedSerials.size > 0 && (
           <button onClick={() => setSelectedSerials(new Set())} className="ds-press px-3 py-2 text-sm bg-destructive/15 text-destructive rounded-sm flex items-center gap-1 hover:bg-destructive/25 transition-colors">
