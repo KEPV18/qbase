@@ -1,4 +1,6 @@
 import React from 'react';
+import { reportError } from '@/services/errorReportService';
+import { log } from '@/services/logger';
 
 interface ErrorBoundaryProps {
   children: React.ReactNode;
@@ -23,6 +25,20 @@ export class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoun
 
   componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
     console.error('ErrorBoundary caught an error:', error, errorInfo);
+    // Prime §D7: the previously-orphaned error_reports hook — the crash is
+    // reported through the audited RPC (migration 20260929_06; identity
+    // server-derived). Fire-and-forget: never blocks or breaks a UI that is
+    // already failing, and a failed delivery is logged, never silent.
+    reportError(error, {
+      pageUrl: typeof window !== 'undefined' ? window.location.pathname : undefined,
+      context: { componentStack: errorInfo.componentStack ?? null },
+    }).then(delivered => {
+      if (!delivered) log.system.warn('errorReport', 'crash report undelivered (evidence kept in local log buffer)');
+    }).catch((err) => {
+      // Defensive only — reportError never throws; a throw here would mean
+      // the promise chain itself broke, and THAT must not be silent (§20).
+      log.system.warn('errorReport', `crash report chain threw: ${(err as Error).message}`);
+    });
     this.props.onError?.(error, errorInfo);
   }
 

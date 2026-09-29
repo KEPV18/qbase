@@ -3,11 +3,13 @@
 // Admin-only. Backup, Restore, and Bulk Import with encryption & validation.
 // ============================================================================
 
-import { useState, useRef, useCallback } from "react";
+import { useState, useRef, useCallback, useEffect } from "react";
 import { AppShell } from "@/components/layout/AppShell";
 import { useBackup } from "@/hooks/useBackup";
 import { importFromJson, importFromCsv, previewImport, type ImportResult, type ImportRow } from "@/services/importService";
 import { useRefreshData } from "@/hooks/useRefreshData";
+import { listErrorReports, resolveErrorReport } from "@/services/errorReportService";
+import { AsyncBoundary } from "@/components/ui/AsyncBoundary";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -25,7 +27,7 @@ import { cn } from "@/lib/utils";
 // Types
 // ============================================================================
 
-type ActiveTab = "backup" | "restore" | "import";
+type ActiveTab = "backup" | "restore" | "import" | "errors";
 
 interface ImportPreviewRow {
   serial: string;
@@ -60,6 +62,7 @@ export default function DatabaseManagementPage() {
             { id: "backup" as const, label: "Export Backup", icon: Download },
             { id: "restore" as const, label: "Restore Backup", icon: Upload },
             { id: "import" as const, label: "Bulk Import", icon: FileSpreadsheet },
+            { id: "errors" as const, label: "Error Reports", icon: AlertTriangle },
           ].map(tab => (
             <button
               key={tab.id}
@@ -81,8 +84,129 @@ export default function DatabaseManagementPage() {
         {activeTab === "backup" && <BackupTab />}
         {activeTab === "restore" && <RestoreTab />}
         {activeTab === "import" && <ImportTab />}
+        {activeTab === "errors" && <ErrorReportsTab />}
       </div>
     </AppShell>
+  );
+}
+
+// ============================================================================
+// Tab 4: Error Reports — resolve client-reported errors (Prime §D7)
+// The read rides the table's manager-or-admin RLS policy; a non-manager
+// sees an honest refusal, never an empty list. Resolution rides the audited
+// error_report_resolve RPC (migration 20260929_06).
+// ============================================================================
+
+function ErrorReportsTab() {
+  const [reports, setReports] = useState<Awaited<ReturnType<typeof listErrorReports>>>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<Error | null>(null);
+  const [resolvingId, setResolvingId] = useState<string | null>(null);
+  const [resolutionDraft, setResolutionDraft] = useState<Record<string, string>>({});
+
+  const load = useCallback(async () => {
+    setIsLoading(true);
+    setError(null);
+    try {
+      setReports(await listErrorReports());
+    } catch (err) {
+      setError(err as Error);
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
+  useEffect(() => { void load(); }, [load]);
+
+  const handleResolve = async (id: string) => {
+    setResolvingId(id);
+    try {
+      await resolveErrorReport(id, resolutionDraft[id] ?? '');
+      toast.success('Error report resolved (audited).');
+      await load();
+    } catch (err) {
+      // Honest failure — a refused resolution is never silent (§20).
+      toast.error((err as Error).message);
+    } finally {
+      setResolvingId(null);
+    }
+  };
+
+  return (
+    <Card>
+      <CardHeader>
+        <div className="flex items-center justify-between">
+          <div>
+            <CardTitle>Error Reports</CardTitle>
+            <CardDescription>
+              Client-reported errors; resolution is audited server-side.
+            </CardDescription>
+          </div>
+          <Button variant="outline" size="sm" onClick={() => void load()} disabled={isLoading}>
+            <RefreshCw className={cn("w-4 h-4", isLoading && "animate-spin")} /> Refresh
+          </Button>
+        </div>
+      </CardHeader>
+      <CardContent>
+        <AsyncBoundary
+          isLoading={isLoading}
+          error={error}
+          onRetry={() => void load()}
+          isEmpty={!isLoading && !error && reports.length === 0}
+          emptyTitle="No error reports"
+          emptyMessage="Client-side errors reported through the app will appear here."
+        >
+          <div className="space-y-3">
+            {reports.map(r => (
+              <div key={r.id} className="border border-border rounded-sm p-4 space-y-2">
+                <div className="flex items-start justify-between gap-3 flex-wrap">
+                  <div className="min-w-0 flex-1">
+                    <p className="text-sm font-medium text-foreground break-words">{r.error_message}</p>
+                    <p className="text-xs text-muted-foreground mt-1 flex flex-wrap gap-3">
+                      <span className="font-mono">{r.version || '—'}</span>
+                      <span>{r.user_email || 'unknown user'}</span>
+                      <span className="font-mono truncate max-w-[240px]">{r.page_url || '—'}</span>
+                      <span>{r.created_at ? new Date(r.created_at).toLocaleString() : '—'}</span>
+                    </p>
+                  </div>
+                  {r.resolved ? (
+                    <Badge variant="outline" className="text-[10px] bg-green-500/10">
+                      <CheckCircle className="w-3 h-3 mr-1" /> Resolved
+                    </Badge>
+                  ) : (
+                    <Badge variant="outline" className="text-[10px] bg-amber-500/10">
+                      Open
+                    </Badge>
+                  )}
+                </div>
+                {r.resolved ? (
+                  <p className="text-xs text-muted-foreground whitespace-pre-wrap">
+                    {r.resolution_notes || '— resolved without notes —'}
+                  </p>
+                ) : (
+                  <div className="flex items-center gap-2">
+                    <Input
+                      value={resolutionDraft[r.id] ?? ''}
+                      onChange={e => setResolutionDraft(prev => ({ ...prev, [r.id]: e.target.value }))}
+                      placeholder='Resolution notes (optional, audited)…'
+                      className="text-xs"
+                    />
+                    <Button
+                      size="sm"
+                      className="text-xs bg-green-600 hover:bg-green-700 text-white shrink-0"
+                      onClick={() => void handleResolve(r.id)}
+                      disabled={resolvingId === r.id}
+                    >
+                      {resolvingId === r.id ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Shield className="w-3 h-3" />} Resolve
+                    </Button>
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+        </AsyncBoundary>
+      </CardContent>
+    </Card>
   );
 }
 

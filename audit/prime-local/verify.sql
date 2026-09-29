@@ -962,6 +962,112 @@ begin;
   end $$;
 rollback;
 
+-- ══ M. Error reports hook (Prime §D7, migration 06) ═════════════════════════
+-- error_report_submit (authenticated; identity server-derived) and
+-- error_report_resolve (manager-or-admin; audited) wire the previously
+-- orphaned error_reports table.
+
+-- M1 — an authenticated user can submit a report; the table row derives
+-- identity from the profile email, not the payload.
+begin;
+  select set_config('request.jwt.claim.sub','44444444-4444-4444-4444-444444444444', true);
+  set local role authenticated;
+  select public.error_report_submit(
+    'M1 fixture rendering crash', 'stack…', '/audit', '0.0.0-test',
+    '{"ua":"fixture-browser"}', '{"section":"fixture"}');
+  reset role;
+  do $$ begin
+    if (select count(*) from public.error_reports
+         where user_email = 'emp.sales@fixture.test'
+           and error_message = 'M1 fixture rendering crash'
+           and page_url = '/audit'
+           and version = '0.0.0-test'
+           and browser_info->>'ua' = 'fixture-browser'
+           and coalesce(resolved, false) = false) <> 1 then
+      perform pg_temp.record_result ('M1 authenticated submit creates an honest report', false,
+        format('count=%s', (select count(*) from public.error_reports)));
+    else
+      perform pg_temp.record_result ('M1 authenticated submit creates an honest report', true, '1 row, email server-derived');
+    end if;
+  end $$;
+rollback;
+
+-- M2 — the message/notes are length-bounded (a report is never an
+-- oversized-payload vector).
+begin;
+  select set_config('request.jwt.claim.sub','44444444-4444-4444-4444-444444444444', true);
+  set local role authenticated;
+  select public.error_report_submit(repeat('x', 5000), null, null, null, null, null);
+  reset role;
+  do $$ begin
+    if (select length(error_message) from public.error_reports
+         where error_message like 'x%') = 2000 then
+      perform pg_temp.record_result ('M2 unbounded client text is length-capped', true, '2000 chars stored');
+    else
+      perform pg_temp.record_result ('M2 unbounded client text is length-capped', false,
+        format('len=%s', (select max(length(error_message)) from public.error_reports)));
+    end if;
+  end $$;
+rollback;
+
+-- M3 — anon is refused (fail closed, §13).
+begin;
+  set local role anon;
+  select pg_temp.expect_error('M3 anon cannot submit an error report', '42501',
+    $$select public.error_report_submit('boom', null, null, null, null, null)$$);
+rollback;
+
+-- M4 — server-checked authorization: an employee cannot resolve.
+begin;
+  select set_config('request.jwt.claim.sub','44444444-4444-4444-4444-444444444444', true);
+  set local role authenticated;
+  select pg_temp.expect_error('M4 employee cannot resolve error reports', '42501',
+    $$select public.error_report_resolve('aaaaaaaa-9999-0000-0000-000000000001'::uuid, 'nope')$$);
+rollback;
+
+-- M5 — admin resolution sets the fields and writes an audit row (§15).
+-- M6 — double-resolution is refused (P0002).
+-- M7 — RLS: the reporter (employee) sees 0 rows; admins see them.
+begin;
+  select set_config('request.jwt.claim.sub','11111111-1111-1111-1111-111111111111', true);
+  set local role authenticated;
+  select public.error_report_resolve('aaaaaaaa-9999-0000-0000-000000000001'::uuid, 'fixed in fixture');
+  reset role;
+  do $$ begin
+    if (select count(*) from public.error_reports
+         where id = 'aaaaaaaa-9999-0000-0000-000000000001'::uuid
+           and resolved = true and resolved_at is not null
+           and resolution_notes = 'fixed in fixture') <> 1 then
+      perform pg_temp.record_result ('M5 admin resolution persists (resolved/at/notes)', false, 'row not resolved');
+    else
+      perform pg_temp.record_result ('M5 admin resolution persists (resolved/at/notes)', true, 'resolved');
+    end if;
+    if (select count(*) from public.audit_log
+         where action = 'error_report_resolved'
+           and record_id = 'aaaaaaaa-9999-0000-0000-000000000001'::uuid
+           and performed_by = 'admin@fixture.test') <> 1 then
+      perform pg_temp.record_result ('M6 resolution is audited (server-derived actor)', false, 'no audit row');
+    else
+      perform pg_temp.record_result ('M6 resolution is audited (server-derived actor)', true, '1 audit row');
+    end if;
+  end $$;
+  select set_config('request.jwt.claim.sub','11111111-1111-1111-1111-111111111111', true);
+  set local role authenticated;
+  select pg_temp.expect_error('M7 double-resolution refused (P0002)', 'P0002',
+    $$select public.error_report_resolve('aaaaaaaa-9999-0000-0000-000000000001'::uuid, 'again')$$);
+  reset role;
+  select set_config('request.jwt.claim.sub','44444444-4444-4444-4444-444444444444', true);
+  set local role authenticated;
+  do $$ begin
+    if (select count(*) from public.error_reports) <> 0 then
+      perform pg_temp.record_result ('M8 RLS read: employee (non-manager) sees 0 reports', false,
+        format('visible=%s', (select count(*) from public.error_reports)));
+    else
+      perform pg_temp.record_result ('M8 RLS read: employee (non-manager) sees 0 reports', true, '0 visible');
+    end if;
+  end $$;
+rollback;
+
 -- ══ report ═══════════════════════════════════════════════════════════════════
 -- Load the rollback-proof verdict stream back into test_results, then report.
 insert into test_results select name, ok, detail from public.verify_results;

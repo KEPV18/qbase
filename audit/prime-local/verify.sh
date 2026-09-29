@@ -66,6 +66,8 @@ apply_and_verify() {
   $PS -f ../../supabase/migrations/prime/20260929_04_dashboard_stats.sql || return 1
   echo "== apply prime migration 05 (decision notifications) =="
   $PS -f ../../supabase/migrations/prime/20260929_05_decision_notifications.sql || return 1
+  echo "== apply prime migration 06 (error reports hook) =="
+  $PS -f ../../supabase/migrations/prime/20260929_06_error_reports_hook.sql || return 1
   echo "== apply supabase-default privilege layer (test replica) =="
   $PS -f 01b_replica_grants.sql || return 1
   echo "== run verification battery =="

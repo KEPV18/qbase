@@ -233,8 +233,23 @@ create table if not exists public.document_reviews (
 create table if not exists public.document_versions (
   id uuid primary key default gen_random_uuid()
 );
+-- error_reports: full production shape (audit/schema-parity-report.json, and
+-- the generated types.ts:426 mirror it) — the bare-stub here previously
+-- existed only for the fail-closed RLS checks. Extended for the D7
+-- error_reports UI hook (prime migration 06) which writes the real columns.
 create table if not exists public.error_reports (
-  id uuid primary key default gen_random_uuid()
+  id uuid primary key default gen_random_uuid(),
+  version text,
+  user_email text,
+  page_url text,
+  error_message text,
+  error_stack text,
+  context jsonb,
+  browser_info jsonb,
+  created_at timestamptz,
+  resolved boolean,
+  resolved_at timestamptz,
+  resolution_notes text
 );
 create table if not exists public.swot_items (
   id uuid primary key default gen_random_uuid()
