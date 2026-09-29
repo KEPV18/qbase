@@ -14,6 +14,7 @@ import { Input } from "@/components/ui/input";
 import { useAuth } from "@/hooks/useAuth";
 import { useRecords } from "@/hooks/useRecordStorage";
 import { approveRecord } from "@/services/recordStorage";
+import { toast } from "sonner";
 import type { RecordData } from "@/components/forms/DynamicFormRenderer";
 import {
   CheckCircle, Clock, Shield, Search, ExternalLink,
@@ -195,7 +196,7 @@ export default function ApprovalQueuePage() {
       if (result.success) {
         await refetch();
       } else {
-        alert(result.error || "Approval failed");
+        toast.error(result.error || "Approval failed");
       }
     } finally {
       setProcessing(prev => {

@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { toast } from "sonner";
 import { Pencil, Loader2, RefreshCw, Search, X, Download, AlertTriangle, ExternalLink, CheckCircle2 } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog";
 import { useCAPAData } from "@/hooks/useCAPAData";
@@ -68,11 +69,11 @@ export function CapaRegisterTab() {
         const originalCapa = capas.find(c => c.capa_id === editingCapa.capa_id);
         if (editingCapa.status === "Closed" && originalCapa?.status !== "Closed") {
             if (!editingCapa.root_cause_analysis) {
-                alert("Cannot close CAPA without Root Cause Analysis.");
+                toast.error("Cannot close CAPA without Root Cause Analysis.");
                 return;
             }
             if (!editingCapa.effectiveness) {
-                alert("Cannot close CAPA without Effectiveness Check.");
+                toast.error("Cannot close CAPA without Effectiveness Check.");
                 return;
             }
             // Show confirmation if there's a linked risk
