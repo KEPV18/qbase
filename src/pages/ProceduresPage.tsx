@@ -10,6 +10,7 @@ import {
   CheckCircle,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { AsyncBoundary } from "@/components/ui/AsyncBoundary";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
@@ -552,8 +553,8 @@ export default function ProceduresPage() {
             ) : (
               /* File List */
               loading ? (
-                <div className="flex-1 flex items-center justify-center py-16 opacity-60">
-                  <Loader2 className="w-8 h-8 animate-spin text-muted-foreground" />
+                <div className="flex-1 px-6 py-8 opacity-80">
+                  <AsyncBoundary isLoading />
                 </div>
               ) : viewMode === "grid" ? (
                 <div className="flex-1 overflow-auto">

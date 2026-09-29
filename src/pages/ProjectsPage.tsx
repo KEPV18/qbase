@@ -10,6 +10,7 @@ import { useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { AppShell } from "@/components/layout/AppShell";
 import { useRecords } from "@/hooks/useRecordStorage";
+import { AsyncBoundary } from "@/components/ui/AsyncBoundary";
 import { PROJECTS, type Project } from "@/data/projectsData";
 import { FileText, Users, Calendar, ChevronRight, Briefcase, Search } from "lucide-react";
 
@@ -109,7 +110,7 @@ function discoverProjects(records: Record<string, unknown>[]): DiscoveredProject
 
 export default function ProjectsPage() {
   const navigate = useNavigate();
-  const { data: records, isLoading } = useRecords();
+  const { data: records, isLoading, error, refetch } = useRecords();
   const [selectedProject, setSelectedProject] = useState<DiscoveredProject | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [expandedGroups, setExpandedGroups] = useState<Record<string, boolean>>({});
@@ -169,11 +170,7 @@ export default function ProjectsPage() {
           </p>
         </div>
 
-        {isLoading ? (
-          <div className="flex items-center justify-center py-20">
-            <div className="animate-spin w-6 h-6 border-2 border-[#2d2d2d] dark:border-[#e8e3db] border-t-transparent rounded-full" />
-          </div>
-        ) : (
+        <AsyncBoundary isLoading={isLoading} error={error} onRetry={() => refetch()}>
           <div className="flex gap-5 flex-1 min-h-0">
             {/* ─── LEFT PANEL: Project List (4 cols) ─────────────────── */}
             <div className="w-4/12 flex flex-col min-w-0">
@@ -418,7 +415,7 @@ export default function ProjectsPage() {
               )}
             </div>
           </div>
-        )}
+        </AsyncBoundary>
       </div>
     </AppShell>
   );

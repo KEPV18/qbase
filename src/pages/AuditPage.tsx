@@ -12,6 +12,7 @@ import {
   Search, ChevronRight, FilePlus,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { AsyncBoundary } from "@/components/ui/AsyncBoundary";
 import { Input } from "@/components/ui/input";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { Badge } from "@/components/ui/badge";
@@ -42,12 +43,14 @@ export default function AuditPage() {
     ? Math.round((stats.filledForms / stats.totalForms) * 100)
     : 0;
 
-  if (isLoading) {
+  if (isLoading || error) {
     return (
       <AppShell breadcrumbs={[{ label: "Dashboard", path: "/" }, { label: "Audit" }]}>
-        <div className="flex items-center justify-center py-20">
-          <RefreshCw className="w-6 h-6 animate-spin text-muted-foreground" />
-        </div>
+        <AsyncBoundary
+          isLoading={isLoading}
+          error={error as Error | null}
+          onRetry={() => refetch()}
+        />
       </AppShell>
     );
   }
