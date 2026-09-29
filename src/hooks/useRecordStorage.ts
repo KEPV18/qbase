@@ -19,6 +19,7 @@ import {
   invalidateRowCache,
   type StorageResult,
 } from '../services/recordStorage';
+import { getDashboardStats } from '../services/dashboardStats';
 import type { RecordData } from '../components/forms/DynamicFormRenderer';
 
 // ============================================================================
@@ -29,7 +30,26 @@ const RECORD_KEYS = {
   all: ['forge-records'] as const,
   byForm: (formCode: string) => ['forge-records', 'form', formCode] as const,
   bySerial: (serial: string) => ['forge-records', 'serial', serial] as const,
+  dashboardStats: ['dashboard-stats'] as const,
 };
+
+// ============================================================================
+// useDashboardStats — org-level KPIs via the ONE dashboard_stats RPC (Prime D6)
+// Each widget consuming this hook documents its exact query (migration
+// 20260929_04); fetch errors propagate to the widget's error state and empty
+// registers render "no data" — never fabricated numbers.
+// ============================================================================
+
+export function useDashboardStats() {
+  return useQuery({
+    queryKey: RECORD_KEYS.dashboardStats,
+    queryFn: getDashboardStats,
+    staleTime: 60_000,      // aggregates; a minute of staleness is fine
+    gcTime: 5 * 60_000,
+    refetchOnWindowFocus: true,
+    retry: 2,
+  });
+}
 
 // ============================================================================
 // useRecords — fetch all records, optionally filtered by formCode

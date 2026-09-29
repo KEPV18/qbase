@@ -30,6 +30,8 @@ import {
 } from "@/lib/temporalUtils";
 import { PROJECTS } from "@/data/projectsData";
 import { discardRecordDraft } from "@/services/recordStorage";
+import { useDashboardStats } from "@/hooks/useRecordStorage";
+import type { DashboardStats } from "@/services/dashboardStats";
 
 const DEPT_ORDER = [
   "Sales & Customer Service",
@@ -205,11 +207,97 @@ function ComplianceRadarCard({
   );
 }
 
+/* ─── Quality Pulse (Prime §D6) ───────────────────────────────────
+   Every tile's number comes from the ONE dashboard_stats() RPC; the
+   migration comments each field with its exact SQL (source of truth).
+   Loading → skeleton; error → surfaced message; empty CAPA register →
+   "No CAPA data" — never fabricated numbers (Prime §9 / §D6). */
+function DashboardStatsCard({ stats, isLoading, error }: {
+  stats: DashboardStats | undefined;
+  isLoading: boolean;
+  error: Error | null;
+}) {
+  if (isLoading) {
+    return (
+      <div className="px-4 py-3 bg-card border rounded-xl animate-pulse" aria-busy="true">
+        <p className="text-sm font-semibold text-muted-foreground">Loading statistics…</p>
+      </div>
+    );
+  }
+  if (error || !stats) {
+    return (
+      <div className="px-4 py-3 bg-red-500/10 border border-red-500/20 rounded-xl" role="alert">
+        <div className="flex items-center gap-2">
+          <AlertTriangle className="w-4 h-4 text-red-500" />
+          <span className="text-sm font-semibold text-red-600 dark:text-red-400">
+            Statistics unavailable
+          </span>
+        </div>
+        <p className="text-xs text-red-600/80 dark:text-red-400/80 mt-1">
+          {error?.message || 'No statistics loaded.'} No numbers are shown rather than guessed values.
+        </p>
+      </div>
+    );
+  }
+
+  const { recordsByStatus: by } = stats;
+  const capaEmpty = stats.capaTotal === 0;
+
+  return (
+    <div
+      className="px-4 py-3 bg-card border rounded-xl"
+      title="Live KPIs from public.dashboard_stats() (migration 20260929_04): records_total / records_by_status / records_last_30d / capa_total / capa_closed / capa_open / capa_closure_rate / capa_overdue / pending_review_aging — counts computed from records and capas tables."
+    >
+      <div className="flex items-center justify-between mb-2">
+        <span className="text-sm font-semibold text-foreground">Quality Pulse</span>
+        <span className="text-[10px] text-muted-foreground/70">
+          {stats.recordsLast30d} filed in the last 30 days
+        </span>
+      </div>
+      <div className="flex flex-wrap items-center gap-x-5 gap-y-1 text-xs">
+        <span className="text-muted-foreground">
+          Records: <strong className="text-foreground">{stats.recordsTotal}</strong>
+          <span className="ml-1.5 text-emerald-600 dark:text-emerald-400">{by.approved} approved</span>
+          <span className="ml-1.5 text-amber-600 dark:text-amber-400">{by.pending_review} pending</span>
+          <span className="ml-1.5 text-muted-foreground">{by.draft} draft</span>
+          <span className="ml-1.5 text-muted-foreground">{by.rejected} rejected</span>
+        </span>
+        <span className="w-px h-4 bg-border" />
+        {capaEmpty ? (
+          <span className="text-muted-foreground">No CAPA data</span>
+        ) : (
+          <span className="text-muted-foreground">
+            CAPA closure: <strong className="text-foreground">{stats.capaClosureRate}%</strong>
+            <span className="ml-1.5 text-muted-foreground">({stats.capaClosed}/{stats.capaTotal} closed)</span>
+          </span>
+        )}
+        {stats.capaOverdue > 0 && (
+          <span className="inline-flex items-center gap-1 text-red-600 dark:text-red-400">
+            <ShieldAlert className="w-3 h-3" /> {stats.capaOverdue} CAPA overdue
+          </span>
+        )}
+        {stats.pendingReviewAging.over_30d > 0 ? (
+          <span className="inline-flex items-center gap-1 text-red-600 dark:text-red-400">
+            <Clock className="w-3 h-3" /> {stats.pendingReviewAging.over_30d} reviews waiting &gt;30d
+          </span>
+        ) : stats.pendingReviewAging.from_7_to_30d > 0 ? (
+          <span className="inline-flex items-center gap-1 text-amber-600 dark:text-amber-400">
+            <Clock className="w-3 h-3" /> {stats.pendingReviewAging.from_7_to_30d} reviews waiting 7–30d
+          </span>
+        ) : (
+          <span className="text-muted-foreground">Reviews current ({stats.pendingReviewAging.under_7d} &lt;7d)</span>
+        )}
+      </div>
+    </div>
+  );
+}
+
 export default function Index() {
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   const { user } = useAuth();
   const { data: records, isLoading: recordsLoading } = useRecords();
+  const { data: stats, isLoading: statsLoading, error: statsError } = useDashboardStats();
   const [activeDept, setActiveDept] = useState(() => {
     const saved = localStorage.getItem('qms_activeDept');
     return saved || "Sales & Customer Service";
@@ -486,6 +574,9 @@ export default function Index() {
 
       {/* COMPLIANCE RADAR — Prominent Gap Alert Card */}
       {!activeMonth && !activeProject && <ComplianceRadarCard missingPeriodsMap={missingPeriodsMap} />}
+
+      {/* QUALITY PULSE — org KPIs via the ONE dashboard_stats RPC (Prime §D6) */}
+      {!activeMonth && !activeProject && <DashboardStatsCard stats={stats} isLoading={statsLoading} error={statsError} />}
 
       {/* Department Metric Cards (Executive Row) */}
       <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-7 gap-3">

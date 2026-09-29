@@ -39,6 +39,16 @@ insert into public.records (id, form_code, serial, status, edit_count, created_b
 insert into public.tenant_settings (company_name) values ('Fixture Co');
 insert into public.error_reports (id) values ('aaaaaaaa-9999-0000-0000-000000000001');
 
+-- CAPA fixtures (Prime D6): deterministic closure-rate/overdue math.
+-- delete-first for re-runnability (no production: throwaway cluster only).
+delete from public.capas;
+insert into public.capas (id, capa_id, source_of_capa, type, description, root_cause_analysis, target_completion_date, status) values
+ ('bbbbbbbb-0000-0000-0000-000000000001', 'CAPA-99-001', 'Fixture', 'Corrective', 'closed  cap',  'fixture', '2026-01-10', 'Closed'),
+ ('bbbbbbbb-0000-0000-0000-000000000002', 'CAPA-99-002', 'Fixture', 'Corrective', 'overdue open', 'fixture', current_date - 1, 'Open'),
+ ('bbbbbbbb-0000-0000-0000-000000000003', 'CAPA-99-003', 'Fixture', 'Preventive', 'future open',  'fixture', current_date + 30, 'Open'),
+ ('bbbbbbbb-0000-0000-0000-000000000004', 'CAPA-99-004', 'Fixture', 'Corrective', 'no date ip',   'fixture', null, 'In Progress'),
+ ('bbbbbbbb-0000-0000-0000-000000000005', 'CAPA-99-005', 'Fixture', 'Preventive', 'overdue uv',   'fixture', current_date - 2, 'Under Verification');
+
 -- ══ verdict pipeline ═════════════════════════════════════════════════════════
 -- dblink loopback target for record_result (see below). The extension is
 -- created OUTSIDE any explicit transaction ⇒ committed immediately, before
@@ -672,6 +682,138 @@ begin;
         format('serial=%s', v_recreated.serial));
     end if;
   end $$;
+rollback;
+
+-- ══ K — dashboard_stats (Prime D6) ═══════════════════════════════════════════
+-- ONE RPC computes org-level aggregates. The traceability core (§9): every
+-- emitted count equals a plain SQL baseline computed in the same battery, AND
+-- equals the deterministic fixture math. Empty register → NULL closure rate
+-- (proven via rollback-delete; the client renders "no data", never 0%).
+begin;
+  do $$ declare v_stats jsonb; begin
+    select public.dashboard_stats() into v_stats;
+    if v_stats ? 'records_total' and v_stats ? 'capa_closure_rate'
+       and v_stats ? 'pending_review_aging' then
+      perform pg_temp.record_result ('K1 dashboard_stats shape', true, 'all expected keys present');
+    else
+      perform pg_temp.record_result ('K1 dashboard_stats shape', false,
+        format('keys: %s', (select string_agg(k, ',') from jsonb_object_keys(v_stats) k)));
+    end if;
+  end $$;
+  -- K1b — the granted role (authenticated) can execute it (analogous to the
+  -- B-section grant checks; postgres executing it proves nothing about grants).
+  select set_config('request.jwt.claim.sub', '44444444-4444-4444-4444-444444444444', true);
+  set local role authenticated;
+  do $$ declare v_stats jsonb; begin
+    select public.dashboard_stats() into v_stats;
+    if v_stats ? 'records_total' then
+      perform pg_temp.record_result ('K1b authenticated can execute dashboard_stats', true, 'executed');
+    else
+      perform pg_temp.record_result ('K1b authenticated can execute dashboard_stats', false, 'malformed result');
+    end if;
+  end $$;
+rollback;
+
+-- K2/K3/K4 — every emitted count equals the plain SQL baseline in the same
+-- transaction AND the deterministic fixture numbers (3 non-archived records:
+-- 2 draft + 1 pending_review, all created "now"; 5 CAPAs: 1 closed, 2 open,
+-- closure rate 20%, 2 overdue beyond target date; aging: 1 under 7d).
+begin;
+  do $$ declare
+    v_stats        jsonb;
+    v_rec_total    int;
+    v_by_status    jsonb;
+    v_last30       int;
+    v_capa_total   int; v_capa_closed int; v_capa_open int;
+    v_capa_rate    int; v_capa_overdue int;
+    v_aging        jsonb;
+  begin
+    select public.dashboard_stats() into v_stats;
+
+    select count(*)::int into v_rec_total from public.records where deleted_at is null;
+    select jsonb_build_object(
+             'draft',          count(*) filter (where status = 'draft')::int,
+             'pending_review', count(*) filter (where status = 'pending_review')::int,
+             'approved',       count(*) filter (where status = 'approved')::int,
+             'rejected',       count(*) filter (where status = 'rejected')::int)
+      into v_by_status from public.records where deleted_at is null;
+    select count(*)::int into v_last30 from public.records
+      where deleted_at is null and created_at >= now() - interval '30 days';
+
+    select count(*)::int, count(*) filter (where status = 'Closed')::int,
+           count(*) filter (where status = 'Open')::int
+      into v_capa_total, v_capa_closed, v_capa_open from public.capas;
+    select case when count(*) = 0 then null::int
+                else round((count(*) filter (where status = 'Closed'))::numeric * 100 / count(*))::int end
+      into v_capa_rate from public.capas;
+    select count(*)::int into v_capa_overdue from public.capas
+      where status <> 'Closed' and target_completion_date is not null
+        and target_completion_date < now()::date;
+
+    select jsonb_build_object(
+             'under_7d',      count(*) filter (where updated_at >= now() - interval '7 days')::int,
+             'from_7_to_30d', count(*) filter (where updated_at < now() - interval '7 days'
+                                                 and updated_at >= now() - interval '30 days')::int,
+             'over_30d',      count(*) filter (where updated_at < now() - interval '30 days')::int)
+      into v_aging from public.records
+      where status = 'pending_review' and deleted_at is null;
+
+    if (v_stats->>'records_total')::int            = v_rec_total
+       and (v_stats->'records_by_status')          = v_by_status
+       and (v_stats->>'records_last_30d')::int     = v_last30
+       and (v_stats->>'capa_total')::int           = v_capa_total
+       and (v_stats->>'capa_closed')::int          = v_capa_closed
+       and (v_stats->>'capa_open')::int            = v_capa_open
+       and (v_stats->>'capa_closure_rate')::int is not distinct from v_capa_rate
+       and (v_stats->>'capa_overdue')::int         = v_capa_overdue
+       and (v_stats->'pending_review_aging')       = v_aging
+    then
+      perform pg_temp.record_result ('K2 dashboard_stats equals SQL baseline', true,
+        format('%s records, rate %s, aging %s', v_stats->>'records_total',
+               v_stats->>'capa_closure_rate', v_stats->'pending_review_aging'));
+    else
+      perform pg_temp.record_result ('K2 dashboard_stats equals SQL baseline', false,
+        format('rpc=%s baseline={total=%s,by_status=%s,last30=%s,capa=%s/%s/%s,rate=%s,overdue=%s,aging=%s}',
+               v_stats, v_rec_total, v_by_status, v_last30, v_capa_total, v_capa_closed,
+               v_capa_open, v_capa_rate, v_capa_overdue, v_aging));
+    end if;
+
+    -- Deterministic fixture math (guards a silently-empty baseline).
+    if (v_stats->>'records_total')::int = 3
+       and (v_stats->'records_by_status'->>'draft')::int = 2
+       and (v_stats->>'capa_total')::int = 5
+       and (v_stats->>'capa_closure_rate')::int = 20
+       and (v_stats->>'capa_overdue')::int = 2
+    then
+      perform pg_temp.record_result ('K3 fixture math (3 records, 2 draft, 5 CAPAs, rate 20, 2 overdue)', true, 'true');
+    else
+      perform pg_temp.record_result ('K3 fixture math', false, format('stats=%s', v_stats));
+    end if;
+  end $$;
+rollback;
+
+-- K4 — empty CAPA register must yield a NULL closure rate (no fabricated 0%).
+begin;
+  delete from public.capas;
+  do $$ declare v_stats jsonb; begin
+    select public.dashboard_stats() into v_stats;
+    if (v_stats->>'capa_total')::int = 0
+       and (v_stats->>'capa_closure_rate') is null
+    then
+      perform pg_temp.record_result ('K4 empty register → closure_rate NULL (no-data, never 0%)', true, 'null');
+    else
+      perform pg_temp.record_result ('K4 empty register → closure_rate NULL (no-data, never 0%)', false,
+        format('total=%s rate=%s', v_stats->>'capa_total', v_stats->>'capa_closure_rate'));
+    end if;
+  end $$;
+rollback;
+
+-- K5 — anon must be refused (revocation discipline: D6 surface is
+-- authenticated-only like the rest of the Prime function set).
+begin;
+  set local role anon;
+  select pg_temp.expect_error('K5 anon denied dashboard_stats', '42501',
+    $$select public.dashboard_stats()$$);
 rollback;
 
 -- ══ report ═══════════════════════════════════════════════════════════════════
