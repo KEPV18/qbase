@@ -33,7 +33,7 @@ export function val(data: Record<string, unknown> | undefined, key: string): str
 export type FormAccent =
   | "blue" | "emerald" | "violet" | "amber" | "rose" | "cyan"
   | "indigo" | "orange" | "teal" | "pink" | "purple" | "lime"
-  | "sky" | "fuchsia" | "red" | "green";
+  | "sky" | "fuchsia" | "red" | "green" | "slate" | "stone";
 
 const ACCENT_MAP: Record<FormAccent, {
   text: string;       // colored text
@@ -195,24 +195,45 @@ const ACCENT_MAP: Record<FormAccent, {
     label: "text-green-700", labelDark: "dark:text-green-300",
     value: "text-green-900", valueDark: "dark:text-green-100",
   },
+  slate: {
+    text: "text-slate-600", textDark: "dark:text-slate-400",
+    bg: "bg-slate-50", bgDark: "dark:bg-slate-950/40",
+    border: "border-slate-200", borderDark: "dark:border-slate-800",
+    gradient: "from-slate-600 to-slate-800", gradientDark: "dark:from-slate-500 dark:to-slate-700",
+    chip: "bg-slate-100", chipDark: "dark:bg-slate-900/50",
+    label: "text-slate-700", labelDark: "dark:text-slate-300",
+    value: "text-slate-900", valueDark: "dark:text-slate-100",
+  },
+  stone: {
+    text: "text-stone-600", textDark: "dark:text-stone-400",
+    bg: "bg-stone-50", bgDark: "dark:bg-stone-950/40",
+    border: "border-stone-200", borderDark: "dark:border-stone-800",
+    gradient: "from-stone-600 to-stone-800", gradientDark: "dark:from-stone-500 dark:to-stone-700",
+    chip: "bg-stone-100", chipDark: "dark:bg-stone-900/50",
+    label: "text-stone-700", labelDark: "dark:text-stone-300",
+    value: "text-stone-900", valueDark: "dark:text-stone-100",
+  },
 };
 
 /** Get accent config for a form code */
 export function getAccent(formCode: string): FormAccent {
-  // Map each form to a unique accent color
+  // Map each form to a unique accent color so every form is instantly
+  // distinguishable at a glance. 36 forms, 18 accent slots — codes are
+  // assigned in sequence, cycling the palette so adjacent form numbers
+  // never share a color.
   const FORM_ACCENTS: Record<string, FormAccent> = {
     "F/08": "blue", "F/09": "emerald", "F/10": "violet",
     "F/11": "amber", "F/12": "rose", "F/13": "cyan",
     "F/14": "indigo", "F/15": "orange", "F/16": "teal",
     "F/17": "pink", "F/18": "purple", "F/19": "lime",
     "F/20": "sky", "F/21": "fuchsia", "F/22": "red",
-    "F/23": "green", "F/24": "blue", "F/25": "emerald",
-    "F/28": "violet", "F/29": "amber", "F/30": "rose",
-    "F/32": "cyan", "F/34": "indigo", "F/35": "orange",
-    "F/37": "teal", "F/40": "pink", "F/41": "purple",
-    "F/42": "lime", "F/43": "sky", "F/44": "fuchsia",
-    "F/45": "red", "F/47": "green", "F/48": "blue",
-    "F/50": "emerald",
+    "F/23": "green", "F/24": "slate", "F/25": "stone",
+    "F/28": "blue", "F/29": "emerald", "F/30": "violet",
+    "F/32": "amber", "F/34": "rose", "F/35": "cyan",
+    "F/37": "indigo", "F/40": "orange", "F/41": "teal",
+    "F/42": "pink", "F/43": "purple", "F/44": "lime",
+    "F/45": "sky", "F/46": "fuchsia", "F/47": "red",
+    "F/48": "green", "F/49": "slate", "F/50": "stone",
   };
   return FORM_ACCENTS[formCode] || "blue";
 }
