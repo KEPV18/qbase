@@ -14,6 +14,7 @@ import type { Risk, RiskUpdate, RiskStatus } from "@/lib/riskRegisterService";
 import { getRiskLevel, getRiskLevelColor } from "@/lib/riskRegisterService";
 import { cn } from "@/lib/utils";
 import { useNavigate } from "react-router-dom";
+import { StateScreen } from "@/components/ui/StateScreen";
 
 export function RiskRegisterTab() {
     const { risks, isLoading, isError, error, refetch, updateRisk, isUpdating, addRisk, isAdding: isAddingRisk } = useRiskData();
@@ -197,23 +198,17 @@ export function RiskRegisterTab() {
     };
 
     if (isLoading) {
-        return (
-            <div className="flex items-center justify-center py-20 gap-3 text-muted-foreground">
-                <Loader2 className="w-5 h-5 animate-spin" />
-                <span className="text-sm font-medium">Loading Risk Register...</span>
-            </div>
-        );
+        return <StateScreen state="loading" title="Loading Risk Register…" />;
     }
 
     if (isError) {
         return (
-            <div className="text-center py-20 space-y-4">
-                <p className="text-destructive font-medium">Failed to load Risk Register</p>
-                <p className="text-xs text-muted-foreground">{(error as Error)?.message}</p>
-                <Button variant="outline" size="sm" onClick={() => refetch()} className="gap-2">
-                    <RefreshCw className="w-4 h-4" /> Retry
-                </Button>
-            </div>
+            <StateScreen
+                state="error"
+                title="Failed to load Risk Register"
+                message={(error as Error)?.message}
+                action={{ label: "Retry", onClick: () => refetch() }}
+            />
         );
     }
 

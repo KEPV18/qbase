@@ -2,8 +2,8 @@
 import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { FORM_SCHEMAS } from '@/data/formSchemas';
-import { Loader2 } from 'lucide-react';
 import { AppShell } from '@/components/layout/AppShell';
+import { StateScreen } from '@/components/ui/StateScreen';
 import { supabase } from '@/integrations/supabase/client';
 
 export default function FormCodeRedirect() {
@@ -86,10 +86,7 @@ export default function FormCodeRedirect() {
             <button onClick={() => navigate('/')} className="text-primary underline">Back to Dashboard</button>
           </>
         ) : (
-          <>
-            <Loader2 className="w-8 h-8 animate-spin text-primary mb-4" />
-            <p className="text-muted-foreground">Loading {decodedSerial}...</p>
-          </>
+          <StateScreen state="loading" title={`Loading ${decodedSerial}…`} />
         )}
       </div>
     </AppShell>

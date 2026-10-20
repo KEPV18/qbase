@@ -37,6 +37,7 @@ import {
 import { preWriteValidation, type ValidationError } from '../services/preWriteValidation';
 import { PROJECTS } from '../data/projectsData';
 import { AppShell } from '@/components/layout/AppShell';
+import { Spinner } from '@/components/ui/LoadingSpinner';
 import { cn } from '@/lib/utils';
 
 // ============================================================================
@@ -537,8 +538,8 @@ const RecordCreationPage: React.FC = () => {
         if (draftBusy) {
           return (
             <div className="max-w-lg mx-auto ds-card p-10 text-center text-muted-foreground">
-              <Loader2 className="w-6 h-6 animate-spin mx-auto mb-3 text-primary" />
-              <p className="text-sm">Opening draft…</p>
+              <Spinner size="md" className="mx-auto" />
+              <p className="text-sm mt-3">Opening draft…</p>
             </div>
           );
         }

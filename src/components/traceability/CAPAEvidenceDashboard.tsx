@@ -24,15 +24,14 @@ import {
   ChevronRight,
   Eye,
   Plus,
-  Loader2,
   RefreshCw,
-  AlertCircle,
 } from 'lucide-react';
 import { useCAPAData } from '@/hooks/useCAPAData';
 import type { CAPA, CAPAStatus as SheetCAPAStatus } from '@/lib/capaRegisterService';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
+import { StateScreen } from '@/components/ui/StateScreen';
 
 // ============================================================================
 // TYPES
@@ -469,9 +468,8 @@ const CAPAEvidenceDashboard: React.FC = () => {
   // Loading state
   if (isLoading) {
     return (
-      <div className="bg-card rounded-lg border border-border p-12 flex flex-col items-center justify-center">
-        <Loader2 className="h-8 w-8 animate-spin text-primary mb-4" />
-        <p className="text-muted-foreground">Loading CAPA data...</p>
+      <div className="bg-card rounded-lg border border-border flex flex-col items-center justify-center">
+        <StateScreen state="loading" title="Loading CAPA data…" />
       </div>
     );
   }
@@ -479,14 +477,13 @@ const CAPAEvidenceDashboard: React.FC = () => {
   // Error state
   if (isError) {
     return (
-      <div className="bg-card rounded-lg border border-destructive/30 p-8 flex flex-col items-center justify-center">
-        <AlertCircle className="h-8 w-8 text-destructive mb-4" />
-        <p className="text-destructive font-medium mb-2">Failed to Load CAPA Data</p>
-        <p className="text-sm text-muted-foreground mb-4">{error?.message || 'Unknown error'}</p>
-        <Button variant="outline" onClick={() => refetch()}>
-          <RefreshCw className="h-4 w-4 mr-2" />
-          Retry
-        </Button>
+      <div className="bg-card rounded-lg border border-destructive/30 flex flex-col items-center justify-center">
+        <StateScreen
+          state="error"
+          title="Failed to Load CAPA Data"
+          message={error?.message || 'Unknown error'}
+          action={{ label: "Retry", onClick: () => refetch() }}
+        />
       </div>
     );
   }

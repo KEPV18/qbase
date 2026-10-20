@@ -29,6 +29,8 @@ import { exportRecordToJson, exportRecordToCsv } from '../services/fileExport';
 import { toast } from 'sonner';
 import { AppShell } from '@/components/layout/AppShell';
 import { deptBorderStyle, deptAccentStyle } from '@/lib/departmentTheme';
+import { StateScreen } from '@/components/ui/StateScreen';
+import { Spinner } from '@/components/ui/LoadingSpinner';
 
 // ============================================================================
 // Constants
@@ -192,8 +194,7 @@ const RecordViewPage: React.FC = () => {
     return (
       <AppShell breadcrumbs={getBreadcrumbs()}>
       <div className="max-w-4xl mx-auto flex flex-col items-center justify-center py-20">
-        <Loader2 className="w-8 h-8 animate-spin text-primary mb-4" />
-        <p className="text-muted-foreground">Loading record {decodedSerial}...</p>
+        <StateScreen state="loading" title={`Loading record ${decodedSerial}…`} />
       </div>
       </AppShell>
     );
@@ -228,8 +229,7 @@ const RecordViewPage: React.FC = () => {
       return (
         <AppShell breadcrumbs={getBreadcrumbs()}>
         <div className="max-w-4xl mx-auto flex flex-col items-center justify-center py-20">
-          <Loader2 className="w-8 h-8 animate-spin text-primary mb-4" />
-          <p className="text-muted-foreground">Redirecting to {decodedSerial}...</p>
+          <StateScreen state="loading" title={`Redirecting to ${decodedSerial}…`} />
         </div>
         </AppShell>
       );
@@ -778,9 +778,8 @@ const RecordViewPage: React.FC = () => {
           </div>
 
           {auditLoading ? (
-            <div className="flex items-center gap-2 py-8 justify-center text-muted-foreground">
-              <Loader2 className="w-5 h-5 animate-spin" />
-              <span>Loading history...</span>
+            <div className="py-8 flex justify-center text-muted-foreground">
+              <Spinner size="md" label="Loading history..." />
             </div>
           ) : !auditEntries || auditEntries.length === 0 ? (
             <div className="text-center py-8">

@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { Navigate, useLocation } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
-import { Loader2 } from "lucide-react";
+import { Spinner } from "@/components/ui/LoadingSpinner";
 import { log } from "@/services/logger";
 
 /**
@@ -34,7 +34,7 @@ export function RequireAuth({ children }: { children: React.ReactNode }) {
   if (loading && !fallbackReady) {
     return (
       <div className="flex items-center justify-center min-h-screen">
-        <Loader2 className="w-8 h-8 animate-spin text-primary" />
+        <Spinner size="lg" />
       </div>
     );
   }
@@ -67,7 +67,7 @@ export function RequireRole({ roles, children }: { roles: string[]; children: Re
   if (loading && !fallbackReady) {
     return (
       <div className="flex items-center justify-center min-h-screen">
-        <Loader2 className="w-8 h-8 animate-spin text-primary" />
+        <Spinner size="lg" />
       </div>
     );
   }

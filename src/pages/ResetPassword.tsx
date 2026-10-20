@@ -33,6 +33,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
+import { Spinner } from "@/components/ui/LoadingSpinner";
 import { supabase } from "@/integrations/supabase/client";
 import { clearRecoveryPending } from "@/hooks/useSupabaseAuth";
 import { log } from "@/services/logger";
@@ -193,7 +194,7 @@ export default function ResetPassword() {
     return shell(
       <Card className="border-border/60 shadow-lg" data-testid="reset-password-checking">
         <CardContent className="py-12 flex flex-col items-center gap-3">
-          <Loader2 className="w-8 h-8 animate-spin text-primary" />
+          <Spinner size="lg" />
           <p className="text-sm text-muted-foreground">Verifying your recovery link…</p>
         </CardContent>
       </Card>,

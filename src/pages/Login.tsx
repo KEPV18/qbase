@@ -6,6 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
+import { Spinner } from "@/components/ui/LoadingSpinner";
 import { Lock, Mail, Loader2, Eye, EyeOff, ArrowRight, Trash2 } from "lucide-react";
 import logoImg from "@/assets/logo.png";
 
@@ -100,7 +101,7 @@ export default function Login() {
   if (loading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
-        <Loader2 className="w-8 h-8 animate-spin text-primary" />
+        <Spinner size="lg" />
       </div>
     );
   }

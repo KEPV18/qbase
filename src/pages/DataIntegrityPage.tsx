@@ -8,7 +8,7 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   Shield, AlertTriangle, CheckCircle, XCircle,
-  ChevronRight, ChevronDown, RefreshCw, Loader2, FileText,
+  ChevronRight, ChevronDown, RefreshCw, FileText,
   ArrowRight, Link2, Hash, ExternalLink,
 } from 'lucide-react';
 import {
@@ -27,6 +27,7 @@ import {
 } from '../services/ruleEngine';
 import { isoToDisplay } from '../schemas';
 import { AppShell } from '@/components/layout/AppShell';
+import { StateScreen } from '@/components/ui/StateScreen';
 
 // ============================================================================
 // Severity Badge
@@ -133,8 +134,7 @@ const DataIntegrityPage: React.FC = () => {
     return (
       <AppShell breadcrumbs={breadcrumbs}>
       <div className="max-w-6xl mx-auto flex flex-col items-center justify-center py-20">
-        <Loader2 className="w-8 h-8 animate-spin text-primary mb-4" />
-        <p className="text-muted-foreground">Scanning data integrity...</p>
+        <StateScreen state="loading" title="Scanning data integrity…" />
       </div>
       </AppShell>
     );

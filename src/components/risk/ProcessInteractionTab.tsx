@@ -10,6 +10,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { useProcessData } from "@/hooks/useProcessData";
 import type { ProcessInteraction, ProcessUpdate } from "@/lib/processInteractionService";
+import { StateScreen } from "@/components/ui/StateScreen";
 
 export function ProcessInteractionTab() {
     const { processes, isLoading, isError, error, refetch, updateProcess, isUpdating } = useProcessData();
@@ -37,23 +38,17 @@ export function ProcessInteractionTab() {
     };
 
     if (isLoading) {
-        return (
-            <div className="flex items-center justify-center py-20 gap-3 text-muted-foreground">
-                <Loader2 className="w-5 h-5 animate-spin" />
-                <span className="text-sm font-medium">Loading Process Map...</span>
-            </div>
-        );
+        return <StateScreen state="loading" title="Loading Process Map…" />;
     }
 
     if (isError) {
         return (
-            <div className="text-center py-20 space-y-4">
-                <p className="text-destructive font-medium">Failed to load Process Map</p>
-                <p className="text-xs text-muted-foreground">{(error as Error)?.message}</p>
-                <Button variant="outline" size="sm" onClick={() => refetch()} className="gap-2">
-                    <RefreshCw className="w-4 h-4" /> Retry
-                </Button>
-            </div>
+            <StateScreen
+                state="error"
+                title="Failed to load Process Map"
+                message={(error as Error)?.message}
+                action={{ label: "Retry", onClick: () => refetch() }}
+            />
         );
     }
 
