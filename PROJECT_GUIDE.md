@@ -1,8 +1,8 @@
 # Vezloo QMS Suite — Comprehensive Project Guide
 
-> **Last Updated:** 2026-04-19
-> **Version:** v2.5.0
-> **Path:** `/home/kepa/qms-personal/`
+> **Last Updated:** 2026-10-21
+> **Version:** v3.0.0
+> **Path:** `/home/kepv/qbase-remediation/`
 
 ---
 
@@ -18,14 +18,13 @@ ISO 9001:2015 compliant Quality Management System (QMS). The application provide
 | Tailwind CSS 3.4 + shadcn/ui | Styling & components |
 | @tanstack/react-query 5 | Data management & caching |
 | Supabase | Authentication + Database + Realtime |
-| Google Sheets API | Primary QMS data store |
-| Google Drive API | File upload & browsing |
+| Google Drive API | Procedure document browsing (read-only) |
 | Express 5.2 | Local OAuth server (port 3001) |
 | Vercel | Deployment |
 
 ### Fonts
-- **Outfit** — Base font (sans)
-- **JetBrains Mono** — Code font (mono)
+- **System stack** (`-apple-system`, `SF Pro Text`, `PingFang SC`, …) — no webfont is loaded; the design system uses the platform's own UI face.
+- **System mono** (`SF Mono`, `Menlo`, `Cascadia Mono`) for codes and serials.
 
 ---
 
@@ -34,127 +33,159 @@ ISO 9001:2015 compliant Quality Management System (QMS). The application provide
 ```
 src/
 ├── App.tsx                    # Main app: providers + routing + lazy loading
-├── App.css                    # App styles (CSS vars only)
 ├── main.tsx                   # Entry point
-├── index.css                  # Theme variables: :root (light) + .dark (dark)
+├── index.css                  # Design tokens + component layer (light + dark)
 │
 ├── assets/
 │   ├── logo.png               # Vezloo Group logo
 │   └── qms-logo.png           # QMS Suite logo
 │
+├── config/
+│   ├── brandColors.ts         # Tenant brand palette (AA-measured)
+│   └── modules.ts             # ISO-clause → module registry
+│
+├── data/
+│   ├── formSchemas.ts         # Re-export of the unified schema
+│   ├── formsRegistry.ts       # Forms registry metadata
+│   ├── kpiData.ts / .json     # KPI definitions
+│   └── projectsData.ts        # Project metadata
+│
+├── schemas/
+│   ├── unifiedSchema.ts       # THE 35-form schema source of truth
+│   ├── formValidation.ts      # Zod validators
+│   ├── serialAndDate.ts       # Serial generation + date helpers
+│   └── index.ts
+│
 ├── integrations/
 │   └── supabase/
-│       ├── client.ts          # Supabase client setup (env vars)
+│       ├── client.ts          # Supabase client setup (env vars, fail-closed)
 │       └── types.ts           # Database types (Auto-generated)
+│
+├── services/                  # ← Data + domain services
+│   ├── recordStorage.ts       # THE record service (Supabase + RPCs)
+│   ├── dashboardStats.ts      # Dashboard aggregates (one RPC)
+│   ├── auditLog.ts            # Append-only audit writes + diffs
+│   ├── preWriteValidation.ts  # Validation gate before any write
+│   ├── ruleEngine.ts          # Integrity rules (warn-first)
+│   ├── importService.ts       # Validated import
+│   ├── docxExport.ts          # DOCX export
+│   ├── fileExport.ts          # CSV export
+│   ├── backupService.ts       # Backup / restore
+│   ├── userService.ts         # User administration
+│   ├── errorReportService.ts  # Error reporting
+│   ├── eventBus.ts            # Typed event bus
+│   ├── recordUtils.ts
+│   └── logger.ts              # Structured logging
 │
 ├── pages/                     # ← All pages here
 │   ├── Index.tsx               # Main Dashboard
-│   ├── ModulePage.tsx          # Module page (Sales, Operations, Quality...)
-│   ├── RecordDetail.tsx        # Single record detail
+│   ├── RecordViewPage.tsx      # Single record detail
+│   ├── RecordListPage.tsx      # Record list
+│   ├── RecordCreationPage.tsx  # Create record
 │   ├── AuditPage.tsx           # Audit panel (5 tabs)
-│   ├── ArchivePage.tsx         # Google Drive archive
+│   ├── ArchivePage.tsx         # Archive
 │   ├── RiskManagementPage.tsx  # Risk management (3 tabs)
-│   ├── RiskRegisterPage.tsx    # Risk register (standalone)
-│   ├── CAPARegisterPage.tsx    # CAPA register (standalone)
-│   ├── ProcessInteractionPage.tsx # Process interaction map (standalone)
 │   ├── ActivityPage.tsx        # Recent activity
-│   ├── ProceduresPage.tsx      # Digital procedures + Drive archive
+│   ├── ProceduresPage.tsx      # Digital procedures
 │   ├── ISOManualPage.tsx       # ISO 9001:2015 manual
 │   ├── ProjectsPage.tsx        # Project overview
 │   ├── ProjectDetailPage.tsx   # Single project detail
-│   ├── AdminAccounts.tsx       # User management (admin only)
+│   ├── FormsRegistryPage.tsx   # Forms registry
+│   ├── FormTemplatePreview.tsx # Template preview
+│   ├── FormCodeRedirect.tsx    # /form-code/:serial → canonical route
+│   ├── NotificationsPage.tsx   # Notification centre
+│   ├── KPIDashboardPage.tsx    # KPI dashboard
+│   ├── KPIReportsPage.tsx      # KPI reports
+│   ├── SWOTAnalysisPage.tsx    # SWOT analysis
+│   ├── TraceabilityPage.tsx    # Traceability explorer
+│   ├── DataIntegrityPage.tsx   # Data integrity rules dashboard
+│   ├── Settings.tsx            # Settings
+│   ├── AdminPanel.tsx          # User management + branding (admin only)
+│   ├── DatabaseManagementPage.tsx # Database admin (admin only)
+│   ├── ApprovalQueuePage.tsx   # Approval queue
 │   ├── Login.tsx               # Login
 │   ├── Register.tsx            # Registration (requires admin approval)
 │   ├── AuthCallback.tsx        # OAuth callback handler
-│   └── NotFound.tsx            # 404 page
+│   ├── ResetPassword.tsx       # Password recovery
+│   ├── NotFound.tsx            # 404 page
+│   ├── admin/
+│   │   └── DataSanitizer.tsx   # Data sanitisation (admin only)
+│   └── audit/
+│       └── useAuditPage.ts     # Audit page state hook
 │
 ├── hooks/                     # ← All hooks
 │   ├── useAuth.tsx             # Auth context (Supabase + local fallback)
-│   ├── useTheme.tsx            # Theme context (light/dark/auto)
-│   ├── useQMSData.ts           # React Query for Google Sheets data
+│   ├── useAuthUtils.ts         # Auth helpers (roles, guards)
+│   ├── useSupabaseAuth.ts      # Supabase session primitives
+│   ├── useUserManagement.ts    # Admin user CRUD
+│   ├── useTheme.tsx            # Theme context (light/dark/system)
+│   ├── useTenantIdentity.tsx   # Tenant branding (name, logo, colour)
+│   ├── useRecordStorage.ts     # React Query for the records table
 │   ├── useRiskData.ts          # React Query for risk register
 │   ├── useCAPAData.ts          # React Query for CAPA register
 │   ├── useProcessData.ts       # React Query for process maps
 │   ├── useProceduresData.ts    # Local state + localStorage for procedures
 │   ├── useManualData.ts        # Local state + localStorage for ISO manual
+│   ├── useNotifications.ts     # Realtime notifications from Supabase
+│   ├── useAuditLog.ts          # Audit log queries
+│   ├── useBackup.ts            # Backup / restore
+│   ├── useRefreshData.ts       # Manual refresh
+│   ├── useTraceabilityResolver.ts # Traceability graph resolution
 │   ├── useDebounce.ts          # General debounce utility
 │   ├── useFilter.ts            # Filter state management
-│   ├── useHotkeys.ts            # Keyboard shortcuts
-│   ├── use-mobile.tsx           # Mobile screen detection
-│   ├── useNotifications.ts      # Realtime notifications from Supabase
-│   └── use-toast.ts            # Legacy toast (shadcn)
+│   └── use-mobile.tsx           # Mobile screen detection
 │
 ├── components/
 │   ├── layout/
-│   │   ├── AppShell.tsx        # Page structure: TopNav + Breadcrumbs + Content + Footer
+│   │   ├── AppShell.tsx        # Page container + breadcrumbs
+│   │   ├── DashboardLayout.tsx # Shell used by authenticated pages
 │   │   ├── TopNav.tsx          # Top navigation bar
-│   │   ├── Header.tsx          # Legacy header
-│   │   ├── Sidebar.tsx          # Legacy sidebar (currently unused)
-│   │   ├── Footer.tsx           # Page footer
-│   │   ├── Breadcrumbs.tsx      # Breadcrumb navigation
-│   │   └── NotificationBell.tsx # Notification bell (Realtime)
+│   │   ├── Sidebar.tsx         # Desktop sidebar navigation
+│   │   ├── MobileBottomNav.tsx # Mobile tab bar
+│   │   ├── Breadcrumbs.tsx     # Breadcrumb navigation
+│   │   └── CommandPalette.tsx  # ⌘K global search / navigation
 │   │
 │   ├── auth/
 │   │   └── Guards.tsx          # RequireAuth + RequireRole
 │   │
-│   ├── dashboard/
-│   │   ├── ModuleCard.tsx      # Module card
-│   │   ├── StatusCard.tsx      # KPI card
-│   │   ├── RecentActivity.tsx  # Recent activity
-│   │   ├── AuditReadiness.tsx  # Audit readiness indicator
-│   │   ├── QuickActions.tsx    # Quick action buttons
-│   │   └── PendingActions.tsx  # Pending actions
+│   ├── forms/
+│   │   ├── DynamicFormRenderer.tsx  # Schema-driven record form
+│   │   ├── FormKit.tsx              # Shared template primitives
+│   │   ├── DocumentView.tsx         # Document-style record wrapper
+│   │   ├── SchemaDrivenRecordView.tsx
+│   │   └── templates/               # DOCX-accurate F/xx templates
 │   │
-│   ├── records/
-│   │   ├── RecordCard.tsx      # Record card
-│   │   ├── RecordBrowser.tsx   # Record file browser
-│   │   ├── RecordsTable.tsx    # Audit records table/cards
-│   │   ├── AddRecordModal.tsx  # Add record window
-│   │   ├── AddFormModal.tsx    # Add form window
-│   │   ├── EditFrequencyModal.tsx  # Edit fill frequency
-│   │   └── EditMetadataModal.tsx   # Edit record metadata
-│   │
-│   ├── record-detail/
-│   │   ├── RecordHeader.tsx    # Detail page header
-│   │   ├── FileStats.tsx      # File statistics
-│   │   ├── TechnicalSpec.tsx  # Technical specifications
-│   │   ├── DocumentLinks.tsx  # Template and folder links
-│   │   ├── CompliancePanel.tsx # Review status panel
-│   │   ├── ReviewPanel.tsx    # Reviewer panel
-│   │   └── RecordTimeline.tsx # Record timeline
-│   │
-│   ├── audit/
-│   │   ├── AuditCharts.tsx     # Audit charts
-│   │   ├── AuditFilters.tsx    # Audit page filters
-│   │   └── AutomatedAuditModal.tsx  # Automated audit check (3 phases)
+│   ├── templates/
+│   │   └── index.tsx           # Lazy template registry (getTemplateComponent)
 │   │
 │   ├── risk/
 │   │   ├── RiskRegisterTab.tsx      # Risk register table
 │   │   ├── CapaRegisterTab.tsx      # CAPA register table
 │   │   ├── ProcessInteractionTab.tsx # Process interaction table
-│   │   ├── RiskHeatMap.tsx          # 5×5 heat map
-│   │   └── RiskStats.tsx            # Risk statistics
+│   │   └── RiskHeatMap.tsx          # 5×5 heat map
 │   │
-│   ├── settings/
-│   │   └── SettingsModal.tsx   # Settings (account, appearance, colors, diagnostics)
+│   ├── traceability/
+│   │   ├── TraceView.tsx            # Traceability graph
+│   │   └── CAPAEvidenceDashboard.tsx
 │   │
-│   ├── ui/                     # 50+ shadcn/ui components (button, card, dialog, etc.)
-│   ├── ErrorBoundary.tsx       # Error boundary
-│   └── NavLink.tsx             # Navigation link
+│   ├── ui/                     # shadcn/ui components + design-system primitives
+│   │                           # (StatsRow, StateScreen, PageHeader, AsyncBoundary, …)
+│   └── ErrorBoundary.tsx       # Error boundary
 │
-├── lib/                        # ← Services and utilities
+├── lib/                        # ← Domain libraries
 │   ├── auth.ts                  # OAuth token helper
-│   ├── googleSheets.ts          # Google Sheets API service
-│   ├── driveService.ts          # Google Drive API service
-│   ├── riskRegisterService.ts   # Risk register service (Sheets)
-│   ├── capaRegisterService.ts   # CAPA register service (Sheets)
-│   ├── processInteractionService.ts # Process interaction service (Sheets)
-│   ├── auditCheckService.ts     # Automated audit check (3 phases)
+│   ├── riskRegisterService.ts   # Risk register service
+│   ├── capaRegisterService.ts   # CAPA register service
+│   ├── processInteractionService.ts # Process interaction service
 │   ├── statusService.ts         # Record status management
+│   ├── compliance.ts            # Compliance scoring
+│   ├── temporalUtils.ts         # Coverage-period / date resolution
+│   ├── traceability.ts          # Traceability graph builder
+│   ├── departmentTheme.ts       # Per-department accent themes
+│   ├── procedureRecordMapping.ts # Procedure → governed QMS records
+│   ├── safeEmit.ts              # Typed event-bus emit
 │   ├── ManualContent.ts         # ISO 9001:2015 manual content
-│   ├── ProceduresContent.ts    # Digital procedures content
-│   ├── exportUtils.ts           # Export utilities (CSV/DOCX)
-│   ├── validation.ts            # Form validation utilities
+│   ├── ProceduresContent.ts     # Digital procedures content
 │   └── utils.ts                 # cn() utility (clsx + tailwind-merge)
 │
 └── server/                      # Local OAuth server
@@ -171,25 +202,38 @@ src/
 | `/login` | Login | Login (email/password + Google OAuth) |
 | `/register` | Register | New account registration (pending admin approval) |
 | `/auth/callback` | AuthCallback | OAuth callback handler |
-| `/module/:moduleId` | ModulePage | Module details (Sales, Operations, Quality...) |
-| `/record/*` | RecordDetail | Single record detail with review panels |
+| `/reset-password` | ResetPassword | Password recovery |
+| `/records` | RecordListPage | Record list (filter by `?formCode=`, `?section=`, `?month=`, `?project=`) |
+| `/records/:serial` | RecordViewPage | Single record detail |
+| `/create` | RecordCreationPage | Create a record |
+| `/forms` | FormsRegistryPage | Forms registry |
+| `/form/*` | FormTemplatePreview | Template preview |
+| `/form-code/:serial` | FormCodeRedirect | Redirects a form code to the canonical record route |
 | `/audit` | AuditPage | Audit panel (5 tabs + automated check) |
 | `/projects` | ProjectsPage | Project overview |
 | `/project/:projectName` | ProjectDetailPage | Single project detail |
-| `/archive` | ArchivePage | Drive file archive (restore/delete) |
+| `/archive` | ArchivePage | Archive |
 | `/risk-management` | RiskManagementPage | Risk management (3 tabs) |
-| `/risk` | RiskRegisterPage | Risk register (standalone) |
-| `/capa` | CAPARegisterPage | CAPA register (standalone) |
-| `/process-interaction` | ProcessInteractionPage | Process interaction map (standalone) |
 | `/activity` | ActivityPage | Recent activity |
-| `/procedures` | ProceduresPage | Digital procedures + Drive archive |
+| `/procedures` | ProceduresPage | Digital procedures |
 | `/iso-manual` | ISOManualPage | ISO 9001:2015 manual |
-| `/admin/accounts` | AdminAccounts | User management (admin only) |
+| `/notifications` | NotificationsPage | Notification centre |
+| `/kpi`, `/kpi/reports` | KPI pages | KPI dashboard and reports |
+| `/swot-analysis` | SWOTAnalysisPage | SWOT analysis |
+| `/traceability`, `/traceability/:recordId` | TraceabilityPage | Traceability explorer |
+| `/integrity` | DataIntegrityPage | Data integrity rules dashboard |
+| `/settings` | Settings | Settings |
+| `/admin/accounts` | AdminPanel | User management + branding (admin only) |
+| `/admin/database` | DatabaseManagementPage | Database admin (admin only) |
+| `/admin/data-sanitizer` | DataSanitizer | Data sanitisation (admin only) |
+| `/admin/approvals` | ApprovalQueuePage | Approval queue |
+
+Redirects: `/modules` → `/`, `/approvals` → `/admin/approvals`, `/admin` → `/admin/accounts`, `/record/*` → `/records`.
 
 ### Routing System
 - **Public routes:** `/login`, `/register`, `/auth/callback`
 - **Protected routes (RequireAuth):** All other routes
-- **Admin-only routes (RequireRole):** `/admin/accounts`
+- **Admin-only routes (RequireRole):** `/admin/accounts`, `/admin/database`, `/admin/data-sanitizer`
 - All pages are **lazy-loaded** via `React.lazy()` + `Suspense`
 - Provider order: `QueryClientProvider` > `ErrorBoundary` > `ThemeProvider` > `AuthProvider` > `TooltipProvider` > `BrowserRouter`
 
@@ -230,7 +274,9 @@ User → Register.tsx → useAuth.register()
 
 ## 5. Database
 
-### Supabase (Authentication + Users + Notifications)
+**Supabase Postgres is the single source of truth for QMS data.** Google Sheets is no longer a data store; the only remaining Google integration is read-only Drive browsing for procedure documents (`src/pages/ProceduresPage.tsx`).
+
+### Supabase (Auth + Users + Notifications + QMS records)
 ```sql
 -- profiles: user data
 id uuid PK, email text, display_name text, is_active boolean, user_id text, password text (legacy)
@@ -240,58 +286,108 @@ id uuid PK, user_id text, role app_role (admin|moderator|user|manager|auditor)
 
 -- notifications: Realtime notifications
 id uuid PK, user_id uuid, type text, title text, message text, read boolean, data jsonb
+
+-- records: every QMS record (all 35 forms)
+id uuid PK, form_code text, serial text, form_name text, status text,
+form_data jsonb, section int, section_name text, frequency text,
+created_by text, last_modified_by text, edit_count int,
+modification_reason text, deleted_at timestamptz, project_id uuid
 ```
 
-### Google Sheets (Primary Data)
-| Sheet | Function | Source |
-|---|---|---|
-| Data | Main QMS records (35+ forms per module) | `VITE_SPREADSHEET_ID` |
-| Risk Register | Risk records | Fixed Spreadsheet ID |
-| CAPA Register | Corrective action records | Same Spreadsheet ID |
-| Process Interaction Sheet | Process interaction map | `VITE_SPREADSHEET_ID` |
+### Server-side functions (the write path)
+All writes go through Postgres RPCs — the browser never writes a table directly.
 
-> **Important note:** Google Sheets is the primary data store for QMS data. Supabase only manages authentication, profiles, and notifications.
+| RPC | Purpose |
+|---|---|
+| `create_record_validated` | Creates a record (draft or otherwise) with server-side validation |
+| `update_record_versioned` | Versioned update with optimistic-concurrency check |
+| `record_transition` | Workflow status transition, permission-checked server-side |
+| `record_draft_create` / `record_draft_autosave` / `record_discard_draft` | Draft lifecycle, owner-checked |
+| `soft_delete_record` | Soft delete (sets `deleted_at`) |
+| `record_restore` | Restore a soft-deleted record |
+| `audit_log_server_append` | Append-only audit entry; the actor comes from `auth.uid()` server-side, so it cannot be forged by the client |
+| `create_notifications_batch` | Fan-out notification insert |
+| `dashboard_stats` | The single aggregate RPC behind the dashboard |
+| `error_report_submit` / `error_report_resolve` | Client error reporting |
+
+### Migrations
+`supabase/migrations/**.sql` is the versioned, reversible record of schema change. A production snapshot of the live schema is kept at `audit/rpc-args.json`, and `npm run verify:schemas` compares **code → production snapshot → migrations** and fails the build on an error-class divergence. See `docs/` and `audit/schema-parity.mjs`.
 
 ---
 
-## 6. Theme System
+## 6. Design System — Apple Liquid Glass
 
-### Controlled Obsidian Theme
-- **Base theme:** Dark with neon-cyan and neon-violet accents
-- **Color system:** CSS variables with `hsl(var(--*))`
-- **Base file:** `src/index.css` — contains `:root` (light) + `.dark` (dark)
-- **Toggle:** `useTheme.tsx` toggles `dark`/`light` class on `<html>`
-- **Accent colors:** 8 possible colors, saved in `localStorage.getItem('accentColor')`, applied via `data-accent` on `<html>`
-- **Color settings:** From `SettingsModal.tsx`
+**Source of truth:** `src/index.css` (tokens + component layer) and `tailwind.config.ts` (token references). The `apple-liquid-glass` skill at `~/.claude/skills/apple-liquid-glass` defines the rules.
 
-### Design Standards
-- Sidebar: `w-60` expanded / `w-[60px]` collapsed
-- Page margins: `md:ml-[60px]` collapsed / `md:ml-60` expanded
-- Max width: `max-w-[1400px] mx-auto`
-- Page title: `text-2xl font-bold tracking-tight`
-- Cards: `rounded-xl` standard / `rounded-2xl` featured
-- Every page includes: TopNav + Breadcrumbs + Footer
+### Philosophy (in priority order)
+1. **Unified surface > fragmented cards** — sibling items go on one white panel with hairline dividers, not a pile of separately-bordered cards.
+2. **Glass is seasoning** — `backdrop-filter` frost only where layers genuinely overlap (sticky nav, overlays, the one colored CTA). Plain content areas are solid `#fff` + soft shadow.
+3. **Restraint is luxury** — whitespace and hierarchy before borders, fills, icons, or numbers.
+4. **Hierarchy from weight + size + grayscale** — colour is for one accent, heat, and brand only.
+5. **Quality lives in details** — negative tracking on titles, `tabular-nums`, hairlines, gentle hover lift.
+
+### Tokens
+| Group | Variables |
+|---|---|
+| Ground / surface | `--background` (#f5f5f7 light), `--card` (#ffffff), `--muted` |
+| Text | `--foreground` (#1d1d1f), `--muted-foreground` (#6e6e73), `--ink` … `--ink-4` |
+| Accent | `--primary` (#0071e3), `--primary-solid`, `--primary-tint`, `--primary-hover` |
+| Status | `--success-solid/-tint/-hover`, `--warning-solid/-tint/-hover`, `--destructive-solid/-tint/-hover` |
+| Lines | `--border` (#e3e3e6) |
+| Radius | `--radius-sm` … `--radius-xl` (semantic tiers only) |
+| Shadow | `--shadow-sm`, `--shadow-md`, `--shadow-lg`, `--shadow-overlay` (two-layer only) |
+| Motion | `--ease-standard/-sharp/-spring`, `--duration-fast/normal/slow` |
+| Type | `--font-sans` (system stack), `--font-display`, `--font-mono` |
+
+Colour values are `H S% L%` triplets consumed as `hsl(var(--x))`; opacity variants use `hsl(var(--x) / 0.03)`.
+
+### Component classes (`src/index.css`, `@layer components`)
+| Class | Role |
+|---|---|
+| `.ds-card` | Standard surface — 18px radius, `--shadow-sm` |
+| `.ds-panel` | Large section container — 22px radius, `--shadow-md` |
+| `.ds-input` | Quiet input with a focus ring |
+| `.glass` | Frosted surface, **only** where layers overlap |
+| `.glass-chip` | Glass element on a coloured ground |
+| `.status-pill` | Status badge using the `-tint` ramp (AA in every mode) |
+| `.ds-press` | Pointer-down feedback |
+| `.ds-focus-ring` | Consistent focus ring |
+
+### Rules that must not be broken
+- **Ground is cool `#f5f5f7`**, not cream/beige/kraft.
+- **No webfont brand face** — the system stack only.
+- **Glass never on plain content blocks.**
+- **Colour never as decoration** — one accent per view.
+- **No emoji as icons** — Lucide line icons, 24-grid, grayscale `currentColor`, accent only on the active/action state, ≥44px hit targets.
+- **Status colours use the `-tint` ramp** for text on a tint fill, not the solid value.
+- **Every interactive element has a visible focus state** and a ≥44px touch target.
+
+### Layout standards
+- Sidebar: `w-64` expanded / `w-16` collapsed (desktop), drawer on mobile
+- Content: `max-w-[1400px] mx-auto`, `p-5`
+- Page title: `text-xl font-bold tracking-tight` (via `PageHeader.tsx`)
+- Every page renders through `AppShell` (breadcrumbs + content)
 
 ---
 
 ## 7. Data Flow
 
 ```
-Google Sheets API  →  googleSheets.ts  →  useQMSData (React Query)  →  Pages/Components
-Google Drive API   →  driveService.ts   →  useQMSData / direct calls       →  Pages/Components
-Risk Sheet         →  riskRegisterService →  useRiskData (React Query)     →  Risk pages
-CAPA Sheet         →  capaRegisterService →  useCAPAData (React Query)    →  CAPA pages
-Process Sheet       →  processInteractionService →  useProcessData          →  Process pages
+Supabase Postgres  →  recordStorage.ts / RPCs  →  useRecordStorage  →  Record pages
+Risk Records       →  riskRegisterService      →  useRiskData (React Query)     →  Risk pages
+CAPA Records       →  capaRegisterService      →  useCAPAData (React Query)    →  CAPA pages
+Process Records    →  processInteractionService →  useProcessData              →  Process pages
 Supabase Auth      →  useAuth (AuthProvider)  →  Guards, Login, Register
-Supabase Realtime  →  useNotifications       →  NotificationBell
+Supabase Realtime  →  useNotifications       →  Sidebar badge, NotificationsPage
 LocalStorage       →  useProceduresData/useManualData →  Procedures and Manual pages
-OAuth Proxy        →  server/local.js (Express)  →  getAccessToken()  →  Drive/Sheets write operations
+Google Drive (RO)  →  ProceduresPage.tsx      →  procedure document browsing
+OAuth Proxy        →  server/local.js (Express)  →  getAccessToken()  →  Drive access
 ```
 
 ### Read and Write Operations
-- **Google Sheets Read:** API Key (read-only)
-- **Google Sheets Write:** OAuth access token (requires Google login)
-- **The app shows a warning** if write operations fail due to missing OAuth
+- **Records, risks, CAPA, processes:** Supabase via the RPCs listed in §5. The browser never writes a table directly.
+- **Google Drive:** read-only browsing of the procedures folder, API key only.
+- **Audit trail:** `audit_log` is append-only; `audit_log_server_append` derives the actor server-side.
 
 ---
 
@@ -300,19 +396,33 @@ OAuth Proxy        →  server/local.js (Express)  →  getAccessToken()  →  D
 | Hook | File | Function |
 |---|---|---|
 | `useAuth` | `useAuth.tsx` | Complete auth context: login, logout, register, user management |
-| `useTheme` | `useTheme.tsx` | Theme context: light/dark/auto with localStorage |
-| `useQMSData` | `useQMSData.ts` | React Query for QMS data (60s refetch, 30s stale) |
-| `useUpdateRecord` | `useQMSData.ts` | Mutation for sheet cell updates |
-| `useDeleteRecord` | `useQMSData.ts` | Mutation for row deletion |
+| `useAuthUtils` | `useAuthUtils.ts` | Role helpers, permission checks |
+| `useSupabaseAuth` | `useSupabaseAuth.ts` | Supabase session primitives |
+| `useUserManagement` | `useUserManagement.ts` | Admin user CRUD |
+| `useTheme` | `useTheme.tsx` | Theme context: light/dark/system with localStorage |
+| `useTenantIdentity` | `useTenantIdentity.tsx` | Tenant name, logo, and brand colour |
+| `useRecords` | `useRecordStorage.ts` | React Query for the records table |
+| `useRecord` | `useRecordStorage.ts` | Single record by serial |
+| `useCreateRecord` | `useRecordStorage.ts` | Create mutation (validates, then calls the RPC) |
+| `useUpdateRecord` | `useRecordStorage.ts` | Versioned update mutation |
+| `useSubmitDraft` | `useRecordStorage.ts` | Draft submission |
+| `useDeleteRecord` | `useRecordStorage.ts` | Soft-delete mutation |
+| `useRestoreRecord` | `useRecordStorage.ts` | Restore mutation |
+| `useArchivedRecords` | `useRecordStorage.ts` | Archived (soft-deleted) records |
+| `useExistingSerials` | `useRecordStorage.ts` | Serials already in use, for duplicate prevention |
+| `useDashboardStats` | `useRecordStorage.ts` | Dashboard aggregates (one RPC) |
 | `useRiskData` | `useRiskData.ts` | React Query for risk register (add/update/fetch) |
 | `useCAPAData` | `useCAPAData.ts` | React Query for CAPA register |
 | `useProcessData` | `useProcessData.ts` | React Query for process maps |
 | `useProceduresData` | `useProceduresData.ts` | Local state + localStorage for procedures |
 | `useManualData` | `useManualData.ts` | Local state + localStorage for ISO manual |
 | `useNotifications` | `useNotifications.ts` | Realtime notifications from Supabase |
+| `useAuditLog` | `useAuditLog.ts` | Audit log queries |
+| `useBackup` | `useBackup.ts` | Backup and restore |
+| `useRefreshData` | `useRefreshData.ts` | Manual data refresh |
+| `useTraceabilityResolver` | `useTraceabilityResolver.ts` | Traceability graph resolution |
 | `useDebounce` | `useDebounce.ts` | General debounce |
 | `useFilter` | `useFilter.ts` | Filter state management |
-| `useHotkeys` | `useHotkeys.ts` | Keyboard shortcuts |
 | `use-mobile` | `use-mobile.tsx` | Mobile screen detection |
 
 ---
@@ -322,15 +432,17 @@ OAuth Proxy        →  server/local.js (Express)  →  getAccessToken()  →  D
 | Variable | Function |
 |---|---|
 | `VITE_SUPABASE_URL` | Supabase project URL |
-| `VITE_SUPABASE_ANON_KEY` | Supabase public key |
-| `VITE_GOOGLE_API_KEY` | Google API key (Sheets + Drive read) |
-| `VITE_SPREADSHEET_ID` | Main Google Sheets spreadsheet ID |
+| `VITE_SUPABASE_ANON_KEY` | Supabase public key (anon / publishable) |
+| `VITE_SUPABASE_PUBLISHABLE_KEY` | Alternative Supabase publishable key |
+| `VITE_GOOGLE_API_KEY` | Google API key (Drive read only) |
 | `VITE_PROCEDURES_FOLDER_ID` | Google Drive folder ID for procedures |
-| `VITE_AUTH_LOCAL_DISABLED` | Disable local auth (default: "true") |
+| `VITE_AUTH_LOCAL_DISABLED` | Disable local auth (default: disabled) |
 | `VITE_AUTH_SALT` | Local password encryption salt |
 | `GOOGLE_CLIENT_ID` | Google OAuth client ID (server) |
 | `GOOGLE_CLIENT_SECRET` | Google OAuth client secret (server) |
-| `GOOGLE_REDIRECT_URI` | OAuth redirect URI |
+| `GOOGLE_REFRESH_TOKEN` | Stored OAuth refresh token (server) |
+
+> The Supabase client **fails closed** at module load if the URL/key are missing — it throws rather than running unauthenticated.
 
 ---
 
@@ -338,48 +450,39 @@ OAuth Proxy        →  server/local.js (Express)  →  getAccessToken()  →  D
 
 ### Security
 - **Never write API keys in code** — use `import.meta.env.VITE_*`
-- Google Sheets/Drive write operations must go through OAuth
-- `admin-update-password` is a Supabase Edge Function for password resets
+- **The `service_role` key must never reach the client.** All privileged work happens in Postgres functions with `security definer` and an explicit `auth.uid()` check.
+- Writes go through RPCs that re-check permission and state server-side; the client's own check is advisory only.
+- `admin-update-password` is a Supabase Edge Function for password resets.
+- Audit writes go through `audit_log_server_append`, which derives the actor from `auth.uid()` — the client cannot forge attribution.
 
 ### Automated Audit Check
-- File: `src/lib/auditCheckService.ts`
-- 3 phases: Record integrity check, file sequence check, file naming check
+- File: `src/services/ruleEngine.ts`
+- Rules cover reference integrity, dependencies, sequencing, and data quality.
+- Every rule defaults to **warn** mode; enforcement is switched on explicitly by an admin.
+
+### Schema parity
+- `npm run verify:schemas` → `scripts/verify-schema-parity.ts`
+- Compares the code's table/RPC usage against the production snapshot (`audit/rpc-args.json`) and the migrations.
+- Fails the build on an error-class divergence.
 
 ### Brand Identity
 - Name: **Vezloo QMS Suite**
 - Developer: **Ahmed Khaled**
-- Fixed Spreadsheet ID for Risk/CAPA: `11dGB-fG2UMqsdqc182PsY-K6S_19FKc8bsZLHlic18M`
+- Tenant brand colours live in `src/config/brandColors.ts`; every value is measured to carry white text at AA in both themes.
 
-### Build
+### Build and checks
 ```bash
-npm install && npx vite build
+npm run lint          # eslint
+npm run typecheck     # tsc -b --force  (NOT `tsc --noEmit` — that checks nothing)
+npm run verify:schemas
+npm run test          # vitest run
+npm run build         # vite build
+npm run ci            # all of the above, in order
 ```
 
 ### Notification System
 - Unified on `sonner` (shadcn Toaster removed from App.tsx)
 - `sonner.tsx` uses local `useTheme` (not next-themes)
-
----
-
-## 11. Files Modified in Last Theme Update (2026-04-18)
-
-- `src/index.css` — Complete rebuild with light/dark theme
-- `tailwind.config.ts` — CSS variable references + module colors
-- `src/App.css` — Removed conflicting Inter/hex definitions
-- `src/hooks/useTheme.tsx` — Removed dead themeVars
-- `src/components/ui/sonner.tsx` — Fixed import to local useTheme
-- `src/components/records/RecordCard.tsx` — Replaced all hardcoded colors
-- `src/pages/ProceduresPage.tsx` — API key in env var + added Breadcrumbs/Footer
-- `src/pages/ISOManualPage.tsx` — Added Breadcrumbs/Footer
-- `src/pages/ActivityPage.tsx` — Added Breadcrumbs
-- `src/pages/ProjectsPage.tsx` — Unified layout
-- `src/pages/ModulePage.tsx` — Unified layout
-- `src/pages/ArchivePage.tsx` — Lucide icons instead of Emoji, toast → sonner
-- `src/pages/AuditPage.tsx` — Fixed hardcoded emerald colors
-- `src/pages/AuthCallback.tsx` — Fixed hardcoded colors
-- `src/pages/Register.tsx` — Fixed orange-500
-- `src/components/ui/LoadingSpinner.tsx` — Fixed import path
-- `src/App.tsx` — Removed shadcn Toaster, kept Sonner
 
 ---
 

@@ -784,6 +784,7 @@ export type Database = {
       }
     }
     Views: {
+      [_ in never]: never
     }
     Functions: {
       append_audit_log: {

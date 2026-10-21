@@ -51,7 +51,17 @@ TRACEABILITY_INTEGRATION_REPORT.md
 02. Procedures/
 03. Manual/
 04. Work Instructions/
-scripts/
+
+# QMS document scripts (not part of the web app build).
+# The BUILD TOOLING under scripts/ IS tracked — `npm run ci` runs
+# `verify:schemas` → scripts/verify-schema-parity.ts, and the Prime backup
+# tool lives in scripts/prime-backup.mjs. Ignoring the whole directory made
+# a fresh clone have a broken `ci` script.
+scripts/*
+!scripts/verify-schema-parity.ts
+!scripts/prime-backup.mjs
+!scripts/backfill-from-docx.py
+!scripts/check-auth-redirect.sh
 
 .codex
 .vite
@@ -60,3 +70,6 @@ scripts/
 .env*
 design-backups/
 src/hooks/_useAuth_backup.tsx
+
+# TypeScript incremental build artifacts (tsc -b)
+*.tsbuildinfo
