@@ -60,9 +60,9 @@ export default function AuthCallback() {
   return (
     <div className="min-h-screen bg-background flex items-center justify-center p-6 relative overflow-hidden grid-bg">
       <div className="absolute inset-0 pointer-events-none aurora-bg opacity-40" />
-      <Card className="w-full max-w-md shadow-xl border-neon-cyan/10 rounded-sm bg-card accent-line-top relative">
+      <Card className="w-full max-w-md shadow-xl border-primary/10 rounded-sm bg-card accent-line-top relative">
         <CardHeader className="text-center">
-          <div className="w-16 h-16 bg-neon-cyan/10 rounded-sm flex items-center justify-center mx-auto mb-4 border border-neon-cyan/20 animate-glow-pulse">
+          <div className="w-16 h-16 bg-primary/10 rounded-sm flex items-center justify-center mx-auto mb-4 border border-primary/20 animate-glow-pulse">
             <div className="w-4 h-4 border-2 border-primary border-t-transparent rounded-none animate-spin"></div>
           </div>
           <CardTitle className="text-2xl text-foreground font-mono">Completing Authentication</CardTitle>

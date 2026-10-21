@@ -78,7 +78,7 @@ export default function Register() {
 
       {/* Brand mark */}
       <div className="absolute top-8 left-8 flex items-center gap-3 animate-fade-in">
-        <div className="w-10 h-10 bg-neon-cyan/10 rounded-sm flex items-center justify-center border border-neon-cyan/20">
+        <div className="w-10 h-10 bg-primary/10 rounded-sm flex items-center justify-center border border-primary/20">
           <span className="text-primary-tint font-mono font-black text-[10px] tracking-tighter">QB</span>
         </div>
         <div>
@@ -87,12 +87,12 @@ export default function Register() {
         </div>
       </div>
 
-      <Card className="w-full max-w-[420px] shadow-xl border-neon-violet/10 rounded-sm overflow-hidden animate-fade-in bg-card accent-line-top">
+      <Card className="w-full max-w-[420px] shadow-xl border-support/10 rounded-sm overflow-hidden animate-fade-in bg-card accent-line-top">
         <CardHeader className="text-center pt-10 pb-4">
           <div className="mb-5 relative mx-auto w-14 h-14">
-            <div className="absolute inset-0 bg-neon-violet/15 rounded-sm blur-xl animate-glow-pulse" />
-            <div className="relative w-14 h-14 bg-gradient-to-br from-neon-violet/20 to-neon-cyan/10 rounded-sm flex items-center justify-center border border-neon-violet/25">
-              <UserPlus className="w-6 h-6 text-neon-violet" />
+            <div className="absolute inset-0 bg-support/15 rounded-sm blur-xl animate-glow-pulse" />
+            <div className="relative w-14 h-14 bg-gradient-to-br from-support/20 to-primary/10 rounded-sm flex items-center justify-center border border-support/25">
+              <UserPlus className="w-6 h-6 text-support" />
             </div>
           </div>
           <CardTitle className="text-2xl font-bold tracking-tight">Create account</CardTitle>
@@ -104,10 +104,10 @@ export default function Register() {
           <div className="space-y-1.5">
             <Label htmlFor="name" className="text-[10px] font-mono font-bold uppercase tracking-widest text-muted-foreground/80">Full name</Label>
             <div className="relative group">
-              <User className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground/50 transition-colors group-focus-within:text-neon-cyan" />
+              <User className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground/50 transition-colors group-focus-within:text-primary" />
               <Input id="name" value={name} onChange={(e) => { setName(e.target.value); clearError('name'); }}
                 placeholder="John Doe"
-                className={`pl-10 h-11 rounded-sm bg-muted/30 border-border/40 focus:border-neon-cyan/50 focus:ring-neon-cyan/20 transition-all text-sm font-mono ${errors.name ? 'border-destructive' : ''}`}
+                className={`pl-10 h-11 rounded-sm bg-muted/30 border-border/40 focus:border-primary/50 focus:ring-primary/20 transition-all text-sm font-mono ${errors.name ? 'border-destructive' : ''}`}
               />
             </div>
             {errors.name && <p className="text-xs text-destructive-tint flex items-center gap-1"><AlertCircle className="w-3 h-3" /> {errors.name}</p>}
@@ -117,10 +117,10 @@ export default function Register() {
           <div className="space-y-1.5">
             <Label htmlFor="email" className="text-[10px] font-mono font-bold uppercase tracking-widest text-muted-foreground/80">Email</Label>
             <div className="relative group">
-              <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground/50 transition-colors group-focus-within:text-neon-cyan" />
+              <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground/50 transition-colors group-focus-within:text-primary" />
               <Input id="email" type="email" value={email} onChange={(e) => { setEmail(e.target.value); clearError('email'); }}
                 placeholder="you@company.com"
-                className={`pl-10 h-11 rounded-sm bg-muted/30 border-border/40 focus:border-neon-cyan/50 focus:ring-neon-cyan/20 transition-all text-sm font-mono ${errors.email ? 'border-destructive' : ''}`}
+                className={`pl-10 h-11 rounded-sm bg-muted/30 border-border/40 focus:border-primary/50 focus:ring-primary/20 transition-all text-sm font-mono ${errors.email ? 'border-destructive' : ''}`}
               />
             </div>
             {errors.email && <p className="text-xs text-destructive-tint flex items-center gap-1"><AlertCircle className="w-3 h-3" /> {errors.email}</p>}
@@ -130,11 +130,11 @@ export default function Register() {
           <div className="space-y-1.5">
             <Label htmlFor="password" className="text-[10px] font-mono font-bold uppercase tracking-widest text-muted-foreground/80">Password</Label>
             <div className="relative group">
-              <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground/50 transition-colors group-focus-within:text-neon-cyan" />
+              <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground/50 transition-colors group-focus-within:text-primary" />
               <Input id="password" type={showPassword ? "text" : "password"} value={password}
                 onChange={(e) => { setPassword(e.target.value); clearError('password'); }}
                 placeholder="••••••••"
-                className={`pl-10 pr-10 h-11 rounded-sm bg-muted/30 border-border/40 focus:border-neon-cyan/50 focus:ring-neon-cyan/20 transition-all text-sm font-mono ${errors.password ? 'border-destructive' : ''}`}
+                className={`pl-10 pr-10 h-11 rounded-sm bg-muted/30 border-border/40 focus:border-primary/50 focus:ring-primary/20 transition-all text-sm font-mono ${errors.password ? 'border-destructive' : ''}`}
               />
               <button type="button" onClick={() => setShowPassword(!showPassword)}
                 className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground/50 hover:text-foreground transition-colors">
@@ -171,11 +171,11 @@ export default function Register() {
           <div className="space-y-1.5">
             <Label htmlFor="confirmPassword" className="text-[10px] font-mono font-bold uppercase tracking-widest text-muted-foreground/80">Confirm password</Label>
             <div className="relative group">
-              <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground/50 transition-colors group-focus-within:text-neon-cyan" />
+              <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground/50 transition-colors group-focus-within:text-primary" />
               <Input id="confirmPassword" type="password" value={confirmPassword}
                 onChange={(e) => { setConfirmPassword(e.target.value); clearError('confirmPassword'); }}
                 placeholder="••••••••"
-                className={`pl-10 h-11 rounded-sm bg-muted/30 border-border/40 focus:border-neon-cyan/50 focus:ring-neon-cyan/20 transition-all text-sm font-mono ${errors.confirmPassword ? 'border-destructive' : ''}`}
+                className={`pl-10 h-11 rounded-sm bg-muted/30 border-border/40 focus:border-primary/50 focus:ring-primary/20 transition-all text-sm font-mono ${errors.confirmPassword ? 'border-destructive' : ''}`}
               />
             </div>
             {errors.confirmPassword && <p className="text-xs text-destructive-tint flex items-center gap-1"><AlertCircle className="w-3 h-3" /> {errors.confirmPassword}</p>}
