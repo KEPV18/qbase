@@ -9,9 +9,9 @@
 //
 //   1. A department label is TEXT, not a fill.  The old raw hexes
 //      (#f97316, #14b8a6, #06b8d4 …) were painted as the text colour on a
-//      10% wash of themselves and measured 2.22–2.53:1 — three hard WCAG
+//      10% wash of themselves and measured 2.22–4.49:1 — three hard WCAG
 //      failures and four AA-large-only results.  The `-tint` step of each
-//      family measures 5.63:1 in light and 5.77:1 in dark, worst case.
+//      family measures 5.43:1 in light and 5.39:1 in dark, worst case.
 //
 //   2. A coloured LEFT BAR is decoration, and the skill names it as
 //      anti-slop ("each item with its own border + tint + colored

@@ -69,13 +69,13 @@
        4.70:1 with pure white and drops below AA at every alpha, so the
        masthead uses a DEEPER pair of the same two hues.
 
-       Measured worst case across the 5-point ramp — every tier clears
-       AA (4.5:1) with margin:
+       Measured worst case across the ramp (21 stops sampled from
+       #184486 to #2727b9) — every tier clears AA (4.5:1):
          white/60  4.52:1   white/70  5.56:1
          white/80  6.74:1   white/90  8.02:1
-         white/100 9.50:1   chip (white/20 ground, white/90 text) 4.87:1
-       The previous pair (#0a4d94 → #4540b5) failed at white/60 (3.95:1)
-       and at the chip (4.29:1). ── */
+         white/100 9.50:1   chip (white/20 ground, white/90 text) 4.66:1
+       The previous pair (#0a4d94 → #4540b5) failed at white/60 (3.96:1)
+       and at the chip (4.16:1). ── */
     --masthead-from: 216 70% 31%;     /* #184486 */
     --masthead-to: 240 65% 44%;       /* #2727b9 */
 
@@ -120,10 +120,10 @@
        #30d158), so the foreground has to flip with it: white on the
        light fill, near-black on the dark one.  Measured, both ends
        clear AA (4.5:1) with margin:
-         primary     light 4.65:1   dark 5.13:1
+         primary     light 4.70:1   dark 5.13:1
          success     light 5.38:1   dark 9.26:1
-         warning     light 5.02:1   dark 8.99:1
-         destructive light 5.38:1   dark 5.47:1
+         warning     light 5.02:1   dark 10.50:1
+         destructive light 5.38:1   dark 6.64:1
 
        `-solid` is the FILLED variant (a saturated surface carrying white
        text).  It is pinned — identical in light and dark — because the
@@ -147,7 +147,7 @@
     --warning-hover: 26 90% 30.81%;        /* #954508 — white on it 6.70:1 */
     --info: 210 100% 44.51%;
     --info-foreground: 0 0% 100%;
-    --info-tint: 210 100% 35.01%;          /* #0059b3 — on a /10 tint 5.96:1 */
+    --info-tint: 210 100% 35.01%;          /* #0059b3 — on a /10 tint 5.82:1 */
     --primary-solid: 210 100% 44.51%;     /* #0071e3 — white on it 4.70:1 */
     --primary-tint: 210 100% 35.01%;      /* #0059b3 — on a /25 tint 4.56:1 */
     --primary-hover: 210 100% 40%;        /* #0066cc — white on it 5.57:1 */
@@ -262,12 +262,12 @@
        Text that sits ON a tint of its own family needs a slightly
        different value than text on a neutral surface: the tint
        darkens the ground, so the text must be darker still.  Each
-       value below clears 4.5:1 against a /15 tint of its own family. */
+       value below clears 4.5:1 against a /25 tint of its own family. */
     --destructive-tint: 3 100% 75.62%;     /* #ff838f — on a /25 tint 4.50:1 */
     --success-tint: 135 64% 50.39%;        /* #32cf69 — on a /25 tint 4.97:1 */
     --warning-tint: 36 100% 60.71%;        /* #f58f41 — on a /25 tint 4.50:1 */
     --primary-tint: 210 100% 68.46%;       /* #5eafff — on a /25 tint 4.52:1 */
-    --info-tint: 210 100% 68.46%;          /* #5eafff — on a /10 tint 6.59:1 */
+    --info-tint: 210 100% 68.46%;          /* #5eafff — on a /10 tint 6.16:1 */
 
     --border: 240 2% 23.14%;        /* #3a3a3c */
     --input: 240 2% 23.14%;

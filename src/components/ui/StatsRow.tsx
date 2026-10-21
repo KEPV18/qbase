@@ -25,7 +25,10 @@ interface StatsRowProps {
  * not) and everything else stays grayscale.
  *
  * Every pairing below is measured against the card surface in BOTH
- * modes:  light 6.66–7.42:1 · dark 7.20–8.32:1 — all clear AA.
+ * modes:  light 6.66–16.83:1 · dark 6.03–15.63:1 — all clear AA.
+ * The low end of each range is the tightest status tint
+ * (success 6.66 light / destructive 6.03 dark); the high end is the
+ * default foreground.
  */
 const variantStyles: Record<NonNullable<StatItem["variant"]>, string> = {
   default: "text-foreground",

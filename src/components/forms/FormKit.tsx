@@ -47,7 +47,7 @@ export function val(data: Record<string, unknown> | undefined, key: string): str
 // Every colour below is a token, and every pairing is measured:
 //   text-foreground on card       16.83:1  light / 15.63:1  dark
 //   text-ink-2      on card        5.07:1  light /  6.61:1  dark
-//   text-ink-2      on bg-muted/40 4.82:1  light /  6.47:1  dark
+//   text-ink-2      on bg-muted/40 4.82:1  light /  6.40:1  dark
 //   white on the masthead ramp    5.56:1 (white/70) … 9.50:1 (white/100)
 // ════════════════════════════════════════════════════════════════════════
 
