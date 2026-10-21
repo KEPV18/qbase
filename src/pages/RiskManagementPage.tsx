@@ -42,7 +42,7 @@ export default function RiskManagementPage() {
                 {/* Header */}
                 <PageHeader
                     icon={AlertTriangle}
-                    iconClassName="text-destructive"
+                    iconClassName="text-destructive-tint"
                     title="Risk & Process Management"
                     description="ISO 9001:2015 Clause 6.1 — Monitor risks, track CAPAs, and visualize processes."
                     badgeVariant="destructive"
@@ -78,12 +78,12 @@ export default function RiskManagementPage() {
                         <TabsTrigger value="risk" className="gap-1.5 rounded-sm text-xs font-bold data-[state=active]:bg-background data-[state=active]:shadow-sm">
                             <AlertTriangle className="w-3.5 h-3.5" />
                             Risk Register
-                            {risks.length > 0 && <span className="text-[9px] font-mono bg-destructive/10 text-destructive px-1.5 py-0.5 rounded-sm ml-1">{risks.length}</span>}
+                            {risks.length > 0 && <span className="text-[9px] font-mono bg-destructive/10 text-destructive-tint px-1.5 py-0.5 rounded-sm ml-1">{risks.length}</span>}
                         </TabsTrigger>
                         <TabsTrigger value="capa" className="gap-1.5 rounded-sm text-xs font-bold data-[state=active]:bg-background data-[state=active]:shadow-sm">
                             <Shield className="w-3.5 h-3.5" />
                             CAPA Register
-                            {capas.length > 0 && <span className="text-[9px] font-mono bg-primary/10 text-primary px-1.5 py-0.5 rounded-sm ml-1">{capas.length}</span>}
+                            {capas.length > 0 && <span className="text-[9px] font-mono bg-primary/10 text-primary-tint px-1.5 py-0.5 rounded-sm ml-1">{capas.length}</span>}
                         </TabsTrigger>
                         <TabsTrigger value="process" className="gap-1.5 rounded-sm text-xs font-bold data-[state=active]:bg-background data-[state=active]:shadow-sm">
                             <Activity className="w-3.5 h-3.5" />

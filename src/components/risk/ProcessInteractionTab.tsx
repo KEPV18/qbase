@@ -54,10 +54,10 @@ export function ProcessInteractionTab() {
 
     return (
         <div className="space-y-6">
-            <div className="flex justify-between items-center p-6 rounded-sm bg-muted/20 border-border/50 backdrop-blur-sm relative overflow-hidden">
+            <div className="flex justify-between items-center p-6 rounded-sm bg-muted/20 border-border/50 relative overflow-hidden">
                 <div className="absolute top-0 right-0 w-32 h-32 bg-primary/5 rounded-bl-full blur-2xl" />
                 <div className="relative z-10">
-                    <h3 className="font-bold text-xl font-heading text-foreground">Process Interaction Sheet</h3>
+                    <h3 className="font-bold text-xl font-display text-foreground">Process Interaction Sheet</h3>
                     <p className="text-[10px] text-muted-foreground font-black uppercase tracking-[0.2em] opacity-60">
                         Live data from Supabase • {processes.length} processes
                     </p>
@@ -90,15 +90,15 @@ export function ProcessInteractionTab() {
                             </TableRow>
                         ) : processes.map((proc) => (
                             <TableRow key={proc.processName} className="align-top hover:bg-primary/5 transition-colors border-b border-border/10">
-                                <TableCell className="font-bold font-heading align-top text-sm">{proc.processName}</TableCell>
+                                <TableCell className="font-bold font-display align-top text-sm">{proc.processName}</TableCell>
                                 <TableCell className="align-top text-xs font-medium">{proc.processOwner}</TableCell>
                                 <TableCell className="whitespace-pre-wrap text-[11px] align-top text-muted-foreground leading-relaxed">{proc.inputs}</TableCell>
                                 <TableCell className="whitespace-pre-wrap text-[11px] align-top text-muted-foreground leading-relaxed">{proc.mainActivities}</TableCell>
-                                <TableCell className="whitespace-pre-wrap text-[11px] align-top text-primary/80 font-mono leading-relaxed">{proc.outputs}</TableCell>
+                                <TableCell className="whitespace-pre-wrap text-[11px] align-top text-primary-tint/80 font-mono leading-relaxed">{proc.outputs}</TableCell>
                                 <TableCell className="whitespace-pre-wrap text-[11px] align-top text-muted-foreground leading-relaxed">{proc.receiver}</TableCell>
                                 <TableCell className="whitespace-pre-wrap text-[11px] align-top font-bold text-foreground/70 leading-relaxed italic">{proc.kpi}</TableCell>
                                 <TableCell className="align-top">
-                                    <Button variant="ghost" size="icon" className="h-8 w-8 hover:text-primary transition-colors" onClick={() => handleEditClick(proc)}>
+                                    <Button variant="ghost" size="icon" className="h-8 w-8 hover:text-primary-tint transition-colors" onClick={() => handleEditClick(proc)}>
                                         <Pencil className="w-3.5 h-3.5" />
                                     </Button>
                                 </TableCell>
@@ -111,7 +111,7 @@ export function ProcessInteractionTab() {
             <Dialog open={isEditOpen} onOpenChange={setIsEditOpen}>
                 <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
                     <DialogHeader>
-                        <DialogTitle className="font-heading font-bold text-2xl">Edit Process: {editingProcess?.processName}</DialogTitle>
+                        <DialogTitle className="font-display font-bold text-2xl">Edit Process: {editingProcess?.processName}</DialogTitle>
                     </DialogHeader>
                     {editingProcess && (
                         <div className="grid gap-4 py-4">

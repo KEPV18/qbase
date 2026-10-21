@@ -94,19 +94,19 @@ export function F37Template({ data, isTemplate = true, editMode = false, onChang
 
             {/* Row 1: Sr. No + Date */}
             <tr>
-              {td(<>Sr. No. 🡪 {val(d, "serial") || (ph ? "{{SERIAL}}" : "—")}</>, 3)}
-              {td(<>Date 🡪 {inp("date", "DD/MM/YYYY")}</>, 3)}
+              {td(<>Sr. No. → {val(d, "serial") || (ph ? "{{SERIAL}}" : "—")}</>, 3)}
+              {td(<>Date → {inp("date", "DD/MM/YYYY")}</>, 3)}
             </tr>
 
             {/* Row 2: Product + Experiment No. */}
             <tr>
-              {td(<>Product 🡪 {inp("product_name", "Product Name")}</>, 3)}
-              {td(<>Experiment No. 🡪 {inp("experiment_no", "Exp No.")}</>, 3)}
+              {td(<>Product → {inp("product_name", "Product Name")}</>, 3)}
+              {td(<>Experiment No. → {inp("experiment_no", "Exp No.")}</>, 3)}
             </tr>
 
             {/* Row 3: Incharge */}
             <tr>
-              {td(<>Incharge 🡪 {inp("incharge", "Incharge Name")}</>, 6)}
+              {td(<>Incharge → {inp("incharge", "Incharge Name")}</>, 6)}
             </tr>
 
             {/* Row 4: Object And Variables */}
@@ -135,8 +135,8 @@ export function F37Template({ data, isTemplate = true, editMode = false, onChang
             <tr className="bg-muted/30">
               {td(
                 <div className="flex justify-between text-[10px]">
-                  <span>Done By 🡪 {inp("done_by", "Name")}</span>
-                  <span>Reviewed By 🡪 {inp("reviewed_by", "Name")}</span>
+                  <span>Done By → {inp("done_by", "Name")}</span>
+                  <span>Reviewed By → {inp("reviewed_by", "Name")}</span>
                 </div>,
                 6
               )}

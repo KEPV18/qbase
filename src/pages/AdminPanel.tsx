@@ -19,10 +19,12 @@ import { Badge } from "@/components/ui/badge";
 import {
   Shield, UserPlus, Loader2, Save, Mail, User, Trash2,
   CheckCircle, XCircle, Clock, Users, KeyRound, RefreshCw, Search,
-  Building2, Image, Palette, Activity, Paintbrush, Eye, Upload
+  Building2, Image, Palette, Activity, Paintbrush, Eye, Upload,
+  Clipboard, Check, ArrowUp, ArrowDown, ChevronsUpDown
 } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
+import { BRAND_COLORS, DEFAULT_BRAND_COLOR, pickReadableForeground, readableAccentOnWhite } from "@/config/brandColors";
 import { supabase } from "@/integrations/supabase/client";
 
 // ============================================================================
@@ -41,11 +43,17 @@ const TABS: { id: AdminTab; label: string; icon: typeof Shield }[] = [
 // Role Config
 // ============================================================================
 
-const ROLE_CONFIG: Record<string, { label: string; color: string; icon: string }> = {
-  admin: { label: "Admin", color: "bg-destructive/10 text-destructive border-destructive/20", icon: "🛡️" },
-  dept_head: { label: "Dept Head", color: "bg-primary/10 text-primary border-primary/20", icon: "📋" },
-  employee: { label: "Employee", color: "bg-muted text-muted-foreground border-border", icon: "👤" },
+const ROLE_CONFIG: Record<string, { label: string; color: string; icon: React.ElementType }> = {
+  admin: { label: "Admin", color: "bg-destructive/10 text-destructive-tint border-destructive/20", icon: Shield },
+  dept_head: { label: "Dept Head", color: "bg-primary/10 text-primary-tint border-primary/20", icon: Clipboard },
+  employee: { label: "Employee", color: "bg-muted text-muted-foreground border-border", icon: User },
 };
+
+/** The role's line icon. Grayscale by default — the badge carries the colour. */
+function RoleIcon({ role }: { role: string }) {
+  const Icon = ROLE_CONFIG[role]?.icon;
+  return Icon ? <Icon className="w-3 h-3 mr-1" aria-hidden="true" /> : null;
+}
 
 const DEPARTMENTS = [
   "Sales & Customer Service",
@@ -73,7 +81,7 @@ export default function AdminPanel() {
         {/* Page Header */}
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 rounded-sm bg-destructive/10 flex items-center justify-center">
-            <Shield className="w-5 h-5 text-destructive" />
+            <Shield className="w-5 h-5 text-destructive-tint" />
           </div>
           <div>
             <h1 className="text-2xl font-bold tracking-tight">Admin Panel</h1>
@@ -90,7 +98,7 @@ export default function AdminPanel() {
               className={cn(
                 "flex items-center gap-2 px-4 py-2 text-sm font-medium border-b-2 transition-all",
                 activeTab === tab.id
-                  ? "border-primary text-primary"
+                  ? "border-primary text-primary-tint"
                   : "border-transparent text-muted-foreground hover:text-foreground hover:border-border"
               )}
             >
@@ -235,8 +243,12 @@ function AccountsTab() {
   };
 
   const SortIcon = ({ field }: { field: SortField }) => (
-    <span className="ml-1 text-[10px]">
-      {sortField === field ? (sortDir === "asc" ? "↑" : "↓") : "↕"}
+    <span className="ml-1 inline-flex align-middle text-muted-foreground">
+      {sortField === field
+        ? (sortDir === "asc"
+            ? <ArrowUp className="w-3 h-3" aria-hidden="true" />
+            : <ArrowDown className="w-3 h-3" aria-hidden="true" />)
+        : <ChevronsUpDown className="w-3 h-3 opacity-50" aria-hidden="true" />}
     </span>
   );
 
@@ -247,7 +259,7 @@ function AccountsTab() {
         <Card className="border-warning/30 bg-warning/5">
           <CardHeader className="pb-3">
             <CardTitle className="text-sm flex items-center gap-2">
-              <Clock className="w-4 h-4 text-warning" />
+              <Clock className="w-4 h-4 text-warning-tint" />
               Pending Approvals ({pendingUsers.length})
             </CardTitle>
           </CardHeader>
@@ -256,7 +268,10 @@ function AccountsTab() {
               <div key={u.id} className="flex items-center gap-3 p-2 rounded-sm bg-background">
                 <span className="text-sm font-medium">{u.name}</span>
                 <span className="text-xs text-muted-foreground">{u.email}</span>
-                <Badge variant="outline" className={ROLE_CONFIG[u.role]?.color || ""}>{ROLE_CONFIG[u.role]?.icon} {u.role}</Badge>
+                <Badge variant="outline" className={ROLE_CONFIG[u.role]?.color || ""}>
+                  <RoleIcon role={u.role} />
+                  {u.role}
+                </Badge>
                 <div className="flex-1" />
                 <Button size="sm" variant="outline" onClick={() => updateUser(u.id, { active: true })} className="h-7 text-xs">
                   <CheckCircle className="w-3 h-3 mr-1" /> Approve
@@ -293,7 +308,7 @@ function AccountsTab() {
                 <SelectTrigger className="h-9"><SelectValue /></SelectTrigger>
                 <SelectContent>
                   {Object.entries(ROLE_CONFIG).map(([role, cfg]) => (
-                    <SelectItem key={role} value={role}>{cfg.icon} {cfg.label}</SelectItem>
+                    <SelectItem key={role} value={role}><RoleIcon role={role} />{cfg.label}</SelectItem>
                   ))}
                 </SelectContent>
               </Select>
@@ -316,7 +331,7 @@ function AccountsTab() {
           <SelectContent>
             <SelectItem value="all">All Roles</SelectItem>
             {Object.entries(ROLE_CONFIG).map(([role, cfg]) => (
-              <SelectItem key={role} value={role}>{cfg.icon} {cfg.label}</SelectItem>
+              <SelectItem key={role} value={role}><RoleIcon role={role} />{cfg.label}</SelectItem>
             ))}
           </SelectContent>
         </Select>
@@ -339,13 +354,13 @@ function AccountsTab() {
           <table className="w-full">
             <thead>
               <tr className="border-b border-border text-xs text-muted-foreground">
-                <th className="text-left px-4 py-3 font-heading font-semibold cursor-pointer hover:text-foreground" onClick={() => toggleSort("name")}>Name <SortIcon field="name" /></th>
-                <th className="text-left px-4 py-3 font-heading font-semibold cursor-pointer hover:text-foreground" onClick={() => toggleSort("email")}>Email <SortIcon field="email" /></th>
-                <th className="text-left px-4 py-3 font-heading font-semibold">Department</th>
-                <th className="text-left px-4 py-3 font-heading font-semibold cursor-pointer hover:text-foreground" onClick={() => toggleSort("role")}>Role <SortIcon field="role" /></th>
-                <th className="text-left px-4 py-3 font-heading font-semibold">Status</th>
-                <th className="text-left px-4 py-3 font-heading font-semibold">Last Login</th>
-                <th className="text-right px-4 py-3 font-heading font-semibold">Actions</th>
+                <th className="text-left px-4 py-3 font-display font-semibold cursor-pointer hover:text-foreground" onClick={() => toggleSort("name")}>Name <SortIcon field="name" /></th>
+                <th className="text-left px-4 py-3 font-display font-semibold cursor-pointer hover:text-foreground" onClick={() => toggleSort("email")}>Email <SortIcon field="email" /></th>
+                <th className="text-left px-4 py-3 font-display font-semibold">Department</th>
+                <th className="text-left px-4 py-3 font-display font-semibold cursor-pointer hover:text-foreground" onClick={() => toggleSort("role")}>Role <SortIcon field="role" /></th>
+                <th className="text-left px-4 py-3 font-display font-semibold">Status</th>
+                <th className="text-left px-4 py-3 font-display font-semibold">Last Login</th>
+                <th className="text-right px-4 py-3 font-display font-semibold">Actions</th>
               </tr>
             </thead>
             <tbody>
@@ -397,7 +412,7 @@ function AccountsTab() {
                       </SelectTrigger>
                       <SelectContent>
                         {Object.entries(ROLE_CONFIG).map(([role, cfg]) => (
-                          <SelectItem key={role} value={role}>{cfg.icon} {cfg.label}</SelectItem>
+                          <SelectItem key={role} value={role}><RoleIcon role={role} />{cfg.label}</SelectItem>
                         ))}
                       </SelectContent>
                     </Select>
@@ -435,7 +450,7 @@ function AccountsTab() {
                           }} disabled={resettingPw[u.id]}>
                             {resettingPw[u.id] ? <Loader2 className="w-3 h-3 animate-spin" /> : <KeyRound className="w-3 h-3" />}
                           </Button>
-                          <Button size="sm" variant="ghost" className="h-7 text-xs text-[#c44] hover:text-[#a33]" onClick={() => {
+                          <Button size="sm" variant="ghost" className="h-7 text-xs text-destructive-tint hover:text-destructive" onClick={() => {
                             if (confirm(`Remove ${u.name}? This cannot be undone.`)) removeUser(u.id).catch(err => toast.error("Remove failed", { description: err.message }));
                           }}>
                             <Trash2 className="w-3 h-3" />
@@ -501,19 +516,6 @@ function BrandingTab() {
     }
   };
 
-  const PRESET_COLORS = [
-    { name: "Cyan", value: "#06b6d4" },
-    { name: "Indigo", value: "#6366f1" },
-    { name: "Emerald", value: "#10b981" },
-    { name: "Amber", value: "#f59e0b" },
-    { name: "Rose", value: "#f43f5e" },
-    { name: "Violet", value: "#8b5cf6" },
-    { name: "Sky", value: "#0ea5e9" },
-    { name: "Lime", value: "#84cc16" },
-    { name: "Slate", value: "#64748b" },
-    { name: "Orange", value: "#f97316" },
-  ];
-
   return (
     <div className="space-y-6 max-w-2xl">
       <p className="text-sm text-muted-foreground">
@@ -525,7 +527,7 @@ function BrandingTab() {
         <CardContent className="pt-6 space-y-4">
           <div className="flex items-center gap-3">
             <div className="w-9 h-9 rounded-sm bg-primary/10 flex items-center justify-center">
-              <Building2 className="w-4 h-4 text-primary" />
+              <Building2 className="w-4 h-4 text-primary-tint" />
             </div>
             <div>
               <h3 className="text-sm font-semibold">Company Name</h3>
@@ -549,7 +551,7 @@ function BrandingTab() {
         <CardContent className="pt-6 space-y-4">
           <div className="flex items-center gap-3">
             <div className="w-9 h-9 rounded-sm bg-primary/10 flex items-center justify-center">
-              <Image className="w-4 h-4 text-primary" />
+              <Image className="w-4 h-4 text-primary-tint" />
             </div>
             <div>
               <h3 className="text-sm font-semibold">Company Logo</h3>
@@ -623,7 +625,7 @@ function BrandingTab() {
         <CardContent className="pt-6 space-y-4">
           <div className="flex items-center gap-3">
             <div className="w-9 h-9 rounded-sm bg-primary/10 flex items-center justify-center">
-              <Palette className="w-4 h-4 text-primary" />
+              <Palette className="w-4 h-4 text-primary-tint" />
             </div>
             <div>
               <h3 className="text-sm font-semibold">Accent Color</h3>
@@ -635,25 +637,29 @@ function BrandingTab() {
               <Input
                 value={themeColor}
                 onChange={(e) => setThemeColor(e.target.value)}
-                placeholder="#6366f1"
+                placeholder={DEFAULT_BRAND_COLOR}
+                className="font-mono"
               />
             </div>
             {themeColor && (
-              <div className="w-9 h-9 rounded-sm border border-border/50 shrink-0" style={{ backgroundColor: themeColor }} />
+              <div className="w-9 h-9 rounded-lg border border-border shrink-0" style={{ backgroundColor: themeColor }} />
             )}
           </div>
           <div className="grid grid-cols-5 gap-2">
-            {PRESET_COLORS.map(color => (
+            {BRAND_COLORS.map(color => (
               <button
                 key={color.value}
+                type="button"
                 onClick={() => setThemeColor(color.value)}
+                aria-label={color.name}
+                aria-pressed={themeColor === color.value}
                 className={cn(
-                  "group relative flex flex-col items-center gap-1.5 p-2 rounded-sm transition-all",
+                  "group relative flex flex-col items-center gap-1.5 p-2 rounded-lg transition-all",
                   themeColor === color.value ? "bg-primary/10 ring-2 ring-primary" : "hover:bg-muted/50"
                 )}
               >
                 <div
-                  className="w-6 h-6 rounded-sm ring-1 ring-border/50"
+                  className="w-6 h-6 rounded-sm ring-1 ring-border"
                   style={{ backgroundColor: color.value }}
                 />
                 <span className="text-[9px] text-muted-foreground">{color.name}</span>
@@ -668,7 +674,7 @@ function BrandingTab() {
         <CardContent className="pt-6 space-y-4">
           <div className="flex items-center gap-3">
             <div className="w-9 h-9 rounded-sm bg-primary/10 flex items-center justify-center">
-              <Paintbrush className="w-4 h-4 text-primary" />
+              <Paintbrush className="w-4 h-4 text-primary-tint" />
             </div>
             <div>
               <h3 className="text-sm font-semibold">Preview</h3>
@@ -685,16 +691,34 @@ function BrandingTab() {
                   <Building2 className="w-4 h-4" style={themeColor ? { color: themeColor } : {}} />
                 )}
               </div>
-              <span className="text-sm font-semibold" style={themeColor ? { color: themeColor } : {}}>
+              <span
+                className="text-sm font-semibold"
+                style={themeColor ? { color: readableAccentOnWhite(themeColor) } : {}}
+              >
                 {companyName || "QBase"}
               </span>
             </div>
             {/* Simulated Button */}
             <div className="px-4 py-3 bg-background flex gap-2">
-              <div className="px-3 py-1 rounded-sm text-xs text-white font-medium" style={themeColor ? { backgroundColor: themeColor } : {}}>
+              {/* The tenant may type any hex, so the label colour on the
+                  filled chip is chosen from the fill's own luminance rather
+                  than assumed to be white.  On the old raw-500 presets
+                  (`#06b6d4` 2.43:1, `#eab308` 1.92:1) white text simply
+                  could not be read. */}
+              <div
+                className="px-3 py-1 rounded-sm text-xs font-medium"
+                style={themeColor
+                  ? { backgroundColor: themeColor, color: pickReadableForeground(themeColor) }
+                  : {}}
+              >
                 Primary Action
               </div>
-              <div className="px-3 py-1 rounded-sm text-xs font-medium border" style={themeColor ? { borderColor: themeColor, color: themeColor } : {}}>
+              <div
+                className="px-3 py-1 rounded-sm text-xs font-medium border"
+                style={themeColor
+                  ? { borderColor: themeColor, color: readableAccentOnWhite(themeColor) }
+                  : {}}
+              >
                 Secondary
               </div>
             </div>
@@ -706,9 +730,13 @@ function BrandingTab() {
       <div className="flex items-center gap-3 pt-2">
         <Button onClick={handleSave} disabled={!hasChanges || saving} className="min-w-[120px]">
           {saving ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Save className="w-4 h-4 mr-2" />}
-          {saving ? "Saving..." : saved ? "Saved ✓" : "Save Changes"}
+          {saving ? "Saving..." : saved ? (
+            <>
+              <Check className="w-4 h-4 mr-2" aria-hidden="true" /> Saved
+            </>
+          ) : "Save Changes"}
         </Button>
-        {error && <p className="text-sm text-destructive">{error}</p>}
+        {error && <p className="text-sm text-destructive-tint">{error}</p>}
         {!hasChanges && !saving && <p className="text-xs text-muted-foreground">No changes to save</p>}
       </div>
     </div>
@@ -726,7 +754,7 @@ function ActivityTab() {
         <CardContent className="pt-6">
           <div className="flex items-center gap-3 mb-4">
             <div className="w-9 h-9 rounded-sm bg-primary/10 flex items-center justify-center">
-              <Activity className="w-4 h-4 text-primary" />
+              <Activity className="w-4 h-4 text-primary-tint" />
             </div>
             <div>
               <h3 className="text-sm font-semibold">System Activity</h3>

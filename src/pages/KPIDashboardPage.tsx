@@ -7,7 +7,7 @@ import {
 } from "lucide-react";
 import {
   KPI_DATA, getAllCategories, getAllRoleTitles, getKPIStatistics,
-  getCategoryColor, calculateRoleKPIScore,
+  getCategoryChip, calculateRoleKPIScore,
   type RoleKPIData, type KPI,
 } from "@/data/kpiData";
 import { AppShell } from "@/components/layout/AppShell";
@@ -44,8 +44,8 @@ const RoleKPICard = ({ role, onClick }: { role: RoleKPIData; onClick: () => void
       className={cn(
         "ds-card hover:shadow-lg transition-all cursor-pointer border-l-4 group",
         isWeightValid
-          ? "border-l-emerald-500 hover:border-l-emerald-400"
-          : "border-l-red-500 hover:border-l-red-400"
+          ? "border-l-success hover:border-l-success/80"
+          : "border-l-destructive hover:border-l-destructive/80"
       )}
       onClick={onClick}
     >
@@ -71,17 +71,17 @@ const RoleKPICard = ({ role, onClick }: { role: RoleKPIData; onClick: () => void
           <div className="flex items-center justify-between">
             <span className="text-sm text-muted-foreground">Weight Total:</span>
             <div className="flex items-center gap-2">
-              <span className={cn("font-medium", isWeightValid ? "text-success" : "text-destructive")}>
+              <span className={cn("font-medium", isWeightValid ? "text-success-tint" : "text-destructive-tint")}>
                 {(totalWeight * 100).toFixed(0)}%
               </span>
               {isWeightValid
-                ? <CheckCircle2 className="w-4 h-4 text-success" />
-                : <AlertCircle className="w-4 h-4 text-destructive" />}
+                ? <CheckCircle2 className="w-4 h-4 text-success-tint" />
+                : <AlertCircle className="w-4 h-4 text-destructive-tint" />}
             </div>
           </div>
           <div className="flex flex-wrap gap-1.5 pt-2">
             {[...new Set(role.kpis.map((k) => k.category))].slice(0, 3).map((cat) => (
-              <Badge key={cat} variant="secondary" className="text-xs" style={{ backgroundColor: getCategoryColor(cat), color: "#fff" }}>
+              <Badge key={cat} variant="secondary" className={cn("text-xs border-transparent", getCategoryChip(cat).chip)}>
                 {cat}
               </Badge>
             ))}
@@ -126,7 +126,7 @@ const KPIDetailView = ({ role }: { role: RoleKPIData }) => (
             <TableRow key={kpi.id}>
               <TableCell className="font-medium">{kpi.objective}</TableCell>
               <TableCell>
-                <Badge style={{ backgroundColor: getCategoryColor(kpi.category), color: "#fff" }}>
+                <Badge variant="secondary" className={cn("border-transparent", getCategoryChip(kpi.category).chip)}>
                   {kpi.category}
                 </Badge>
               </TableCell>
@@ -147,7 +147,7 @@ const KPIDetailView = ({ role }: { role: RoleKPIData }) => (
     <Card>
       <CardHeader className="pb-2">
         <CardTitle className="text-base flex items-center gap-2">
-          <Award className="w-4 h-4 text-primary" />
+          <Award className="w-4 h-4 text-primary-tint" />
           Overall Performance Score
         </CardTitle>
       </CardHeader>
@@ -307,14 +307,14 @@ export default function KPIDashboardPage() {
                           <TableCell className="text-muted-foreground">{role.manager}</TableCell>
                           <TableCell className="text-center">{role.kpis.length}</TableCell>
                           <TableCell className="text-center">
-                            <span className={isValid ? "text-success" : "text-destructive"}>
+                            <span className={isValid ? "text-success-tint" : "text-destructive-tint"}>
                               {(totalWeight * 100).toFixed(0)}%
                             </span>
                           </TableCell>
                           <TableCell>
                             <div className="flex flex-wrap gap-1">
                               {[...new Set(role.kpis.map((k) => k.category))].slice(0, 2).map((cat) => (
-                                <Badge key={cat} variant="secondary" className="text-xs" style={{ backgroundColor: getCategoryColor(cat), color: "#fff" }}>
+                                <Badge key={cat} variant="secondary" className={cn("text-xs border-transparent", getCategoryChip(cat).chip)}>
                                   {cat}
                                 </Badge>
                               ))}
@@ -358,27 +358,31 @@ export default function KPIDashboardPage() {
             </CardHeader>
             <CardContent>
               <div className="flex flex-wrap gap-2">
-                {categories.map((cat) => (
-                  <Badge key={cat} style={{ backgroundColor: getCategoryColor(cat), color: "#fff" }}>
-                    {cat}
-                  </Badge>
-                ))}
+                {categories.map((cat) => {
+                  const { dot, chip } = getCategoryChip(cat);
+                  return (
+                    <Badge key={cat} variant="secondary" className={cn("gap-1.5 border-transparent", chip)}>
+                      <span className={cn("w-1.5 h-1.5 rounded-full shrink-0", dot)} aria-hidden="true" />
+                      {cat}
+                    </Badge>
+                  );
+                })}
               </div>
             </CardContent>
           </Card>
 
-          <Card className="mt-6 bg-amber-50 dark:bg-amber-950/30 border-amber-200 dark:border-amber-800/40">
+          <Card className="mt-6 bg-warning/10 dark:bg-warning/20 border-warning/25 dark:border-warning/40">
             <CardContent className="pt-6">
               <div className="flex items-start gap-3">
-                <Info className="w-5 h-5 text-amber-600 dark:text-amber-400 mt-0.5 shrink-0" />
+                <Info className="w-5 h-5 text-warning-tint mt-0.5 shrink-0" />
                 <div>
-                  <h4 className="font-medium text-amber-800 dark:text-amber-300">ISO 9001:2015 Compliance Note</h4>
-                  <p className="text-sm text-amber-700 dark:text-amber-400 mt-1">
+                  <h4 className="font-medium text-warning-tint">ISO 9001:2015 Compliance Note</h4>
+                  <p className="text-sm text-warning-tint mt-1">
                     This KPI Dashboard provides Individual Performance Management (IPM) data for all operational roles.
                     Per ISO 9001:2015 Clause 9.3.2, Management Review inputs include organizational performance data.
                     Each role&apos;s KPI weights must sum to 100%. Valid weights are indicated with green borders.
                   </p>
-                  <p className="text-xs text-amber-600 dark:text-amber-500 mt-2">
+                  <p className="text-xs text-warning-tint mt-2">
                     Generated: {new Date().toISOString().split("T")[0]}
                   </p>
                 </div>

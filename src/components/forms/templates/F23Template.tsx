@@ -162,7 +162,7 @@ export function F23Template({ data, isTemplate = true, editMode = false, onChang
                   <td className="border border-border px-1 py-0.5 text-center">
                     <button
                       onClick={() => removeRow(idx)}
-                      className="text-red-500 hover:text-red-700"
+                      className="text-destructive-tint hover:text-destructive"
                       title="Remove row"
                     >
                       <Trash2 className="h-3 w-3" />
@@ -178,7 +178,7 @@ export function F23Template({ data, isTemplate = true, editMode = false, onChang
       {editMode && (
         <button
           onClick={addRow}
-          className="flex items-center gap-1 text-xs text-blue-600 hover:text-blue-800 mt-2"
+          className="flex items-center gap-1 text-xs text-primary-tint hover:text-primary mt-2"
         >
           <Plus className="h-3 w-3" /> Add Record Entry
         </button>

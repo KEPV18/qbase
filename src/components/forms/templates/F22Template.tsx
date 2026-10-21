@@ -4,6 +4,7 @@
 // ============================================================================
 
 import React from "react";
+import { Check } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { FormDocument, val } from "../FormKit";
 
@@ -81,8 +82,8 @@ export function F22Template({ data, isTemplate = true, editMode = false, onChang
         }}
       />
     ) : (
-      <span className="inline-flex items-center justify-center w-3.5 h-3.5 border border-foreground/30 align-middle mr-1 text-[9px]">
-        {checked ? "✓" : ""}
+      <span className="inline-flex items-center justify-center w-3.5 h-3.5 border border-foreground/30 align-middle mr-1">
+        {checked && <Check className="w-2.5 h-2.5" aria-hidden="true" />}
       </span>
     );
   };

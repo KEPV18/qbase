@@ -65,7 +65,7 @@ const FieldValue: React.FC<{
     case 'select':
     case 'radio':
       return (
-        <span className="inline-flex items-center px-2 py-0.5 rounded-sm text-xs font-medium bg-primary/10 text-primary border border-primary/20">
+        <span className="inline-flex items-center px-2 py-0.5 rounded-sm text-xs font-medium bg-primary/10 text-primary-tint border border-primary/20">
           {String(val)}
         </span>
       );
@@ -75,7 +75,7 @@ const FieldValue: React.FC<{
       return (
         <div className="flex flex-wrap gap-1">
           {items.map((item, i) => (
-            <span key={i} className="inline-flex items-center px-2 py-0.5 rounded-sm text-xs font-medium bg-primary/10 text-primary border border-primary/20">
+            <span key={i} className="inline-flex items-center px-2 py-0.5 rounded-sm text-xs font-medium bg-primary/10 text-primary-tint border border-primary/20">
               {String(item)}
             </span>
           ))}
@@ -88,7 +88,7 @@ const FieldValue: React.FC<{
 
     case 'checkbox':
       return val ? (
-        <span className="inline-flex items-center gap-1.5 text-green-400 text-sm font-medium">
+        <span className="inline-flex items-center gap-1.5 text-success-tint text-sm font-medium">
           <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
             <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
           </svg>
@@ -217,9 +217,9 @@ export const SchemaDrivenRecordView: React.FC<SchemaDrivenRecordViewProps> = ({
   // Status badge styling
   const statusStyle: Record<string, string> = {
     draft: 'bg-muted text-muted-foreground border-border',
-    pending_review: 'bg-yellow-500/10 text-yellow-500 border-yellow-500/20',
-    approved: 'bg-green-500/10 text-green-500 border-green-500/20',
-    rejected: 'bg-red-500/10 text-red-500 border-red-500/20',
+    pending_review: 'bg-warning/10 text-warning-tint border-warning/20',
+    approved: 'bg-success/10 text-success-tint border-success/20',
+    rejected: 'bg-destructive/10 text-destructive-tint border-destructive/20',
   };
 
   return (

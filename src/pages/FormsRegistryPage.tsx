@@ -114,7 +114,7 @@ export default function FormsRegistryPage() {
           <div className="flex flex-col gap-1 mb-6">
             <div className="flex items-center gap-3">
               <div className="w-11 h-11 rounded-xl bg-primary/10 border border-primary/20 flex items-center justify-center">
-                <LayoutGrid className="w-5 h-5 text-primary" />
+                <LayoutGrid className="w-5 h-5 text-primary-tint" />
               </div>
               <div>
                 <h1 className="text-xl font-bold text-foreground tracking-tight">
@@ -156,7 +156,7 @@ export default function FormsRegistryPage() {
                 className={cn(
                   "px-3 py-1.5 rounded-lg text-[12px] font-semibold transition-all border",
                   sectionFilter === null
-                    ? "bg-primary/15 text-primary border-primary/30"
+                    ? "bg-primary/15 text-primary-tint border-primary/30"
                     : "bg-muted/20 text-muted-foreground border-border/50 hover:bg-muted/40"
                 )}
               >
@@ -203,7 +203,7 @@ export default function FormsRegistryPage() {
                   onClick={() => setViewMode("grid")}
                   className={cn(
                     "p-1.5 rounded-md transition-colors",
-                    viewMode === "grid" ? "bg-primary/15 text-primary" : "text-muted-foreground hover:text-foreground"
+                    viewMode === "grid" ? "bg-primary/15 text-primary-tint" : "text-muted-foreground hover:text-foreground"
                   )}
                 >
                   <LayoutGrid className="w-4 h-4" />
@@ -212,7 +212,7 @@ export default function FormsRegistryPage() {
                   onClick={() => setViewMode("list")}
                   className={cn(
                     "p-1.5 rounded-md transition-colors",
-                    viewMode === "list" ? "bg-primary/15 text-primary" : "text-muted-foreground hover:text-foreground"
+                    viewMode === "list" ? "bg-primary/15 text-primary-tint" : "text-muted-foreground hover:text-foreground"
                   )}
                 >
                   <List className="w-4 h-4" />
@@ -224,7 +224,7 @@ export default function FormsRegistryPage() {
             <div className="flex items-center justify-between">
               <p className="text-[12px] font-mono text-muted-foreground">
                 {filteredForms.length} of {FORMS_REGISTRY.length} forms
-                {hasActiveFilters && <span className="text-primary ml-1">· filtered</span>}
+                {hasActiveFilters && <span className="text-primary-tint ml-1">· filtered</span>}
               </p>
               {hasActiveFilters && (
                 <button
@@ -233,7 +233,7 @@ export default function FormsRegistryPage() {
                     setImportanceFilter(null);
                     setSearchTerm("");
                   }}
-                  className="flex items-center gap-1 text-[12px] text-primary hover:underline font-medium"
+                  className="flex items-center gap-1 text-[12px] text-primary-tint hover:underline font-medium"
                 >
                   <X className="w-3 h-3" />
                   Clear filters
@@ -253,7 +253,7 @@ export default function FormsRegistryPage() {
                   setImportanceFilter(null);
                   setSearchTerm("");
                 }}
-                className="mt-3 text-sm text-primary hover:underline"
+                className="mt-3 text-sm text-primary-tint hover:underline"
               >
                 Clear all filters
               </button>
@@ -337,7 +337,7 @@ function FormCardGrid({
       {/* Top row: code + importance */}
       <div className="flex items-start justify-between mb-2">
         <div className="flex items-center gap-2.5">
-          <div className="w-10 h-10 rounded-lg flex items-center justify-center text-[11px] font-mono font-bold bg-muted/30 text-foreground border border-border/50 group-hover:bg-primary/10 group-hover:text-primary group-hover:border-primary/20 transition-colors">
+          <div className="w-10 h-10 rounded-lg flex items-center justify-center text-[11px] font-mono font-bold bg-muted/30 text-foreground border border-border/50 group-hover:bg-primary/10 group-hover:text-primary-tint group-hover:border-primary/20 transition-colors">
             {form.code}
           </div>
           <div>
@@ -361,13 +361,13 @@ function FormCardGrid({
           {form.frequency}
         </Badge>
         {hasRecords && (
-          <Badge variant="outline" className="text-[9px] px-1.5 py-0 h-4 font-mono bg-success/10 text-success border-success/20">
+          <Badge variant="outline" className="text-[9px] px-1.5 py-0 h-4 font-mono bg-success/10 text-success-tint border-success/20">
             <Database className="w-2.5 h-2.5 mr-0.5" />
             {form.lastRecordCount}
           </Badge>
         )}
         {missingMonths && missingMonths.length > 0 && (
-          <Badge variant="outline" className="text-[9px] px-1.5 py-0 h-4 font-mono bg-amber-500/10 text-amber-600 border-amber-500/20">
+          <Badge variant="outline" className="text-[9px] px-1.5 py-0 h-4 font-mono bg-warning/10 text-warning-tint border-warning/20">
             <AlertTriangle className="w-2.5 h-2.5 mr-0.5" />
             {missingMonths.length} missing
           </Badge>
@@ -384,7 +384,7 @@ function FormCardGrid({
         <span className="text-[10px] text-muted-foreground font-mono">
           Last: {form.lastRecordDate || "—"}
         </span>
-        <span className="flex items-center gap-1 text-[10px] font-semibold text-muted-foreground group-hover:text-primary transition-colors">
+        <span className="flex items-center gap-1 text-[10px] font-semibold text-muted-foreground group-hover:text-primary-tint transition-colors">
           Open
           <ChevronRight className="w-3 h-3 group-hover:translate-x-0.5 transition-transform" />
         </span>
@@ -415,7 +415,7 @@ function FormCardList({
       className="group w-full flex items-center gap-3 text-left bg-card border border-border/50 rounded-lg px-4 py-2.5 transition-all duration-200 hover:border-primary/30 hover:bg-primary/5"
     >
       {/* Code badge */}
-      <div className="w-9 h-9 rounded-lg flex items-center justify-center text-[10px] font-mono font-bold bg-muted/30 text-foreground border border-border/50 group-hover:bg-primary/10 group-hover:text-primary transition-colors shrink-0">
+      <div className="w-9 h-9 rounded-lg flex items-center justify-center text-[10px] font-mono font-bold bg-muted/30 text-foreground border border-border/50 group-hover:bg-primary/10 group-hover:text-primary-tint transition-colors shrink-0">
         {form.code}
       </div>
 
@@ -436,7 +436,7 @@ function FormCardList({
       {/* Badges */}
       <div className="hidden sm:flex items-center gap-1.5 shrink-0">
         {missingMonths && missingMonths.length > 0 && (
-          <Badge variant="outline" className="text-[9px] px-1.5 py-0 h-4 font-mono bg-amber-500/10 text-amber-600 border-amber-500/20">
+          <Badge variant="outline" className="text-[9px] px-1.5 py-0 h-4 font-mono bg-warning/10 text-warning-tint border-warning/20">
             <AlertTriangle className="w-2.5 h-2.5 mr-0.5" />
             {missingMonths.length} missing
           </Badge>
@@ -447,7 +447,7 @@ function FormCardList({
       </div>
 
       {/* Arrow */}
-      <ChevronRight className="w-4 h-4 text-muted-foreground/40 group-hover:text-primary shrink-0" />
+      <ChevronRight className="w-4 h-4 text-muted-foreground/40 group-hover:text-primary-tint shrink-0" />
     </button>
   );
 }

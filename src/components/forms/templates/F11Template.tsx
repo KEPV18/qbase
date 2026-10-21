@@ -228,22 +228,22 @@ export function F11Template({ data, isTemplate = true, editMode = false, onChang
               <th rowSpan={2} className="border border-border p-1 text-center w-[30px]">Sr. No.</th>
               <th rowSpan={2} className="border border-border p-1 text-left">Product</th>
               <th rowSpan={2} className="border border-border p-1 text-left">Batch No.</th>
-              <th colSpan={3} className="border border-border p-1 text-center bg-blue-50 dark:bg-blue-950/30">Plan For Completion</th>
-              <th colSpan={3} className="border border-border p-1 text-center bg-green-50 dark:bg-green-950/30">Actual Completion</th>
+              <th colSpan={3} className="border border-border p-1 text-center bg-primary/10 dark:bg-primary/20">Plan For Completion</th>
+              <th colSpan={3} className="border border-border p-1 text-center bg-success/10 dark:bg-success/20">Actual Completion</th>
               <th rowSpan={2} className="border border-border p-1 text-center">% Yield</th>
             </tr>
             <tr className="bg-muted/80 font-semibold">
-              <th className="border border-border p-1 text-center bg-blue-50 dark:bg-blue-950/30">Date</th>
-              <th className="border border-border p-1 text-center bg-blue-50 dark:bg-blue-950/30"># Size</th>
-              <th className="border border-border p-1 text-center bg-blue-50 dark:bg-blue-950/30">Status</th>
-              <th className="border border-border p-1 text-center bg-green-50 dark:bg-green-950/30">Date</th>
-              <th className="border border-border p-1 text-center bg-green-50 dark:bg-green-950/30">Qty.</th>
-              <th className="border border-border p-1 text-center bg-green-50 dark:bg-green-950/30">Status</th>
+              <th className="border border-border p-1 text-center bg-primary/10 dark:bg-primary/20">Date</th>
+              <th className="border border-border p-1 text-center bg-primary/10 dark:bg-primary/20"># Size</th>
+              <th className="border border-border p-1 text-center bg-primary/10 dark:bg-primary/20">Status</th>
+              <th className="border border-border p-1 text-center bg-success/10 dark:bg-success/20">Date</th>
+              <th className="border border-border p-1 text-center bg-success/10 dark:bg-success/20">Qty.</th>
+              <th className="border border-border p-1 text-center bg-success/10 dark:bg-success/20">Status</th>
             </tr>
 
             {/* ── Data rows: each sub-column renders its own key ── */}
             {rows.map((row, idx) => (
-              <tr key={idx} className={idx % 2 === 0 ? "bg-background dark:bg-[#1e1d1a]" : "bg-muted/30"}>
+              <tr key={idx} className={idx % 2 === 0 ? "bg-background dark:bg-card" : "bg-muted/30"}>
                 <td className="border border-border p-1 text-center text-muted-foreground">{idx + 1}</td>
                 <td className="border border-border p-1">{cellInp(idx, "product", "Product")}</td>
                 <td className="border border-border p-1">{cellInp(idx, "batch_no", "Batch No.")}</td>
@@ -256,7 +256,7 @@ export function F11Template({ data, isTemplate = true, editMode = false, onChang
                 <td className="border border-border p-1 text-center">{cellInp(idx, "yield_percent", "%")}</td>
                 {editMode && (
                   <td className="border border-border p-1 text-center">
-                    <button onClick={() => removeRow(idx)} className="text-destructive hover:text-destructive/80">
+                    <button onClick={() => removeRow(idx)} className="text-destructive-tint hover:text-destructive-tint/80">
                       <Trash2 className="w-3 h-3 inline" />
                     </button>
                   </td>
@@ -390,7 +390,7 @@ export function F11Template({ data, isTemplate = true, editMode = false, onChang
       {editMode && (
         <button
           onClick={addRow}
-          className="w-full border-x border-b border-border py-1.5 text-xs text-muted-foreground hover:text-primary hover:bg-primary/5 transition-colors flex items-center justify-center gap-1"
+          className="w-full border-x border-b border-border py-1.5 text-xs text-muted-foreground hover:text-primary-tint hover:bg-primary/5 transition-colors flex items-center justify-center gap-1"
         >
           <Plus className="w-3 h-3 inline" /> Add Row
         </button>

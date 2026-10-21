@@ -92,13 +92,13 @@ export function F34Template({ data, isTemplate = true, editMode = false, onChang
 
             {/* Row 1: Project Number + Date */}
             <tr>
-              {td(<>Project Number 🡪 {inp("project_number", "F/34-001")}</>, 1)}
-              {td(<>Date 🡪 {inp("date", "DD/MM/YYYY")}</>, 2)}
+              {td(<>Project Number → {inp("project_number", "F/34-001")}</>, 1)}
+              {td(<>Date → {inp("date", "DD/MM/YYYY")}</>, 2)}
             </tr>
 
             {/* Row 2: Name Of Product */}
             <tr>
-              {td(<>Name Of Product 🡪 {inp("product_name", "Product Name")}</>, 3)}
+              {td(<>Name Of Product → {inp("product_name", "Product Name")}</>, 3)}
             </tr>
 
             {/* Row 3: Column headers */}

@@ -5,6 +5,7 @@
 // ============================================================================
 
 import React, { useMemo } from "react";
+import { Check } from "lucide-react";
 import { FormDocument } from "../FormKit";
 
 export interface F09Props {
@@ -103,10 +104,10 @@ export function F09Template({ data, isTemplate = true, editMode = false, onChang
           {/* ROW 1: Complaint Sr. No. + Date */}
           <tr>
             <td colSpan={7} className={`${cellClass}`}>
-              <strong>Complaint Sr. No.</strong> 🡪&nbsp;&nbsp;{serialValue}
+              <strong>Complaint Sr. No.</strong> →&nbsp;&nbsp;{serialValue}
             </td>
             <td colSpan={5} className={`${cellClass}`}>
-              <strong>Date</strong> 🡪&nbsp;&nbsp;{inp("date", "DD/MM/YYYY")}
+              <strong>Date</strong> →&nbsp;&nbsp;{inp("date", "DD/MM/YYYY")}
             </td>
           </tr>
 
@@ -122,7 +123,7 @@ export function F09Template({ data, isTemplate = true, editMode = false, onChang
               {inp("receipt_date", "DD/MM/YYYY")}
             </td>
             <td colSpan={5} rowSpan={2} className={`${labelClass} align-middle`}>
-              Received By 🡪&nbsp;&nbsp;{inp("received_by", "Name")}
+              Received By →&nbsp;&nbsp;{inp("received_by", "Name")}
             </td>
           </tr>
 
@@ -139,7 +140,7 @@ export function F09Template({ data, isTemplate = true, editMode = false, onChang
           {/* ROW 4: Mode of Receipt + Received By */}
           <tr>
             <td colSpan={7} className={`${cellClass}`}>
-              <strong>Mode of Receipt</strong> 🡪&nbsp;&nbsp;
+              <strong>Mode of Receipt</strong> →&nbsp;&nbsp;
               {inp("mode_of_receipt", "Email / Phone / Letter / In-person")}
             </td>
             <td colSpan={5} className={cellClass}>
@@ -190,10 +191,10 @@ export function F09Template({ data, isTemplate = true, editMode = false, onChang
                     value="SERIOUS"
                     checked={natureChecks.serious}
                     onChange={() => onChange?.("complaint_nature", "SERIOUS")}
-                    className="accent-blue-600"
+                    className="accent-primary"
                   />
                 ) : natureChecks.serious ? (
-                  <span className="text-lg">✓</span>
+                  <Check className="w-4 h-4 text-primary-tint inline-block" aria-hidden="true" />
                 ) : (
                   <span className="w-4 h-4 border border-border rounded-sm inline-block" />
                 )}
@@ -209,10 +210,10 @@ export function F09Template({ data, isTemplate = true, editMode = false, onChang
                     value="MAJOR"
                     checked={natureChecks.major}
                     onChange={() => onChange?.("complaint_nature", "MAJOR")}
-                    className="accent-amber-600"
+                    className="accent-warning-solid"
                   />
                 ) : natureChecks.major ? (
-                  <span className="text-lg">✓</span>
+                  <Check className="w-4 h-4 text-warning-tint inline-block" aria-hidden="true" />
                 ) : (
                   <span className="w-4 h-4 border border-border rounded-sm inline-block" />
                 )}
@@ -228,10 +229,10 @@ export function F09Template({ data, isTemplate = true, editMode = false, onChang
                     value="MINOR"
                     checked={natureChecks.minor}
                     onChange={() => onChange?.("complaint_nature", "MINOR")}
-                    className="accent-green-600"
+                    className="accent-success-solid"
                   />
                 ) : natureChecks.minor ? (
-                  <span className="text-lg">✓</span>
+                  <Check className="w-4 h-4 text-success-tint inline-block" aria-hidden="true" />
                 ) : (
                   <span className="w-4 h-4 border border-border rounded-sm inline-block" />
                 )}
@@ -239,7 +240,7 @@ export function F09Template({ data, isTemplate = true, editMode = false, onChang
               </label>
             </td>
             <td colSpan={3} className={cellClass}>
-              <strong>Complaint Type</strong> 🡪&nbsp;&nbsp;{inp("complaint_type", "Type")}
+              <strong>Complaint Type</strong> →&nbsp;&nbsp;{inp("complaint_type", "Type")}
             </td>
           </tr>
 

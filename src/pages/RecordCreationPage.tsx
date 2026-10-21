@@ -44,9 +44,9 @@ import { cn } from '@/lib/utils';
 // Section config (maps section numbers to icons/colors from MODULE_CONFIG)
 // ============================================================================
 
-const SECTION_META: Record<number, { id: string; icon: typeof Layers; color: string }> = {};
+const SECTION_META: Record<number, { id: string; icon: typeof Layers }> = {};
 Object.values(MODULE_CONFIG).forEach(m => {
-  SECTION_META[m.section] = { id: m.id, icon: m.icon, color: m.moduleClass };
+  SECTION_META[m.section] = { id: m.id, icon: m.icon };
 });
 
 const AUTOSAVE_DEBOUNCE_MS = 1200;
@@ -420,10 +420,10 @@ const RecordCreationPage: React.FC = () => {
           {/* Success Header */}
           <div className="ds-card p-6 text-center border-success/30 mb-4">
             <div className="w-14 h-14 rounded-full bg-success/10 border border-success/20 flex items-center justify-center mx-auto mb-3">
-              <CheckCircle className="w-7 h-7 text-success" />
+              <CheckCircle className="w-7 h-7 text-success-tint" />
             </div>
             <h2 className="text-xl font-bold text-foreground mb-1">Record Created Successfully</h2>
-            <span className="px-3 py-1.5 text-sm bg-success/10 text-success border border-success/20 rounded-sm font-mono font-semibold">
+            <span className="px-3 py-1.5 text-sm bg-success/10 text-success-tint border border-success/20 rounded-sm font-mono font-semibold">
               {created.serial}
             </span>
           </div>
@@ -450,7 +450,7 @@ const RecordCreationPage: React.FC = () => {
 
           {/* Action Buttons */}
           <div className="flex gap-3 justify-center">
-            <button onClick={resetToSelect} className="ds-press ds-focus-ring px-6 py-2 bg-primary text-primary-foreground rounded-sm font-medium">
+            <button onClick={resetToSelect} className="ds-press ds-focus-ring px-6 py-2 bg-primary text-primary-foreground rounded-full font-medium">
               Create Another
             </button>
             <button onClick={() => navigate(`/records/${encodeURIComponent(created.serial)}`)} className="ds-press px-6 py-2 bg-secondary text-secondary-foreground rounded-sm font-medium hover:bg-accent transition-colors">
@@ -502,12 +502,12 @@ const RecordCreationPage: React.FC = () => {
       {/* Error */}
       {(createError || autosaveError) && (
         <div className="mb-4 p-4 rounded-sm bg-destructive/10 border border-destructive/20 flex items-start gap-2">
-          <AlertTriangle className="w-4 h-4 text-destructive mt-0.5 shrink-0" />
+          <AlertTriangle className="w-4 h-4 text-destructive-tint mt-0.5 shrink-0" />
           <div className="flex-1">
-            <p className="text-sm text-destructive">{createError || autosaveError}</p>
+            <p className="text-sm text-destructive-tint">{createError || autosaveError}</p>
             {createError && step === 'form' && (
               <div className="mt-1.5 flex gap-3">
-                <button onClick={retryDraft} className="text-xs text-destructive underline">
+                <button onClick={retryDraft} className="text-xs text-destructive-tint underline">
                   Retry
                 </button>
                 <button onClick={resetToSelect} className="text-xs text-muted-foreground underline">
@@ -522,8 +522,8 @@ const RecordCreationPage: React.FC = () => {
       {/* Validation errors (single error surface for both paths) */}
       {validationErrors.length > 0 && step === 'form' && (
         <div className="mb-4 p-4 rounded-sm bg-destructive/10 border border-destructive/20">
-          <p className="text-sm font-medium text-destructive mb-2">Fix the following before submitting:</p>
-          <ul className="list-disc list-inside space-y-0.5 text-xs text-destructive">
+          <p className="text-sm font-medium text-destructive-tint mb-2">Fix the following before submitting:</p>
+          <ul className="list-disc list-inside space-y-0.5 text-xs text-destructive-tint">
             {validationErrors.map(err => (
               <li key={err.field}><span className="font-mono">{err.field}</span> — {err.message}</li>
             ))}
@@ -556,7 +556,7 @@ const RecordCreationPage: React.FC = () => {
                     Fill in the form below. Fields marked with * are required.
                     <span className="ml-2 font-mono text-xs text-muted-foreground">{draft.serial}</span>
                     {resumedContent && (
-                      <span className="ml-2 text-xs text-[#b1922d] dark:text-[#e8c84a]">resumed draft</span>
+                      <span className="ml-2 text-xs text-warning-tint">resumed draft</span>
                     )}
                   </p>
                   <p className="text-xs text-muted-foreground mt-1 flex items-center gap-1">
@@ -574,7 +574,7 @@ const RecordCreationPage: React.FC = () => {
                   <button
                     onClick={handleFormSubmit}
                     disabled={submitPending}
-                    className="ds-press ds-focus-ring px-6 py-2 text-sm bg-primary text-primary-foreground rounded-sm font-medium hover:bg-primary/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                    className="ds-press ds-focus-ring px-6 py-2 text-sm bg-primary text-primary-foreground rounded-full font-medium hover:bg-primary-hover transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
                   >
                     {submitPending && <Loader2 className="w-4 h-4 animate-spin" />}
                     Create Record
@@ -591,9 +591,9 @@ const RecordCreationPage: React.FC = () => {
                 />
               </div>
 
-              {/* ── Scope Selector (NotionWarm) ─────────────────────────── */}
-              <div className="mt-4 bg-[#f8f6f1] dark:bg-[#1a1a18] border border-[#e8e3db] dark:border-[#2d2d2b] rounded-sm p-4">
-                <h3 className="text-xs font-semibold text-[#2d2d2d] dark:text-[#e8e3db] uppercase tracking-wider mb-3">
+              {/* ── Scope Selector ─────────────────────────── */}
+              <div className="mt-4 bg-card border border-border rounded-xl p-4">
+                <h3 className="text-xs font-semibold text-foreground uppercase tracking-wider mb-3">
                   Record Scope
                 </h3>
                 <div className="flex items-center gap-3 mb-3">
@@ -602,41 +602,41 @@ const RecordCreationPage: React.FC = () => {
                     onClick={() => { setScope('company-wide'); setSelectedProjectId(''); }}
                     className={`flex items-center gap-2 px-3 py-2 text-xs rounded-sm border transition-all ${
                       scope === 'company-wide'
-                        ? 'bg-[#2d2d2d] dark:bg-[#e8e3db] text-white dark:text-[#1a1a18] border-[#2d2d2d] dark:border-[#e8e3db]'
-                        : 'bg-white dark:bg-[#1a1a18] text-[#7a756a] dark:text-[#b5b0a5] border-[#e8e3db] dark:border-[#2d2d2b] hover:border-[#d4cfc4] dark:hover:border-[#3d3d3a]'
+                        ? 'bg-foreground text-background border-foreground'
+                        : 'bg-card text-ink-2 dark:text-ink-2 border border-border hover:border-foreground/20'
                     }`}
                   >
                     <Building2 className="w-3.5 h-3.5" />
-                    🏢 Company-Wide
+                    Company-Wide
                   </button>
                   <button
                     type="button"
                     onClick={() => setScope('project-specific')}
                     className={`flex items-center gap-2 px-3 py-2 text-xs rounded-sm border transition-all ${
                       scope === 'project-specific'
-                        ? 'bg-[#2d2d2d] dark:bg-[#e8e3db] text-white dark:text-[#1a1a18] border-[#2d2d2d] dark:border-[#e8e3db]'
-                        : 'bg-white dark:bg-[#1a1a18] text-[#7a756a] dark:text-[#b5b0a5] border-[#e8e3db] dark:border-[#2d2d2b] hover:border-[#d4cfc4] dark:hover:border-[#3d3d3a]'
+                        ? 'bg-foreground text-background border-foreground'
+                        : 'bg-card text-ink-2 dark:text-ink-2 border border-border hover:border-foreground/20'
                     }`}
                   >
                     <FolderKanban className="w-3.5 h-3.5" />
-                    📁 Project-Specific
+                    Project-Specific
                   </button>
                 </div>
 
                 {scope === 'project-specific' && (
                   <div>
-                    <label className="block text-xs text-[#7a756a] dark:text-[#b5b0a5] mb-1.5">Select Project</label>
+                    <label className="block text-xs text-ink-2 dark:text-ink-2 mb-1.5">Select Project</label>
                     <select
                       value={selectedProjectId}
                       onChange={e => setSelectedProjectId(e.target.value)}
-                      className="w-full px-3 py-2 text-sm bg-white dark:bg-[#1a1a18] border border-[#e8e3db] dark:border-[#2d2d2b] rounded-sm text-[#2d2d2d] dark:text-[#e8e3db] focus:outline-none focus:border-[#2d2d2d] dark:focus:border-[#e8e3db] focus:ring-1 focus:ring-[#2d2d2d]/20 dark:focus:ring-[#e8e3db]/20"
+                      className="w-full px-3 py-2 text-sm bg-card border border-border rounded-lg text-foreground focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary/25"
                     >
                       <option value="">— Select a project —</option>
                       {PROJECTS.map(p => (
                         <option key={p.id} value={p.id}>{p.name}</option>
                       ))}
                     </select>
-                    <p className="text-[10px] text-[#9f9a8f] dark:text-[#7a756a] mt-1">
+                    <p className="text-[10px] text-ink-3 mt-1">
                       This record will be linked to the selected project.
                     </p>
                   </div>
@@ -717,17 +717,17 @@ const RecordCreationPage: React.FC = () => {
                       )}
                     >
                       <div className="w-8 h-8 rounded-sm bg-primary/10 flex items-center justify-center shrink-0">
-                        <Icon className="w-4 h-4 text-primary" />
+                        <Icon className="w-4 h-4 text-primary-tint" />
                       </div>
                       <div className="flex-1 min-w-0">
-                        <h3 className="text-sm font-semibold text-foreground group-hover:text-primary transition-colors">
+                        <h3 className="text-sm font-semibold text-foreground group-hover:text-primary-tint transition-colors">
                           {sec.name}
                         </h3>
                         <p className="text-xs text-muted-foreground mt-0.5">
                           {sec.count} form{sec.count !== 1 ? 's' : ''} available
                         </p>
                       </div>
-                      <ChevronRight className="w-4 h-4 text-muted-foreground/50 group-hover:text-primary transition-colors mt-0.5" />
+                      <ChevronRight className="w-4 h-4 text-muted-foreground/50 group-hover:text-primary-tint transition-colors mt-0.5" />
                     </button>
                   );
                 })}
@@ -743,7 +743,7 @@ const RecordCreationPage: React.FC = () => {
                 <div className="flex items-center gap-2 mb-3">
                   <button
                     onClick={() => setActiveSection(null)}
-                    className="flex items-center gap-1.5 px-2.5 py-1 rounded-sm bg-primary/10 text-primary text-xs font-medium hover:bg-primary/20 transition-colors"
+                    className="flex items-center gap-1.5 px-2.5 py-1 rounded-sm bg-primary/10 text-primary-tint text-xs font-medium hover:bg-primary/20 transition-colors"
                   >
                     {currentSectionName}
                     <XCircle className="w-3 h-3" />
@@ -774,11 +774,11 @@ const RecordCreationPage: React.FC = () => {
                     )}
                   >
                     <div className="w-8 h-8 rounded-sm bg-primary/10 flex items-center justify-center shrink-0">
-                      <Icon className="w-4 h-4 text-primary" />
+                      <Icon className="w-4 h-4 text-primary-tint" />
                     </div>
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2">
-                        <h3 className="text-sm font-semibold text-foreground group-hover:text-primary transition-colors">
+                        <h3 className="text-sm font-semibold text-foreground group-hover:text-primary-tint transition-colors">
                           {f.name}
                         </h3>
                         <span className="text-[10px] font-mono text-muted-foreground">{f.code}</span>
@@ -787,7 +787,7 @@ const RecordCreationPage: React.FC = () => {
                         <p className="text-xs text-muted-foreground mt-0.5">{f.frequency}</p>
                       )}
                     </div>
-                    <ChevronRight className="w-4 h-4 text-muted-foreground/50 group-hover:text-primary transition-colors" />
+                    <ChevronRight className="w-4 h-4 text-muted-foreground/50 group-hover:text-primary-tint transition-colors" />
                   </button>
                 );
               })}

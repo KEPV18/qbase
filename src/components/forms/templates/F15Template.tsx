@@ -89,7 +89,7 @@ export function F15Template({ data, isTemplate = true, editMode = false, onChang
                 <td colSpan={2} className="border border-border p-1 relative">
                   {cellInp(idx, "approval_criteria", "Criteria")}
                   {editMode && rows.length > 1 && (
-                    <button onClick={() => removeRow(idx)} className="absolute -right-6 top-1/2 -translate-y-1/2 text-destructive opacity-0 group-hover:opacity-100 transition-opacity">
+                    <button onClick={() => removeRow(idx)} className="absolute -right-6 top-1/2 -translate-y-1/2 text-destructive-tint opacity-0 group-hover:opacity-100 transition-opacity">
                       <Trash2 className="w-3 h-3" />
                     </button>
                   )}
@@ -116,7 +116,7 @@ export function F15Template({ data, isTemplate = true, editMode = false, onChang
               <div className="col-span-2"><span className="text-muted-foreground">Remarks:</span> {cellInp(idx, "remarks", "Remarks")}</div>
             </div>
             {editMode && rows.length > 1 && (
-              <button onClick={() => removeRow(idx)} className="absolute top-1 right-1 text-destructive">
+              <button onClick={() => removeRow(idx)} className="absolute top-1 right-1 text-destructive-tint">
                 <Trash2 className="w-3 h-3" />
               </button>
             )}
@@ -125,7 +125,7 @@ export function F15Template({ data, isTemplate = true, editMode = false, onChang
       </div>
 
       {editMode && (
-        <button onClick={addRow} className="mt-2 flex items-center gap-1 text-xs text-primary hover:underline mx-auto">
+        <button onClick={addRow} className="mt-2 flex items-center gap-1 text-xs text-primary-tint hover:underline mx-auto">
           <Plus className="w-3 h-3" /> Add Row
         </button>
       )}

@@ -305,7 +305,7 @@ export function RiskRegisterTab() {
                                                 onClick={() => navigateToCAPA(linkedCapa.capa_id)}
                                                 className="flex items-center gap-1 group"
                                             >
-                                                <span className="text-[10px] font-mono font-bold text-primary group-hover:underline">{linkedCapa.capa_id}</span>
+                                                <span className="text-[10px] font-mono font-bold text-primary-tint group-hover:underline">{linkedCapa.capa_id}</span>
                                                 <Badge variant="outline" className={cn("text-[7px] font-bold", getCAPABadgeColor(linkedCapa.status))}>
                                                     {linkedCapa.status}
                                                 </Badge>
@@ -317,15 +317,15 @@ export function RiskRegisterTab() {
                                     </TableCell>
                                     <TableCell>
                                         <div className="flex items-center gap-0.5">
-                                            <Button variant="ghost" size="icon" className="h-7 w-7 hover:text-primary" onClick={() => handleEditClick(risk)} title="Edit Risk">
+                                            <Button variant="ghost" size="icon" className="h-7 w-7 hover:text-primary-tint" onClick={() => handleEditClick(risk)} title="Edit Risk">
                                                 <Pencil className="w-3 h-3" />
                                             </Button>
                                             {!risk.linked_capa && (
                                                 <>
-                                                    <Button variant="ghost" size="icon" className="h-7 w-7 hover:text-green-600" onClick={() => handleCreateCAPAForRisk(risk)} title="Create CAPA">
+                                                    <Button variant="ghost" size="icon" className="h-7 w-7 hover:text-success-tint" onClick={() => handleCreateCAPAForRisk(risk)} title="Create CAPA">
                                                         <Plus className="w-3 h-3" />
                                                     </Button>
-                                                    <Button variant="ghost" size="icon" className="h-7 w-7 hover:text-blue-600" onClick={() => handleLinkCAPAToRisk(risk)} title="Link existing CAPA">
+                                                    <Button variant="ghost" size="icon" className="h-7 w-7 hover:text-primary-tint" onClick={() => handleLinkCAPAToRisk(risk)} title="Link existing CAPA">
                                                         <Link2 className="w-3 h-3" />
                                                     </Button>
                                                 </>
@@ -381,7 +381,7 @@ export function RiskRegisterTab() {
                                 </div>
                                 <div className="space-y-2">
                                     <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Score</Label>
-                                    <div className="flex h-10 w-full rounded-md border border-input bg-muted/20 px-3 py-2 text-sm font-bold text-primary">
+                                    <div className="flex h-10 w-full rounded-md border border-input bg-muted/20 px-3 py-2 text-sm font-bold text-primary-tint">
                                         {editingRisk.likelihood * editingRisk.impact}
                                     </div>
                                 </div>
@@ -456,7 +456,7 @@ export function RiskRegisterTab() {
                 <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
                     <DialogHeader>
                         <DialogTitle className="font-bold text-xl flex items-center gap-2">
-                            <Plus className="w-5 h-5 text-green-600" />
+                            <Plus className="w-5 h-5 text-success-tint" />
                             Create CAPA for {capaSourceRisk?.risk_id}
                         </DialogTitle>
                         <DialogDescription className="text-xs">
@@ -487,7 +487,7 @@ export function RiskRegisterTab() {
                         </div>
                         <div className="space-y-2">
                             <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
-                                Root Cause Analysis <span className="text-destructive">*</span>
+                                Root Cause Analysis <span className="text-destructive-tint">*</span>
                             </Label>
                             <Textarea value={newCAPAData.root_cause_analysis} onChange={(e) => setNewCAPAData({ ...newCAPAData, root_cause_analysis: e.target.value })} className="min-h-[60px]" />
                         </div>
@@ -508,7 +508,7 @@ export function RiskRegisterTab() {
                             </div>
                             <div className="space-y-2">
                                 <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
-                                    Target Date <span className="text-destructive">*</span>
+                                    Target Date <span className="text-destructive-tint">*</span>
                                 </Label>
                                 <Input type="date" value={newCAPAData.target_completion_date} onChange={(e) => setNewCAPAData({ ...newCAPAData, target_completion_date: e.target.value })} />
                             </div>
@@ -533,7 +533,7 @@ export function RiskRegisterTab() {
                 <DialogContent className="max-w-md">
                     <DialogHeader>
                         <DialogTitle className="font-bold text-lg flex items-center gap-2">
-                            <Link2 className="w-5 h-5 text-blue-600" />
+                            <Link2 className="w-5 h-5 text-primary-tint" />
                             Link CAPA to {linkSourceRisk?.risk_id}
                         </DialogTitle>
                         <DialogDescription className="text-xs">
@@ -595,7 +595,7 @@ export function RiskRegisterTab() {
                 <DialogContent className="max-w-md">
                     <DialogHeader>
                         <DialogTitle className="font-bold text-lg flex items-center gap-2">
-                            <AlertTriangle className="w-5 h-5 text-primary" />
+                            <AlertTriangle className="w-5 h-5 text-primary-tint" />
                             Add New Risk
                         </DialogTitle>
                         <DialogDescription className="text-xs">
@@ -694,10 +694,10 @@ export function RiskRegisterTab() {
 
 function getCAPABadgeColor(status: string): string {
     switch (status) {
-        case "Open": return "text-red-600 bg-red-100";
-        case "In Progress": return "text-blue-600 bg-blue-100";
-        case "Under Verification": return "text-yellow-600 bg-yellow-100";
-        case "Closed": return "text-green-600 bg-green-100";
+        case "Open": return "text-destructive-tint bg-destructive/10";
+        case "In Progress": return "text-primary-tint bg-primary/10";
+        case "Under Verification": return "text-warning-tint bg-warning/10";
+        case "Closed": return "text-success-tint bg-success/10";
         default: return "";
     }
 }

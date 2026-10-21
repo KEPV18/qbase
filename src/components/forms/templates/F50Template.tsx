@@ -96,7 +96,7 @@ export function F50Template({ data, isTemplate = true, editMode = false, onChang
   const valueCls = "px-1.5 py-1.5 border border-border text-sm text-foreground min-h-[2rem]";
   const emptyValueCls = cn(valueCls, isTemplate ? "text-muted-foreground" : "");
   const titleCls = "bg-muted/50 font-bold text-base px-3 py-2 border border-border text-foreground";
-  const headerCls = "bg-indigo-50 dark:bg-indigo-950 font-semibold text-xs uppercase tracking-wide px-1.5 py-1.5 border border-indigo-200 dark:border-indigo-800 text-indigo-800 dark:text-indigo-300";
+  const headerCls = "bg-primary/10 dark:bg-primary/25 font-semibold text-xs uppercase tracking-wide px-1.5 py-1.5 border border-primary/25 dark:border-primary/45 text-primary-tint";
   const inputCls = "w-full bg-transparent outline-none text-sm text-foreground placeholder:text-muted-foreground";
 
   const serialValue = val(d, "serial") || val(d, "formCode") || "";
@@ -149,7 +149,7 @@ export function F50Template({ data, isTemplate = true, editMode = false, onChang
                   <>
                     F 50 Rev{" "}
                     <input
-                      className="inline w-16 text-xs bg-transparent outline-none border-b border-border text-center text-foreground placeholder:text-slate-400"
+                      className="inline w-16 text-xs bg-transparent outline-none border-b border-border text-center text-foreground placeholder:text-ink-3"
                       value={serialValue}
                       onChange={e => onChange?.("serial", e.target.value)}
                       placeholder="00"
@@ -231,7 +231,7 @@ export function F50Template({ data, isTemplate = true, editMode = false, onChang
                   <button
                     type="button"
                     onClick={() => updateEntries([...entries, emptyEntry()])}
-                    className="flex items-center gap-1 text-xs text-indigo-600 dark:text-indigo-400 hover:text-indigo-800 dark:hover:text-indigo-300"
+                    className="flex items-center gap-1 text-xs text-primary-tint hover:text-primary-tint"
                   >
                     <Plus className="w-3.5 h-3.5" /> Add Entry
                   </button>
@@ -246,7 +246,7 @@ export function F50Template({ data, isTemplate = true, editMode = false, onChang
                   <button
                     type="button"
                     onClick={() => updateEntries(entries.slice(0, -1))}
-                    className="flex items-center gap-1 text-xs text-red-600 dark:text-red-400 hover:text-red-800 dark:hover:text-red-300"
+                    className="flex items-center gap-1 text-xs text-destructive-tint hover:text-destructive-tint"
                   >
                     <Trash2 className="w-3.5 h-3.5" /> Remove Last Entry
                   </button>

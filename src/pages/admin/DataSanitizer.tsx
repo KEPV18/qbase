@@ -32,7 +32,7 @@ import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { restRpc } from "@/services/userService";
 import { isoToDisplay } from "@/schemas";
-import { getDeptTheme, deptBorderStyle, deptAccentStyle } from "@/lib/departmentTheme";
+import { deptBorderStyle, deptAccentStyle } from "@/lib/departmentTheme";
 import { FORM_SCHEMAS } from "@/data/formSchemas";
 import { useRecords } from "@/hooks/useRecordStorage";
 
@@ -259,8 +259,8 @@ export default function DataSanitizer() {
         {/* ── Error Banner (post-initial-load) ── */}
         {error && (
           <div className="flex items-start gap-3 p-4 bg-destructive/10 border border-destructive/30 rounded-md">
-            <AlertTriangle className="w-5 h-5 text-destructive shrink-0 mt-0.5" />
-            <div className="text-xs text-destructive">
+            <AlertTriangle className="w-5 h-5 text-destructive-tint shrink-0 mt-0.5" />
+            <div className="text-xs text-destructive-tint">
               <p className="font-medium mb-0.5">Scan error</p>
               <p>{error}</p>
             </div>
@@ -384,7 +384,7 @@ export default function DataSanitizer() {
               </div>
 
               {/* Table */}
-              <div className="border border-border/50 rounded-md overflow-hidden bg-card/40 backdrop-blur-xl">
+              <div className="border border-border/50 rounded-md overflow-hidden bg-card">
                 <Table>
                   <TableHeader>
                     <TableRow className="border-b border-border/30 bg-muted/20">
@@ -454,7 +454,7 @@ export default function DataSanitizer() {
                         <TableCell className="py-3">
                           {record.section_name ? (
                             <span
-                              className="backdrop-blur-sm border rounded-md px-2 py-0.5 text-xs font-medium"
+                              className="border rounded-sm px-2 py-0.5 text-xs font-medium"
                               style={deptBadge}
                             >
                               {record.section_name}
@@ -502,7 +502,7 @@ export default function DataSanitizer() {
             </div>
 
             {/* ── Info Banner ── */}
-            <div className="flex items-start gap-3 p-4 bg-card/40 backdrop-blur-xl border border-border/50 rounded-md">
+            <div className="flex items-start gap-3 p-4 bg-card border border-border/50 rounded-md">
               <Archive className="w-5 h-5 text-muted-foreground shrink-0 mt-0.5" />
               <div className="text-xs text-muted-foreground">
                 <p className="font-medium text-foreground mb-1">Retrofitting Workflow</p>

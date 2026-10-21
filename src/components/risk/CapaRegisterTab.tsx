@@ -232,7 +232,7 @@ export function CapaRegisterTab() {
                                     <TableCell className="font-bold text-xs font-mono">
                                         <div className="flex items-center gap-1.5">
                                             {capa.capa_id}
-                                            {isOverdue(capa) && <AlertTriangle className="w-3 h-3 text-destructive" />}
+                                            {isOverdue(capa) && <AlertTriangle className="w-3 h-3 text-destructive-tint" />}
                                         </div>
                                     </TableCell>
                                     <TableCell>
@@ -251,7 +251,7 @@ export function CapaRegisterTab() {
                                         {capa.preventive_action && <div className="text-[10px] text-muted-foreground truncate mt-0.5"><span className="font-bold text-foreground">PA:</span> {capa.preventive_action}</div>}
                                     </TableCell>
                                     <TableCell className="text-xs font-medium">{capa.responsible_person}</TableCell>
-                                    <TableCell className={cn("text-xs font-medium", isOverdue(capa) ? "text-destructive" : "text-muted-foreground")}>
+                                    <TableCell className={cn("text-xs font-medium", isOverdue(capa) ? "text-destructive-tint" : "text-muted-foreground")}>
                                         {capa.target_completion_date || "—"}
                                     </TableCell>
                                     <TableCell>
@@ -265,7 +265,7 @@ export function CapaRegisterTab() {
                                                 onClick={() => navigate(`/risk-management?tab=risk`)}
                                                 className="flex items-center gap-1 group"
                                             >
-                                                <span className="text-[10px] font-mono font-bold text-primary group-hover:underline">{linkedRisk.risk_id}</span>
+                                                <span className="text-[10px] font-mono font-bold text-primary-tint group-hover:underline">{linkedRisk.risk_id}</span>
                                                 <Badge variant="outline" className={cn("text-[7px] font-bold", getRiskBadgeColor(linkedRisk.status))}>
                                                     {linkedRisk.status}
                                                 </Badge>
@@ -278,7 +278,7 @@ export function CapaRegisterTab() {
                                         )}
                                     </TableCell>
                                     <TableCell>
-                                        <Button variant="ghost" size="icon" className="h-7 w-7 hover:text-primary" onClick={() => handleEditClick(capa)}>
+                                        <Button variant="ghost" size="icon" className="h-7 w-7 hover:text-primary-tint" onClick={() => handleEditClick(capa)}>
                                             <Pencil className="w-3 h-3" />
                                         </Button>
                                     </TableCell>
@@ -305,8 +305,8 @@ export function CapaRegisterTab() {
                             {/* Closure warning */}
                             {editingCapa.status === "Closed" && (!editingCapa.root_cause_analysis || !editingCapa.effectiveness || !editingCapa.effectiveness) && (
                                 <div className="p-3 rounded-sm bg-destructive/10 border border-destructive/20 flex gap-2 items-start">
-                                    <AlertTriangle className="w-4 h-4 text-destructive shrink-0 mt-0.5" />
-                                    <p className="text-xs text-destructive">
+                                    <AlertTriangle className="w-4 h-4 text-destructive-tint shrink-0 mt-0.5" />
+                                    <p className="text-xs text-destructive-tint">
                                         Closing requires: Root Cause Analysis, Effectiveness Check, and Closure Approval.
                                     </p>
                                 </div>
@@ -337,7 +337,7 @@ export function CapaRegisterTab() {
                             </div>
                             <div className="space-y-2">
                                 <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
-                                    Root Cause Analysis <span className="text-destructive">*</span>
+                                    Root Cause Analysis <span className="text-destructive-tint">*</span>
                                 </Label>
                                 <Textarea value={editingCapa.root_cause_analysis} onChange={(e) => setEditingCapa({ ...editingCapa, root_cause_analysis: e.target.value })} className="min-h-[60px]" />
                             </div>
@@ -376,7 +376,7 @@ export function CapaRegisterTab() {
                             <div className="grid grid-cols-3 gap-4">
                                 <div className="space-y-2">
                                     <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
-                                        Effectiveness Check <span className="text-destructive">*</span>
+                                        Effectiveness Check <span className="text-destructive-tint">*</span>
                                     </Label>
                                     <Input value={editingCapa.effectiveness ?? ''} onChange={(e) => setEditingCapa({ ...editingCapa, effectiveness: e.target.value })} />
                                 </div>
@@ -427,7 +427,7 @@ export function CapaRegisterTab() {
                 <DialogContent className="max-w-md">
                     <DialogHeader>
                         <DialogTitle className="font-bold text-lg flex items-center gap-2">
-                            <CheckCircle2 className="w-5 h-5 text-green-600" />
+                            <CheckCircle2 className="w-5 h-5 text-success-tint" />
                             Close CAPA & Update Risk?
                         </DialogTitle>
                         <DialogDescription className="text-xs">
@@ -441,7 +441,7 @@ export function CapaRegisterTab() {
                             <div className="p-3 rounded-sm bg-muted/30 border border-border/30 space-y-1 text-xs">
                                 <div className="font-bold">{lr.risk_id} — {lr.risk_description}</div>
                                 <div className="text-muted-foreground">Current Status: <Badge variant="outline" className={cn("text-[7px]", getRiskBadgeColor(lr.status))}>{lr.status}</Badge></div>
-                                <div className="text-muted-foreground mt-1">→ Will be updated to: <Badge variant="outline" className="text-[7px] text-green-600 bg-green-100">Controlled</Badge></div>
+                                <div className="text-muted-foreground mt-1">→ Will be updated to: <Badge variant="outline" className="text-[7px] text-success-tint bg-success/10">Controlled</Badge></div>
                             </div>
                         ) : null;
                     })()}
@@ -459,7 +459,7 @@ export function CapaRegisterTab() {
                             if (closingCapa) submitCAPAUpdate(closingCapa, true);
                             setIsCloseConfirmOpen(false);
                             setClosingCapa(null);
-                        }} className="gap-2 bg-green-600 hover:bg-green-700">
+                        }} className="gap-2 bg-success-solid hover:bg-success-solid/90">
                             <CheckCircle2 className="w-4 h-4" />
                             Close CAPA & Update Risk
                         </Button>
@@ -472,10 +472,10 @@ export function CapaRegisterTab() {
 
 function getRiskBadgeColor(status: string): string {
     switch (status) {
-        case "Open": return "text-red-600 bg-red-100";
-        case "Under Review": return "text-yellow-600 bg-yellow-100";
-        case "Controlled": return "text-blue-600 bg-blue-100";
-        case "Closed": return "text-green-600 bg-green-100";
+        case "Open": return "text-destructive-tint bg-destructive/10";
+        case "Under Review": return "text-warning-tint bg-warning/10";
+        case "Controlled": return "text-primary-tint bg-primary/10";
+        case "Closed": return "text-success-tint bg-success/10";
         default: return "";
     }
 }

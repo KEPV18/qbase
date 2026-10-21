@@ -47,7 +47,7 @@ export default function FormTemplatePreview() {
             <AlertTriangle className="w-10 h-10 text-muted-foreground/40 mx-auto mb-3" />
             <h2 className="text-lg font-medium text-foreground mb-1">Form Not Found</h2>
             <p className="text-sm text-muted-foreground mb-4">No form schema found for code "{code}"</p>
-            <button onClick={() => navigate('/forms')} className="text-sm text-blue-600 hover:underline">Back to Forms Registry</button>
+            <button onClick={() => navigate('/forms')} className="text-sm text-primary-tint hover:underline">Back to Forms Registry</button>
           </div>
         </div>
       </AppShell>
@@ -87,7 +87,7 @@ export default function FormTemplatePreview() {
 
           {/* Center: Form info */}
           <div className="flex items-center gap-3">
-            <span className="font-mono text-base font-bold text-primary">{code}</span>
+            <span className="font-mono text-base font-bold text-primary-tint">{code}</span>
             <span className="text-border">·</span>
             <span className="text-sm text-foreground font-medium">{schema.name}</span>
             <Badge variant="outline" className="text-[10px] px-2 py-0 h-5 font-mono">
@@ -120,9 +120,9 @@ export default function FormTemplatePreview() {
           {registryEntry && (
             <Badge variant="outline" className={cn(
               "text-[9px] px-1.5 py-0 h-4 font-mono",
-              registryEntry.importance === "Critical" ? "border-red-500/30 text-red-400" :
-              registryEntry.importance === "High" ? "border-orange-500/30 text-orange-400" :
-              registryEntry.importance === "Medium" ? "border-yellow-500/30 text-yellow-400" :
+              registryEntry.importance === "Critical" ? "border-destructive/30 text-destructive-tint" :
+              registryEntry.importance === "High" ? "border-warning/30 text-warning-tint" :
+              registryEntry.importance === "Medium" ? "border-warning/30 text-warning-tint" :
               "border-border text-muted-foreground"
             )}>
               {registryEntry.importance}
@@ -137,8 +137,8 @@ export default function FormTemplatePreview() {
           </div>
           {schema.templateLastModified && (
             <div className="flex items-center gap-1.5">
-              <Edit3 className="w-3 h-3 text-amber-500" />
-              <span className="text-amber-500">Modified: {formatDate(schema.templateLastModified)}</span>
+              <Edit3 className="w-3 h-3 text-warning-tint" />
+              <span className="text-warning-tint">Modified: {formatDate(schema.templateLastModified)}</span>
             </div>
           )}
           <div className="flex items-center gap-1.5">
@@ -146,7 +146,7 @@ export default function FormTemplatePreview() {
             <span>{schema.templateCreatedBy || "—"}</span>
           </div>
           <div className="flex items-center gap-1.5">
-            <UserCheck className="w-3 h-3 text-emerald-500" />
+            <UserCheck className="w-3 h-3 text-success-tint" />
             <span>{schema.templateApprovedBy || "—"}</span>
           </div>
         </div>
@@ -192,7 +192,7 @@ export default function FormTemplatePreview() {
                         <div key={i} className="space-y-1.5">
                           <p className={cn("text-[9px] font-bold uppercase tracking-wide", accent.label, accent.labelDark)}>{field.label}</p>
                           <div className="border border-border rounded-sm overflow-hidden">
-                            <table className="w-full border-collapse text-[11px] font-[Arial,sans-serif]">
+                            <table className="w-full border-collapse text-[11px] font-sans">
                               <thead>
                                 <tr>
                                   {columns.map(c => (
@@ -219,18 +219,18 @@ export default function FormTemplatePreview() {
                       <div key={i} className="flex flex-col gap-0.5">
                         <span className={cn(
                           "text-[9px] font-bold uppercase tracking-wide",
-                          isDate ? "text-amber-600 dark:text-amber-400" : cn(accent.label, accent.labelDark),
+                          isDate ? "text-warning-tint" : cn(accent.label, accent.labelDark),
                         )}>
                           {field.label}
-                          {field.required && <span className="text-red-500 ml-0.5">*</span>}
+                          {field.required && <span className="text-destructive-tint ml-0.5">*</span>}
                         </span>
                         <div className={cn(
                           "h-7 border-b border-dashed flex items-center",
-                          isDate ? "border-amber-300 dark:border-amber-700" : cn(accent.border, accent.borderDark),
+                          isDate ? "border-warning/30 dark:border-warning/45" : cn(accent.border, accent.borderDark),
                         )}>
                           <span className={cn(
                             "text-[11px] italic",
-                            isDate ? "text-amber-600/50 dark:text-amber-400/50" : "text-muted-foreground/50",
+                            isDate ? "text-warning-tint/50" : "text-muted-foreground/50",
                           )}>{field.type}</span>
                         </div>
                       </div>

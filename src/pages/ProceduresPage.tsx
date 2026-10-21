@@ -18,7 +18,7 @@ import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { useProceduresData } from "@/hooks/useProceduresData";
-import { useQMSData } from "@/hooks/useQMSData";
+import { useRecords } from "@/hooks/useRecordStorage";
 import { getRecordsForProcedure } from "@/lib/procedureRecordMapping";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
@@ -56,19 +56,19 @@ function getEditUrl(file: DriveItem): string {
 }
 
 function getFileIcon(mimeType: string) {
-  if (mimeType.includes("folder")) return <Folder className="w-4 h-4 text-accent" />;
-  if (mimeType.includes("spreadsheet") || mimeType.includes("excel")) return <TableIcon className="w-4 h-4 text-success" />;
-  if (mimeType.includes("document") || mimeType.includes("word")) return <FileText className="w-4 h-4 text-primary" />;
-  if (mimeType.includes("pdf")) return <FileCode className="w-4 h-4 text-destructive" />;
-  if (mimeType.includes("presentation") || mimeType.includes("powerpoint")) return <FileText className="w-4 h-4 text-warning" />;
+  if (mimeType.includes("folder")) return <Folder className="w-4 h-4 text-primary-tint" />;
+  if (mimeType.includes("spreadsheet") || mimeType.includes("excel")) return <TableIcon className="w-4 h-4 text-success-tint" />;
+  if (mimeType.includes("document") || mimeType.includes("word")) return <FileText className="w-4 h-4 text-primary-tint" />;
+  if (mimeType.includes("pdf")) return <FileCode className="w-4 h-4 text-destructive-tint" />;
+  if (mimeType.includes("presentation") || mimeType.includes("powerpoint")) return <FileText className="w-4 h-4 text-warning-tint" />;
   return <FileText className="w-4 h-4 text-muted-foreground" />;
 }
 
 function getFileTypeBadge(mimeType: string) {
-  if (mimeType.includes("document") || mimeType.includes("word")) return { label: "DOC", color: "bg-primary/10 text-primary border-primary/20" };
-  if (mimeType.includes("spreadsheet") || mimeType.includes("excel")) return { label: "SHEET", color: "bg-success/10 text-success border-success/20" };
-  if (mimeType.includes("pdf")) return { label: "PDF", color: "bg-destructive/10 text-destructive border-destructive/20" };
-  if (mimeType.includes("presentation") || mimeType.includes("powerpoint")) return { label: "SLIDES", color: "bg-accent/10 text-accent border-accent/20" };
+  if (mimeType.includes("document") || mimeType.includes("word")) return { label: "DOC", color: "bg-primary/10 text-primary-tint border-primary/20" };
+  if (mimeType.includes("spreadsheet") || mimeType.includes("excel")) return { label: "SHEET", color: "bg-success/10 text-success-tint border-success/20" };
+  if (mimeType.includes("pdf")) return { label: "PDF", color: "bg-destructive/10 text-destructive-tint border-destructive/20" };
+  if (mimeType.includes("presentation") || mimeType.includes("powerpoint")) return { label: "SLIDES", color: "bg-primary/10 text-primary-tint border-primary/20" };
   if (mimeType.includes("folder")) return { label: "FOLDER", color: "bg-muted text-muted-foreground border-border" };
   return { label: "FILE", color: "bg-muted text-muted-foreground border-border" };
 }
@@ -108,8 +108,11 @@ export default function ProceduresPage() {
     { id: PROCEDURES_FOLDER_ID, name: "02. Procedures" }
   ]);
 
-  // QMS Records for Procedure → Record linking
-  const { data: qmsRecords } = useQMSData();
+  // QMS Records for Procedure → Record linking.
+  // The records come from the Supabase `records` table through the shared
+  // React Query hook, so the counts shown against each procedure are the
+  // live ones rather than a static figure.
+  const { data: qmsRecords } = useRecords();
   const navigate = useNavigate();
 
   // Scroll-to-top visibility
@@ -189,7 +192,7 @@ export default function ProceduresPage() {
       <div className="sticky top-0 z-40 border-b border-border/50 bg-background/95 backdrop-blur-xl px-4 md:px-8 py-3 flex items-center justify-between gap-3">
         <div className="flex items-center gap-3 min-w-0">
           <div className="p-2 rounded-lg bg-primary/10 border border-primary/15">
-            <FileCode className="w-5 h-5 text-primary" />
+            <FileCode className="w-5 h-5 text-primary-tint" />
           </div>
           <div className="min-w-0">
             <h1 className="text-lg font-bold tracking-tight truncate">Quality Procedures</h1>
@@ -208,7 +211,7 @@ export default function ProceduresPage() {
             />
           </div>
           <Tabs value={activeTab} onValueChange={setActiveTab} className="w-auto">
-            <TabsList className="grid grid-cols-2 h-9 p-0.5 bg-muted/30 backdrop-blur-sm rounded-lg">
+            <TabsList className="grid grid-cols-2 h-9 p-0.5 bg-muted/40 rounded-lg">
               <TabsTrigger value="digital" className="gap-1.5 text-xs rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-sm">
                 <Library className="w-3.5 h-3.5" /> <span className="hidden sm:inline">Digital</span>
               </TabsTrigger>
@@ -227,7 +230,7 @@ export default function ProceduresPage() {
             {isEditMode ? "Done" : "Edit"}
           </Button>
           {isEditMode && (
-            <Button variant="outline" size="sm" className="gap-1.5 h-8 text-xs text-destructive hover:bg-destructive/10 rounded-lg"
+            <Button variant="outline" size="sm" className="gap-1.5 h-8 text-xs text-destructive-tint hover:bg-destructive/10 rounded-lg"
               onClick={() => { if (confirm("Reset all procedures to default?")) { resetToDefault(); toast.info("Procedures reset"); } }}
             >
               <RotateCcw className="w-3.5 h-3.5" /> Reset
@@ -253,7 +256,7 @@ export default function ProceduresPage() {
                     className={cn(
                       "w-full flex items-center gap-2 px-2.5 py-1.5 text-[11px] rounded-md transition-all text-left",
                       activeSectionId === proc.id
-                        ? "bg-primary/10 text-primary font-semibold"
+                        ? "bg-primary/10 text-primary-tint font-semibold"
                         : "text-muted-foreground hover:text-foreground hover:bg-muted/40"
                     )}
                   >
@@ -281,8 +284,8 @@ export default function ProceduresPage() {
                 {/* Approval Banner */}
                 <div className="mb-8 p-5 rounded-xl border-2 border-primary/20 bg-gradient-to-br from-primary/[0.03] to-primary/[0.01]">
                   <div className="flex items-center gap-2 mb-3">
-                    <CheckCircle className="w-4 h-4 text-primary" />
-                    <span className="text-[10px] font-bold uppercase tracking-[0.15em] text-primary/60">Document Approval</span>
+                    <CheckCircle className="w-4 h-4 text-primary-tint" />
+                    <span className="text-[10px] font-bold uppercase tracking-[0.15em] text-primary-tint/60">Document Approval</span>
                   </div>
                   <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-xs">
                     <div className="p-3 rounded-lg bg-background/80 border border-border/20">
@@ -314,7 +317,7 @@ export default function ProceduresPage() {
                   >
                     {/* Title */}
                     <div className="mb-5 space-y-2">
-                      <div className="flex items-center gap-2 text-[10px] font-bold text-primary/50 uppercase tracking-[0.2em]">
+                      <div className="flex items-center gap-2 text-[10px] font-bold text-primary-tint/50 uppercase tracking-[0.2em]">
                         <div className="w-8 h-px bg-primary/20" />
                         <span>SOP {procIdx + 1}</span>
                       </div>
@@ -334,7 +337,7 @@ export default function ProceduresPage() {
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-5">
                       <div className={cn("p-4 rounded-xl border transition-all", isEditMode ? "border-primary/10 bg-primary/[0.02]" : "border-border/25 bg-card/60")}>
                         <div className="flex items-center gap-1.5 mb-2">
-                          <Info className="w-3 h-3 text-primary/40" />
+                          <Info className="w-3 h-3 text-primary-tint/40" />
                           <span className="text-[9px] font-bold uppercase tracking-[0.12em] text-muted-foreground/40">Purpose</span>
                         </div>
                         {isEditMode ? (
@@ -345,7 +348,7 @@ export default function ProceduresPage() {
                       </div>
                       <div className={cn("p-4 rounded-xl border transition-all", isEditMode ? "border-primary/10 bg-primary/[0.02]" : "border-border/25 bg-card/60")}>
                         <div className="flex items-center gap-1.5 mb-2">
-                          <Layers className="w-3 h-3 text-primary/40" />
+                          <Layers className="w-3 h-3 text-primary-tint/40" />
                           <span className="text-[9px] font-bold uppercase tracking-[0.12em] text-muted-foreground/40">Scope</span>
                         </div>
                         {isEditMode ? (
@@ -356,7 +359,7 @@ export default function ProceduresPage() {
                       </div>
                       <div className={cn("p-4 rounded-xl border transition-all", isEditMode ? "border-primary/10 bg-primary/[0.02]" : "border-border/25 bg-card/60")}>
                         <div className="flex items-center gap-1.5 mb-2">
-                          <User className="w-3 h-3 text-primary/40" />
+                          <User className="w-3 h-3 text-primary-tint/40" />
                           <span className="text-[9px] font-bold uppercase tracking-[0.12em] text-muted-foreground/40">Responsibilities</span>
                         </div>
                         {isEditMode ? (
@@ -374,10 +377,10 @@ export default function ProceduresPage() {
                     )}>
                       <div className="flex items-center justify-between mb-3">
                         <div className="flex items-center gap-2">
-                          <Layers className="w-3.5 h-3.5 text-primary/40" />
+                          <Layers className="w-3.5 h-3.5 text-primary-tint/40" />
                           <h3 className="text-sm font-bold">Step-by-Step Procedure</h3>
                         </div>
-                        {isEditMode && <Badge variant="outline" className="bg-primary/5 text-primary text-[9px]">Editing</Badge>}
+                        {isEditMode && <Badge variant="outline" className="bg-primary/5 text-primary-tint text-[9px]">Editing</Badge>}
                       </div>
                       {isEditMode ? (
                         <Textarea
@@ -399,7 +402,7 @@ export default function ProceduresPage() {
                       <div className="flex items-center gap-2 flex-wrap justify-end">
                         {isEditMode && (
                           <div className="flex items-center gap-1.5">
-                            <Clock className="w-3 h-3 text-primary/40" />
+                            <Clock className="w-3 h-3 text-primary-tint/40" />
                             <select
                               value={proc.recordFrequency || "As needed"}
                               onChange={(e) => updateProcedure(proc.id, { recordFrequency: e.target.value })}
@@ -415,7 +418,7 @@ export default function ProceduresPage() {
                         )}
                         {isEditMode ? (
                           <div className="flex items-center gap-1.5">
-                            <Calendar className="w-3 h-3 text-primary/40" />
+                            <Calendar className="w-3 h-3 text-primary-tint/40" />
                             <input
                               type="date"
                               value={proc.approvalDate}
@@ -439,7 +442,7 @@ export default function ProceduresPage() {
                       return (
                         <div className="mt-5 pt-4 border-t border-border/30">
                           <div className="flex items-center gap-2 mb-3">
-                            <Layers className="w-3.5 h-3.5 text-primary/40" />
+                            <Layers className="w-3.5 h-3.5 text-primary-tint/40" />
                             <span className="text-[11px] font-bold uppercase tracking-wider text-foreground/70">Related QMS Records</span>
                             <Badge variant="outline" className="text-[9px] h-4 font-mono">{related.length}</Badge>
                           </div>
@@ -448,7 +451,7 @@ export default function ProceduresPage() {
                               <div
                                 key={rec.code}
                                 className="flex items-center gap-2 px-3 py-2 rounded-lg border border-border/30 bg-card/40 hover:bg-muted/20 hover:border-primary/30 transition-all cursor-pointer group"
-                                onClick={() => navigate(`/record/${encodeURIComponent(rec.code)}`)}
+                                onClick={() => navigate(`/records?formCode=${encodeURIComponent(rec.code)}`)}
                               >
                                 <span className="text-[9px] font-mono font-bold px-1.5 py-0.5 rounded bg-muted text-muted-foreground shrink-0">
                                   {rec.code}
@@ -457,10 +460,12 @@ export default function ProceduresPage() {
                                   <p className="text-xs font-medium text-foreground truncate">{rec.recordName}</p>
                                   <p className="text-[9px] text-muted-foreground truncate">
                                     {proc.recordFrequency || "As needed"}
-                                    {rec.actualRecordCount ? ` · ${rec.actualRecordCount} records` : ""}
+                                    {rec.actualRecordCount !== undefined
+                                      ? ` · ${rec.actualRecordCount} record${rec.actualRecordCount === 1 ? '' : 's'}`
+                                      : ""}
                                   </p>
                                 </div>
-                                <FileText className="w-3 h-3 text-muted-foreground/30 group-hover:text-primary transition-colors shrink-0" />
+                                <FileText className="w-3 h-3 text-muted-foreground/30 group-hover:text-primary-tint transition-colors shrink-0" />
                               </div>
                             ))}
                           </div>
@@ -587,7 +592,7 @@ export default function ProceduresPage() {
                       >
                         <div className="flex items-center gap-3 truncate">
                           {getFileIcon(file.mimeType)}
-                          <span className="text-xs font-medium truncate group-hover:text-primary transition-colors">{file.name}</span>
+                          <span className="text-xs font-medium truncate group-hover:text-primary-tint transition-colors">{file.name}</span>
                         </div>
                         <div className="flex items-center gap-3 shrink-0">
                           <Badge variant="outline" className={cn("text-[8px] h-4", getFileTypeBadge(file.mimeType).color)}>

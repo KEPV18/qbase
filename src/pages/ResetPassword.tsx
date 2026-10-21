@@ -211,7 +211,7 @@ export default function ResetPassword() {
       >
         <CardHeader>
           <div className="inline-flex items-center justify-center w-11 h-11 rounded-lg bg-destructive/10 border border-destructive/20 mb-2">
-            <ShieldAlert className="w-5 h-5 text-destructive" />
+            <ShieldAlert className="w-5 h-5 text-destructive-tint" />
           </div>
           <CardTitle className="text-xl text-foreground">Link invalid or expired</CardTitle>
           <CardDescription>
@@ -221,7 +221,7 @@ export default function ResetPassword() {
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="flex items-start gap-3 rounded-md border border-destructive/30 bg-destructive/5 p-3">
-            <AlertTriangle className="w-4 h-4 mt-0.5 shrink-0 text-destructive" />
+            <AlertTriangle className="w-4 h-4 mt-0.5 shrink-0 text-destructive-tint" />
             <p className="text-xs text-muted-foreground">
               Request a fresh link from the sign-in page using{" "}
               <span className="text-foreground font-medium">Forgot password?</span>, then open the
@@ -245,7 +245,7 @@ export default function ResetPassword() {
       <Card className="border-success/40 shadow-lg" data-testid="reset-password-success">
         <CardHeader>
           <div className="inline-flex items-center justify-center w-11 h-11 rounded-lg bg-success/10 border border-success/20 mb-2">
-            <CheckCircle2 className="w-5 h-5 text-success" />
+            <CheckCircle2 className="w-5 h-5 text-success-tint" />
           </div>
           <CardTitle className="text-xl text-foreground">Password updated</CardTitle>
           <CardDescription>
@@ -269,7 +269,7 @@ export default function ResetPassword() {
     <Card className="border-border/60 shadow-lg" data-testid="reset-password-form">
       <CardHeader>
         <div className="inline-flex items-center justify-center w-11 h-11 rounded-lg bg-primary/10 border border-primary/20 mb-2">
-          <KeyRound className="w-5 h-5 text-primary" />
+          <KeyRound className="w-5 h-5 text-primary-tint" />
         </div>
         <CardTitle className="text-xl text-foreground">Set New Password</CardTitle>
         <CardDescription>
@@ -286,8 +286,8 @@ export default function ResetPassword() {
             data-testid="reset-password-error"
             role="alert"
           >
-            <AlertTriangle className="w-4 h-4 mt-0.5 shrink-0 text-destructive" />
-            <p className="text-xs text-destructive">{submitError}</p>
+            <AlertTriangle className="w-4 h-4 mt-0.5 shrink-0 text-destructive-tint" />
+            <p className="text-xs text-destructive-tint">{submitError}</p>
           </div>
         )}
 
@@ -321,7 +321,7 @@ export default function ResetPassword() {
               {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
             </button>
           </div>
-          {errors.password && <p className="text-xs text-destructive">{errors.password}</p>}
+          {errors.password && <p className="text-xs text-destructive-tint">{errors.password}</p>}
         </div>
 
         {/* Confirm Password */}
@@ -355,7 +355,7 @@ export default function ResetPassword() {
             </button>
           </div>
           {errors.confirmPassword && (
-            <p className="text-xs text-destructive">{errors.confirmPassword}</p>
+            <p className="text-xs text-destructive-tint">{errors.confirmPassword}</p>
           )}
         </div>
 
@@ -378,7 +378,7 @@ export default function ResetPassword() {
       </CardContent>
 
       <CardFooter className="justify-center">
-        <Link to="/login" className="text-xs text-primary hover:underline font-medium">
+        <Link to="/login" className="text-xs text-primary-tint hover:underline font-medium">
           Back to sign in
         </Link>
       </CardFooter>

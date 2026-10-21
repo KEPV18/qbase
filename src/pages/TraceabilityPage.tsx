@@ -139,14 +139,14 @@ export default function TraceabilityPage() {
         <div className="flex items-center gap-3">
           <Badge
             variant="outline"
-            className="bg-emerald-50 dark:bg-emerald-950/30 text-emerald-700 dark:text-emerald-400 border-emerald-200 dark:border-emerald-800/40"
+            className="bg-success/10 dark:bg-success/20 text-success-tint border-success/25 dark:border-success/40"
           >
             <CheckCircle2 className="w-3 h-3 mr-1" />
             ISO Clause 7.5.3
           </Badge>
           <Badge
             variant="outline"
-            className="bg-blue-50 dark:bg-blue-950/30 text-blue-700 dark:text-blue-400 border-blue-200 dark:border-blue-800/40"
+            className="bg-primary/10 dark:bg-primary/20 text-primary-tint border-primary/25 dark:border-primary/40"
           >
             <Activity className="w-3 h-3 mr-1" />
             Live Data
@@ -235,15 +235,15 @@ export default function TraceabilityPage() {
           <Card
             className={
               hasBrokenLinks
-                ? "border-amber-400 dark:border-amber-600"
-                : "border-emerald-400 dark:border-emerald-600"
+                ? "border-warning/40 dark:border-warning/50"
+                : "border-success/40 dark:border-success/50"
             }
           >
             <CardContent className="pt-6">
               <p className="text-sm text-muted-foreground">Link Health</p>
               <div className="flex items-center gap-2">
                 <p className="text-2xl font-bold">
-                  {hasBrokenLinks ? brokenLinks.length : "✓"}
+                  {hasBrokenLinks ? brokenLinks.length : <CheckCircle2 className="w-5 h-5 text-success-tint" aria-label="All links valid" />}
                 </p>
                 <p className="text-sm text-muted-foreground">
                   {hasBrokenLinks ? "Broken" : "Valid"}

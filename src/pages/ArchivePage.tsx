@@ -74,10 +74,10 @@ export default function ArchivePage() {
     return (
       <AppShell breadcrumbs={breadcrumbs}>
         <div className="max-w-5xl mx-auto flex flex-col items-center justify-center py-20 ds-fade-enter">
-          <AlertTriangle className="w-12 h-12 text-destructive mb-4" />
+          <AlertTriangle className="w-12 h-12 text-destructive-tint mb-4" />
           <h2 className="text-xl text-foreground mb-2">Failed to Load Archive</h2>
           <p className="text-muted-foreground mb-4">{(error as Error).message}</p>
-          <button onClick={() => refetch()} className="ds-press ds-focus-ring px-4 py-2 bg-primary text-primary-foreground rounded-sm flex items-center gap-2">
+          <button onClick={() => refetch()} className="ds-press ds-focus-ring px-4 py-2 bg-primary text-primary-foreground rounded-full flex items-center gap-2">
             <RefreshCw className="w-4 h-4" /> Retry
           </button>
         </div>
@@ -141,7 +141,7 @@ export default function ArchivePage() {
                 >
                   {/* Serial + Form Code */}
                   <div className="w-28 shrink-0">
-                    <span className="font-mono text-sm font-semibold text-muted-foreground group-hover:text-primary transition-colors">
+                    <span className="font-mono text-sm font-semibold text-muted-foreground group-hover:text-primary-tint transition-colors">
                       {record.serial as string}
                     </span>
                     <p className="text-xs text-muted-foreground mt-0.5">{record.formCode as string}</p>
@@ -149,7 +149,7 @@ export default function ArchivePage() {
 
                   {/* Name */}
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm text-foreground truncate group-hover:text-primary/90 transition-colors">
+                    <p className="text-sm text-foreground truncate group-hover:text-primary-tint/90 transition-colors">
                       {record.formName as string}
                     </p>
                   </div>
@@ -166,7 +166,7 @@ export default function ArchivePage() {
                   <button
                     onClick={(e) => handleRestore(record.id as string, e)}
                     disabled={restoreMutation.isPending}
-                    className="ds-press ds-focus-ring shrink-0 px-3 py-1.5 text-xs font-medium bg-emerald-500/15 text-emerald-400 rounded-sm flex items-center gap-1.5 hover:bg-emerald-500/25 transition-colors disabled:opacity-50"
+                    className="ds-press ds-focus-ring shrink-0 px-3 py-1.5 text-xs font-medium bg-success/15 text-success-tint rounded-sm flex items-center gap-1.5 hover:bg-success/25 transition-colors disabled:opacity-50"
                     title="Restore record"
                   >
                     {restoreMutation.isPending

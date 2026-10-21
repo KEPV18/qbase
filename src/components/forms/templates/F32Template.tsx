@@ -4,6 +4,7 @@
 // ============================================================================
 
 import React from "react";
+import { Check, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { FormDocument, val } from "../FormKit";
 
@@ -56,14 +57,14 @@ export function F32Template({ data, isTemplate = true, editMode = false, onChang
           <tbody>
             {/* Row 0: Ref No + Date */}
             <tr>
-              {td(<>{inp("serial", "Serial")} 🡪 {val(d, "serial") || (ph ? "{{SERIAL}}" : "—")}</>, 9)}
-              {td(<>Date 🡪 {inp("date", "DD/MM/YYYY")}</>, 8)}
+              {td(<>{inp("serial", "Serial")} → {val(d, "serial") || (ph ? "{{SERIAL}}" : "—")}</>, 9)}
+              {td(<>Date → {inp("date", "DD/MM/YYYY")}</>, 8)}
             </tr>
 
             {/* Row 1: From / To */}
             <tr>
-              {td(<>From 🡪 {inp("from_department", "Department")}</>, 9)}
-              {td(<>To 🡪 R&D Head</>, 8)}
+              {td(<>From → {inp("from_department", "Department")}</>, 9)}
+              {td(<>To → R&D Head</>, 8)}
             </tr>
 
             {/* Row 2: Request type checkboxes */}
@@ -74,7 +75,7 @@ export function F32Template({ data, isTemplate = true, editMode = false, onChang
                   {editMode ? (
                     <input type="checkbox" checked={val(d, "request_type") === "new"} onChange={() => onChange?.("request_type", "new")} />
                   ) : (
-                    <span className="w-3 h-3 border border-foreground/30 inline-block text-center text-[8px]">{val(d, "request_type") === "new" ? "✓" : ""}</span>
+                    <span className="w-3 h-3 border border-foreground/30 inline-block text-center">{val(d, "request_type") === "new" && <Check className="w-2.5 h-2.5 align-middle" aria-hidden="true" />}</span>
                   )}
                   New product development
                 </label>,
@@ -85,7 +86,7 @@ export function F32Template({ data, isTemplate = true, editMode = false, onChang
                   {editMode ? (
                     <input type="checkbox" checked={val(d, "request_type") === "modification"} onChange={() => onChange?.("request_type", "modification")} />
                   ) : (
-                    <span className="w-3 h-3 border border-foreground/30 inline-block text-center text-[8px]">{val(d, "request_type") === "modification" ? "✓" : ""}</span>
+                    <span className="w-3 h-3 border border-foreground/30 inline-block text-center">{val(d, "request_type") === "modification" && <Check className="w-2.5 h-2.5 align-middle" aria-hidden="true" />}</span>
                   )}
                   Modification in existing product
                 </label>,
@@ -204,7 +205,7 @@ export function F32Template({ data, isTemplate = true, editMode = false, onChang
 
             {/* Row 15: Feasibility Review label */}
             <tr>
-              {td(<span className="font-semibold bg-amber-50 dark:bg-amber-950/20 px-2 py-0.5 rounded">Feasibility Review by Research and Development Head</span>, 17)}
+              {td(<span className="font-semibold bg-warning/10 dark:bg-warning/20 px-2 py-0.5 rounded">Feasibility Review by Research and Development Head</span>, 17)}
             </tr>
 
             {/* Row 16: Approved / Rejected */}
@@ -215,7 +216,7 @@ export function F32Template({ data, isTemplate = true, editMode = false, onChang
                     {editMode ? (
                       <input type="radio" name="feasibility" checked={val(d, "feasibility") === "approved"} onChange={() => onChange?.("feasibility", "approved")} />
                     ) : (
-                      <span className="w-3 h-3 border border-foreground/30 rounded-full inline-block text-center text-[8px]">{val(d, "feasibility") === "approved" ? "✓" : ""}</span>
+                      <span className="w-3 h-3 border border-foreground/30 rounded-full inline-block text-center">{val(d, "feasibility") === "approved" && <Check className="w-2.5 h-2.5 align-middle" aria-hidden="true" />}</span>
                     )}
                     Approved to process further
                   </label>
@@ -223,7 +224,7 @@ export function F32Template({ data, isTemplate = true, editMode = false, onChang
                     {editMode ? (
                       <input type="radio" name="feasibility" checked={val(d, "feasibility") === "rejected"} onChange={() => onChange?.("feasibility", "rejected")} />
                     ) : (
-                      <span className="w-3 h-3 border border-foreground/30 rounded-full inline-block text-center text-[8px]">{val(d, "feasibility") === "rejected" ? "✗" : ""}</span>
+                      <span className="w-3 h-3 border border-foreground/30 rounded-full inline-block text-center">{val(d, "feasibility") === "rejected" && <X className="w-2.5 h-2.5 align-middle" aria-hidden="true" />}</span>
                     )}
                     Rejected and verbally intimated to requestor
                   </label>

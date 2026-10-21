@@ -22,9 +22,9 @@ import { isoToDisplay } from "@/schemas";
 type AuditAction = 'create' | 'update' | 'delete';
 
 const ACTION_CONFIG: Record<string, { icon: React.ElementType; color: string; label: string }> = {
-  create: { icon: PlusCircle, color: "text-emerald-400", label: "Created" },
-  update: { icon: Pencil, color: "text-blue-400", label: "Updated" },
-  delete: { icon: AlertTriangle, color: "text-red-400", label: "Deleted" },
+  create: { icon: PlusCircle, color: "text-success-tint", label: "Created" },
+  update: { icon: Pencil, color: "text-primary-tint", label: "Updated" },
+  delete: { icon: AlertTriangle, color: "text-destructive-tint", label: "Deleted" },
 };
 
 export default function ActivityPage() {
@@ -76,9 +76,9 @@ export default function ActivityPage() {
               >
                 <CardContent className="p-3 flex items-center gap-3">
                   <div className={cn("w-8 h-8 rounded-full flex items-center justify-center border",
-                    entry.action === 'create' ? "bg-emerald-500/10 border-emerald-500/20" :
-                    entry.action === 'delete' ? "bg-red-500/10 border-red-500/20" :
-                    "bg-blue-500/10 border-blue-500/20"
+                    entry.action === 'create' ? "bg-success/10 border-success/20" :
+                    entry.action === 'delete' ? "bg-destructive/10 border-destructive/20" :
+                    "bg-primary/10 border-primary/20"
                   )}>
                     <Icon className={cn("w-4 h-4", config.color)} />
                   </div>

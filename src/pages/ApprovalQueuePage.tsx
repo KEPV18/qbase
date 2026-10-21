@@ -13,6 +13,7 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { useAuth } from "@/hooks/useAuth";
 import { useRecords } from "@/hooks/useRecordStorage";
+import { cn } from "@/lib/utils";
 import { approveRecord } from "@/services/recordStorage";
 import { toast } from "sonner";
 import type { RecordData } from "@/components/forms/DynamicFormRenderer";
@@ -22,9 +23,9 @@ import {
 } from "lucide-react";
 
 const STATUS_CONFIG: Record<string, { label: string; color: string; icon: React.ElementType }> = {
-  Draft:            { label: "Draft",             color: "bg-zinc-100 text-zinc-500",      icon: FileText },
-  Pending_Approval: { label: "Pending Approval", color: "bg-amber-100 text-amber-700",      icon: Clock },
-  Approved:         { label: "Approved",          color: "bg-green-100 text-green-700",      icon: CheckCircle },
+  Draft:            { label: "Draft",             color: "bg-muted text-ink-2",      icon: FileText },
+  Pending_Approval: { label: "Pending Approval", color: "bg-warning/10 text-warning-tint",      icon: Clock },
+  Approved:         { label: "Approved",          color: "bg-success/10 text-success-tint",      icon: CheckCircle },
 };
 
 type ViewMode = "pending" | "recent_created" | "recent_approved";
@@ -68,7 +69,7 @@ function RecordCard({
             <span className="flex items-center gap-1"><Calendar size={12} /> {createdAt ? new Date(createdAt).toLocaleDateString() : "—"}</span>
             {showApprovedBy && lastModifiedBy && (
               <>
-                <span className="flex items-center gap-1"><CheckCircle size={12} className="text-green-600" /> Approved: {lastModifiedBy}</span>
+                <span className="flex items-center gap-1"><CheckCircle size={12} className="text-success-tint" /> Approved: {lastModifiedBy}</span>
                 <span className="flex items-center gap-1"><Calendar size={12} /> {lastModifiedAt ? new Date(lastModifiedAt).toLocaleDateString() : "—"}</span>
               </>
             )}
@@ -91,7 +92,7 @@ function RecordCard({
         {status === "Pending_Approval" && canApprove && (
           <Button
             size="sm"
-            className="text-xs bg-green-600 hover:bg-green-700 text-white"
+            className="text-xs bg-success hover:bg-success-hover text-success-foreground"
             onClick={() => onApprove(serial)}
           >
             <CheckCircle size={12} className="mr-1" /> Approve
@@ -231,10 +232,10 @@ export default function ApprovalQueuePage() {
 
       {/* Stats row */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-        <StatCard label="Pending" value={stats.pending} icon={Clock} color="amber" />
-        <StatCard label="Created Today" value={stats.createdToday} icon={PlusCircle} color="blue" />
-        <StatCard label="Approved Today" value={stats.approvedToday} icon={CheckCircle} color="green" />
-        <StatCard label="Total Records" value={stats.total} icon={FileText} color="purple" />
+        <StatCard label="Pending" value={stats.pending} icon={Clock} tone="warning" />
+        <StatCard label="Created Today" value={stats.createdToday} icon={PlusCircle} tone="info" />
+        <StatCard label="Approved Today" value={stats.approvedToday} icon={CheckCircle} tone="success" />
+        <StatCard label="Total Records" value={stats.total} icon={FileText} tone="info" />
       </div>
 
       {/* View Tabs */}
@@ -247,7 +248,7 @@ export default function ApprovalQueuePage() {
             onClick={() => setViewMode(tab.id)}
             className={`flex items-center gap-1.5 px-3 py-2 rounded-md text-sm font-medium transition-all ${
               viewMode === tab.id
-                ? "bg-background text-primary shadow-sm"
+                ? "bg-background text-primary-tint shadow-sm"
                 : "text-muted-foreground hover:text-foreground"
             }`}
           >
@@ -331,23 +332,31 @@ export default function ApprovalQueuePage() {
   );
 }
 
-function StatCard({ label, value, icon: Icon, color = "primary" }: { label: string; value: string | number; icon: React.ElementType; color?: string }) {
-  const colorMap: Record<string, string> = {
-    primary: "bg-primary/10 text-primary",
-    amber: "bg-amber-100 text-amber-700",
-    blue: "bg-blue-100 text-blue-700",
-    green: "bg-green-100 text-green-700",
-    purple: "bg-purple-100 text-purple-700",
-  };
-  const bgColor = colorMap[color] || colorMap.primary;
+/**
+ * One stat tile.
+ *
+ * `tone` is a semantic name, not a raw palette key.  The old map keyed on
+ * `primary` / `amber` / `blue` / `green` / `purple`, so three different
+ * keys (`primary`, `blue`, `purple`) all resolved to the SAME blue wash —
+ * the colour was carrying no information at all.  The tones below are the
+ * ones the design system has, and each maps to a token.
+ */
+type StatTone = 'info' | 'warning' | 'success';
 
+const STAT_TONE_CLASS: Record<StatTone, string> = {
+  info: 'bg-primary/10 text-primary-tint',
+  warning: 'bg-warning/10 text-warning-tint',
+  success: 'bg-success/10 text-success-tint',
+};
+
+function StatCard({ label, value, icon: Icon, tone = 'info' }: { label: string; value: string | number; icon: React.ElementType; tone?: StatTone }) {
   return (
     <div className="ds-card p-3 flex items-center gap-3">
-      <div className={`w-9 h-9 rounded-full ${bgColor} flex items-center justify-center`}>
+      <div className={cn('w-9 h-9 rounded-full flex items-center justify-center', STAT_TONE_CLASS[tone])}>
         <Icon className="w-4 h-4" />
       </div>
       <div>
-        <p className="text-lg font-bold">{value}</p>
+        <p className="text-lg font-bold tabular-nums">{value}</p>
         <p className="text-[10px] uppercase tracking-wider text-muted-foreground">{label}</p>
       </div>
     </div>

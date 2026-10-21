@@ -10,7 +10,7 @@ import {
   ArrowLeft, Edit3, Save, X, AlertTriangle, Shield, Clock, User,
   FileText, CheckCircle, Lock, Loader2, RefreshCw, History,
   Download, FileJson, FileSpreadsheet, FileText as FileTextIcon,
-  Trash2, Printer, ChevronLeft, ChevronRightIcon,
+  Trash2, Printer, ChevronLeft, ChevronRightIcon, XCircle, Table,
 } from 'lucide-react';
 import { getFormSchema, FORM_SCHEMAS } from '../data/formSchemas';
 import { isoToDisplay } from '../schemas';
@@ -209,10 +209,10 @@ const RecordViewPage: React.FC = () => {
       return (
         <AppShell breadcrumbs={getBreadcrumbs()}>
         <div className="max-w-4xl mx-auto flex flex-col items-center justify-center py-20 ds-fade-enter">
-          <AlertTriangle className="w-12 h-12 text-destructive mb-4" />
+          <AlertTriangle className="w-12 h-12 text-destructive-tint mb-4" />
           <h2 className="text-xl text-foreground mb-2">Failed to Load Record</h2>
           <p className="text-muted-foreground mb-4">{(error as Error).message}</p>
-          <button onClick={() => refetch()} className="ds-press ds-focus-ring px-4 py-2 bg-primary text-primary-foreground rounded-sm flex items-center gap-2">
+          <button onClick={() => refetch()} className="ds-press ds-focus-ring px-4 py-2 bg-primary text-primary-foreground rounded-full flex items-center gap-2">
             <RefreshCw className="w-4 h-4" /> Retry
           </button>
         </div>
@@ -240,8 +240,8 @@ const RecordViewPage: React.FC = () => {
       <div className="max-w-4xl mx-auto flex flex-col items-center justify-center py-20 ds-fade-enter">
         <FileText className="w-12 h-12 text-muted-foreground/40 mb-4" />
         <h2 className="text-xl text-foreground mb-2">Record Not Found</h2>
-        <p className="text-muted-foreground mb-4">No record with serial <code className="text-primary font-mono">{decodedSerial}</code></p>
-        <button onClick={() => navigate('/')} className="ds-press ds-focus-ring px-4 py-2 bg-primary text-primary-foreground rounded-sm flex items-center gap-2">
+        <p className="text-muted-foreground mb-4">No record with serial <code className="text-primary-tint font-mono">{decodedSerial}</code></p>
+        <button onClick={() => navigate('/')} className="ds-press ds-focus-ring px-4 py-2 bg-primary text-primary-foreground rounded-full flex items-center gap-2">
           <ArrowLeft className="w-4 h-4" /> Back to Records
         </button>
       </div>
@@ -364,7 +364,7 @@ const RecordViewPage: React.FC = () => {
       {/* Top bar */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-6">
         <div className="flex items-center gap-2">
-          <button onClick={() => navigate(`/records?formCode=${encodeURIComponent(originalRecord.formCode as string)}`)} className="flex items-center gap-2 text-muted-foreground hover:text-primary transition-colors ds-press rounded-lg px-2 py-1">
+          <button onClick={() => navigate(`/records?formCode=${encodeURIComponent(originalRecord.formCode as string)}`)} className="flex items-center gap-2 text-muted-foreground hover:text-primary-tint transition-colors ds-press rounded-lg px-2 py-1">
             <ArrowLeft className="w-4 h-4" /> <span className="text-sm">{schema?.sectionName || 'Records'}</span>
           </button>
           {mode === 'view' && (
@@ -391,21 +391,21 @@ const RecordViewPage: React.FC = () => {
                   title="Jump to any record in this form"
                 >
                   <option value={recordNav.currentIndex} className="font-semibold">
-                    📄 {recordNav.currentIndex + 1} / {recordNav.sameFormList.length}
+                    {recordNav.currentIndex + 1} / {recordNav.sameFormList.length}
                   </option>
                   {/* Split-group: only applies when both types coexist (F/44 hybrid) */}
                   {recordNav.textSerials.size > 0 && recordNav.pdfSerials.size > 0 ? (
                     <>
-                      <optgroup label="📝 Standard QMS Records (Digital Tables)">
+                      <optgroup label="Standard QMS Records (Digital Tables)">
                         {recordNav.sameFormList.map((r, i) => {
                           if (recordNav.pdfSerials.has(String(r.serial))) return null;
-                          return <option key={r.id} value={i}>📝 {i + 1} — {String(r.serial)}</option>;
+                          return <option key={r.id} value={i}>{i + 1} — {String(r.serial)}</option>;
                         })}
                       </optgroup>
-                      <optgroup label="📄 Digitized Assets (Uploaded PDFs)">
+                      <optgroup label="Digitized Assets (Uploaded PDFs)">
                         {recordNav.sameFormList.map((r, i) => {
                           if (!recordNav.pdfSerials.has(String(r.serial))) return null;
-                          return <option key={r.id} value={i}>🔴 {i + 1} — {String(r.serial)} [PDF]</option>;
+                          return <option key={r.id} value={i}>{i + 1} — {String(r.serial)} [PDF]</option>;
                         })}
                       </optgroup>
                     </>
@@ -413,7 +413,7 @@ const RecordViewPage: React.FC = () => {
                     /* Single type — flat list with badges */
                     recordNav.sameFormList.map((r, i) => (
                       <option key={r.id} value={i}>
-                        {recordNav.pdfSerials.has(String(r.serial)) ? `🔴 ${i + 1} — ${String(r.serial)} [PDF]` : `📝 ${i + 1} — ${String(r.serial)}`}
+                        {recordNav.pdfSerials.has(String(r.serial)) ? `${i + 1} — ${String(r.serial)} [PDF]` : `${i + 1} — ${String(r.serial)}`}
                       </option>
                     ))
                   )}
@@ -455,15 +455,15 @@ const RecordViewPage: React.FC = () => {
                         Export {originalRecord.serial as string}
                       </div>
                       <button onClick={handleExportDocx} className="w-full px-4 py-3 text-sm text-popover-foreground hover:bg-accent flex items-center gap-3 transition-colors">
-                        <FileTextIcon className="w-5 h-5 text-blue-400" />
+                        <FileTextIcon className="w-5 h-5 text-primary-tint" />
                         <div className="text-left"><div className="font-medium">Word Document</div><div className="text-xs text-muted-foreground">.docx — formatted report</div></div>
                       </button>
                       <button onClick={handleExportJson} className="w-full px-4 py-3 text-sm text-popover-foreground hover:bg-accent flex items-center gap-3 transition-colors border-t border-border">
-                        <FileJson className="w-5 h-5 text-emerald-400" />
+                        <FileJson className="w-5 h-5 text-success-tint" />
                         <div className="text-left"><div className="font-medium">JSON</div><div className="text-xs text-muted-foreground">.json — raw data</div></div>
                       </button>
                       <button onClick={handleExportCsv} className="w-full px-4 py-3 text-sm text-popover-foreground hover:bg-accent flex items-center gap-3 transition-colors border-t border-border">
-                        <FileSpreadsheet className="w-5 h-5 text-amber-400" />
+                        <FileSpreadsheet className="w-5 h-5 text-warning-tint" />
                         <div className="text-left"><div className="font-medium">CSV</div><div className="text-xs text-muted-foreground">.csv — key-value pairs</div></div>
                       </button>
                     </div>
@@ -475,16 +475,16 @@ const RecordViewPage: React.FC = () => {
 
           {mode === 'view' && (
             <button onClick={handleStartEdit}
-              className="ds-press ds-focus-ring px-4 py-2 bg-primary text-primary-foreground rounded-lg flex items-center gap-2 text-sm font-medium hover:bg-primary/90 transition-colors">
+              className="ds-press ds-focus-ring px-4 py-2 bg-primary text-primary-foreground rounded-full flex items-center gap-2 text-sm font-medium hover:bg-primary-hover transition-colors">
               <Edit3 className="w-4 h-4" /> Edit
             </button>
           )}
           {mode === 'view' && isAdmin && (
             confirmDelete ? (
               <div className="flex items-center gap-2">
-                <span className="text-xs text-destructive font-medium">Delete this record?</span>
+                <span className="text-xs text-destructive-tint font-medium">Delete this record?</span>
                 <button onClick={handleDelete} disabled={deleteMutation.isPending}
-                  className="ds-press px-3 py-2 bg-destructive text-destructive-foreground rounded-lg flex items-center gap-2 text-sm font-medium hover:bg-destructive/90 transition-colors">
+                  className="ds-press px-3 py-2 bg-destructive text-destructive-foreground rounded-full flex items-center gap-2 text-sm font-medium hover:bg-destructive-hover transition-colors">
                   {deleteMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Trash2 className="w-4 h-4" />} Confirm
                 </button>
                 <button onClick={() => setConfirmDelete(false)}
@@ -494,7 +494,7 @@ const RecordViewPage: React.FC = () => {
               </div>
             ) : (
               <button onClick={handleDelete}
-                className="ds-press ds-focus-ring px-3 py-2 bg-secondary text-destructive rounded-sm flex items-center gap-2 text-sm hover:bg-destructive/10 transition-colors border border-destructive/20">
+                className="ds-press ds-focus-ring px-3 py-2 bg-secondary text-destructive-tint rounded-sm flex items-center gap-2 text-sm hover:bg-destructive/10 transition-colors border border-destructive/20">
                 <Trash2 className="w-4 h-4" /> Delete
               </button>
             )
@@ -506,13 +506,13 @@ const RecordViewPage: React.FC = () => {
                 <X className="w-4 h-4" /> Cancel
               </button>
               {hasChangedFields && (
-                <span className="px-2 py-1 text-xs bg-warning/10 text-warning border border-warning/20 rounded-sm font-medium">
+                <span className="px-2 py-1 text-xs bg-warning/10 text-warning-tint border border-warning/20 rounded-sm font-medium">
                   Unsaved changes
                 </span>
               )}
               <button onClick={() => handleFormSubmit(editData)}
                 disabled={isSaving}
-                className="ds-press ds-focus-ring px-4 py-2 bg-primary text-primary-foreground rounded-lg flex items-center gap-2 text-sm font-medium hover:bg-primary/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
+                className="ds-press ds-focus-ring px-4 py-2 bg-primary text-primary-foreground rounded-full flex items-center gap-2 text-sm font-medium hover:bg-primary-hover transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
                 {isSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
                 Save
               </button>
@@ -526,32 +526,32 @@ const RecordViewPage: React.FC = () => {
         <div className="flex items-center gap-2 mb-4">
           <Lock className="w-4 h-4 text-muted-foreground" />
           <h3 className="text-sm font-semibold text-foreground">System Metadata</h3>
-          <span className="backdrop-blur-sm border rounded-md px-2 py-0.5 text-[10px] font-semibold ml-2" style={deptAccent}>
+          <span className="border rounded-sm px-2 py-0.5 text-[10px] font-semibold ml-2" style={deptAccent}>
             {deptName}
           </span>
           {/* F/44 Hybrid: PDF record badge */}
           {originalRecord.signed_document_url && (
-            <span className="ml-1 px-2 py-0.5 text-[10px] font-bold rounded-md bg-red-500/15 text-red-600 dark:text-red-400 border border-red-500/20">
-              🔴 PDF ASSET
+            <span className="ml-1 inline-flex items-center gap-1 px-2 py-0.5 text-[10px] font-bold rounded-full bg-destructive/10 text-destructive-tint border border-destructive/20">
+              <FileText className="w-3 h-3" aria-hidden="true" /> PDF ASSET
             </span>
           )}
           {/* F/44 Hybrid: Text record badge */}
           {String(originalRecord.formCode) === 'F/44' && !originalRecord.signed_document_url && (
-            <span className="ml-1 px-2 py-0.5 text-[10px] font-bold rounded-md bg-blue-500/15 text-blue-600 dark:text-blue-400 border border-blue-500/20">
-              📝 DIGITAL TABLE
+            <span className="ml-1 inline-flex items-center gap-1 px-2 py-0.5 text-[10px] font-bold rounded-full bg-primary/10 text-primary-tint border border-primary/20">
+              <Table className="w-3 h-3" aria-hidden="true" /> DIGITAL TABLE
             </span>
           )}
           {integritySeverity !== 'clean' && mode === 'view' && (
             <span className={`ml-auto px-2 py-0.5 text-xs font-medium rounded-full border ${
               integritySeverity === 'critical'
-                ? 'bg-destructive/10 text-destructive border-destructive/20'
-                : 'bg-warning/10 text-warning border-warning/20'
+                ? 'bg-destructive/10 text-destructive-tint border-destructive/20'
+                : 'bg-warning/10 text-warning-tint border-warning/20'
             }`}>
               {integritySeverity === 'critical' ? `${integritySignals.length} issues` : `${integritySignals.length} warnings`}
             </span>
           )}
           {integritySeverity === 'clean' && mode === 'view' && (
-            <span className="ml-auto px-2 py-0.5 text-xs font-medium rounded-full bg-success/10 text-success border border-success/20">
+            <span className="ml-auto px-2 py-0.5 text-xs font-medium rounded-full bg-success/10 text-success-tint border border-success/20">
               Clean
             </span>
           )}
@@ -561,7 +561,7 @@ const RecordViewPage: React.FC = () => {
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
           <div>
             <span className="text-xs text-muted-foreground uppercase tracking-wider">Serial</span>
-            <p className="font-mono text-primary font-semibold mt-0.5">{originalRecord.serial as string}</p>
+            <p className="font-mono text-primary-tint font-semibold mt-0.5">{originalRecord.serial as string}</p>
           </div>
           <div>
             <span className="text-xs text-muted-foreground uppercase tracking-wider">Form</span>
@@ -601,7 +601,7 @@ const RecordViewPage: React.FC = () => {
                   {riskLevel !== 'none' && <AlertTriangle className="w-3 h-3" />}
                 </span>
                 <p className={`font-semibold mt-0.5 ${
-                  riskLevel === 'high' ? 'text-destructive' : riskLevel === 'medium' ? 'text-warning' : 'text-foreground'
+                  riskLevel === 'high' ? 'text-destructive-tint' : riskLevel === 'medium' ? 'text-warning-tint' : 'text-foreground'
                 }`}>
                   {originalRecord._editCount as number}
                 </p>
@@ -618,13 +618,13 @@ const RecordViewPage: React.FC = () => {
 
         {/* Risk warnings */}
         {riskLevel === 'high' && (
-          <div className="mt-4 flex items-center gap-2 px-3 py-2 bg-destructive/10 border border-destructive/20 rounded-lg text-xs text-destructive">
+          <div className="mt-4 flex items-center gap-2 px-3 py-2 bg-destructive/10 border border-destructive/20 rounded-lg text-xs text-destructive-tint">
             <AlertTriangle className="w-4 h-4 shrink-0" />
             <span>Frequently modified ({originalRecord._editCount as number} edits). Verify data integrity.</span>
           </div>
         )}
         {riskLevel === 'medium' && (
-          <div className="mt-4 flex items-center gap-2 px-3 py-2 bg-warning/10 border border-warning/20 rounded-lg text-xs text-warning">
+          <div className="mt-4 flex items-center gap-2 px-3 py-2 bg-warning/10 border border-warning/20 rounded-lg text-xs text-warning-tint">
             <AlertTriangle className="w-4 h-4 shrink-0" />
             <span>This record has been edited {originalRecord._editCount as number} time(s).</span>
           </div>
@@ -634,8 +634,8 @@ const RecordViewPage: React.FC = () => {
         {integritySignals.length > 0 && mode === 'view' && (
           <div className={`mt-3 px-3 py-2 border rounded-lg text-sm ${
             integritySeverity === 'critical'
-              ? 'bg-destructive/10 border-destructive/20 text-destructive'
-              : 'bg-warning/10 border-warning/20 text-warning'
+              ? 'bg-destructive/10 border-destructive/20 text-destructive-tint'
+              : 'bg-warning/10 border-warning/20 text-warning-tint'
           }`}>
             <div className="flex items-center gap-2 mb-1.5 font-medium">
               <Shield className="w-4 h-4" />
@@ -644,9 +644,9 @@ const RecordViewPage: React.FC = () => {
             <div className="space-y-1 ml-6">
               {integritySignals.map((signal, i) => (
                 <div key={i} className="flex items-start gap-1.5">
-                  <span className={signal.severity === 'critical' ? 'text-destructive' : 'text-warning'}>
-                    {signal.severity === 'critical' ? '✕' : '⚠'}
-                  </span>
+                  {signal.severity === 'critical'
+                    ? <XCircle className="w-3.5 h-3.5 shrink-0 mt-px text-destructive-tint" aria-hidden="true" />
+                    : <AlertTriangle className="w-3.5 h-3.5 shrink-0 mt-px text-warning-tint" aria-hidden="true" />}
                   <div>
                     <span className="text-foreground">{signal.message}</span>
                     {signal.details && <span className="text-muted-foreground ml-1">— {signal.details}</span>}
@@ -657,7 +657,7 @@ const RecordViewPage: React.FC = () => {
           </div>
         )}
         {integritySignals.length === 0 && mode === 'view' && riskLevel === 'none' && (
-          <div className="mt-3 flex items-center gap-2 px-3 py-2 bg-success/10 border border-success/20 rounded-lg text-xs text-success">
+          <div className="mt-3 flex items-center gap-2 px-3 py-2 bg-success/10 border border-success/20 rounded-lg text-xs text-success-tint">
             <CheckCircle className="w-4 h-4" />
             <span>No integrity issues detected</span>
           </div>
@@ -737,7 +737,7 @@ const RecordViewPage: React.FC = () => {
                           <div key={i} className="space-y-1">
                             <p className={`text-[9px] font-bold uppercase ${a.label} ${a.labelDark}`}>{field.label}</p>
                             <div className="border border-border overflow-x-auto">
-                              <table className="w-full border-collapse text-[11px] font-[Arial,sans-serif]">
+                              <table className="w-full border-collapse text-[11px] font-sans">
                                 <thead><tr>{columns.map(c => <th key={c.key} className={`border border-border px-2 py-1 text-[10px] font-bold uppercase ${a.text} ${a.textDark} ${a.bg} ${a.bgDark}`}>{c.label}</th>)}</tr></thead>
                                 <tbody>{rows.map((row, ri) => <tr key={ri} className={ri % 2 ? "bg-muted/20" : ""}>{columns.map(c => <td key={c.key} className="border border-border px-2 py-1 text-[11px] text-foreground">{String(row[c.key] ?? "")}</td>)}</tr>)}</tbody>
                               </table>
@@ -748,8 +748,8 @@ const RecordViewPage: React.FC = () => {
                       const isDate = /date|expiry|validity|received|dispatch|review|approved|target/i.test(field.key + " " + field.label);
                       return (
                         <div key={i} className="flex flex-col gap-0.5">
-                          <span className={`text-[9px] font-bold uppercase ${isDate ? "text-amber-600 dark:text-amber-400" : `${a.label} ${a.labelDark}`}`}>{field.label}</span>
-                          <span className={`text-[11px] pb-0.5 border-b border-dashed min-h-[16px] ${isDate ? "text-amber-700 dark:text-amber-300 border-amber-300 dark:border-amber-700" : `text-foreground ${a.border} ${a.borderDark}`}`}>{field.type === 'textarea' ? <span className="whitespace-pre-wrap">{String(value)}</span> : String(value)}</span>
+                          <span className={`text-[9px] font-bold uppercase ${isDate ? "text-warning-tint" : `${a.label} ${a.labelDark}`}`}>{field.label}</span>
+                          <span className={`text-[11px] pb-0.5 border-b border-dashed min-h-[16px] ${isDate ? "text-warning-tint border-warning/30 dark:border-warning/45" : `text-foreground ${a.border} ${a.borderDark}`}`}>{field.type === 'textarea' ? <span className="whitespace-pre-wrap">{String(value)}</span> : String(value)}</span>
                         </div>
                       );
                     })}
@@ -768,7 +768,7 @@ const RecordViewPage: React.FC = () => {
         <div className="ds-card p-6 page-transition">
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-2">
-              <History className="w-5 h-5 text-primary" />
+              <History className="w-5 h-5 text-primary-tint" />
               <h3 className="text-lg font-semibold text-foreground">Change History</h3>
               <span className="text-xs text-muted-foreground ml-2 font-mono">{decodedSerial}</span>
             </div>
@@ -798,11 +798,11 @@ const RecordViewPage: React.FC = () => {
                   <div className="flex items-center justify-between mb-2">
                     <div className="flex items-center gap-2">
                       {entry.action === 'create'
-                        ? <CheckCircle className="w-4 h-4 text-success" />
-                        : <Edit3 className="w-4 h-4 text-primary" />
+                        ? <CheckCircle className="w-4 h-4 text-success-tint" />
+                        : <Edit3 className="w-4 h-4 text-primary-tint" />
                       }
                       <span className={`text-sm font-medium ${
-                        entry.action === 'create' ? 'text-success' : 'text-primary'
+                        entry.action === 'create' ? 'text-success-tint' : 'text-primary-tint'
                       }`}>
                         {entry.action === 'create' ? 'Created' : 'Updated'}
                       </span>
@@ -822,13 +822,13 @@ const RecordViewPage: React.FC = () => {
                     <div className="space-y-1.5">
                       {entry.changedFields.map(field => (
                         <div key={field} className="flex items-start gap-2 text-xs">
-                          <span className="px-1.5 py-0.5 bg-primary/15 text-primary rounded-sm font-mono shrink-0 text-[11px]">
+                          <span className="px-1.5 py-0.5 bg-primary/15 text-primary-tint rounded-sm font-mono shrink-0 text-[11px]">
                             {field}
                           </span>
                           <div className="flex items-center gap-1 min-w-0">
-                            <span className="text-destructive/70 line-through truncate">{JSON.stringify(entry.previousValues[field] ?? '')}</span>
+                            <span className="text-destructive-tint/70 line-through truncate">{JSON.stringify(entry.previousValues[field] ?? '')}</span>
                             <span className="text-muted-foreground/40">→</span>
-                            <span className="text-success truncate">{JSON.stringify(entry.newValues[field] ?? '')}</span>
+                            <span className="text-success-tint truncate">{JSON.stringify(entry.newValues[field] ?? '')}</span>
                           </div>
                         </div>
                       ))}
@@ -845,7 +845,7 @@ const RecordViewPage: React.FC = () => {
           <div className="bg-card border border-warning/30 rounded-lg p-6 max-w-lg w-full mx-4 shadow-xl ds-fade-enter">
             <div className="flex items-center gap-3 mb-4">
               <div className="w-10 h-10 rounded-full bg-warning/10 border border-warning/20 flex items-center justify-center">
-                <Shield className="w-5 h-5 text-warning" />
+                <Shield className="w-5 h-5 text-warning-tint" />
               </div>
               <div>
                 <h3 className="text-lg font-semibold text-foreground">Edit Intent Check</h3>
@@ -853,12 +853,12 @@ const RecordViewPage: React.FC = () => {
               </div>
             </div>
             <p className="text-sm text-muted-foreground mb-4">
-              You are modifying critical fields on <code className="text-primary font-mono text-xs bg-primary/10 px-1.5 py-0.5 rounded">{originalRecord.serial as string}</code>.
+              You are modifying critical fields on <code className="text-primary-tint font-mono text-xs bg-primary/10 px-1.5 py-0.5 rounded">{originalRecord.serial as string}</code>.
               Please provide a reason for this change.
             </p>
             <div className="mb-4">
               <label className="block text-sm font-medium text-foreground mb-1.5">
-                Reason for modification <span className="text-destructive">*</span>
+                Reason for modification <span className="text-destructive-tint">*</span>
               </label>
               <textarea
                 value={modificationReason}
@@ -868,7 +868,7 @@ const RecordViewPage: React.FC = () => {
                 rows={3}
               />
               {modificationReason.trim().length > 0 && modificationReason.trim().length < 5 && (
-                <p className="text-xs text-destructive mt-1">Minimum 5 characters required</p>
+                <p className="text-xs text-destructive-tint mt-1">Minimum 5 characters required</p>
               )}
             </div>
             <div className="flex justify-end gap-3">
@@ -877,7 +877,7 @@ const RecordViewPage: React.FC = () => {
               </button>
               <button onClick={handleIntentProceed}
                 disabled={modificationReason.trim().length < 5 || isSaving}
-                className="ds-press ds-focus-ring px-4 py-2 bg-warning text-warning-foreground rounded-lg text-sm flex items-center gap-2 hover:bg-warning/90 disabled:opacity-40 disabled:cursor-not-allowed transition-colors">
+                className="ds-press ds-focus-ring px-4 py-2 bg-warning text-warning-foreground rounded-full text-sm flex items-center gap-2 hover:bg-warning-hover disabled:opacity-40 disabled:cursor-not-allowed transition-colors">
                 {isSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
                 Save with Reason
               </button>
@@ -889,13 +889,13 @@ const RecordViewPage: React.FC = () => {
         <>
           {errors._conflict && (
             <div className="mb-4 p-4 ds-critical-card rounded-sm">
-              <strong className="text-destructive">Conflict:</strong> <span className="text-destructive/80">{errors._conflict}</span>
-              <button onClick={() => { setErrors({}); refetch(); }} className="ml-3 underline text-destructive/60 hover:text-destructive">Reload record</button>
+              <strong className="text-destructive-tint">Conflict:</strong> <span className="text-destructive-tint/80">{errors._conflict}</span>
+              <button onClick={() => { setErrors({}); refetch(); }} className="ml-3 underline text-destructive-tint/60 hover:text-destructive-tint">Reload record</button>
             </div>
           )}
           {errors._save && (
             <div className="mb-4 p-4 ds-critical-card rounded-sm">
-              <strong className="text-destructive">Error:</strong> <span className="text-destructive/80">{errors._save}</span>
+              <strong className="text-destructive-tint">Error:</strong> <span className="text-destructive-tint/80">{errors._save}</span>
             </div>
           )}
           {(() => {

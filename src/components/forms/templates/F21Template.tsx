@@ -50,23 +50,23 @@ export function F21Template({ data, isTemplate = true, editMode = false, onChang
         <InfoCard formCode={FC} variant="tinted" icon={<Calendar size={14} />} title="Meeting Details">
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             <div className="flex items-center gap-2">
-              <Calendar size={14} className="text-amber-600 dark:text-amber-400 shrink-0" />
+              <Calendar size={14} className="text-warning-tint shrink-0" />
               <div className="flex flex-col">
-                <span className="text-[9px] font-bold text-amber-600 dark:text-amber-400 uppercase tracking-wide">Meeting Date</span>
+                <span className="text-[9px] font-bold text-warning-tint uppercase tracking-wide">Meeting Date</span>
                 {inp("meeting_date", "Date", "w-32")}
               </div>
             </div>
             <div className="flex items-center gap-2">
-              <Clock size={14} className="text-violet-600 dark:text-violet-400 shrink-0" />
+              <Clock size={14} className="text-primary-tint shrink-0" />
               <div className="flex flex-col">
-                <span className="text-[9px] font-bold text-violet-600 dark:text-violet-400 uppercase tracking-wide">Time</span>
+                <span className="text-[9px] font-bold text-primary-tint uppercase tracking-wide">Time</span>
                 {inp("meeting_time", "Time", "w-28")}
               </div>
             </div>
             <div className="flex items-center gap-2">
-              <MapPin size={14} className="text-emerald-600 dark:text-emerald-400 shrink-0" />
+              <MapPin size={14} className="text-success-tint shrink-0" />
               <div className="flex flex-col">
-                <span className="text-[9px] font-bold text-emerald-600 dark:text-emerald-400 uppercase tracking-wide">Place</span>
+                <span className="text-[9px] font-bold text-success-tint uppercase tracking-wide">Place</span>
                 {inp("meeting_place", "Place", "w-32")}
               </div>
             </div>
@@ -77,7 +77,7 @@ export function F21Template({ data, isTemplate = true, editMode = false, onChang
         <SectionDivider formCode={FC} title="Discussion Points" icon={<MessageSquare size={14} />} />
         <div className="px-2">
           <p className="text-[12px] font-semibold text-foreground mb-2">Following Points have been discussed:</p>
-          <div className="border border-violet-200 dark:border-violet-800 rounded-md p-4 bg-violet-50/30 dark:bg-violet-950/20">
+          <div className="border border-primary/25 dark:border-primary/45 rounded-md p-4 bg-primary/30 dark:bg-primary/20">
             {textArea("discussion_points", "Enter discussion points...")}
           </div>
         </div>
@@ -86,19 +86,19 @@ export function F21Template({ data, isTemplate = true, editMode = false, onChang
         <SectionDivider formCode={FC} title="Distribution" icon={<Users size={14} />} />
         <div className="px-2 space-y-3">
           <div className="flex items-center gap-3">
-            <span className="text-[10px] font-bold text-violet-700 dark:text-violet-300 uppercase tracking-wide shrink-0 min-w-[140px]">
+            <span className="text-[10px] font-bold text-primary-tint uppercase tracking-wide shrink-0 min-w-[140px]">
               Minutes Circulated With
             </span>
             {inp("minutes_circulated_with", "Circulated with...", "w-full")}
           </div>
           <div className="flex items-center gap-3">
-            <span className="text-[10px] font-bold text-violet-700 dark:text-violet-300 uppercase tracking-wide shrink-0 min-w-[140px]">
+            <span className="text-[10px] font-bold text-primary-tint uppercase tracking-wide shrink-0 min-w-[140px]">
               Prepared By
             </span>
             {inp("prepared_by", "Prepared By", "w-48")}
           </div>
           <div className="flex items-center gap-3 justify-end pt-2">
-            <span className="text-[10px] font-bold text-violet-700 dark:text-violet-300 uppercase tracking-wide shrink-0">
+            <span className="text-[10px] font-bold text-primary-tint uppercase tracking-wide shrink-0">
               Approved By
             </span>
             {inp("approved_by", "Approved By", "w-48")}

@@ -48,7 +48,7 @@ export default function DatabaseManagementPage() {
         {/* Page Header */}
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
-            <Database className="w-5 h-5 text-primary" />
+            <Database className="w-5 h-5 text-primary-tint" />
           </div>
           <div>
             <h1 className="text-2xl font-bold tracking-tight">Database Management</h1>
@@ -70,7 +70,7 @@ export default function DatabaseManagementPage() {
               className={cn(
                 "flex items-center gap-2 px-4 py-2 text-sm font-medium border-b-2 transition-all",
                 activeTab === tab.id
-                  ? "border-primary text-primary"
+                  ? "border-primary text-primary-tint"
                   : "border-transparent text-muted-foreground hover:text-foreground hover:border-border"
               )}
             >
@@ -170,11 +170,11 @@ function ErrorReportsTab() {
                     </p>
                   </div>
                   {r.resolved ? (
-                    <Badge variant="outline" className="text-[10px] bg-green-500/10">
+                    <Badge variant="outline" className="text-[10px] bg-success/10">
                       <CheckCircle className="w-3 h-3 mr-1" /> Resolved
                     </Badge>
                   ) : (
-                    <Badge variant="outline" className="text-[10px] bg-amber-500/10">
+                    <Badge variant="outline" className="text-[10px] bg-warning/10">
                       Open
                     </Badge>
                   )}
@@ -193,7 +193,7 @@ function ErrorReportsTab() {
                     />
                     <Button
                       size="sm"
-                      className="text-xs bg-green-600 hover:bg-green-700 text-white shrink-0"
+                      className="text-xs bg-success hover:bg-success-hover text-success-foreground shrink-0"
                       onClick={() => void handleResolve(r.id)}
                       disabled={resolvingId === r.id}
                     >
@@ -238,7 +238,7 @@ function BackupTab() {
       <Card>
         <CardHeader>
           <div className="flex items-center gap-2">
-            <Download className="w-5 h-5 text-primary" />
+            <Download className="w-5 h-5 text-primary-tint" />
             <CardTitle>Export Encrypted Backup</CardTitle>
           </div>
           <CardDescription>
@@ -247,9 +247,9 @@ function BackupTab() {
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div className="rounded-lg bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-800 p-3 flex items-start gap-3">
-            <AlertTriangle className="w-5 h-5 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
-            <div className="text-sm text-amber-800 dark:text-amber-200">
+          <div className="rounded-lg bg-warning/10 dark:bg-warning/20 border border-warning/25 dark:border-warning/45 p-3 flex items-start gap-3">
+            <AlertTriangle className="w-5 h-5 text-warning-tint shrink-0 mt-0.5" />
+            <div className="text-sm text-warning-tint">
               <p className="font-medium">Security Notice</p>
               <p className="mt-1">
                 Your backup will be encrypted with AES-GCM-256 using the password you set below.
@@ -328,7 +328,7 @@ function RestoreTab() {
       <Card>
         <CardHeader>
           <div className="flex items-center gap-2">
-            <Upload className="w-5 h-5 text-primary" />
+            <Upload className="w-5 h-5 text-primary-tint" />
             <CardTitle>Restore from Backup</CardTitle>
           </div>
           <CardDescription>
@@ -337,9 +337,9 @@ function RestoreTab() {
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div className="rounded-lg bg-red-50 dark:bg-red-950/20 border border-red-200 dark:border-red-800 p-3 flex items-start gap-3">
-            <AlertTriangle className="w-5 h-5 text-red-600 dark:text-red-400 shrink-0 mt-0.5" />
-            <div className="text-sm text-red-800 dark:text-red-200">
+          <div className="rounded-lg bg-destructive/10 dark:bg-destructive/20 border border-destructive/25 dark:border-destructive/45 p-3 flex items-start gap-3">
+            <AlertTriangle className="w-5 h-5 text-destructive-tint shrink-0 mt-0.5" />
+            <div className="text-sm text-destructive-tint">
               <p className="font-medium">Warning</p>
               <p className="mt-1">
                 Restoring will overwrite existing records with the same serial numbers.
@@ -389,35 +389,35 @@ function RestoreTab() {
             <div className={cn(
               "rounded-lg border p-4 mt-4",
               lastRestore.success
-                ? "bg-green-50 dark:bg-green-950/20 border-green-200 dark:border-green-800"
-                : "bg-amber-50 dark:bg-amber-950/20 border-amber-200 dark:border-amber-800"
+                ? "bg-success/10 dark:bg-success/20 border-success/25 dark:border-success/45"
+                : "bg-warning/10 dark:bg-warning/20 border-warning/25 dark:border-warning/45"
             )}>
               <div className="flex items-center gap-2 mb-2">
                 {lastRestore.success ? (
-                  <CheckCircle className="w-5 h-5 text-green-600" />
+                  <CheckCircle className="w-5 h-5 text-success-tint" />
                 ) : (
-                  <AlertTriangle className="w-5 h-5 text-amber-600" />
+                  <AlertTriangle className="w-5 h-5 text-warning-tint" />
                 )}
                 <span className="font-medium">{lastRestore.success ? "Restore Successful" : "Restore Completed with Issues"}</span>
               </div>
               <div className="grid grid-cols-3 gap-4 text-sm">
                 <div>
                   <span className="text-muted-foreground">Imported</span>
-                  <p className="text-lg font-semibold text-green-600">{lastRestore.imported}</p>
+                  <p className="text-lg font-semibold text-success-tint">{lastRestore.imported}</p>
                 </div>
                 <div>
                   <span className="text-muted-foreground">Skipped</span>
-                  <p className="text-lg font-semibold text-amber-600">{lastRestore.skipped}</p>
+                  <p className="text-lg font-semibold text-warning-tint">{lastRestore.skipped}</p>
                 </div>
                 <div>
                   <span className="text-muted-foreground">Errors</span>
-                  <p className="text-lg font-semibold text-red-600">{lastRestore.errors.length}</p>
+                  <p className="text-lg font-semibold text-destructive-tint">{lastRestore.errors.length}</p>
                 </div>
               </div>
               {lastRestore.errors.length > 0 && (
                 <div className="mt-3 p-2 bg-background rounded border text-xs font-mono max-h-40 overflow-auto">
                   {lastRestore.errors.map((e, i) => (
-                    <div key={i} className="text-red-600 py-0.5">{e}</div>
+                    <div key={i} className="text-destructive-tint py-0.5">{e}</div>
                   ))}
                 </div>
               )}
@@ -497,7 +497,7 @@ function ImportTab() {
       <Card>
         <CardHeader>
           <div className="flex items-center gap-2">
-            <FileSpreadsheet className="w-5 h-5 text-primary" />
+            <FileSpreadsheet className="w-5 h-5 text-primary-tint" />
             <CardTitle>Bulk Import Records</CardTitle>
           </div>
           <CardDescription>
@@ -516,7 +516,7 @@ function ImportTab() {
               className="max-w-md"
             />
             {file && (
-              <button onClick={clearFile} className="text-sm text-red-500 hover:text-red-700 flex items-center gap-1">
+              <button onClick={clearFile} className="text-sm text-destructive-tint hover:text-destructive-tint flex items-center gap-1">
                 <X className="w-3 h-3" /> Clear
               </button>
             )}
@@ -568,7 +568,7 @@ function ImportTab() {
                 type="checkbox"
                 checked={dryRun}
                 onChange={e => setDryRun(e.target.checked)}
-                className="rounded border-gray-300"
+                className="rounded border-border"
               />
               <span className="text-sm">Dry run (validate only, don't insert)</span>
             </label>
@@ -577,7 +577,7 @@ function ImportTab() {
                 type="checkbox"
                 checked={skipInvalid}
                 onChange={e => setSkipInvalid(e.target.checked)}
-                className="rounded border-gray-300"
+                className="rounded border-border"
               />
               <span className="text-sm">Skip invalid rows</span>
             </label>
@@ -598,14 +598,14 @@ function ImportTab() {
             <div className={cn(
               "rounded-lg border p-4",
               result.success
-                ? "bg-green-50 dark:bg-green-950/20 border-green-200 dark:border-green-800"
-                : "bg-amber-50 dark:bg-amber-950/20 border-amber-200 dark:border-amber-800"
+                ? "bg-success/10 dark:bg-success/15 border-success/30 dark:border-success/40"
+                : "bg-warning/10 dark:bg-warning/15 border-warning/30 dark:border-warning/40"
             )}>
               <div className="flex items-center gap-2 mb-2">
                 {result.success ? (
-                  <CheckCircle className="w-5 h-5 text-green-600" />
+                  <CheckCircle className="w-5 h-5 text-success-tint" />
                 ) : (
-                  <AlertTriangle className="w-5 h-5 text-amber-600" />
+                  <AlertTriangle className="w-5 h-5 text-warning-tint" />
                 )}
                 <span className="font-medium">
                   {dryRun ? "Validation Result" : "Import Result"}
@@ -614,11 +614,11 @@ function ImportTab() {
               <div className="grid grid-cols-3 gap-4 text-sm">
                 <div>
                   <span className="text-muted-foreground">{dryRun ? "Valid" : "Imported"}</span>
-                  <p className="text-lg font-semibold text-green-600">{result.imported}</p>
+                  <p className="text-lg font-semibold text-success-tint">{result.imported}</p>
                 </div>
                 <div>
                   <span className="text-muted-foreground">Failed</span>
-                  <p className="text-lg font-semibold text-red-600">{result.failed}</p>
+                  <p className="text-lg font-semibold text-destructive-tint">{result.failed}</p>
                 </div>
                 <div>
                   <span className="text-muted-foreground">Total</span>
@@ -628,7 +628,7 @@ function ImportTab() {
               {result.errors.length > 0 && (
                 <div className="mt-3 p-2 bg-background rounded border text-xs font-mono max-h-40 overflow-auto">
                   {result.errors.map((e, i) => (
-                    <div key={i} className="text-red-600 py-0.5">
+                    <div key={i} className="text-destructive-tint py-0.5">
                       Row {e.row} ({e.serial}): {e.error}
                     </div>
                   ))}

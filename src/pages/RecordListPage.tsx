@@ -35,16 +35,16 @@ import {
 const PAGE_SIZE = 12;
 
 const STATUS_STYLES: Record<string, string> = {
-  'Open': 'bg-red-500/15 text-red-400 border-red-500/25',
-  'In Progress': 'bg-amber-500/15 text-amber-400 border-amber-500/25',
-  'Closed': 'bg-emerald-500/15 text-emerald-400 border-emerald-500/25',
-  'Verified': 'bg-blue-500/15 text-blue-400 border-blue-500/25',
-  'Active': 'bg-emerald-500/15 text-emerald-400 border-emerald-500/25',
-  'Completed': 'bg-emerald-500/15 text-emerald-400 border-emerald-500/25',
-  'On Hold': 'bg-amber-500/15 text-amber-400 border-amber-500/25',
-  'Achieved': 'bg-emerald-500/15 text-emerald-400 border-emerald-500/25',
-  'On Track': 'bg-blue-500/15 text-blue-400 border-blue-500/25',
-  'Planned': 'bg-zinc-500/15 text-zinc-400 border-zinc-500/25',
+  'Open': 'bg-destructive/15 text-destructive-tint border-destructive/25',
+  'In Progress': 'bg-warning/15 text-warning-tint border-warning/25',
+  'Closed': 'bg-success/15 text-success-tint border-success/25',
+  'Verified': 'bg-primary/15 text-primary-tint border-primary/25',
+  'Active': 'bg-success/15 text-success-tint border-success/25',
+  'Completed': 'bg-success/15 text-success-tint border-success/25',
+  'On Hold': 'bg-warning/15 text-warning-tint border-warning/25',
+  'Achieved': 'bg-success/15 text-success-tint border-success/25',
+  'On Track': 'bg-primary/15 text-primary-tint border-primary/25',
+  'Planned': 'bg-ink/15 text-ink-3 border-ink/25',
 };
 
 // ============================================================================
@@ -52,9 +52,9 @@ const STATUS_STYLES: Record<string, string> = {
 // ============================================================================
 
 const INTEGRITY_ICON: Record<RuleSeverity, React.ReactNode> = {
-  clean: <CheckCircle className="w-3.5 h-3.5 text-emerald-400" />,
-  warning: <AlertTriangle className="w-3.5 h-3.5 text-amber-400" />,
-  critical: <Shield className="w-3.5 h-3.5 text-red-400" />,
+  clean: <CheckCircle className="w-3.5 h-3.5 text-success-tint" />,
+  warning: <AlertTriangle className="w-3.5 h-3.5 text-warning-tint" />,
+  critical: <Shield className="w-3.5 h-3.5 text-destructive-tint" />,
 };
 
 // ============================================================================
@@ -269,10 +269,10 @@ const RecordListPage: React.FC = () => {
     return (
       <AppShell breadcrumbs={breadcrumbs}>
       <div className="max-w-6xl mx-auto flex flex-col items-center justify-center py-20 ds-fade-enter">
-        <AlertTriangle className="w-12 h-12 text-destructive mb-4" />
+        <AlertTriangle className="w-12 h-12 text-destructive-tint mb-4" />
         <h2 className="text-xl text-foreground mb-2">Failed to Load Records</h2>
         <p className="text-muted-foreground mb-4">{(error as Error).message}</p>
-        <button onClick={() => refetch()} className="ds-press ds-focus-ring px-4 py-2 bg-primary text-primary-foreground rounded-sm flex items-center gap-2">
+        <button onClick={() => refetch()} className="ds-press ds-focus-ring px-4 py-2 bg-primary text-primary-foreground rounded-full flex items-center gap-2">
           <RefreshCw className="w-4 h-4" /> Retry
         </button>
       </div>
@@ -291,7 +291,7 @@ const RecordListPage: React.FC = () => {
           <p className="text-sm text-muted-foreground mt-1">
             {records?.length || 0} records across {activeFormCodes.length} form types
             {selectedSerials.size > 0 && (
-              <span className="ml-2 px-2 py-0.5 text-xs bg-primary/15 text-primary rounded-full font-medium">
+              <span className="ml-2 px-2 py-0.5 text-xs bg-primary/15 text-primary-tint rounded-full font-medium">
                 {selectedSerials.size} selected
               </span>
             )}
@@ -321,15 +321,15 @@ const RecordListPage: React.FC = () => {
                         : `Export all ${filteredRecords.length} visible record(s)`}
                   </div>
                   <button onClick={() => handleBatchExport('docx')} className="w-full px-4 py-3 text-sm text-popover-foreground hover:bg-accent flex items-center gap-3 transition-colors">
-                    <FileTextIcon className="w-5 h-5 text-blue-400" />
+                    <FileTextIcon className="w-5 h-5 text-primary-tint" />
                     <div className="text-left"><div className="font-medium">Word Document</div><div className="text-xs text-muted-foreground">.docx — formatted report</div></div>
                   </button>
                   <button onClick={() => handleBatchExport('json')} className="w-full px-4 py-3 text-sm text-popover-foreground hover:bg-accent flex items-center gap-3 transition-colors border-t border-border">
-                    <FileJson className="w-5 h-5 text-emerald-400" />
+                    <FileJson className="w-5 h-5 text-success-tint" />
                     <div className="text-left"><div className="font-medium">JSON</div><div className="text-xs text-muted-foreground">.json — raw data</div></div>
                   </button>
                   <button onClick={() => handleBatchExport('csv')} className="w-full px-4 py-3 text-sm text-popover-foreground hover:bg-accent flex items-center gap-3 transition-colors border-t border-border">
-                    <FileSpreadsheet className="w-5 h-5 text-amber-400" />
+                    <FileSpreadsheet className="w-5 h-5 text-warning-tint" />
                     <div className="text-left"><div className="font-medium">CSV</div><div className="text-xs text-muted-foreground">.csv — spreadsheet</div></div>
                   </button>
                 </div>
@@ -415,7 +415,7 @@ const RecordListPage: React.FC = () => {
           <button
             onClick={handleBulkApprove}
             disabled={isBulkApproving}
-            className="ds-press ds-focus-ring px-3 py-2 text-sm bg-emerald-500/15 text-emerald-400 rounded-sm flex items-center gap-1 hover:bg-emerald-500/25 transition-colors disabled:opacity-50 disabled:pointer-events-none"
+            className="ds-press ds-focus-ring px-3 py-2 text-sm bg-success/15 text-success-tint rounded-sm flex items-center gap-1 hover:bg-success/25 transition-colors disabled:opacity-50 disabled:pointer-events-none"
             title="Approve all selected records awaiting review"
           >
             {isBulkApproving ? <Loader2 className="w-4 h-4 animate-spin" /> : <CheckCircle className="w-4 h-4" />}
@@ -424,7 +424,7 @@ const RecordListPage: React.FC = () => {
         )}
 
         {selectedSerials.size > 0 && (
-          <button onClick={() => setSelectedSerials(new Set())} className="ds-press px-3 py-2 text-sm bg-destructive/15 text-destructive rounded-sm flex items-center gap-1 hover:bg-destructive/25 transition-colors">
+          <button onClick={() => setSelectedSerials(new Set())} className="ds-press px-3 py-2 text-sm bg-destructive/15 text-destructive-tint rounded-sm flex items-center gap-1 hover:bg-destructive/25 transition-colors">
             <XCircle className="w-4 h-4" /> Clear
           </button>
         )}
@@ -479,7 +479,7 @@ const RecordListPage: React.FC = () => {
         <>
           {/* Select All + Page info */}
           <div className="flex items-center gap-3 mb-2 px-4 py-2 bg-secondary/30 border border-border rounded-t-sm">
-            <button onClick={toggleSelectAll} className="text-muted-foreground hover:text-primary transition-colors" title={selectedSerials.size === pagedRecords.length ? 'Deselect all' : 'Select all'}>
+            <button onClick={toggleSelectAll} className="text-muted-foreground hover:text-primary-tint transition-colors" title={selectedSerials.size === pagedRecords.length ? 'Deselect all' : 'Select all'}>
               {selectedSerials.size === pagedRecords.length && pagedRecords.length > 0
                 ? <CheckSquare className="w-4 h-4" />
                 : <Square className="w-4 h-4" />}
@@ -510,8 +510,8 @@ const RecordListPage: React.FC = () => {
                   {/* Checkbox */}
                   <div className="shrink-0" onClick={e => { e.stopPropagation(); toggleSelect(record.serial as string); }}>
                     {isSelected
-                      ? <CheckSquare className="w-4 h-4 text-primary cursor-pointer" />
-                      : <Square className="w-4 h-4 text-muted-foreground hover:text-primary cursor-pointer transition-colors" />}
+                      ? <CheckSquare className="w-4 h-4 text-primary-tint cursor-pointer" />
+                      : <Square className="w-4 h-4 text-muted-foreground hover:text-primary-tint cursor-pointer transition-colors" />}
                   </div>
 
                   {/* Integrity indicator */}
@@ -521,7 +521,7 @@ const RecordListPage: React.FC = () => {
 
                   {/* Serial + Type */}
                   <div className="w-28 shrink-0">
-                    <span className="font-mono text-sm font-semibold text-primary group-hover:text-primary/80 transition-colors">
+                    <span className="font-mono text-sm font-semibold text-primary-tint group-hover:text-primary-tint/80 transition-colors">
                       {record.serial as string}
                     </span>
                     <p className="text-xs text-muted-foreground mt-0.5">{record.formCode as string}</p>
@@ -529,7 +529,7 @@ const RecordListPage: React.FC = () => {
 
                   {/* Name + Status */}
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm text-foreground truncate group-hover:text-primary/90 transition-colors">
+                    <p className="text-sm text-foreground truncate group-hover:text-primary-tint/90 transition-colors">
                       {record.formName as string}
                     </p>
                     <div className="flex items-center gap-2 mt-1">
@@ -550,14 +550,14 @@ const RecordListPage: React.FC = () => {
                   <div className="shrink-0 text-right">
                     {(record._editCount as number) > 0 && (
                       <span className={`text-[11px] font-medium px-1.5 py-0.5 rounded ${
-                        risk === 'high' ? 'text-destructive bg-destructive/10' : risk === 'medium' ? 'text-warning bg-warning/10' : 'text-muted-foreground bg-muted'
+                        risk === 'high' ? 'text-destructive-tint bg-destructive/10' : risk === 'medium' ? 'text-warning-tint bg-warning/10' : 'text-muted-foreground bg-muted'
                       }`}>
                         {(record._editCount as number)} edit{(record._editCount as number) !== 1 ? 's' : ''}
                       </span>
                     )}
                   </div>
 
-                  <ChevronRightIcon className="w-4 h-4 text-muted-foreground/40 group-hover:text-primary transition-colors shrink-0" />
+                  <ChevronRightIcon className="w-4 h-4 text-muted-foreground/40 group-hover:text-primary-tint transition-colors shrink-0" />
                 </button>
               );
             })}

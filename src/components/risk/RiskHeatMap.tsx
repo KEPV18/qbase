@@ -11,16 +11,16 @@ const LIKELIHOOD_LABELS = ["Rare", "Unlikely", "Possible", "Likely", "Almost Cer
 const IMPACT_LABELS = ["Negligible", "Minor", "Moderate", "Major", "Catastrophic"];
 
 function getCellColor(score: number): string {
-  if (score <= 3) return "bg-success/20 border-success/30 text-success";
-  if (score <= 6) return "bg-warning/20 border-warning/30 text-warning";
-  if (score <= 12) return "bg-orange-500/20 border-orange-500/30 text-orange-600";
-  return "bg-destructive/20 border-destructive/30 text-destructive";
+  if (score <= 3) return "bg-success/20 border-success/30 text-success-tint";
+  if (score <= 6) return "bg-warning/20 border-warning/30 text-warning-tint";
+  if (score <= 12) return "bg-warning/20 border-warning/30 text-warning-tint";
+  return "bg-destructive/20 border-destructive/30 text-destructive-tint";
 }
 
 function getCellBg(score: number): string {
   if (score <= 3) return "bg-success/10";
   if (score <= 6) return "bg-warning/10";
-  if (score <= 12) return "bg-orange-500/10";
+  if (score <= 12) return "bg-warning/10";
   return "bg-destructive/10";
 }
 
@@ -122,7 +122,7 @@ export function RiskHeatMap({ risks }: RiskHeatMapProps) {
         {[
           { label: "Low (1-3)", color: "bg-success/30" },
           { label: "Medium (4-6)", color: "bg-warning/30" },
-          { label: "High (7-12)", color: "bg-orange-500/30" },
+          { label: "High (7-12)", color: "bg-warning/30" },
           { label: "Critical (13-25)", color: "bg-destructive/30" },
         ].map(l => (
           <div key={l.label} className="flex items-center gap-1.5">

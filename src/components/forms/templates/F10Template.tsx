@@ -5,6 +5,7 @@
 // ============================================================================
 
 import React, { useState, useEffect } from "react";
+import { Check } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { FormDocument } from "../FormKit";
 
@@ -41,7 +42,7 @@ export function F10Template({ data, isTemplate = true, editMode = false, onChang
   const projectName = val(d, "project_name") || "";
 
   // ── Render helpers ──────────────────────────────────────────────────
-  const labelCls = "border border-border px-2 py-1.5 text-sm font-semibold text-foreground bg-muted/50 dark:bg-gray-800";
+  const labelCls = "border border-border px-2 py-1.5 text-sm font-semibold text-foreground bg-muted/50 dark:bg-secondary";
   const cellCls = "border border-border px-2 py-1.5 text-sm text-foreground";
 
   const inp = (key: string, placeholder?: string) => {
@@ -78,10 +79,10 @@ export function F10Template({ data, isTemplate = true, editMode = false, onChang
           {/* ROW 1: Date + Year */}
           <tr>
             <td colSpan={5} className="border border-border px-3 py-1.5 text-sm text-foreground">
-              <strong>Date</strong> 🡪 {inp("date", "DD/MM/YYYY")}
+              <strong>Date</strong> → {inp("date", "DD/MM/YYYY")}
             </td>
             <td colSpan={4} className="border border-border px-3 py-1.5 text-sm text-foreground">
-              <strong>Year</strong> 🡪 {inp("year", "2026")}
+              <strong>Year</strong> → {inp("year", "2026")}
             </td>
           </tr>
 
@@ -107,14 +108,14 @@ export function F10Template({ data, isTemplate = true, editMode = false, onChang
 
           {/* ROW 4: Self Rating header */}
           <tr>
-            <td colSpan={9} className="border border-border px-3 py-1.5 text-sm font-bold text-foreground text-center bg-muted/50 dark:bg-gray-800">
+            <td colSpan={9} className="border border-border px-3 py-1.5 text-sm font-bold text-foreground text-center bg-muted/50 dark:bg-secondary">
               Self Rating
             </td>
           </tr>
 
           {/* ROW 5: Rating column headers */}
           <tr>
-            <td colSpan={2} className={labelCls}>Comment 🡪</td>
+            <td colSpan={2} className={labelCls}>Comment →</td>
             <td className={cn(labelCls, "text-center text-xs")}>Excellent</td>
             <td className={cn(labelCls, "text-center text-xs")}>Good</td>
             <td className={cn(labelCls, "text-center text-xs")}>Satisfactory</td>
@@ -139,9 +140,9 @@ export function F10Template({ data, isTemplate = true, editMode = false, onChang
                           name={field.key}
                           checked={isSelected}
                           onChange={() => onChange?.(field.key, option)}
-                          className="accent-blue-600 w-4 h-4" />
+                          className="accent-primary w-4 h-4" />
                       ) : (
-                        isSelected ? <span className="text-lg font-bold">✓</span> : ""
+                        isSelected ? <Check className="w-4 h-4 text-primary-tint inline-block" aria-hidden="true" /> : ""
                       )}
                     </td>
                   );
@@ -190,7 +191,7 @@ export function F10Template({ data, isTemplate = true, editMode = false, onChang
 
           {/* For Office Use Only */}
           <tr>
-            <td colSpan={9} className="border border-border px-2 py-1.5 text-sm font-bold text-foreground text-center bg-muted/50 dark:bg-gray-800">
+            <td colSpan={9} className="border border-border px-2 py-1.5 text-sm font-bold text-foreground text-center bg-muted/50 dark:bg-secondary">
               For Office Use Only
             </td>
           </tr>
@@ -215,7 +216,7 @@ export function F10Template({ data, isTemplate = true, editMode = false, onChang
 
           {/* VEZLOO footer */}
           <tr>
-            <td colSpan={9} className="text-center text-[10px] font-bold text-gray-400 py-1 border border-border">
+            <td colSpan={9} className="text-center text-[10px] font-bold text-ink-3 py-1 border border-border">
               VEZLOO
             </td>
           </tr>

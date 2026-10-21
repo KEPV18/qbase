@@ -21,7 +21,7 @@ import {
   todayISO,
   type PreCreationGateData,
 } from '../../schemas';
-import { Shield, Loader2, Plus, X, AlertTriangle, FileText } from 'lucide-react';
+import { Shield, Loader2, Plus, X, AlertTriangle, FileText, Check } from 'lucide-react';
 
 // ============================================================================
 // Types
@@ -136,7 +136,7 @@ const PreCreationGate: React.FC<{
       <div className="bg-card border border-warning/30 rounded-lg p-6 max-w-lg w-full mx-4 shadow-xl ds-fade-enter">
         <div className="flex items-center gap-3 mb-4">
           <div className="w-10 h-10 rounded-full bg-warning/10 border border-warning/20 flex items-center justify-center">
-            <Shield className="w-5 h-5 text-warning" />
+            <Shield className="w-5 h-5 text-warning-tint" />
           </div>
           <div>
             <h3 className="text-lg font-semibold text-foreground">Pre-Creation Gate</h3>
@@ -145,7 +145,7 @@ const PreCreationGate: React.FC<{
         </div>
 
         <div className="bg-warning/10 border border-warning/20 rounded-sm p-3 mb-4">
-          <p className="text-sm text-warning">{warning}</p>
+          <p className="text-sm text-warning-tint">{warning}</p>
         </div>
 
         <p className="text-sm text-muted-foreground mb-4">
@@ -155,7 +155,7 @@ const PreCreationGate: React.FC<{
         <div className="space-y-4">
           <div>
             <label className="block text-sm font-medium text-foreground mb-1">
-              1. Why is this record needed? <span className="text-destructive">*</span>
+              1. Why is this record needed? <span className="text-destructive-tint">*</span>
             </label>
             <textarea
               value={needReason}
@@ -164,12 +164,12 @@ const PreCreationGate: React.FC<{
               className="input-modern w-full px-3 py-2 text-sm resize-none"
               rows={2}
             />
-            {errors.needReason && <p className="text-destructive text-xs mt-1">{errors.needReason}</p>}
+            {errors.needReason && <p className="text-destructive-tint text-xs mt-1">{errors.needReason}</p>}
           </div>
 
           <div>
             <label className="block text-sm font-medium text-foreground mb-1">
-              2. What business event triggered this? <span className="text-destructive">*</span>
+              2. What business event triggered this? <span className="text-destructive-tint">*</span>
             </label>
             <textarea
               value={businessEvent}
@@ -178,7 +178,7 @@ const PreCreationGate: React.FC<{
               className="input-modern w-full px-3 py-2 text-sm resize-none"
               rows={2}
             />
-            {errors.businessEvent && <p className="text-destructive text-xs mt-1">{errors.businessEvent}</p>}
+            {errors.businessEvent && <p className="text-destructive-tint text-xs mt-1">{errors.businessEvent}</p>}
           </div>
 
           <div>
@@ -191,14 +191,14 @@ const PreCreationGate: React.FC<{
               />
               3. I confirm this record is needed per its frequency schedule
             </label>
-            {errors.frequencyConfirmed && <p className="text-destructive text-xs mt-1">{errors.frequencyConfirmed}</p>}
+            {errors.frequencyConfirmed && <p className="text-destructive-tint text-xs mt-1">{errors.frequencyConfirmed}</p>}
           </div>
         </div>
 
         <div className="flex gap-3 mt-6 pt-4 border-t border-border">
           <button
             onClick={handlePass}
-            className="ds-press ds-focus-ring px-6 py-2 bg-primary text-primary-foreground rounded-sm font-medium"
+            className="ds-press ds-focus-ring px-6 py-2 bg-primary text-primary-foreground rounded-full font-medium"
           >
             Proceed to Form
           </button>
@@ -233,7 +233,7 @@ const TextField: React.FC<{
   <div className={`form-field ${field.width === 'full' ? 'col-span-2' : field.width === 'third' ? '' : 'col-span-1'}`}>
     <label className="block text-sm font-medium text-foreground mb-1">
       {field.label}
-      {field.required && <span className="text-destructive ml-1">*</span>}
+      {field.required && <span className="text-destructive-tint ml-1">*</span>}
     </label>
     <input
       type="text"
@@ -246,7 +246,7 @@ const TextField: React.FC<{
     {field.defaultValue === 'auto' && !readOnly && (
       <p className="text-xs text-muted-foreground mt-1">Auto-generated</p>
     )}
-    {error && <p className="text-destructive text-xs mt-1">{error}</p>}
+    {error && <p className="text-destructive-tint text-xs mt-1">{error}</p>}
   </div>
 );
 
@@ -260,7 +260,7 @@ const NumberField: React.FC<{
   <div className={`form-field ${field.width === 'full' ? 'col-span-2' : field.width === 'third' ? '' : 'col-span-1'}`}>
     <label className="block text-sm font-medium text-foreground mb-1">
       {field.label}
-      {field.required && <span className="text-destructive ml-1">*</span>}
+      {field.required && <span className="text-destructive-tint ml-1">*</span>}
     </label>
     <input
       type="number"
@@ -271,7 +271,7 @@ const NumberField: React.FC<{
       disabled={readOnly}
       className={`${FIELD_NORMAL} ${error ? FIELD_ERROR : ''} ${readOnly ? FIELD_READONLY : ''}`}
     />
-    {error && <p className="text-destructive text-xs mt-1">{error}</p>}
+    {error && <p className="text-destructive-tint text-xs mt-1">{error}</p>}
   </div>
 );
 
@@ -285,7 +285,7 @@ const DateField: React.FC<{
   <div className={`form-field ${field.width === 'full' ? 'col-span-2' : field.width === 'third' ? '' : 'col-span-1'}`}>
     <label className="block text-sm font-medium text-foreground mb-1">
       {field.label}
-      {field.required && <span className="text-destructive ml-1">*</span>}
+      {field.required && <span className="text-destructive-tint ml-1">*</span>}
     </label>
     <input
       type="date"
@@ -294,7 +294,7 @@ const DateField: React.FC<{
       disabled={readOnly}
       className={`${FIELD_NORMAL} ${error ? FIELD_ERROR : ''} ${readOnly ? FIELD_READONLY : ''}`}
     />
-    {error && <p className="text-destructive text-xs mt-1">{error}</p>}
+    {error && <p className="text-destructive-tint text-xs mt-1">{error}</p>}
   </div>
 );
 
@@ -308,7 +308,7 @@ const SelectField: React.FC<{
   <div className={`form-field ${field.width === 'full' ? 'col-span-2' : field.width === 'third' ? '' : 'col-span-1'}`}>
     <label className="block text-sm font-medium text-foreground mb-1">
       {field.label}
-      {field.required && <span className="text-destructive ml-1">*</span>}
+      {field.required && <span className="text-destructive-tint ml-1">*</span>}
     </label>
     <select
       value={value}
@@ -321,7 +321,7 @@ const SelectField: React.FC<{
         <option key={opt} value={opt}>{opt}</option>
       ))}
     </select>
-    {error && <p className="text-destructive text-xs mt-1">{error}</p>}
+    {error && <p className="text-destructive-tint text-xs mt-1">{error}</p>}
   </div>
 );
 
@@ -335,7 +335,7 @@ const TextareaField: React.FC<{
   <div className="form-field col-span-2">
     <label className="block text-sm font-medium text-foreground mb-1">
       {field.label}
-      {field.required && <span className="text-destructive ml-1">*</span>}
+      {field.required && <span className="text-destructive-tint ml-1">*</span>}
     </label>
     <textarea
       value={value}
@@ -345,7 +345,7 @@ const TextareaField: React.FC<{
       rows={3}
       className={`${FIELD_NORMAL} resize-none ${error ? FIELD_ERROR : ''} ${readOnly ? FIELD_READONLY : ''}`}
     />
-    {error && <p className="text-destructive text-xs mt-1">{error}</p>}
+    {error && <p className="text-destructive-tint text-xs mt-1">{error}</p>}
   </div>
 );
 
@@ -371,7 +371,7 @@ const CheckboxField: React.FC<{
 
 const HeadingField: React.FC<{ field: FieldSchema }> = ({ field }) => (
   <div className="col-span-2 mt-4 pt-2 border-t border-border">
-    <h3 className="text-sm font-semibold text-primary uppercase tracking-wider">{field.label}</h3>
+    <h3 className="text-sm font-semibold text-primary-tint uppercase tracking-wider">{field.label}</h3>
   </div>
 );
 
@@ -414,7 +414,7 @@ const TableField: React.FC<{
     <div className="col-span-2">
       <label className="block text-sm font-medium text-foreground mb-2">
         {field.label}
-        {field.required && <span className="text-destructive ml-1">*</span>}
+        {field.required && <span className="text-destructive-tint ml-1">*</span>}
       </label>
       <div className="overflow-x-auto rounded-sm border border-border">
         <table className="w-full text-sm">
@@ -424,7 +424,7 @@ const TableField: React.FC<{
               {columns.map(col => (
                 <th key={col.key} className="px-3 py-2 text-left text-secondary-foreground font-medium">
                   {col.label}
-                  {col.required && <span className="text-destructive ml-1">*</span>}
+                  {col.required && <span className="text-destructive-tint ml-1">*</span>}
                 </th>
               ))}
               {!readOnly && <th className="px-2 py-2 w-10"></th>}
@@ -478,7 +478,7 @@ const TableField: React.FC<{
                   <td className="px-2 py-1">
                     <button
                       onClick={() => removeRow(ri)}
-                      className="text-destructive hover:text-destructive/80 text-sm ds-press"
+                      className="text-destructive-tint hover:text-destructive-tint/80 text-sm ds-press"
                       title="Remove row"
                     >
                       <X className="w-4 h-4" />
@@ -490,11 +490,11 @@ const TableField: React.FC<{
           </tbody>
         </table>
       </div>
-      {tableError && <p className="text-destructive text-xs mt-1">{tableError}</p>}
+      {tableError && <p className="text-destructive-tint text-xs mt-1">{tableError}</p>}
       {!readOnly && (
         <button
           onClick={addRow}
-          className="mt-2 ds-press px-3 py-1.5 text-sm rounded-sm border border-dashed border-border text-muted-foreground hover:text-primary hover:border-primary transition-colors flex items-center gap-1"
+          className="mt-2 ds-press px-3 py-1.5 text-sm rounded-sm border border-dashed border-border text-muted-foreground hover:text-primary-tint hover:border-primary transition-colors flex items-center gap-1"
         >
           <Plus className="w-4 h-4" /> Add Row
         </button>
@@ -514,7 +514,7 @@ const ValidationBanner: React.FC<{ errors: Record<string, string>; onDismiss: ()
   return (
     <div className="mb-4 ds-critical-card rounded-sm p-4">
       <div className="flex items-center justify-between mb-2">
-        <div className="flex items-center gap-2 text-destructive font-medium text-sm">
+        <div className="flex items-center gap-2 text-destructive-tint font-medium text-sm">
           <AlertTriangle className="w-4 h-4" />
           {count} validation error{count !== 1 ? 's' : ''}
         </div>
@@ -522,7 +522,7 @@ const ValidationBanner: React.FC<{ errors: Record<string, string>; onDismiss: ()
           Dismiss
         </button>
       </div>
-      <ul className="space-y-1 text-xs text-destructive/80">
+      <ul className="space-y-1 text-xs text-destructive-tint/80">
         {Object.entries(errors).map(([key, msg]) => (
           <li key={key}><span className="font-mono text-foreground/70">{key}:</span> {msg}</li>
         ))}
@@ -762,11 +762,11 @@ const DynamicFormRenderer: React.FC<DynamicFormRendererProps> = ({
         <div className="ds-card p-6">
           <div className="text-center py-12">
             <div className="w-16 h-16 rounded-full bg-warning/10 border border-warning/20 flex items-center justify-center mx-auto mb-4">
-              <Shield className="w-8 h-8 text-warning" />
+              <Shield className="w-8 h-8 text-warning-tint" />
             </div>
             <h3 className="text-lg text-foreground mb-2">Complete the Pre-Creation Gate</h3>
             <p className="text-sm text-muted-foreground">
-              Answer 3 questions before filling the <span className="text-primary font-mono font-semibold">{selectedCode}</span> form.
+              Answer 3 questions before filling the <span className="text-primary-tint font-mono font-semibold">{selectedCode}</span> form.
             </p>
           </div>
         </div>
@@ -781,7 +781,7 @@ const DynamicFormRenderer: React.FC<DynamicFormRendererProps> = ({
           {/* Form header */}
           <div className="mb-6">
             <div className="flex items-center gap-3 mb-2">
-              <span className="px-2 py-1 text-xs font-bold bg-primary/15 text-primary rounded-sm font-mono">
+              <span className="px-2 py-1 text-xs font-bold bg-primary/15 text-primary-tint rounded-sm font-mono">
                 {schema.code}
               </span>
               <h2 className="text-xl font-semibold text-foreground">{schema.name}</h2>
@@ -793,15 +793,16 @@ const DynamicFormRenderer: React.FC<DynamicFormRendererProps> = ({
               <span>Frequency: {schema.frequency}</span>
               <span>·</span>
               <span className={
-                schema.importance === 'Critical' ? 'text-destructive font-medium' :
-                schema.importance === 'High' ? 'text-warning font-medium' : ''
+                schema.importance === 'Critical' ? 'text-destructive-tint font-medium' :
+                schema.importance === 'High' ? 'text-warning-tint font-medium' : ''
               }>
                 {schema.importance}
               </span>
             </div>
             {gateAnswers && (
-              <div className="mt-2 text-xs bg-success/10 border border-success/20 rounded-sm px-3 py-1.5 text-success">
-                ✓ Gate passed — Reason: {gateAnswers.needReason.slice(0, 60)}...
+              <div className="mt-2 text-xs bg-success/10 border border-success/20 rounded-sm px-3 py-1.5 text-success-tint">
+                <Check className="w-3 h-3 mr-1 inline-block" aria-hidden="true" />
+                Gate passed — Reason: {gateAnswers.needReason.slice(0, 60)}...
               </div>
             )}
           </div>
@@ -826,7 +827,7 @@ const DynamicFormRenderer: React.FC<DynamicFormRendererProps> = ({
                   className={`ds-press ds-focus-ring px-6 py-2 rounded-sm font-medium flex items-center gap-2 ${
                     (submitting || readOnly)
                       ? 'bg-muted text-muted-foreground cursor-not-allowed'
-                      : 'bg-primary text-primary-foreground hover:bg-primary/90'
+                      : 'bg-primary text-primary-foreground hover:bg-primary-hover'
                   } transition-colors`}
                 >
                   {isSubmitting && <Loader2 className="w-4 h-4 animate-spin" />}

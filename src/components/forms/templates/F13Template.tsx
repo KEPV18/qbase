@@ -147,7 +147,7 @@ export function F13Template({
                 To,
               </td>
               <td colSpan={5} className={cn(TBL, "p-2")}>
-                <span className="font-semibold">Purchase Order No. 🡪 </span>
+                <span className="font-semibold">Purchase Order No. → </span>
                 {ec("serial", val(d, "serial"), { label: "PO No." })}
               </td>
             </tr>
@@ -165,7 +165,7 @@ export function F13Template({
                 </span>
               </td>
               <td colSpan={5} className={cn(TBL, "p-2")}>
-                <span className="font-semibold">Date 🡪 </span>
+                <span className="font-semibold">Date → </span>
                 {ec("date", val(d, "date"), { label: "DD/MM/YYYY" })}
               </td>
             </tr>
@@ -301,7 +301,7 @@ export function F13Template({
       </div>
 
       {/* ── Mobile Fallback ── */}
-      <div className="md:hidden mt-4 space-y-3 text-xs border border-border rounded p-3 print:hidden">
+      <div className="md:hidden mt-4 space-y-3 text-xs border border-border rounded-lg p-3 print:hidden">
         <p className="font-semibold text-muted-foreground">— Mobile Preview —</p>
         <div>
           <span className="font-semibold">PO No: </span>

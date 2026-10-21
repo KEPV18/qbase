@@ -107,7 +107,7 @@ export function F44Template({ data, isTemplate = true, editMode = false, onChang
           {/* PDF header bar */}
           <div className="flex items-center justify-between p-3 rounded-md bg-primary/5 border border-border">
             <div className="flex items-center gap-2">
-              <FileText size={18} className="text-primary" />
+              <FileText size={18} className="text-primary-tint" />
               <div>
                 <div className="text-sm font-bold text-foreground">Signed Job Description — PDF</div>
                 <div className="text-xs text-muted-foreground">
@@ -117,11 +117,11 @@ export function F44Template({ data, isTemplate = true, editMode = false, onChang
             </div>
             <div className="flex items-center gap-2">
               <a href={signedDocUrl} download
-                className="flex items-center gap-1 px-3 py-1.5 text-xs font-medium rounded-md bg-primary/10 hover:bg-primary/20 text-primary transition-colors">
+                className="flex items-center gap-1 px-3 py-1.5 text-xs font-medium rounded-md bg-primary/10 hover:bg-primary/20 text-primary-tint transition-colors">
                 <Download size={12} /> Download
               </a>
               <a href={signedDocUrl} target="_blank" rel="noopener noreferrer"
-                className="flex items-center gap-1 px-3 py-1.5 text-xs font-medium rounded-md bg-primary/10 hover:bg-primary/20 text-primary transition-colors">
+                className="flex items-center gap-1 px-3 py-1.5 text-xs font-medium rounded-md bg-primary/10 hover:bg-primary/20 text-primary-tint transition-colors">
                 <ExternalLink size={12} /> Open
               </a>
             </div>
@@ -134,7 +134,7 @@ export function F44Template({ data, isTemplate = true, editMode = false, onChang
                 title="Signed Job Description PDF">
                 <p className="p-4 text-sm text-muted-foreground text-center">
                   Your browser does not support inline PDFs.
-                  <a href={signedDocUrl} target="_blank" rel="noopener noreferrer" className="text-primary underline ml-1">
+                  <a href={signedDocUrl} target="_blank" rel="noopener noreferrer" className="text-primary-tint underline ml-1">
                     Click here to view the PDF
                   </a>
                 </p>
@@ -169,10 +169,10 @@ export function F44Template({ data, isTemplate = true, editMode = false, onChang
       <FormDocument formCode={FC} formName="Job Description" serial={val(d, "serial")} sectionName="HR & Training" className={className}>
         <div className="p-4">
           <div className="flex items-center gap-2 p-3 rounded-md bg-primary/5 border border-border">
-            <FileText size={16} className="text-primary" />
+            <FileText size={16} className="text-primary-tint" />
             <span className="text-sm font-semibold text-foreground">Signed Document (PDF):</span>
             <a href={signedDocUrl} target="_blank" rel="noopener noreferrer"
-              className="text-xs text-primary underline hover:opacity-80">{signedDocUrl.split('/').pop()}</a>
+              className="text-xs text-primary-tint underline hover:opacity-80">{signedDocUrl.split('/').pop()}</a>
           </div>
         </div>
       </FormDocument>
@@ -263,13 +263,13 @@ export function F44Template({ data, isTemplate = true, editMode = false, onChang
                   {section.tag && (
                     <span className={cn(
                       "text-[8px] font-bold px-1.5 py-0.5 rounded uppercase tracking-wide",
-                      section.tag.includes('PRIMARY') ? "bg-primary/15 text-primary" : "bg-muted text-muted-foreground"
+                      section.tag.includes('PRIMARY') ? "bg-primary/15 text-primary-tint" : "bg-muted text-muted-foreground"
                     )}>
                       {section.tag}
                     </span>
                   )}
                   {section.isPlain && !section.tag && (
-                    <span className="text-[8px] font-bold px-1.5 py-0.5 rounded uppercase tracking-wide bg-blue-500/15 text-blue-600 dark:text-blue-400">
+                    <span className="text-[8px] font-bold px-1.5 py-0.5 rounded uppercase tracking-wide bg-primary/15 text-primary-tint">
                       Details
                     </span>
                   )}

@@ -7,6 +7,7 @@
 // ============================================================================
 
 import React from "react";
+import { Check } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 // ── Props shared by all templates ──────────────────────────────────────
@@ -27,200 +28,92 @@ export function val(data: Record<string, unknown> | undefined, key: string): str
 }
 
 // ════════════════════════════════════════════════════════════════════════
-// ACCENT COLOR SYSTEM — Each form gets a unique color theme
+// DOCUMENT PALETTE
+//
+// A QMS record is paper, not a dashboard.  Giving each of the 35 forms its
+// own hue put 35 competing colours into a product that allows exactly one
+// accent per view — and the colour carried no information, because a hue
+// is not a wayfinding signal a reader can act on.
+//
+// The document palette is therefore grayscale plus a single accent:
+//   · masthead  — the deep blue→indigo gradient.  The document's ONE
+//                 coloured surface; it carries the brand mark and the
+//                 form code, and nothing else in the record competes
+//                 with it.
+//   · values    — near-black.  The answer the reader came for.
+//   · labels    — muted gray, small, uppercase, tracked.
+//   · rules     — hairline gray.  Never a coloured left-bar.
+//
+// Every colour below is a token, and every pairing is measured:
+//   text-foreground on card       16.83:1  light / 15.63:1  dark
+//   text-ink-2      on card        5.07:1  light /  6.61:1  dark
+//   text-ink-2      on bg-muted/40 4.82:1  light /  6.47:1  dark
+//   white on the masthead ramp    5.56:1 (white/70) … 9.50:1 (white/100)
 // ════════════════════════════════════════════════════════════════════════
 
-export type FormAccent =
-  | "blue" | "emerald" | "violet" | "amber" | "rose" | "cyan"
-  | "indigo" | "orange" | "teal" | "pink" | "purple" | "lime"
-  | "sky" | "fuchsia" | "red" | "green";
-
-const ACCENT_MAP: Record<FormAccent, {
-  text: string;       // colored text
-  textDark: string;   // dark mode text
-  bg: string;         // light bg tint
-  bgDark: string;      // dark bg tint
-  border: string;     // border color
-  borderDark: string; // dark border
-  gradient: string;   // gradient for header
+export interface FormAccent {
+  /** Primary text — the answer, the title, the heading. */
+  text: string;
+  /** Primary text, dark mode. */
+  textDark: string;
+  /** Neutral band ground (title bar, section band). */
+  bg: string;
+  /** Neutral band ground, dark mode. */
+  bgDark: string;
+  /** Hairline rule. */
+  border: string;
+  /** Hairline rule, dark mode. */
+  borderDark: string;
+  /** Masthead gradient stops. */
+  gradient: string;
+  /** Masthead gradient stops, dark mode. */
   gradientDark: string;
-  chip: string;       // small chip bg
+  /** Small chip ground. */
+  chip: string;
+  /** Small chip ground, dark mode. */
   chipDark: string;
-  label: string;      // label text color
+  /** Field label colour — muted gray, never the accent. */
+  label: string;
+  /** Field label colour, dark mode. */
   labelDark: string;
-  value: string;      // answer value color
-  valueDark: string;  // dark answer value
-}> = {
-  blue: {
-    text: "text-blue-600", textDark: "dark:text-blue-400",
-    bg: "bg-blue-50", bgDark: "dark:bg-blue-950/40",
-    border: "border-blue-200", borderDark: "dark:border-blue-800",
-    gradient: "from-blue-600 to-blue-800", gradientDark: "dark:from-blue-500 dark:to-blue-700",
-    chip: "bg-blue-100", chipDark: "dark:bg-blue-900/50",
-    label: "text-blue-700", labelDark: "dark:text-blue-300",
-    value: "text-blue-900", valueDark: "dark:text-blue-100",
-  },
-  emerald: {
-    text: "text-emerald-600", textDark: "dark:text-emerald-400",
-    bg: "bg-emerald-50", bgDark: "dark:bg-emerald-950/40",
-    border: "border-emerald-200", borderDark: "dark:border-emerald-800",
-    gradient: "from-emerald-600 to-emerald-800", gradientDark: "dark:from-emerald-500 dark:to-emerald-700",
-    chip: "bg-emerald-100", chipDark: "dark:bg-emerald-900/50",
-    label: "text-emerald-700", labelDark: "dark:text-emerald-300",
-    value: "text-emerald-900", valueDark: "dark:text-emerald-100",
-  },
-  violet: {
-    text: "text-violet-600", textDark: "dark:text-violet-400",
-    bg: "bg-violet-50", bgDark: "dark:bg-violet-950/40",
-    border: "border-violet-200", borderDark: "dark:border-violet-800",
-    gradient: "from-violet-600 to-violet-800", gradientDark: "dark:from-violet-500 dark:to-violet-700",
-    chip: "bg-violet-100", chipDark: "dark:bg-violet-900/50",
-    label: "text-violet-700", labelDark: "dark:text-violet-300",
-    value: "text-violet-900", valueDark: "dark:text-violet-100",
-  },
-  amber: {
-    text: "text-amber-600", textDark: "dark:text-amber-400",
-    bg: "bg-amber-50", bgDark: "dark:bg-amber-950/40",
-    border: "border-amber-200", borderDark: "dark:border-amber-800",
-    gradient: "from-amber-600 to-amber-800", gradientDark: "dark:from-amber-500 dark:to-amber-700",
-    chip: "bg-amber-100", chipDark: "dark:bg-amber-900/50",
-    label: "text-amber-700", labelDark: "dark:text-amber-300",
-    value: "text-amber-900", valueDark: "dark:text-amber-100",
-  },
-  rose: {
-    text: "text-rose-600", textDark: "dark:text-rose-400",
-    bg: "bg-rose-50", bgDark: "dark:bg-rose-950/40",
-    border: "border-rose-200", borderDark: "dark:border-rose-800",
-    gradient: "from-rose-600 to-rose-800", gradientDark: "dark:from-rose-500 dark:to-rose-700",
-    chip: "bg-rose-100", chipDark: "dark:bg-rose-900/50",
-    label: "text-rose-700", labelDark: "dark:text-rose-300",
-    value: "text-rose-900", valueDark: "dark:text-rose-100",
-  },
-  cyan: {
-    text: "text-cyan-600", textDark: "dark:text-cyan-400",
-    bg: "bg-cyan-50", bgDark: "dark:bg-cyan-950/40",
-    border: "border-cyan-200", borderDark: "dark:border-cyan-800",
-    gradient: "from-cyan-600 to-cyan-800", gradientDark: "dark:from-cyan-500 dark:to-cyan-700",
-    chip: "bg-cyan-100", chipDark: "dark:bg-cyan-900/50",
-    label: "text-cyan-700", labelDark: "dark:text-cyan-300",
-    value: "text-cyan-900", valueDark: "dark:text-cyan-100",
-  },
-  indigo: {
-    text: "text-indigo-600", textDark: "dark:text-indigo-400",
-    bg: "bg-indigo-50", bgDark: "dark:bg-indigo-950/40",
-    border: "border-indigo-200", borderDark: "dark:border-indigo-800",
-    gradient: "from-indigo-600 to-indigo-800", gradientDark: "dark:from-indigo-500 dark:to-indigo-700",
-    chip: "bg-indigo-100", chipDark: "dark:bg-indigo-900/50",
-    label: "text-indigo-700", labelDark: "dark:text-indigo-300",
-    value: "text-indigo-900", valueDark: "dark:text-indigo-100",
-  },
-  orange: {
-    text: "text-orange-600", textDark: "dark:text-orange-400",
-    bg: "bg-orange-50", bgDark: "dark:bg-orange-950/40",
-    border: "border-orange-200", borderDark: "dark:border-orange-800",
-    gradient: "from-orange-600 to-orange-800", gradientDark: "dark:from-orange-500 dark:to-orange-700",
-    chip: "bg-orange-100", chipDark: "dark:bg-orange-900/50",
-    label: "text-orange-700", labelDark: "dark:text-orange-300",
-    value: "text-orange-900", valueDark: "dark:text-orange-100",
-  },
-  teal: {
-    text: "text-teal-600", textDark: "dark:text-teal-400",
-    bg: "bg-teal-50", bgDark: "dark:bg-teal-950/40",
-    border: "border-teal-200", borderDark: "dark:border-teal-800",
-    gradient: "from-teal-600 to-teal-800", gradientDark: "dark:from-teal-500 dark:to-teal-700",
-    chip: "bg-teal-100", chipDark: "dark:bg-teal-900/50",
-    label: "text-teal-700", labelDark: "dark:text-teal-300",
-    value: "text-teal-900", valueDark: "dark:text-teal-100",
-  },
-  pink: {
-    text: "text-pink-600", textDark: "dark:text-pink-400",
-    bg: "bg-pink-50", bgDark: "dark:bg-pink-950/40",
-    border: "border-pink-200", borderDark: "dark:border-pink-800",
-    gradient: "from-pink-600 to-pink-800", gradientDark: "dark:from-pink-500 dark:to-pink-700",
-    chip: "bg-pink-100", chipDark: "dark:bg-pink-900/50",
-    label: "text-pink-700", labelDark: "dark:text-pink-300",
-    value: "text-pink-900", valueDark: "dark:text-pink-100",
-  },
-  purple: {
-    text: "text-purple-600", textDark: "dark:text-purple-400",
-    bg: "bg-purple-50", bgDark: "dark:bg-purple-950/40",
-    border: "border-purple-200", borderDark: "dark:border-purple-800",
-    gradient: "from-purple-600 to-purple-800", gradientDark: "dark:from-purple-500 dark:to-purple-700",
-    chip: "bg-purple-100", chipDark: "dark:bg-purple-900/50",
-    label: "text-purple-700", labelDark: "dark:text-purple-300",
-    value: "text-purple-900", valueDark: "dark:text-purple-100",
-  },
-  lime: {
-    text: "text-lime-600", textDark: "dark:text-lime-400",
-    bg: "bg-lime-50", bgDark: "dark:bg-lime-950/40",
-    border: "border-lime-200", borderDark: "dark:border-lime-800",
-    gradient: "from-lime-600 to-lime-800", gradientDark: "dark:from-lime-500 dark:to-lime-700",
-    chip: "bg-lime-100", chipDark: "dark:bg-lime-900/50",
-    label: "text-lime-700", labelDark: "dark:text-lime-300",
-    value: "text-lime-900", valueDark: "dark:text-lime-100",
-  },
-  sky: {
-    text: "text-sky-600", textDark: "dark:text-sky-400",
-    bg: "bg-sky-50", bgDark: "dark:bg-sky-950/40",
-    border: "border-sky-200", borderDark: "dark:border-sky-800",
-    gradient: "from-sky-600 to-sky-800", gradientDark: "dark:from-sky-500 dark:to-sky-700",
-    chip: "bg-sky-100", chipDark: "dark:bg-sky-900/50",
-    label: "text-sky-700", labelDark: "dark:text-sky-300",
-    value: "text-sky-900", valueDark: "dark:text-sky-100",
-  },
-  fuchsia: {
-    text: "text-fuchsia-600", textDark: "dark:text-fuchsia-400",
-    bg: "bg-fuchsia-50", bgDark: "dark:bg-fuchsia-950/40",
-    border: "border-fuchsia-200", borderDark: "dark:border-fuchsia-800",
-    gradient: "from-fuchsia-600 to-fuchsia-800", gradientDark: "dark:from-fuchsia-500 dark:to-fuchsia-700",
-    chip: "bg-fuchsia-100", chipDark: "dark:bg-fuchsia-900/50",
-    label: "text-fuchsia-700", labelDark: "dark:text-fuchsia-300",
-    value: "text-fuchsia-900", valueDark: "dark:text-fuchsia-100",
-  },
-  red: {
-    text: "text-red-600", textDark: "dark:text-red-400",
-    bg: "bg-red-50", bgDark: "dark:bg-red-950/40",
-    border: "border-red-200", borderDark: "dark:border-red-800",
-    gradient: "from-red-600 to-red-800", gradientDark: "dark:from-red-500 dark:to-red-700",
-    chip: "bg-red-100", chipDark: "dark:bg-red-900/50",
-    label: "text-red-700", labelDark: "dark:text-red-300",
-    value: "text-red-900", valueDark: "dark:text-red-100",
-  },
-  green: {
-    text: "text-green-600", textDark: "dark:text-green-400",
-    bg: "bg-green-50", bgDark: "dark:bg-green-950/40",
-    border: "border-green-200", borderDark: "dark:border-green-800",
-    gradient: "from-green-600 to-green-800", gradientDark: "dark:from-green-500 dark:to-green-700",
-    chip: "bg-green-100", chipDark: "dark:bg-green-900/50",
-    label: "text-green-700", labelDark: "dark:text-green-300",
-    value: "text-green-900", valueDark: "dark:text-green-100",
-  },
+  /** Answer value colour. */
+  value: string;
+  /** Answer value colour, dark mode. */
+  valueDark: string;
+}
+
+const DOC_PALETTE: FormAccent = {
+  text: "text-foreground",
+  textDark: "dark:text-foreground",
+  bg: "bg-muted/40",
+  bgDark: "dark:bg-muted/30",
+  border: "border-border",
+  borderDark: "dark:border-border",
+  gradient: "from-masthead-from to-masthead-to",
+  gradientDark: "dark:from-masthead-from dark:to-masthead-to",
+  chip: "bg-track",
+  chipDark: "dark:bg-track",
+  label: "text-ink-2",
+  labelDark: "dark:text-ink-2",
+  value: "text-foreground",
+  valueDark: "dark:text-foreground",
 };
 
-/** Get accent config for a form code */
+/**
+ * Get the document palette for a form code.
+ *
+ * Every form shares one palette by design — see the note above.  The
+ * `formCode` argument is kept so callers do not have to change and so a
+ * future per-section accent has a single place to live.
+ */
 export function getAccent(formCode: string): FormAccent {
-  // Map each form to a unique accent color
-  const FORM_ACCENTS: Record<string, FormAccent> = {
-    "F/08": "blue", "F/09": "emerald", "F/10": "violet",
-    "F/11": "amber", "F/12": "rose", "F/13": "cyan",
-    "F/14": "indigo", "F/15": "orange", "F/16": "teal",
-    "F/17": "pink", "F/18": "purple", "F/19": "lime",
-    "F/20": "sky", "F/21": "fuchsia", "F/22": "red",
-    "F/23": "green", "F/24": "blue", "F/25": "emerald",
-    "F/28": "violet", "F/29": "amber", "F/30": "rose",
-    "F/32": "cyan", "F/34": "indigo", "F/35": "orange",
-    "F/37": "teal", "F/40": "pink", "F/41": "purple",
-    "F/42": "lime", "F/43": "sky", "F/44": "fuchsia",
-    "F/45": "red", "F/47": "green", "F/48": "blue",
-    "F/50": "emerald",
-  };
-  return FORM_ACCENTS[formCode] || "blue";
+  void formCode;
+  return DOC_PALETTE;
 }
 
 /** Get the full accent style object */
-export function useAccent(formCode: string) {
-  const accentName = getAccent(formCode);
-  return ACCENT_MAP[accentName];
+export function useAccent(formCode: string): FormAccent {
+  return getAccent(formCode);
 }
 
 /**
@@ -228,8 +121,8 @@ export function useAccent(formCode: string) {
  * `useAccent` cannot be called from inside a loop or a callback, so renderers
  * that resolve an accent per form inside a `.map()` need this form.
  */
-export function getAccentStyles(formCode: string): (typeof ACCENT_MAP)[FormAccent] {
-  return ACCENT_MAP[getAccent(formCode)];
+export function getAccentStyles(formCode: string): FormAccent {
+  return getAccent(formCode);
 }
 
 // ════════════════════════════════════════════════════════════════════════
@@ -259,7 +152,7 @@ export function FormDocument({
 
   return (
     <div className={cn(
-      "w-full bg-card text-foreground font-[Arial,sans-serif] text-[11px]",
+      "w-full bg-card text-foreground font-sans text-[11px]",
       "border border-border rounded-sm shadow-sm overflow-hidden",
       "print:bg-white print:text-black print:shadow-none print:rounded-none print:border-black",
       className,
@@ -354,15 +247,21 @@ export function FormHeader({ children, className, formCode }: FormHeaderProps) {
 }
 
 // ════════════════════════════════════════════════════════════════════════
-// 3. FORM META GRID — metadata fields with label vs answer color contrast
-//    Labels = accent-colored muted, Answers = dark/prominent text
-//    Date fields automatically get amber accent
+// 3. FORM META GRID — metadata fields with label vs answer contrast
+//    Labels = muted gray, small, uppercase.  Answers = near-black.
+//
+//    A field used to be tinted amber whenever its name contained
+//    "date", "expiry" or "approved".  That spent a colour on a
+//    distinction the reader cannot act on — the label already says
+//    what the field is — and it made a document look like a warning
+//    board.  The date is a value, not a status, so it is now printed
+//    like every other value.
 // ════════════════════════════════════════════════════════════════════════
 
 interface MetaField {
   label: string;
   key: string;
-  /** Mark this field as a date — gets amber/rose accent */
+  /** Retained for call-site compatibility; the palette no longer varies by field type. */
   isDate?: boolean;
 }
 
@@ -376,14 +275,6 @@ interface FormMetaGridProps {
   formCode?: string;
 }
 
-// Keywords that hint a field is a date
-const DATE_KEYWORDS = ["date", "training_date", "expiry", "validity", "received", "dispatch", "review", "approved", "target"];
-
-function isDateField(key: string, label: string): boolean {
-  const lower = (key + " " + label).toLowerCase();
-  return DATE_KEYWORDS.some(kw => lower.includes(kw));
-}
-
 export function FormMetaGrid({ fields, data, editMode, onChange, columns = 2, className, formCode }: FormMetaGridProps) {
   const d = data ?? {};
   const a = useAccent(formCode || 'F/00');
@@ -393,28 +284,21 @@ export function FormMetaGrid({ fields, data, editMode, onChange, columns = 2, cl
     <div className={cn("px-6 py-4 border-b border-border", className)}>
       <div className={cn("grid gap-x-6 gap-y-3", colClass)}>
         {fields.map(f => {
-          const isDate = f.isDate || isDateField(f.key, f.label);
-          const labelColor = isDate
-            ? "text-amber-600 dark:text-amber-400"
-            : cn(a.label, a.labelDark);
-          const valueColor = isDate
-            ? "text-amber-700 dark:text-amber-300"
-            : "text-foreground";
-          const underlineColor = isDate
-            ? "border-amber-300 dark:border-amber-700"
-            : cn(a.border, a.borderDark);
+          const labelColor = cn(a.label, a.labelDark);
+          const valueColor = a.value;
+          const underlineColor = cn(a.border, a.borderDark);
 
           return (
             <div key={f.key} className="flex flex-col gap-0.5">
-              {/* LABEL — accent colored, small, uppercase */}
+              {/* LABEL — muted gray, small, uppercase */}
               <span className={cn("text-[9px] font-bold uppercase tracking-wide", labelColor)}>
                 {f.label}
               </span>
-              {/* ANSWER — prominent, dark/foreground, with accent underline */}
+              {/* ANSWER — prominent, near-black, with a hairline underline */}
               {editMode ? (
                 <input
                   className={cn(
-                    "w-full bg-transparent text-[12px] font-semibold outline-none border-b border-dashed pb-1 font-[Arial,sans-serif]",
+                    "w-full bg-transparent text-[12px] font-semibold outline-none border-b border-dashed pb-1 font-sans",
                     "text-foreground", underlineColor,
                   )}
                   value={val(d, f.key)}
@@ -422,7 +306,7 @@ export function FormMetaGrid({ fields, data, editMode, onChange, columns = 2, cl
                 />
               ) : (
                 <span className={cn(
-                  "text-[12px] font-semibold pb-1 border-b border-dashed min-h-[18px] font-[Arial,sans-serif]",
+                  "text-[12px] font-semibold pb-1 border-b border-dashed min-h-[18px] font-sans",
                   valueColor, underlineColor,
                 )}>
                   {val(d, f.key) || "\u00A0"}
@@ -459,7 +343,7 @@ export function FormTable({ columns, children, striped = true, className, formCo
   const a = useAccent(formCode || 'F/00');
   return (
     <div className={cn("w-full overflow-x-auto", className)}>
-      <table className="w-full border-collapse text-[11px] font-[Arial,sans-serif]">
+      <table className="w-full border-collapse text-[11px] font-sans">
         <thead>
           <tr>
             {columns.map(col => (
@@ -518,11 +402,12 @@ interface FormTableCellProps {
 }
 
 export function FormTableCell({ children, align, colSpan, rowSpan, className, isDate }: FormTableCellProps) {
+  void isDate;
   return (
     <td
       className={cn(
-        "border border-border px-2 py-1.5 text-[11px] font-[Arial,sans-serif]",
-        isDate ? "text-amber-700 dark:text-amber-300 font-semibold" : "text-foreground",
+        "border border-border px-2 py-1.5 text-[11px] font-sans",
+        "text-foreground",
         align === "center" && "text-center",
         align === "right" && "text-right",
         className,
@@ -566,13 +451,13 @@ export function FormSignature({ fields, data, editMode, onChange, columns = 2, c
             <div className="min-h-[28px] border-b border-border pb-1 mb-1">
               {editMode ? (
                 <input
-                  className="w-full bg-transparent text-[12px] font-semibold outline-none font-[Arial,sans-serif] text-foreground"
+                  className="w-full bg-transparent text-[12px] font-semibold outline-none font-sans text-foreground"
                   value={val(d, f.key)}
                   onChange={e => onChange?.(f.key, e.target.value)}
                   placeholder={f.label}
                 />
               ) : (
-                <span className="text-[12px] font-semibold text-foreground font-[Arial,sans-serif]">{val(d, f.key)}</span>
+                <span className="text-[12px] font-semibold text-foreground font-sans">{val(d, f.key)}</span>
               )}
             </div>
             <p className={cn("text-[9px] font-bold uppercase tracking-wider", a.label, a.labelDark)}>{f.label}</p>
@@ -617,9 +502,9 @@ interface FormCalloutProps {
 
 export function FormCallout({ children, variant = "info", className }: FormCalloutProps) {
   const styles = {
-    info: "bg-primary/10 border-primary/20 text-primary",
-    success: "bg-green-500/10 border-green-500/20 text-green-600 dark:text-green-400",
-    warning: "bg-amber-500/10 border-amber-500/20 text-amber-600 dark:text-amber-400",
+    info: "bg-primary/10 border-primary/20 text-primary-tint",
+    success: "bg-success/10 border-success/20 text-success-tint",
+    warning: "bg-warning/10 border-warning/20 text-warning-tint",
   };
   return (
     <div className={cn("border rounded-sm px-4 py-3 text-[11px]", styles[variant], className)}>
@@ -632,7 +517,7 @@ export function FormCallout({ children, variant = "info", className }: FormCallo
 /** Read-only field with dashed underline (template mode) */
 export function FieldValue({ value, placeholder = "___" }: { value: string; placeholder?: string }) {
   return (
-    <span className="border-b border-dashed border-border px-1 inline-block min-w-[4rem] text-[11px] font-[Arial,sans-serif] text-foreground">
+    <span className="border-b border-dashed border-border px-1 inline-block min-w-[4rem] text-[11px] font-sans text-foreground">
       {value || placeholder}
     </span>
   );
@@ -649,7 +534,7 @@ export function FieldInput({
 }) {
   return (
     <input
-      className={cn("border-b border-dashed border-border bg-transparent text-[11px] px-1 outline-none font-[Arial,sans-serif] text-foreground", className)}
+      className={cn("border-b border-dashed border-border bg-transparent text-[11px] px-1 outline-none font-sans text-foreground", className)}
       value={value}
       onChange={e => onChange(e.target.value)}
       placeholder={placeholder}
@@ -664,7 +549,7 @@ export function FieldInput({
 export function FormWrapper({ children, className }: { children: React.ReactNode; className?: string }) {
   return (
     <div className={cn(
-      "w-full bg-card text-foreground text-[11px] font-[Arial,sans-serif]",
+      "w-full bg-card text-foreground text-[11px] font-sans",
       "border border-border rounded-sm shadow-sm overflow-hidden",
       "print:bg-white print:text-black print:shadow-none print:rounded-none print:border-black",
       className,
@@ -737,13 +622,9 @@ interface FieldRowProps {
 
 export function FieldRow({ label, data, fieldKey, editMode, onChange, formCode, fullWidth, isDate, className }: FieldRowProps) {
   const a = useAccent(formCode || 'F/00');
-  const dateDetected = isDate || isDateField(fieldKey, label);
-  const labelCls = dateDetected
-    ? "text-amber-600 dark:text-amber-400"
-    : cn(a.label, a.labelDark);
-  const underline = dateDetected
-    ? "border-amber-300 dark:border-amber-700"
-    : cn(a.border, a.borderDark);
+  void isDate;
+  const labelCls = cn(a.label, a.labelDark);
+  const underline = cn(a.border, a.borderDark);
 
   return (
     <div className={cn("flex items-baseline gap-3 py-1.5", className)}>
@@ -759,7 +640,7 @@ export function FieldRow({ label, data, fieldKey, editMode, onChange, formCode, 
       ) : (
         <span className={cn(
           "text-[12px] font-semibold pb-0.5 border-b border-dashed min-h-[18px]",
-          dateDetected ? "text-amber-700 dark:text-amber-300" : "text-foreground",
+          "text-foreground",
           underline,
           fullWidth ? "flex-1" : "inline-block min-w-[4rem]",
         )}>
@@ -850,10 +731,10 @@ export function CheckboxGroup({ title, items, formCode, onToggle, editMode, clas
               />
             ) : (
               <span className={cn(
-                "inline-flex items-center justify-center w-3.5 h-3.5 border rounded text-[9px] font-bold",
+                "inline-flex items-center justify-center w-3.5 h-3.5 border rounded",
                 item.checked ? cn(a.text, a.textDark, "border-current") : "border-border",
               )}>
-                {item.checked ? "✓" : ""}
+                {item.checked && <Check className="w-2.5 h-2.5" aria-hidden="true" />}
               </span>
             )}
             <span className={cn("font-medium", item.checked ? "text-foreground" : "text-muted-foreground")}>{item.label}</span>

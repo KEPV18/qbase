@@ -28,15 +28,16 @@ import {
 import { isoToDisplay } from '../schemas';
 import { AppShell } from '@/components/layout/AppShell';
 import { StateScreen } from '@/components/ui/StateScreen';
+import { cn } from '@/lib/utils';
 
 // ============================================================================
 // Severity Badge
 // ============================================================================
 
 const SEVERITY_STYLES: Record<RuleSeverity, { bg: string; text: string; border: string }> = {
-  clean:    { bg: 'bg-success/10',     text: 'text-success',     border: 'border-success/20' },
-  warning:  { bg: 'bg-warning/10',     text: 'text-warning',     border: 'border-warning/20' },
-  critical: { bg: 'bg-destructive/10', text: 'text-destructive', border: 'border-destructive/20' },
+  clean:    { bg: 'bg-success/10',     text: 'text-success-tint',     border: 'border-success/20' },
+  warning:  { bg: 'bg-warning/10',     text: 'text-warning-tint',     border: 'border-warning/20' },
+  critical: { bg: 'bg-destructive/10', text: 'text-destructive-tint', border: 'border-destructive/20' },
 };
 
 const SEVERITY_LABELS: Record<RuleSeverity, string> = {
@@ -145,10 +146,10 @@ const DataIntegrityPage: React.FC = () => {
     return (
       <AppShell breadcrumbs={breadcrumbs}>
       <div className="max-w-6xl mx-auto flex flex-col items-center justify-center py-20 ds-fade-enter">
-        <XCircle className="w-12 h-12 text-destructive mb-4" />
+        <XCircle className="w-12 h-12 text-destructive-tint mb-4" />
         <h2 className="text-xl text-foreground mb-2">Failed to Load Integrity Data</h2>
         <p className="text-muted-foreground mb-4">{(error as Error).message}</p>
-        <button onClick={() => refetch()} className="ds-press ds-focus-ring px-4 py-2 bg-primary text-primary-foreground rounded-sm flex items-center gap-2">
+        <button onClick={() => refetch()} className="ds-press ds-focus-ring px-4 py-2 bg-primary text-primary-foreground rounded-full flex items-center gap-2">
           <RefreshCw className="w-4 h-4" /> Retry
         </button>
       </div>
@@ -162,7 +163,7 @@ const DataIntegrityPage: React.FC = () => {
       {/* Header */}
       <div className="flex items-center justify-between mb-6">
         <div className="flex items-center gap-3">
-          <Shield className="w-6 h-6 text-primary" />
+          <Shield className="w-6 h-6 text-primary-tint" />
           <div>
             <h1 className="text-2xl font-bold text-foreground">Data Integrity</h1>
             <p className="text-xs text-muted-foreground mt-0.5">
@@ -182,16 +183,16 @@ const DataIntegrityPage: React.FC = () => {
           <p className="text-2xl font-bold text-foreground">{summary.total}</p>
         </div>
         <div className="ds-success-card p-4">
-          <p className="text-xs text-success/70 mb-1">Clean</p>
-          <p className="text-2xl font-bold text-success">{summary.clean}</p>
+          <p className="text-xs text-success-tint/70 mb-1">Clean</p>
+          <p className="text-2xl font-bold text-success-tint">{summary.clean}</p>
         </div>
         <div className="ds-warning-card p-4">
-          <p className="text-xs text-warning/70 mb-1">Warnings</p>
-          <p className="text-2xl font-bold text-warning">{summary.warning}</p>
+          <p className="text-xs text-warning-tint/70 mb-1">Warnings</p>
+          <p className="text-2xl font-bold text-warning-tint">{summary.warning}</p>
         </div>
         <div className="ds-critical-card p-4">
-          <p className="text-xs text-destructive/70 mb-1">Critical</p>
-          <p className="text-2xl font-bold text-destructive">{summary.critical}</p>
+          <p className="text-xs text-destructive-tint/70 mb-1">Critical</p>
+          <p className="text-2xl font-bold text-destructive-tint">{summary.critical}</p>
         </div>
       </div>
 
@@ -209,12 +210,12 @@ const DataIntegrityPage: React.FC = () => {
           </div>
           <div className="flex items-center gap-4 mt-2 text-xs text-muted-foreground">
             {serialGaps.length === 0 && missingReferences.length === 0 && missingDependencies.length === 0 ? (
-              <span className="text-success flex items-center gap-1"><CheckCircle className="w-3 h-3" /> No gaps · No missing refs · No missing deps</span>
+              <span className="text-success-tint flex items-center gap-1"><CheckCircle className="w-3 h-3" /> No gaps · No missing refs · No missing deps</span>
             ) : (
               <>
-                {serialGaps.length > 0 && <span className="text-warning flex items-center gap-1"><Hash className="w-3 h-3" /> {serialGaps.length} gap(s)</span>}
-                {missingReferences.length > 0 && <span className="text-warning flex items-center gap-1"><Link2 className="w-3 h-3" /> {missingReferences.length} missing ref(s)</span>}
-                {missingDependencies.length > 0 && <span className="text-warning flex items-center gap-1"><AlertTriangle className="w-3 h-3" /> {missingDependencies.length} missing dep(s)</span>}
+                {serialGaps.length > 0 && <span className="text-warning-tint flex items-center gap-1"><Hash className="w-3 h-3" /> {serialGaps.length} gap(s)</span>}
+                {missingReferences.length > 0 && <span className="text-warning-tint flex items-center gap-1"><Link2 className="w-3 h-3" /> {missingReferences.length} missing ref(s)</span>}
+                {missingDependencies.length > 0 && <span className="text-warning-tint flex items-center gap-1"><AlertTriangle className="w-3 h-3" /> {missingDependencies.length} missing dep(s)</span>}
               </>
             )}
           </div>
@@ -226,17 +227,17 @@ const DataIntegrityPage: React.FC = () => {
         <CollapsibleSection
           title="Serial Gaps"
           count={serialGaps.length}
-          icon={<Hash className="w-4 h-4 text-warning" />}
+          icon={<Hash className="w-4 h-4 text-warning-tint" />}
           severity="warning"
           defaultOpen={serialGaps.length > 0 && totalRecords < 50}
         >
           <div className="space-y-2">
             {serialGaps.map((gap, i) => (
               <div key={i} className="flex items-center gap-2 text-xs px-3 py-2 bg-warning/5 border border-warning/20 rounded-sm">
-                <span className="font-mono text-primary">{gap.beforeSerial}</span>
+                <span className="font-mono text-primary-tint">{gap.beforeSerial}</span>
                 <ArrowRight className="w-3 h-3 text-muted-foreground" />
-                <span className="font-mono text-primary">{gap.afterSerial}</span>
-                <span className="text-warning ml-auto">Gap detected</span>
+                <span className="font-mono text-primary-tint">{gap.afterSerial}</span>
+                <span className="text-warning-tint ml-auto">Gap detected</span>
               </div>
             ))}
           </div>
@@ -248,7 +249,7 @@ const DataIntegrityPage: React.FC = () => {
         <CollapsibleSection
           title="Missing References"
           count={missingReferences.length}
-          icon={<Link2 className="w-4 h-4 text-warning" />}
+          icon={<Link2 className="w-4 h-4 text-warning-tint" />}
           severity="warning"
           defaultOpen={missingReferences.length <= 5}
         >
@@ -257,7 +258,7 @@ const DataIntegrityPage: React.FC = () => {
               <div key={i} className="flex items-center gap-2 text-xs px-3 py-2 bg-warning/5 border border-warning/20 rounded-sm">
                 <button
                   onClick={() => navigate(`/records/${encodeURIComponent(ref.fromSerial)}`)}
-                  className="font-mono text-primary hover:underline flex items-center gap-1"
+                  className="font-mono text-primary-tint hover:underline flex items-center gap-1"
                 >
                   {ref.fromSerial}
                   <ExternalLink className="w-3 h-3 text-muted-foreground" />
@@ -277,7 +278,7 @@ const DataIntegrityPage: React.FC = () => {
         <CollapsibleSection
           title="Dependency Issues"
           count={missingDependencies.length}
-          icon={<AlertTriangle className="w-4 h-4 text-warning" />}
+          icon={<AlertTriangle className="w-4 h-4 text-warning-tint" />}
           severity="warning"
           defaultOpen={missingDependencies.length <= 5}
         >
@@ -286,14 +287,14 @@ const DataIntegrityPage: React.FC = () => {
               <div key={i} className="flex items-center gap-2 text-xs px-3 py-2 bg-warning/5 border border-warning/20 rounded-sm">
                 <button
                   onClick={() => navigate(`/records/${encodeURIComponent(dep.forSerial)}`)}
-                  className="font-mono text-primary hover:underline flex items-center gap-1"
+                  className="font-mono text-primary-tint hover:underline flex items-center gap-1"
                 >
                   {dep.forSerial}
                   <ExternalLink className="w-3 h-3 text-muted-foreground" />
                 </button>
                 <span className="text-muted-foreground">({dep.forFormCode})</span>
                 <ArrowRight className="w-3 h-3 text-muted-foreground" />
-                <span className="text-warning">missing {dep.expectedPattern}</span>
+                <span className="text-warning-tint">missing {dep.expectedPattern}</span>
               </div>
             ))}
           </div>
@@ -305,7 +306,7 @@ const DataIntegrityPage: React.FC = () => {
         <CollapsibleSection
           title="Records with Issues"
           count={recordsWithIssues.length}
-          icon={<FileText className="w-4 h-4 text-warning" />}
+          icon={<FileText className="w-4 h-4 text-warning-tint" />}
           severity={recordsWithIssues.some(r => r.overallSeverity === 'critical') ? 'critical' : 'warning'}
           defaultOpen={recordsWithIssues.length <= 10}
         >
@@ -318,21 +319,24 @@ const DataIntegrityPage: React.FC = () => {
                       onClick={() => navigate(`/records/${encodeURIComponent(report.recordSerial)}`)}
                       className="flex items-center gap-1.5 group"
                     >
-                      <span className="font-mono text-primary text-sm group-hover:underline">
+                      <span className="font-mono text-primary-tint text-sm group-hover:underline">
                         {report.recordSerial}
                       </span>
-                      <ExternalLink className="w-3 h-3 text-muted-foreground group-hover:text-primary transition-colors" />
+                      <ExternalLink className="w-3 h-3 text-muted-foreground group-hover:text-primary-tint transition-colors" />
                     </button>
                     <span className="text-xs text-muted-foreground">{report.formCode}</span>
                   </div>
                   <SeverityBadge severity={report.overallSeverity} />
                 </div>
                 <div className="space-y-1.5 ml-4">
-                  {report.signals.map((signal, j) => (
+                  {report.signals.map((signal, j) => {
+                    const SignalIcon = getSeverityIcon(signal.severity);
+                    return (
                     <div key={j} className="flex items-start gap-2 text-xs">
-                      <span className={getSeverityColor(signal.severity)}>
-                        {getSeverityIcon(signal.severity)}
-                      </span>
+                      <SignalIcon
+                        className={cn("w-3.5 h-3.5 shrink-0 mt-px", getSeverityColor(signal.severity))}
+                        aria-hidden="true"
+                      />
                       <div>
                         <span className="text-foreground">{signal.message}</span>
                         {signal.details && (
@@ -341,15 +345,16 @@ const DataIntegrityPage: React.FC = () => {
                         <span className="text-muted-foreground/60 ml-1">({signal.ruleId})</span>
                       </div>
                     </div>
-                  ))}
+                    );
+                  })}
                   {report.missingReferences.map((ref, j) => (
-                    <div key={`ref-${j}`} className="flex items-center gap-2 text-xs text-warning">
+                    <div key={`ref-${j}`} className="flex items-center gap-2 text-xs text-warning-tint">
                       <Link2 className="w-3 h-3" />
                       <span>Missing {ref.referencedFormCode} reference (field: {ref.fromField})</span>
                     </div>
                   ))}
                   {report.missingDependencies.map((dep, j) => (
-                    <div key={`dep-${j}`} className="flex items-center gap-2 text-xs text-warning">
+                    <div key={`dep-${j}`} className="flex items-center gap-2 text-xs text-warning-tint">
                       <ArrowRight className="w-3 h-3" />
                       <span>Missing dependency: {dep.expectedPattern}</span>
                     </div>
@@ -364,7 +369,7 @@ const DataIntegrityPage: React.FC = () => {
       {/* No Issues */}
       {recordsWithIssues.length === 0 && serialGaps.length === 0 && (
         <div className="flex flex-col items-center py-16 ds-fade-enter">
-          <CheckCircle className="w-12 h-12 text-success/50 mb-3" />
+          <CheckCircle className="w-12 h-12 text-success-tint/50 mb-3" />
           <h3 className="text-lg text-foreground mb-2">All Clear</h3>
           <p className="text-sm text-muted-foreground">No integrity issues detected across {summary.total} records.</p>
         </div>
@@ -374,7 +379,7 @@ const DataIntegrityPage: React.FC = () => {
       <CollapsibleSection
         title="Active Rules"
         count={rules.length}
-        icon={<Shield className="w-4 h-4 text-primary" />}
+        icon={<Shield className="w-4 h-4 text-primary-tint" />}
         defaultOpen={false}
       >
         <div className="space-y-2">

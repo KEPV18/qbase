@@ -1,11 +1,12 @@
 // ============================================================================
 // F/43 — Induction Training Form (COMPLETE DOCX-Faithful Rebuild)
 // Header: Employee info (name, ID, designation, dept, qualification, joining date, project, trainer)
-// Checklist: 15 training topics with ✔ marks
+// Checklist: 15 training topics with check marks
 // Footer: Signatures (Inductee, Trainer, Authorised Person/Manager) + Effectiveness
 // ============================================================================
 
 import React from "react";
+import { Check } from "lucide-react";
 import { FormDocument, val } from "../FormKit";
 
 export interface F43Props {
@@ -46,7 +47,7 @@ export function F43Template({ data, isTemplate = true, editMode = false, onChang
   const th = "border border-border p-1 text-[9px] font-semibold bg-muted";
   const tc = "border border-border p-0.5 text-[10px]";
 
-  // All 15 topics get ✔ by default for completed induction records
+  // All 15 topics are checked by default for completed induction records
   const isCompleted = !isTemplate;
 
   return (
@@ -124,7 +125,7 @@ export function F43Template({ data, isTemplate = true, editMode = false, onChang
                     <input className="w-full bg-transparent text-[10px] text-center border-none outline-none"
                       value={val(d, `topic_${t.num}_trainer`) || ""} onChange={e => onChange?.(`topic_${t.num}_trainer`, e.target.value)} />
                   ) : (
-                    <span>{isCompleted ? "✔" : ""}</span>
+                    <span>{isCompleted && <Check className="w-3 h-3 align-middle" aria-hidden="true" />}</span>
                   )}
                 </td>
                 <td className={tc + " text-center"}>
@@ -132,7 +133,7 @@ export function F43Template({ data, isTemplate = true, editMode = false, onChang
                     <input className="w-full bg-transparent text-[10px] text-center border-none outline-none"
                       value={val(d, `topic_${t.num}_inductee`) || ""} onChange={e => onChange?.(`topic_${t.num}_inductee`, e.target.value)} />
                   ) : (
-                    <span>{isCompleted ? "✔" : ""}</span>
+                    <span>{isCompleted && <Check className="w-3 h-3 align-middle" aria-hidden="true" />}</span>
                   )}
                 </td>
               </tr>

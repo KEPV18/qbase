@@ -60,7 +60,7 @@ export function F19Template({ data, isTemplate = true, editMode = false, onChang
                 className={cn(
                   "flex gap-3 rounded-md border p-3 transition-colors",
                   isEven
-                    ? "border-lime-200 dark:border-lime-800 bg-lime-50/40 dark:bg-lime-950/20"
+                    ? "border-primary/25 dark:border-primary/45 bg-primary/40 dark:bg-primary/20"
                     : "border-border bg-muted/10",
                 )}
               >
@@ -68,7 +68,7 @@ export function F19Template({ data, isTemplate = true, editMode = false, onChang
                 <div className="flex flex-col items-center gap-1 shrink-0">
                   <div className={cn(
                     "w-8 h-8 rounded-md flex items-center justify-center",
-                    isEven ? "bg-lime-100 dark:bg-lime-900/50 text-lime-700 dark:text-lime-300" : "bg-muted/40 text-muted-foreground",
+                    isEven ? "bg-primary/10 dark:bg-primary/20 text-primary-tint" : "bg-muted/40 text-muted-foreground",
                   )}>
                     <Icon size={14} />
                   </div>
@@ -78,7 +78,7 @@ export function F19Template({ data, isTemplate = true, editMode = false, onChang
                 <div className="flex-1 min-w-0">
                   <span className={cn(
                     "text-[9px] font-bold uppercase tracking-wide block mb-1",
-                    isEven ? "text-lime-700 dark:text-lime-300" : "text-muted-foreground",
+                    isEven ? "text-primary-tint" : "text-muted-foreground",
                   )}>
                     {field.label}
                   </span>

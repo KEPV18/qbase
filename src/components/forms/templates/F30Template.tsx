@@ -5,6 +5,7 @@
 // ============================================================================
 
 import React, { useMemo } from "react";
+import { Check } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { FormDocument, val } from "../FormKit";
 
@@ -162,7 +163,7 @@ export function F30Template({ data, isTemplate = true, editMode = false, onChang
                       {SCORE_COLS.map(n => (
                         <td key={n} className="border-r border-border p-1.5 text-center">
                           {item.score === n ? (
-                            <span className="text-amber-500 dark:text-amber-400 font-bold text-sm">✔</span>
+                            <Check className="w-3.5 h-3.5 text-warning-tint inline-block" aria-hidden="true" />
                           ) : null}
                         </td>
                       ))}
@@ -184,7 +185,7 @@ export function F30Template({ data, isTemplate = true, editMode = false, onChang
       <div className="grid grid-cols-[35px_1fr_120px] border-x border-b border-border text-xs bg-muted/40 font-semibold text-foreground">
         <div className="p-2 border-r border-border"></div>
         <div className="p-2 border-r border-border">Total Marking →</div>
-        <div className="p-2 text-center text-sm font-bold text-amber-600 dark:text-amber-400">
+        <div className="p-2 text-center text-sm font-bold text-warning-tint">
           {val(d, "total_marking") || (ph ? "—" : "")}
         </div>
       </div>

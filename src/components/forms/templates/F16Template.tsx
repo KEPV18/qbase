@@ -1,4 +1,5 @@
 import React from "react";
+import { Check } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { FormDocument, val } from "../FormKit";
 
@@ -26,7 +27,7 @@ export function F16Template({ data, isTemplate = true, editMode = false, onChang
       {editMode ? (
         <input type="checkbox" className="mx-1" checked={val(d, key) === "true"} onChange={e => onChange?.(key, e.target.checked ? "true" : "false")} />
       ) : (
-        <span className="inline-block w-4 h-4 border border-foreground/30 align-middle text-center text-[10px]">{val(d, key) === "true" ? "✓" : ""}</span>
+        <span className="inline-block w-4 h-4 border border-foreground/30 align-middle text-center">{val(d, key) === "true" && <Check className="w-3 h-3 align-middle" aria-hidden="true" />}</span>
       )}
       {label}
     </label>

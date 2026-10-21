@@ -11,6 +11,7 @@
 // ============================================================================
 
 import React from "react";
+import { CheckSquare, Square } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { FormDocument, val } from "../FormKit";
 
@@ -80,8 +81,11 @@ export function F46Template({ data, isTemplate = true, editMode = false, onChang
     }
     const checked = current === option;
     return (
-      <span className="text-xs">
-        {checked ? "☑" : "☐"} {option}
+      <span className="text-xs inline-flex items-center gap-1">
+        {checked
+          ? <CheckSquare className="w-3.5 h-3.5 text-foreground shrink-0" aria-hidden="true" />
+          : <Square className="w-3.5 h-3.5 text-muted-foreground shrink-0" aria-hidden="true" />}
+        {option}
       </span>
     );
   };

@@ -59,7 +59,7 @@ export function F08Template({ data, isTemplate = true, editMode = false, onChang
                   Order Form / Order Confirmation
                 </strong>
               </td>
-              <td className="border border-border px-2 py-1 text-[10px] text-gray-500 dark:text-gray-400 text-center leading-tight">
+              <td className="border border-border px-2 py-1 text-[10px] text-ink-2 text-center leading-tight">
                 F/08<br />Rev No. {serialValue}
               </td>
             </tr>
@@ -67,10 +67,10 @@ export function F08Template({ data, isTemplate = true, editMode = false, onChang
             {/* ROW 1: Sr. No. + Date */}
             <tr>
               <td colSpan={8} className="border border-border px-3 py-1.5 text-sm text-foreground">
-                <strong>Sr. No.</strong> 🡪&nbsp;&nbsp;{serialValue}
+                <strong>Sr. No.</strong> →&nbsp;&nbsp;{serialValue}
               </td>
               <td colSpan={6} className="border border-border px-3 py-1.5 text-sm text-foreground">
-                <strong>Date</strong> 🡪&nbsp;&nbsp;{val(d, "date") || todayDDMMYYYY()}
+                <strong>Date</strong> →&nbsp;&nbsp;{val(d, "date") || todayDDMMYYYY()}
               </td>
             </tr>
 
@@ -153,7 +153,7 @@ export function F08Template({ data, isTemplate = true, editMode = false, onChang
                     <span className="text-foreground">{item.qty || "--"}</span>
                   )}
                   {editMode && (
-                    <button onClick={() => removeItem(idx)} className="ml-1 text-red-500 hover:text-red-700">
+                    <button onClick={() => removeItem(idx)} className="ml-1 text-destructive-tint hover:text-destructive-tint">
                       <Trash2 size={12} />
                     </button>
                   )}
@@ -164,7 +164,7 @@ export function F08Template({ data, isTemplate = true, editMode = false, onChang
             {editMode && (
               <tr>
                 <td colSpan={14} className="border border-border px-2 py-1">
-                  <button onClick={addItem} className="flex items-center gap-1 text-xs text-blue-600 hover:underline">
+                  <button onClick={addItem} className="flex items-center gap-1 text-xs text-primary-tint hover:underline">
                     <Plus size={14} /> Add Product
                   </button>
                 </td>
@@ -262,7 +262,7 @@ export function F08Template({ data, isTemplate = true, editMode = false, onChang
               <td colSpan={3} className="border border-border px-3 py-1.5 text-sm text-foreground">
                 {val(d, "bill_no") || "N/A"}
               </td>
-              <td colSpan={3} className="border border-border px-3 py-1.5 text-sm text-gray-500 dark:text-gray-400">
+              <td colSpan={3} className="border border-border px-3 py-1.5 text-sm text-ink-2">
                 (Service Contract Based)
               </td>
               <td colSpan={1} className="border border-border"></td>

@@ -1,6 +1,6 @@
 // ============================================================================
 // QBase — Settings (Dedicated Route)
-// NotionWarm aesthetic: narrow settings sidebar + generous content whitespace.
+// Narrow settings sidebar + generous content whitespace.
 // Replaces the former SettingsModal overlay.
 // ============================================================================
 
@@ -23,11 +23,13 @@ import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { cn } from "@/lib/utils";
+import { BRAND_COLORS, DEFAULT_BRAND_COLOR } from "@/config/brandColors";
 import { toast } from "sonner";
 import {
   User, UserCircle, Mail, Crown, KeyRound, LogOut, Eye, EyeOff,
   Moon, Sun, Palette, Bell, Shield, Server, CheckCircle, Database, Activity,
   AlertTriangle, Loader2, Wifi, WifiOff, Monitor, Settings as SettingsIcon,
+  VolumeX, BellRing,
 } from "lucide-react";
 
 // ---------------------------------------------------------------------------
@@ -57,9 +59,9 @@ export default function SettingsPage() {
         <div className="pt-2">
           <div className="flex items-center gap-2 px-3 mb-4">
             <div className="w-7 h-7 rounded-lg bg-primary/10 flex items-center justify-center">
-              <SettingsIcon className="w-4 h-4 text-primary" />
+              <SettingsIcon className="w-4 h-4 text-primary-tint" />
             </div>
-            <h2 className="text-base font-heading font-bold text-[#2d2d2d] dark:text-[#e8e3db]">Settings</h2>
+            <h2 className="text-base font-display font-bold text-foreground dark:text-foreground">Settings</h2>
           </div>
           <div className="space-y-0.5">
             {SECTIONS.map((s) => (
@@ -69,11 +71,11 @@ export default function SettingsPage() {
                 className={cn(
                   "w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200",
                   activeSection === s.id
-                    ? "bg-[#2d2d2d] text-white"
-                    : "text-[#7a756a] hover:text-[#2d2d2d] hover:bg-[#ece8df] dark:hover:bg-[#2a2a26]"
+                    ? "bg-foreground text-background"
+                    : "text-ink-2 hover:text-foreground hover:bg-muted dark:hover:bg-muted/30"
                 )}
               >
-                <s.icon className={cn("w-[17px] h-[17px]", activeSection === s.id ? "text-white" : "text-[#9f9a8f]")} />
+                <s.icon className={cn("w-[17px] h-[17px]", activeSection === s.id ? "text-background" : "text-ink-3")} />
                 <span className="text-left">{s.label}</span>
               </button>
             ))}
@@ -99,15 +101,15 @@ export default function SettingsPage() {
 function SectionHeader({ title, description }: { title: string; description: string }) {
   return (
     <div className="mb-8">
-      <h1 className="text-2xl font-heading font-bold text-[#2d2d2d] dark:text-[#e8e3db] tracking-tight">{title}</h1>
-      <p className="text-sm text-[#9f9a8f] mt-1">{description}</p>
+      <h1 className="text-2xl font-display font-bold text-foreground dark:text-foreground tracking-tight">{title}</h1>
+      <p className="text-sm text-ink-3 mt-1">{description}</p>
     </div>
   );
 }
 
 function Card({ children, className }: { children: React.ReactNode; className?: string }) {
   return (
-    <div className={cn("rounded-xl border border-[#e8e3db] dark:border-[#3a3834] bg-white dark:bg-[#1f1f1c] p-6", className)}>
+    <div className={cn("rounded-xl border border-border dark:border-border bg-card dark:bg-card p-6", className)}>
       {children}
     </div>
   );
@@ -116,12 +118,12 @@ function Card({ children, className }: { children: React.ReactNode; className?: 
 function CardLabel({ icon: Icon, title, description }: { icon: React.ElementType; title: string; description?: string }) {
   return (
     <div className="flex items-start gap-3 mb-4">
-      <div className="w-9 h-9 rounded-lg bg-[#f8f6f1] dark:bg-[#2a2a26] flex items-center justify-center shrink-0 border border-[#e8e3db] dark:border-[#3a3834]">
-        <Icon className="w-4 h-4 text-[#7a756a]" />
+      <div className="w-9 h-9 rounded-lg bg-muted dark:bg-muted/30 flex items-center justify-center shrink-0 border border-border dark:border-border">
+        <Icon className="w-4 h-4 text-ink-2" />
       </div>
       <div>
-        <h3 className="text-sm font-semibold text-[#2d2d2d] dark:text-[#e8e3db]">{title}</h3>
-        {description && <p className="text-xs text-[#9f9a8f] mt-0.5">{description}</p>}
+        <h3 className="text-sm font-semibold text-foreground dark:text-foreground">{title}</h3>
+        {description && <p className="text-xs text-ink-3 mt-0.5">{description}</p>}
       </div>
     </div>
   );
@@ -159,9 +161,9 @@ function ProfileSection() {
 
   const getRoleColor = (role: string) => {
     switch (role) {
-      case "admin": return "bg-destructive/10 text-destructive border-destructive/20";
-      case "manager": return "bg-amber-500/10 text-amber-600 border-amber-500/20";
-      case "auditor": return "bg-blue-500/10 text-blue-600 border-blue-500/20";
+      case "admin": return "bg-destructive/10 text-destructive-tint border-destructive/20";
+      case "manager": return "bg-warning/10 text-warning-tint border-warning/20";
+      case "auditor": return "bg-primary/10 text-primary-tint border-primary/20";
       default: return "bg-muted text-muted-foreground border-border";
     }
   };
@@ -175,8 +177,8 @@ function ProfileSection() {
         <CardLabel icon={UserCircle} title="Profile" description="Your avatar and display name." />
         <div className="flex items-center gap-5">
           {/* Avatar */}
-          <div className="w-16 h-16 rounded-xl bg-[#f8f6f1] dark:bg-[#2a2a26] border border-[#e8e3db] dark:border-[#3a3834] flex items-center justify-center shrink-0">
-            <span className="text-xl font-bold text-[#2d2d2d] dark:text-[#e8e3db]">{userInitials}</span>
+          <div className="w-16 h-16 rounded-xl bg-muted dark:bg-muted/30 border border-border dark:border-border flex items-center justify-center shrink-0">
+            <span className="text-xl font-bold text-foreground dark:text-foreground">{userInitials}</span>
           </div>
           <div className="flex-1 min-w-0">
             {isEditing ? (
@@ -205,10 +207,10 @@ function ProfileSection() {
               </div>
             ) : (
               <div className="flex items-center gap-3">
-                <h3 className="text-lg font-semibold text-[#2d2d2d] dark:text-[#e8e3db]">{user?.name || "User"}</h3>
+                <h3 className="text-lg font-semibold text-foreground dark:text-foreground">{user?.name || "User"}</h3>
                 <button
                   onClick={() => setIsEditing(true)}
-                  className="text-xs text-primary hover:underline font-medium"
+                  className="text-xs text-primary-tint hover:underline font-medium"
                 >
                   Edit
                 </button>
@@ -221,8 +223,8 @@ function ProfileSection() {
                   {user.role}
                 </Badge>
                 <div className="flex items-center gap-1">
-                  <div className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse" />
-                  <span className="text-[10px] text-[#9f9a8f] font-medium">Active Session</span>
+                  <div className="w-1.5 h-1.5 rounded-full bg-success animate-pulse" />
+                  <span className="text-[10px] text-ink-3 font-medium">Active Session</span>
                 </div>
               </div>
             )}
@@ -237,13 +239,13 @@ function ProfileSection() {
           <Input
             value={user?.email || ""}
             readOnly
-            className="h-9 text-sm max-w-sm bg-[#f8f6f1] dark:bg-[#2a2a26] border-[#e8e3db] dark:border-[#3a3834]"
+            className="h-9 text-sm max-w-sm bg-muted dark:bg-muted/30 border-border dark:border-border"
           />
-          <Badge variant="outline" className="text-[10px] h-6 text-[#9f9a8f] border-[#e8e3db]">
+          <Badge variant="outline" className="text-[10px] h-6 text-ink-3 border-border">
             Verified
           </Badge>
         </div>
-        <p className="text-xs text-[#9f9a8f] mt-3">
+        <p className="text-xs text-ink-3 mt-3">
           To change your email, contact your administrator or use Supabase account recovery.
         </p>
       </Card>
@@ -292,7 +294,7 @@ function SecuritySection() {
         <CardLabel icon={KeyRound} title="Change Password" description="Enter your current password and a new one." />
         <div className="space-y-3 max-w-md">
           <div>
-            <Label className="text-xs text-[#9f9a8f] uppercase tracking-wider mb-1.5 block">Current Password</Label>
+            <Label className="text-xs text-ink-3 uppercase tracking-wider mb-1.5 block">Current Password</Label>
             <div className="relative">
               <Input
                 type={showOld ? "text" : "password"}
@@ -304,14 +306,14 @@ function SecuritySection() {
               <button
                 type="button"
                 onClick={() => setShowOld(!showOld)}
-                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-[#9f9a8f] hover:text-[#2d2d2d]"
+                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-ink-3 hover:text-foreground"
               >
                 {showOld ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
               </button>
             </div>
           </div>
           <div>
-            <Label className="text-xs text-[#9f9a8f] uppercase tracking-wider mb-1.5 block">New Password</Label>
+            <Label className="text-xs text-ink-3 uppercase tracking-wider mb-1.5 block">New Password</Label>
             <div className="relative">
               <Input
                 type={showNew ? "text" : "password"}
@@ -323,7 +325,7 @@ function SecuritySection() {
               <button
                 type="button"
                 onClick={() => setShowNew(!showNew)}
-                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-[#9f9a8f] hover:text-[#2d2d2d]"
+                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-ink-3 hover:text-foreground"
               >
                 {showNew ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
               </button>
@@ -344,22 +346,22 @@ function SecuritySection() {
       <Card>
         <CardLabel icon={Monitor} title="Active Sessions" description="Devices currently signed in to your account." />
         <div className="space-y-3">
-          <div className="flex items-center justify-between p-4 rounded-lg border border-[#e8e3db] dark:border-[#3a3834] bg-[#f8f6f1] dark:bg-[#2a2a26]">
+          <div className="flex items-center justify-between p-4 rounded-lg border border-border dark:border-border bg-muted dark:bg-muted/30">
             <div className="flex items-center gap-3">
-              <div className="w-9 h-9 rounded-lg bg-green-500/10 flex items-center justify-center">
-                <Monitor className="w-4 h-4 text-green-600" />
+              <div className="w-9 h-9 rounded-lg bg-success/10 flex items-center justify-center">
+                <Monitor className="w-4 h-4 text-success-tint" />
               </div>
               <div>
-                <p className="text-sm font-semibold text-[#2d2d2d] dark:text-[#e8e3db]">This Device</p>
-                <p className="text-xs text-[#9f9a8f]">Current session · {user?.email}</p>
+                <p className="text-sm font-semibold text-foreground dark:text-foreground">This Device</p>
+                <p className="text-xs text-ink-3">Current session · {user?.email}</p>
               </div>
             </div>
-            <Badge variant="outline" className="bg-green-500/10 text-green-600 border-green-500/20 text-[10px] h-6 font-bold gap-1">
-              <div className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse" />
+            <Badge variant="outline" className="bg-success/10 text-success-tint border-success/20 text-[10px] h-6 font-bold gap-1">
+              <div className="w-1.5 h-1.5 rounded-full bg-success animate-pulse" />
               Active
             </Badge>
           </div>
-          <p className="text-xs text-[#9f9a8f] px-1">
+          <p className="text-xs text-ink-3 px-1">
             Sign out below to end your current session. Other devices will be signed out on their next request.
           </p>
         </div>
@@ -399,36 +401,43 @@ function NotificationsSection() {
                 "flex flex-col items-center gap-1.5 p-4 rounded-lg border text-center transition-all",
                 soundLevel === level
                   ? "border-primary bg-primary/5 ring-1 ring-primary"
-                  : "border-[#e8e3db] dark:border-[#3a3834] hover:border-primary/30 hover:bg-[#f8f6f1] dark:hover:bg-[#2a2a26]"
+                  : "border-border dark:border-border hover:border-primary/30 hover:bg-muted dark:hover:bg-muted/30"
               )}
             >
-              <span className="text-xl">
-                {level === "off" ? "🔇" : level === "critical_only" ? "🔔" : "🔔🔔"}
+              <span className={cn(
+                "flex h-10 w-10 items-center justify-center rounded-full",
+                soundLevel === level ? "bg-primary/10 text-primary-tint" : "bg-foreground/[0.05] text-ink-3"
+              )}>
+                {level === "off"
+                  ? <VolumeX className="w-[18px] h-[18px]" aria-hidden="true" />
+                  : level === "critical_only"
+                    ? <Bell className="w-[18px] h-[18px]" aria-hidden="true" />
+                    : <BellRing className="w-[18px] h-[18px]" aria-hidden="true" />}
               </span>
-              <span className={cn("text-xs font-semibold", soundLevel === level ? "text-primary" : "text-[#7a756a]")}>
+              <span className={cn("text-xs font-semibold", soundLevel === level ? "text-primary-tint" : "text-ink-2")}>
                 {config.label}
               </span>
-              <span className="text-[10px] text-[#9f9a8f] leading-tight">{config.description}</span>
+              <span className="text-[10px] text-ink-3 leading-tight">{config.description}</span>
             </button>
           ))}
         </div>
 
         {/* Test sounds */}
         {soundLevel !== "off" && (
-          <div className="mt-5 pt-4 border-t border-[#e8e3db] dark:border-[#3a3834]">
-            <p className="text-xs text-[#9f9a8f] mb-2">Test notification sounds:</p>
+          <div className="mt-5 pt-4 border-t border-border dark:border-border">
+            <p className="text-xs text-ink-3 mb-2">Test notification sounds:</p>
             <div className="flex items-center gap-2">
               <button
                 onClick={() => testNotificationSound("critical")}
-                className="text-xs px-3 py-1.5 rounded-lg bg-red-500/10 text-red-600 border border-red-500/20 hover:bg-red-500/20 transition-colors"
+                className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-lg bg-destructive/10 text-destructive-tint border border-destructive/20 hover:bg-destructive/20 transition-colors"
               >
-                🔴 Critical
+                <AlertTriangle className="w-3.5 h-3.5" aria-hidden="true" /> Critical
               </button>
               <button
                 onClick={() => testNotificationSound("important")}
-                className="text-xs px-3 py-1.5 rounded-lg bg-amber-500/10 text-amber-600 border border-amber-500/20 hover:bg-amber-500/20 transition-colors"
+                className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-lg bg-warning/10 text-warning-tint border border-warning/20 hover:bg-warning/20 transition-colors"
               >
-                🟡 Important
+                <AlertTriangle className="w-3.5 h-3.5" aria-hidden="true" /> Important
               </button>
             </div>
           </div>
@@ -464,12 +473,12 @@ function PreferencesSection() {
         />
         <div className="flex items-center justify-between max-w-md">
           <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-lg bg-[#f8f6f1] dark:bg-[#2a2a26] border border-[#e8e3db] dark:border-[#3a3834] flex items-center justify-center">
-              {isDark ? <Moon className="w-4 h-4 text-[#7a756a]" /> : <Sun className="w-4 h-4 text-[#7a756a]" />}
+            <div className="w-9 h-9 rounded-lg bg-muted dark:bg-muted/30 border border-border dark:border-border flex items-center justify-center">
+              {isDark ? <Moon className="w-4 h-4 text-ink-2" /> : <Sun className="w-4 h-4 text-ink-2" />}
             </div>
             <div>
-              <p className="text-sm font-semibold text-[#2d2d2d] dark:text-[#e8e3db]">Dark Mode</p>
-              <p className="text-xs text-[#9f9a8f]">Currently {isDark ? "on" : "off"}</p>
+              <p className="text-sm font-semibold text-foreground dark:text-foreground">Dark Mode</p>
+              <p className="text-xs text-ink-3">Currently {isDark ? "on" : "off"}</p>
             </div>
           </div>
           <Switch checked={isDark} onCheckedChange={toggleDark} />
@@ -483,19 +492,19 @@ function PreferencesSection() {
           <Input
             value="English"
             readOnly
-            className="h-9 text-sm bg-[#f8f6f1] dark:bg-[#2a2a26] border-[#e8e3db] dark:border-[#3a3834]"
+            className="h-9 text-sm bg-muted dark:bg-muted/30 border-border dark:border-border"
           />
-          <Badge variant="outline" className="text-[10px] h-6 text-[#9f9a8f] border-[#e8e3db]">
+          <Badge variant="outline" className="text-[10px] h-6 text-ink-3 border-border">
             Default
           </Badge>
         </div>
-        <p className="text-xs text-[#9f9a8f] mt-3">QBase is English-native. Additional languages coming soon.</p>
+        <p className="text-xs text-ink-3 mt-3">QBase is English-native. Additional languages coming soon.</p>
       </Card>
 
       {/* Company / Tenant identity — admin only */}
       {isAdmin && (
         <>
-          <Separator className="bg-[#e8e3db] dark:bg-[#3a3834] my-2" />
+          <Separator className="bg-border dark:bg-border my-2" />
           <CompanySettingsCard />
           <DiagnosticsCard />
         </>
@@ -507,17 +516,6 @@ function PreferencesSection() {
 // ---------------------------------------------------------------------------
 // Company Settings Card — admin-only tenant identity configuration
 // ---------------------------------------------------------------------------
-
-const PRESET_COLORS = [
-  { name: "Cyan", value: "#06b6d4" },
-  { name: "Blue", value: "#3b82f6" },
-  { name: "Green", value: "#22c55e" },
-  { name: "Purple", value: "#a855f7" },
-  { name: "Red", value: "#ef4444" },
-  { name: "Orange", value: "#f97316" },
-  { name: "Pink", value: "#ec4899" },
-  { name: "Gold", value: "#eab308" },
-];
 
 function CompanySettingsCard() {
   const identity = useTenantIdentity();
@@ -563,19 +561,19 @@ function CompanySettingsCard() {
       <div className="space-y-5">
         {/* Company name */}
         <div>
-          <Label className="text-xs text-[#9f9a8f] uppercase tracking-wider mb-1.5 block">Company Name</Label>
+          <Label className="text-xs text-ink-3 uppercase tracking-wider mb-1.5 block">Company Name</Label>
           <Input
             value={companyName}
             onChange={(e) => setCompanyName(e.target.value)}
             placeholder="QBase"
             className="h-9 text-sm max-w-md"
           />
-          <p className="text-[11px] text-[#9f9a8f] mt-1">Shown in navigation and headers. Leave empty for default.</p>
+          <p className="text-[11px] text-ink-3 mt-1">Shown in navigation and headers. Leave empty for default.</p>
         </div>
 
         {/* Logo URL */}
         <div>
-          <Label className="text-xs text-[#9f9a8f] uppercase tracking-wider mb-1.5 block">Logo URL</Label>
+          <Label className="text-xs text-ink-3 uppercase tracking-wider mb-1.5 block">Logo URL</Label>
           <div className="flex items-center gap-2 max-w-md">
             <Input
               value={logoUrl}
@@ -584,7 +582,7 @@ function CompanySettingsCard() {
               className="flex-1 h-9 text-sm"
             />
             {logoUrl && (
-              <div className="w-9 h-9 rounded border border-[#e8e3db] dark:border-[#3a3834] overflow-hidden bg-[#f8f6f1] dark:bg-[#2a2a26] shrink-0">
+              <div className="w-9 h-9 rounded border border-border dark:border-border overflow-hidden bg-muted dark:bg-muted/30 shrink-0">
                 <img
                   src={logoUrl}
                   alt="Preview"
@@ -594,34 +592,39 @@ function CompanySettingsCard() {
               </div>
             )}
           </div>
-          <p className="text-[11px] text-[#9f9a8f] mt-1">Direct URL to logo image (SVG/PNG).</p>
+          <p className="text-[11px] text-ink-3 mt-1">Direct URL to logo image (SVG/PNG).</p>
         </div>
 
         {/* Theme color */}
         <div>
-          <Label className="text-xs text-[#9f9a8f] uppercase tracking-wider mb-1.5 block flex items-center gap-1">
+          <Label className="text-xs text-ink-3 uppercase tracking-wider mb-1.5 block flex items-center gap-1">
             <Palette className="w-3 h-3" /> Theme Color
           </Label>
           <div className="flex items-center gap-2">
             <Input
               value={themeColor}
               onChange={(e) => setThemeColor(e.target.value)}
-              placeholder="#06b6d4"
+              placeholder={DEFAULT_BRAND_COLOR}
               className="w-28 font-mono h-9 text-sm"
             />
             <div
-              className="w-9 h-9 rounded border border-[#e8e3db] dark:border-[#3a3834] shrink-0"
-              style={{ backgroundColor: themeColor || "#06b6d4" }}
+              className="w-9 h-9 rounded-lg border border-border shrink-0"
+              style={{ backgroundColor: themeColor || DEFAULT_BRAND_COLOR }}
             />
           </div>
           <div className="flex flex-wrap gap-1.5 mt-2">
-            {PRESET_COLORS.map((c) => (
+            {BRAND_COLORS.map((c) => (
               <button
                 key={c.value}
+                type="button"
                 onClick={() => setThemeColor(c.value)}
+                aria-label={c.name}
+                aria-pressed={themeColor === c.value}
                 className={cn(
-                  "w-6 h-6 rounded-full border-2 transition-all hover:scale-110",
-                  themeColor === c.value ? "border-[#2d2d2d] dark:border-[#e8e3db] ring-2 ring-primary/20" : "border-transparent"
+                  "w-6 h-6 rounded-full border transition-transform hover:scale-110",
+                  themeColor === c.value
+                    ? "border-foreground ring-2 ring-foreground/20"
+                    : "border-border"
                 )}
                 style={{ backgroundColor: c.value }}
                 title={c.name}
@@ -637,12 +640,12 @@ function CompanySettingsCard() {
             Save Changes
           </Button>
           {saved && (
-            <span className="text-xs text-green-600 flex items-center gap-1">
+            <span className="text-xs text-success-tint flex items-center gap-1">
               <CheckCircle className="w-3.5 h-3.5" /> Saved
             </span>
           )}
           {error && (
-            <span className="text-xs text-red-500 flex items-center gap-1">
+            <span className="text-xs text-destructive-tint flex items-center gap-1">
               <AlertTriangle className="w-3.5 h-3.5" /> {error}
             </span>
           )}
@@ -786,44 +789,44 @@ function HealthRow({
   const isChecking = check.status === "checking";
 
   return (
-    <div className="flex items-center justify-between p-4 rounded-lg border border-[#e8e3db] dark:border-[#3a3834]">
+    <div className="flex items-center justify-between p-4 rounded-lg border border-border dark:border-border">
       <div className="flex items-center gap-3">
         <div
           className={cn(
             "w-9 h-9 rounded-lg flex items-center justify-center",
-            isOk ? "bg-green-500/10" : isErr ? "bg-red-500/10" : "bg-[#f8f6f1] dark:bg-[#2a2a26]"
+            isOk ? "bg-success/10" : isErr ? "bg-destructive/10" : "bg-muted dark:bg-muted/30"
           )}
         >
           <Icon
             className={cn(
               "w-4 h-4",
-              isOk ? "text-green-600" : isErr ? "text-red-500" : "text-[#7a756a]"
+              isOk ? "text-success-tint" : isErr ? "text-destructive-tint" : "text-ink-2"
             )}
           />
         </div>
         <div>
-          <p className="text-sm font-semibold text-[#2d2d2d] dark:text-[#e8e3db]">{label}</p>
-          <p className="text-xs text-[#9f9a8f]">{sublabel}</p>
-          {check.msg && <p className="text-[11px] text-[#7a756a] mt-0.5">{check.msg}</p>}
+          <p className="text-sm font-semibold text-foreground dark:text-foreground">{label}</p>
+          <p className="text-xs text-ink-3">{sublabel}</p>
+          {check.msg && <p className="text-[11px] text-ink-2 mt-0.5">{check.msg}</p>}
         </div>
       </div>
       <div className="flex items-center gap-2">
         {check.latency && (
-          <span className="text-[10px] text-[#9f9a8f] font-mono">{check.latency}ms</span>
+          <span className="text-[10px] text-ink-3 font-mono">{check.latency}ms</span>
         )}
-        {isChecking && <Loader2 className="w-4 h-4 animate-spin text-[#9f9a8f]" />}
+        {isChecking && <Loader2 className="w-4 h-4 animate-spin text-ink-3" />}
         {isOk && (
-          <Badge variant="outline" className="bg-green-500/10 text-green-600 border-green-500/20 text-[10px] h-6 font-bold gap-1">
+          <Badge variant="outline" className="bg-success/10 text-success-tint border-success/20 text-[10px] h-6 font-bold gap-1">
             <Wifi className="w-2.5 h-2.5" /> OK
           </Badge>
         )}
         {isErr && (
-          <Badge variant="outline" className="bg-red-500/10 text-red-500 border-red-500/20 text-[10px] h-6 font-bold gap-1">
+          <Badge variant="outline" className="bg-destructive/10 text-destructive-tint border-destructive/20 text-[10px] h-6 font-bold gap-1">
             <WifiOff className="w-2.5 h-2.5" /> Failed
           </Badge>
         )}
         {!isOk && !isErr && !isChecking && (
-          <Badge variant="outline" className="text-[10px] h-6 text-[#9f9a8f] border-[#e8e3db]">Not Checked</Badge>
+          <Badge variant="outline" className="text-[10px] h-6 text-ink-3 border-border">Not Checked</Badge>
         )}
       </div>
     </div>
@@ -831,16 +834,16 @@ function HealthRow({
 }
 
 function StatusBadge({ status }: { status: "idle" | "checking" | "online" | "offline" }) {
-  if (status === "checking") return <Loader2 className="w-4 h-4 animate-spin text-[#9f9a8f]" />;
+  if (status === "checking") return <Loader2 className="w-4 h-4 animate-spin text-ink-3" />;
   if (status === "online") return (
-    <Badge variant="outline" className="bg-green-500/10 text-green-600 border-green-500/20 text-[10px] h-6 font-bold gap-1">
+    <Badge variant="outline" className="bg-success/10 text-success-tint border-success/20 text-[10px] h-6 font-bold gap-1">
       <Wifi className="w-2.5 h-2.5" /> Online
     </Badge>
   );
   if (status === "offline") return (
-    <Badge variant="outline" className="bg-red-500/10 text-red-500 border-red-500/20 text-[10px] h-6 font-bold gap-1">
+    <Badge variant="outline" className="bg-destructive/10 text-destructive-tint border-destructive/20 text-[10px] h-6 font-bold gap-1">
       <WifiOff className="w-2.5 h-2.5" /> Offline
     </Badge>
   );
-  return <Badge variant="outline" className="text-[10px] h-6 text-[#9f9a8f] border-[#e8e3db]">Not Checked</Badge>;
+  return <Badge variant="outline" className="text-[10px] h-6 text-ink-3 border-border">Not Checked</Badge>;
 }

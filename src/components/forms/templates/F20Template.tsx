@@ -62,23 +62,23 @@ export function F20Template({ data, isTemplate = true, editMode = false, onChang
         <InfoCard formCode={FC} variant="tinted" icon={<Calendar size={14} />} title="Meeting Details">
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             <div className="flex items-center gap-2">
-              <Calendar size={14} className="text-amber-600 dark:text-amber-400 shrink-0" />
+              <Calendar size={14} className="text-warning-tint shrink-0" />
               <div className="flex flex-col">
-                <span className="text-[9px] font-bold text-amber-600 dark:text-amber-400 uppercase tracking-wide">Date</span>
+                <span className="text-[9px] font-bold text-warning-tint uppercase tracking-wide">Date</span>
                 {inp("date", "DD/MM/YYYY", "w-32")}
               </div>
             </div>
             <div className="flex items-center gap-2">
-              <Clock size={14} className="text-violet-600 dark:text-violet-400 shrink-0" />
+              <Clock size={14} className="text-primary-tint shrink-0" />
               <div className="flex flex-col">
-                <span className="text-[9px] font-bold text-violet-600 dark:text-violet-400 uppercase tracking-wide">Time</span>
+                <span className="text-[9px] font-bold text-primary-tint uppercase tracking-wide">Time</span>
                 {inp("time", "Time", "w-28")}
               </div>
             </div>
             <div className="flex items-center gap-2">
-              <MapPin size={14} className="text-emerald-600 dark:text-emerald-400 shrink-0" />
+              <MapPin size={14} className="text-success-tint shrink-0" />
               <div className="flex flex-col">
-                <span className="text-[9px] font-bold text-emerald-600 dark:text-emerald-400 uppercase tracking-wide">Place</span>
+                <span className="text-[9px] font-bold text-success-tint uppercase tracking-wide">Place</span>
                 {inp("place", "Place", "w-32")}
               </div>
             </div>
@@ -99,16 +99,16 @@ export function F20Template({ data, isTemplate = true, editMode = false, onChang
           <ul className="space-y-2">
             {AGENDA_ITEMS.map((item, i) => (
               <li key={i} className="flex gap-2 text-[12px] text-foreground">
-                <span className="text-violet-600 dark:text-violet-400 font-bold mt-0.5">▸</span>
+                <span className="text-primary-tint font-bold mt-0.5">▸</span>
                 <span className="leading-relaxed">{item}</span>
               </li>
             ))}
           </ul>
           {/* Sub-items */}
-          <ul className="ml-8 space-y-1.5 border-l-2 border-violet-200 dark:border-violet-800 pl-4">
+          <ul className="ml-8 space-y-1.5 border-l-2 border-primary/25 dark:border-primary/45 pl-4">
             {SUB_ITEMS.map((item, i) => (
               <li key={i} className="flex gap-2 text-[11px] text-muted-foreground">
-                <span className="text-violet-500 dark:text-violet-400">•</span>
+                <span className="text-primary-tint">•</span>
                 <span className="leading-relaxed">{item}</span>
               </li>
             ))}
@@ -116,7 +116,7 @@ export function F20Template({ data, isTemplate = true, editMode = false, onChang
           <ul className="space-y-2 mt-2">
             {EXTRA_ITEMS.map((item, i) => (
               <li key={i} className="flex gap-2 text-[12px] text-foreground">
-                <span className="text-violet-600 dark:text-violet-400 font-bold mt-0.5">▸</span>
+                <span className="text-primary-tint font-bold mt-0.5">▸</span>
                 <span className="leading-relaxed">{item}</span>
               </li>
             ))}
@@ -126,7 +126,7 @@ export function F20Template({ data, isTemplate = true, editMode = false, onChang
         {/* ── Approval ── */}
         <SectionDivider formCode={FC} title="Approval" icon={<CheckSquare size={14} />} />
         <div className="px-2 flex justify-end items-center gap-2">
-          <span className="text-[11px] font-bold text-violet-700 dark:text-violet-300 uppercase tracking-wide">Approved By</span>
+          <span className="text-[11px] font-bold text-primary-tint uppercase tracking-wide">Approved By</span>
           {inp("approved_by", "Approved By", "w-48")}
         </div>
       </div>

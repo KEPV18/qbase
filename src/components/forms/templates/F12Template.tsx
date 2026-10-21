@@ -160,7 +160,7 @@ export function F12Template({
               colSpan={4}
               className="border border-border p-2 text-left"
             >
-              Sr. No. 🡪 {serial}
+              Sr. No. → {serial}
             </th>
             <th
               colSpan={3}
@@ -181,7 +181,7 @@ export function F12Template({
               colSpan={4}
               className="border border-border p-2 text-left"
             >
-              Month 🡪 {inp("month", "Month")}
+              Month → {inp("month", "Month")}
             </th>
             <th
               colSpan={3}
@@ -239,7 +239,7 @@ export function F12Template({
               key={idx}
               className={
                 idx % 2 === 0
-                  ? "bg-background dark:bg-[#1e1d1a]"
+                  ? "bg-background dark:bg-card"
                   : "bg-muted/30"
               }
             >
@@ -283,7 +283,7 @@ export function F12Template({
                 {editMode ? (
                   <button
                     onClick={() => removeRow(idx)}
-                    className="text-destructive hover:text-destructive/80"
+                    className="text-destructive-tint hover:text-destructive-tint/80"
                     title="Remove row"
                   >
                     <Trash2 className="w-3 h-3 inline" />
@@ -300,7 +300,7 @@ export function F12Template({
       {editMode && (
         <button
           onClick={addRow}
-          className="w-full border-x border-b border-border py-1.5 text-xs text-muted-foreground hover:text-primary hover:bg-primary/5 transition-colors flex items-center justify-center gap-1"
+          className="w-full border-x border-b border-border py-1.5 text-xs text-muted-foreground hover:text-primary-tint hover:bg-primary/5 transition-colors flex items-center justify-center gap-1"
         >
           <Plus className="w-3 h-3" /> Add Row
         </button>

@@ -1,6 +1,7 @@
 // ============================================================================
-// QBase — Dashboard (NotionWarm Workspace)
-// Warm paper-toned cards, serif headings, soft borders, felt warmth
+// QBase — Dashboard
+// Grayscale workspace: one white panel per section, hairline dividers
+// between rows, and a single blue accent reserved for action.
 // NOW WITH: ISO Compliance Monitor, SLA Countdown Grid, Department Health,
 //           Compliance Radar (gap analysis for ALL recurring forms)
 // ============================================================================
@@ -46,12 +47,12 @@ const DEPT_ORDER = [
 
 function StatusText({ status }: { status: string }) {
   const colors: Record<string, string> = {
-    Approved: "bg-emerald-500/5 text-emerald-700 dark:bg-emerald-400/10 dark:text-emerald-300",
-    Pending_Approval: "bg-amber-500/5 text-amber-700 dark:bg-amber-400/10 dark:text-amber-300",
-    Draft: "bg-zinc-500/5 text-muted-foreground dark:bg-zinc-400/10 dark:text-zinc-400",
+    Approved: "bg-success/5 text-success-tint dark:bg-success/10",
+    Pending_Approval: "bg-warning/5 text-warning-tint dark:bg-warning/10",
+    Draft: "bg-ink/5 text-muted-foreground dark:bg-ink/10 dark:text-ink-3",
   };
   const label = status === "Pending_Approval" ? "Pending" : status;
-  return <span className={cn("px-2 py-0.5 rounded-md text-xs font-medium", colors[status] || "bg-zinc-500/5 text-muted-foreground")}>{label}</span>;
+  return <span className={cn("px-2 py-0.5 rounded-md text-xs font-medium", colors[status] || "bg-ink/5 text-muted-foreground")}>{label}</span>;
 }
 
 /* ─── SLA Health Pill ─────────────────────────────────────────────── */
@@ -59,20 +60,20 @@ function HealthPill({ health, dept }: { health: DeptHealth; dept: string }) {
   const accent = deptAccentStyle(dept);
   if (health.status === 'healthy') {
     return (
-      <span className="inline-flex items-center gap-1 text-xs font-medium text-emerald-600 dark:text-emerald-400" style={{ ...accent, backgroundColor: undefined, border: 'none', padding: 0 }}>
+      <span className="inline-flex items-center gap-1 text-xs font-medium text-success-tint" style={{ ...accent, backgroundColor: undefined, border: 'none', padding: 0 }}>
         <CheckCircle className="w-3 h-3" /> Up to date
       </span>
     );
   }
   if (health.status === 'warning') {
     return (
-      <span className="inline-flex items-center gap-1 text-xs font-medium text-amber-600 dark:text-amber-400">
+      <span className="inline-flex items-center gap-1 text-xs font-medium text-warning-tint">
         <AlertTriangle className="w-3 h-3" /> {health.overdueCount} Overdue
       </span>
     );
   }
   return (
-    <span className="inline-flex items-center gap-1 text-xs font-medium text-red-500 dark:text-red-400">
+    <span className="inline-flex items-center gap-1 text-xs font-medium text-destructive-tint">
       <ShieldAlert className="w-3 h-3" /> {health.overdueCount} Overdue
     </span>
   );
@@ -96,7 +97,7 @@ function DeptMetricCard({
       onClick={onClick}
       style={borderStyle}
       className={cn(
-        "text-left rounded-r-xl border border-l-0 p-4 transition-all w-full",
+        "text-left rounded-xl border p-4 transition-all w-full",
         isActive
           ? "bg-card border-foreground/20 shadow-sm"
           : "bg-card border-border dark:border-border hover:border-foreground/20"
@@ -111,7 +112,7 @@ function DeptMetricCard({
           <p className="text-lg font-bold text-foreground dark:text-foreground">{health.totalForms}</p>
           <p className="text-[10px] text-muted-foreground/70">Forms Available</p>
         </div>
-        <div className="w-px h-8 bg-[#e8e3db] dark:bg-[#3a3834]" />
+        <div className="w-px h-8 bg-border dark:bg-border" />
         <div>
           <p className="text-lg font-bold text-foreground dark:text-foreground">{health.totalSubmissions}</p>
           <p className="text-[10px] text-muted-foreground/70">Records Filed</p>
@@ -132,17 +133,17 @@ function ComplianceBadge({ compliance }: { compliance: FormCompliance }) {
     return <span className="text-[10px] text-muted-foreground/70 font-medium">Required per Project</span>;
   }
   if (!daysSinceLast) {
-    return <span className="text-[10px] text-amber-600 font-medium">Never filed</span>;
+    return <span className="text-[10px] text-warning-tint font-medium">Never filed</span>;
   }
   if (isOverdue) {
     return (
-      <span className="inline-flex items-center gap-1 text-[10px] text-red-500 font-medium">
+      <span className="inline-flex items-center gap-1 text-[10px] text-destructive-tint font-medium">
         <ShieldAlert className="w-3 h-3" /> Overdue by {overdueDays}d
       </span>
     );
   }
   return (
-    <span className="inline-flex items-center gap-1 text-[10px] text-emerald-600 font-medium">
+    <span className="inline-flex items-center gap-1 text-[10px] text-success-tint font-medium">
       <Clock className="w-3 h-3" /> {getUrgencyText(compliance)}
     </span>
   );
@@ -156,14 +157,14 @@ function ComplianceRadarCard({
 }) {
   if (missingPeriodsMap.size === 0) {
     return (
-      <div className="px-4 py-3 bg-emerald-500/10 border border-emerald-500/20 rounded-xl">
+      <div className="px-4 py-3 bg-success/10 border border-success/20 rounded-xl">
         <div className="flex items-center gap-2">
-          <CheckCircle className="w-4 h-4 text-emerald-500" />
-          <span className="text-sm font-semibold text-emerald-600 dark:text-emerald-400">
+          <CheckCircle className="w-4 h-4 text-success-tint" />
+          <span className="text-sm font-semibold text-success-tint">
             All Recurring Forms Are Up to Date
           </span>
         </div>
-        <p className="text-xs text-emerald-600/70 dark:text-emerald-400/70 ml-6 mt-1">
+        <p className="text-xs text-success-tint/70 ml-6 mt-1">
           No compliance gaps detected across monthly, quarterly, semi-annual, or annual forms.
         </p>
       </div>
@@ -171,10 +172,10 @@ function ComplianceRadarCard({
   }
 
   return (
-    <div className="px-4 py-3 bg-amber-500/10 border border-amber-500/20 rounded-xl">
+    <div className="px-4 py-3 bg-warning/10 border border-warning/20 rounded-xl">
       <div className="flex items-center gap-2 mb-3">
-        <Radar className="w-4 h-4 text-amber-500" />
-        <span className="text-sm font-semibold text-amber-600 dark:text-amber-400">
+        <Radar className="w-4 h-4 text-warning-tint" />
+        <span className="text-sm font-semibold text-warning-tint">
           Compliance Radar — {missingPeriodsMap.size} Gap{missingPeriodsMap.size > 1 ? 's' : ''} Detected
         </span>
       </div>
@@ -185,10 +186,10 @@ function ComplianceRadarCard({
           const freqLabel = def.frequency.charAt(0).toUpperCase() + def.frequency.slice(1);
           return (
             <div key={code} className="flex items-start gap-3 ml-2">
-              <AlertTriangle className="w-3.5 h-3.5 text-amber-500 mt-0.5 shrink-0" />
+              <AlertTriangle className="w-3.5 h-3.5 text-warning-tint mt-0.5 shrink-0" />
               <div>
-                <p className="text-xs font-medium text-amber-700 dark:text-amber-300">
-                  ⚠️ Compliance Gap: {code} ({def.name}) — Missing for{' '}
+                <p className="text-xs font-medium text-warning-tint">
+                  Compliance Gap: {code} ({def.name}) — Missing for{' '}
                   {/* Array.map passes (value, index, array), so passing the function
                       straight to map handed the array INDEX to `frequency`, which is
                       never 'quarterly'/'semi-annual'/'annual' — every label fell
@@ -196,7 +197,7 @@ function ComplianceRadarCard({
                       scope here. */}
                   {missing.map(ym => formatPeriodLabel(ym, def.frequency)).join(', ')}
                 </p>
-                <p className="text-[10px] text-amber-600/70 dark:text-amber-400/70 mt-0.5">
+                <p className="text-[10px] text-warning-tint/70 mt-0.5">
                   {freqLabel} form — expected {missing.length} period{missing.length > 1 ? 's' : ''} in 2026
                 </p>
               </div>
@@ -227,14 +228,14 @@ function DashboardStatsCard({ stats, isLoading, error }: {
   }
   if (error || !stats) {
     return (
-      <div className="px-4 py-3 bg-red-500/10 border border-red-500/20 rounded-xl" role="alert">
+      <div className="px-4 py-3 bg-destructive/10 border border-destructive/20 rounded-xl" role="alert">
         <div className="flex items-center gap-2">
-          <AlertTriangle className="w-4 h-4 text-red-500" />
-          <span className="text-sm font-semibold text-red-600 dark:text-red-400">
+          <AlertTriangle className="w-4 h-4 text-destructive-tint" />
+          <span className="text-sm font-semibold text-destructive-tint">
             Statistics unavailable
           </span>
         </div>
-        <p className="text-xs text-red-600/80 dark:text-red-400/80 mt-1">
+        <p className="text-xs text-destructive-tint/80 mt-1">
           {error?.message || 'No statistics loaded.'} No numbers are shown rather than guessed values.
         </p>
       </div>
@@ -258,8 +259,8 @@ function DashboardStatsCard({ stats, isLoading, error }: {
       <div className="flex flex-wrap items-center gap-x-5 gap-y-1 text-xs">
         <span className="text-muted-foreground">
           Records: <strong className="text-foreground">{stats.recordsTotal}</strong>
-          <span className="ml-1.5 text-emerald-600 dark:text-emerald-400">{by.approved} approved</span>
-          <span className="ml-1.5 text-amber-600 dark:text-amber-400">{by.pending_review} pending</span>
+          <span className="ml-1.5 text-success-tint">{by.approved} approved</span>
+          <span className="ml-1.5 text-warning-tint">{by.pending_review} pending</span>
           <span className="ml-1.5 text-muted-foreground">{by.draft} draft</span>
           <span className="ml-1.5 text-muted-foreground">{by.rejected} rejected</span>
         </span>
@@ -273,16 +274,16 @@ function DashboardStatsCard({ stats, isLoading, error }: {
           </span>
         )}
         {stats.capaOverdue > 0 && (
-          <span className="inline-flex items-center gap-1 text-red-600 dark:text-red-400">
+          <span className="inline-flex items-center gap-1 text-destructive-tint">
             <ShieldAlert className="w-3 h-3" /> {stats.capaOverdue} CAPA overdue
           </span>
         )}
         {stats.pendingReviewAging.over_30d > 0 ? (
-          <span className="inline-flex items-center gap-1 text-red-600 dark:text-red-400">
+          <span className="inline-flex items-center gap-1 text-destructive-tint">
             <Clock className="w-3 h-3" /> {stats.pendingReviewAging.over_30d} reviews waiting &gt;30d
           </span>
         ) : stats.pendingReviewAging.from_7_to_30d > 0 ? (
-          <span className="inline-flex items-center gap-1 text-amber-600 dark:text-amber-400">
+          <span className="inline-flex items-center gap-1 text-warning-tint">
             <Clock className="w-3 h-3" /> {stats.pendingReviewAging.from_7_to_30d} reviews waiting 7–30d
           </span>
         ) : (
@@ -476,10 +477,10 @@ export default function Index() {
       {/* Welcome + Global Month Selector */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <div>
-          <h1 className="text-xl font-heading font-bold text-foreground dark:text-foreground">Hey, {firstName}!</h1>
+          <h1 className="text-xl font-display font-bold text-foreground dark:text-foreground">Hey, {firstName}!</h1>
           <p className="text-sm text-muted-foreground mt-1">
             {totalRecords} records · {approvedCount} approved · {deptHealthMap.size} departments
-            {globalOverdue > 0 && <span className="text-red-500 ml-1">· {globalOverdue} overdue forms</span>}
+            {globalOverdue > 0 && <span className="text-destructive-tint ml-1">· {globalOverdue} overdue forms</span>}
           </p>
         </div>
         <div className="flex items-center gap-2 flex-wrap justify-end">
@@ -496,7 +497,7 @@ export default function Index() {
                 if (val) next.set("project", val); else next.delete("project");
                 setSearchParams(next, { replace: true });
               }}
-              className="pl-9 pr-4 py-2.5 rounded-lg bg-background dark:bg-[#1a1a18] border border-border dark:border-border text-sm text-foreground dark:text-foreground appearance-none cursor-pointer focus:outline-none focus:ring-2 focus:ring-foreground/10"
+              className="pl-9 pr-4 py-2.5 rounded-lg bg-background dark:bg-card border border-border dark:border-border text-sm text-foreground dark:text-foreground appearance-none cursor-pointer focus:outline-none focus:ring-2 focus:ring-foreground/10"
             >
               <option value="">All Projects</option>
               {PROJECTS.map(p => (
@@ -517,7 +518,7 @@ export default function Index() {
                 if (val) next.set("month", val); else next.delete("month");
                 setSearchParams(next, { replace: true });
               }}
-              className="pl-9 pr-4 py-2.5 rounded-lg bg-background dark:bg-[#1a1a18] border border-border dark:border-border text-sm text-foreground dark:text-foreground appearance-none cursor-pointer focus:outline-none focus:ring-2 focus:ring-foreground/10"
+              className="pl-9 pr-4 py-2.5 rounded-lg bg-background dark:bg-card border border-border dark:border-border text-sm text-foreground dark:text-foreground appearance-none cursor-pointer focus:outline-none focus:ring-2 focus:ring-foreground/10"
             >
               <option value="">All Months</option>
               {availableMonths.map(m => (
@@ -527,7 +528,7 @@ export default function Index() {
           </div>
           <button
             onClick={() => navigate("/create")}
-            className="self-start shrink-0 flex items-center gap-2 px-4 py-2.5 rounded-lg bg-foreground text-primary-foreground dark:bg-primary dark:text-primary-foreground text-sm font-medium hover:bg-foreground/90 dark:hover:bg-primary/90 transition-colors"
+            className="self-start shrink-0 flex items-center gap-2 px-4 py-2.5 rounded-full bg-primary text-primary-foreground text-sm font-medium hover:bg-primary-hover transition-colors"
           >
             <Plus className="w-4 h-4" />
             New Record
@@ -539,7 +540,7 @@ export default function Index() {
       {myDrafts.length > 0 && (
         <div className="bg-card border border-border rounded-xl p-4">
           <div className="flex items-center justify-between mb-2">
-            <h2 className="text-sm font-heading font-bold text-foreground dark:text-foreground">Continue drafts</h2>
+            <h2 className="text-sm font-display font-bold text-foreground dark:text-foreground">Continue drafts</h2>
             <span className="text-[11px] text-muted-foreground">{myDrafts.length} unsent</span>
           </div>
           <div className="flex flex-wrap gap-2">
@@ -550,7 +551,7 @@ export default function Index() {
               >
                 <button
                   onClick={() => navigate(`/create?formCode=${encodeURIComponent(String(d.formCode))}`)}
-                  className="flex items-center gap-2 hover:text-primary transition-colors"
+                  className="flex items-center gap-2 hover:text-primary-tint transition-colors"
                   title="Resume this draft"
                 >
                   <FileText className="w-3.5 h-3.5 text-muted-foreground" />
@@ -561,7 +562,7 @@ export default function Index() {
                   onClick={() => handleDiscardDraft(String(d.id), String(d.serial))}
                   disabled={discardingSerial === d.serial}
                   title="Discard draft"
-                  className="p-1 rounded hover:bg-muted/50 text-muted-foreground hover:text-destructive transition-colors disabled:opacity-50"
+                  className="p-1 rounded hover:bg-muted/50 text-muted-foreground hover:text-destructive-tint transition-colors disabled:opacity-50"
                 >
                   {discardingSerial === d.serial
                     ? <Loader2 className="w-3.5 h-3.5 animate-spin" />
@@ -599,7 +600,7 @@ export default function Index() {
           <div className="bg-card border-border rounded-xl">
             <div className="px-5 pt-5 pb-3 border-b border-border dark:border-border/50">
               <div className="flex items-center justify-between mb-3">
-                <h2 className="text-sm font-heading font-bold text-foreground dark:text-foreground">Forms</h2>
+                <h2 className="text-sm font-display font-bold text-foreground dark:text-foreground">Forms</h2>
                 <span className="text-[11px] text-muted-foreground">{filteredForms.length}</span>
               </div>
               <div className="relative">
@@ -609,7 +610,7 @@ export default function Index() {
                   placeholder="Search forms…"
                   value={formSearch}
                   onChange={(e) => setFormSearch(e.target.value)}
-                  className="w-full pl-8 pr-3 py-2 rounded-lg bg-background dark:bg-[#1a1a18] border border-border dark:border-border text-sm text-foreground dark:text-foreground placeholder:text-muted-foreground/70 focus:outline-none focus:ring-2 focus:ring-foreground/10"
+                  className="w-full pl-8 pr-3 py-2 rounded-lg bg-background dark:bg-card border border-border dark:border-border text-sm text-foreground dark:text-foreground placeholder:text-muted-foreground/70 focus:outline-none focus:ring-2 focus:ring-foreground/10"
                 />
               </div>
             </div>
@@ -625,10 +626,10 @@ export default function Index() {
                       onClick={() => setSelectedForm(isSelected ? null : schema.code)}
                       className={cn(
                         "w-full flex items-center gap-3 px-5 py-3 text-left transition-colors",
-                        isSelected ? "bg-background dark:bg-[#1a1a18]" : "hover:bg-background dark:hover:bg-[#1a1a18]/50"
+                        isSelected ? "bg-background dark:bg-card" : "hover:bg-background dark:hover:bg-card/50"
                       )}
                     >
-                      <div className="w-7 h-7 rounded flex items-center justify-center bg-background dark:bg-[#1a1a18] border border-border dark:border-border shrink-0">
+                      <div className="w-7 h-7 rounded flex items-center justify-center bg-background dark:bg-card border border-border dark:border-border shrink-0">
                         <FileText className="w-3.5 h-3.5 text-muted-foreground/70" />
                       </div>
                       <div className="flex-1 min-w-0">
@@ -645,7 +646,7 @@ export default function Index() {
                         {recordCount > 0 && (
                           <span className="text-[10px] font-mono text-muted-foreground/70">{recordCount}</span>
                         )}
-                        <ChevronRight className="w-3.5 h-3.5 text-[#e8e3db] dark:text-[#3a3834]" />
+                        <ChevronRight className="w-3.5 h-3.5 text-ink-3 dark:text-ink-2" />
                       </div>
                     </button>
                   );
@@ -660,7 +661,7 @@ export default function Index() {
           <div className="bg-card border-border rounded-xl">
             <div className="px-5 pt-5 pb-3 border-b border-border dark:border-border/50 flex items-center justify-between">
               <div>
-                <h2 className="text-sm font-heading font-bold text-foreground dark:text-foreground">
+                <h2 className="text-sm font-display font-bold text-foreground dark:text-foreground">
                   {selectedForm
                     ? `Records — ${FORM_SCHEMAS.find((f: FormSchema) => f.code === selectedForm)?.name || selectedForm}`
                     : `${activeDept} Records`}
@@ -698,7 +699,7 @@ export default function Index() {
                     <button
                       key={record.id}
                       onClick={() => navigate(`/records/${encodeURIComponent(record.serial || "")}`)}
-                      className="w-full flex items-center gap-4 px-5 py-4 hover:bg-background dark:hover:bg-[#1a1a18]/50 transition-colors text-left group"
+                      className="w-full flex items-center gap-4 px-5 py-4 hover:bg-background dark:hover:bg-card/50 transition-colors text-left group"
                     >
                       <span className="font-mono text-[10px] text-muted-foreground shrink-0 w-5 text-right">{idx + 1}</span>
                       <span className="font-mono text-[10px] text-muted-foreground shrink-0">{record.serial}</span>

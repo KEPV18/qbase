@@ -72,12 +72,12 @@ export default function ISOManualPage() {
       <div className="sticky top-0 z-40 border-b border-border/50 bg-background/95 backdrop-blur-xl px-4 md:px-8 py-3 flex items-center justify-between gap-3">
         <div className="flex items-center gap-3 min-w-0">
           <div className="p-2 rounded-lg bg-primary/10 border border-primary/15">
-            <BookOpen className="w-5 h-5 text-primary" />
+            <BookOpen className="w-5 h-5 text-primary-tint" />
           </div>
           <div className="min-w-0">
             <h1 className="text-lg font-bold tracking-tight truncate">ISO 9001:2015 Quality Manual</h1>
             <div className="flex items-center gap-2 text-[10px] text-muted-foreground">
-              <Badge variant="outline" className="text-[8px] h-4 px-1.5 bg-primary/5 text-primary border-primary/15 font-mono">
+              <Badge variant="outline" className="text-[8px] h-4 px-1.5 bg-primary/5 text-primary-tint border-primary/15 font-mono">
                 {MANUAL_METADATA.documentNo}
               </Badge>
               <span>Rev {MANUAL_METADATA.revisionNo}</span>
@@ -107,7 +107,7 @@ export default function ISOManualPage() {
             {isEditMode ? "Exit Edit" : "Edit"}
           </Button>
           {isEditMode && (
-            <Button variant="outline" size="sm" className="gap-1.5 h-8 text-xs text-destructive hover:bg-destructive/10 rounded-lg"
+            <Button variant="outline" size="sm" className="gap-1.5 h-8 text-xs text-destructive-tint hover:bg-destructive/10 rounded-lg"
               onClick={() => { if (confirm("Reset manual to original text?")) { resetToDefault(); toast.info("Manual reset"); } }}
             >
               <RotateCcw className="w-3.5 h-3.5" /> Reset
@@ -135,7 +135,7 @@ export default function ISOManualPage() {
                 className={cn(
                   "w-full flex items-center gap-2 px-2.5 py-1.5 text-[11px] rounded-md transition-all text-left",
                   activeSectionId === section.id
-                    ? "bg-primary/10 text-primary font-semibold"
+                    ? "bg-primary/10 text-primary-tint font-semibold"
                     : "text-muted-foreground hover:text-foreground hover:bg-muted/40"
                 )}
               >
@@ -171,8 +171,8 @@ export default function ISOManualPage() {
             {/* Approval Banner */}
             <div className="mb-8 p-5 rounded-xl border-2 border-primary/20 bg-gradient-to-br from-primary/[0.03] to-primary/[0.01]">
               <div className="flex items-center gap-2 mb-3">
-                <CheckCircle className="w-4 h-4 text-primary" />
-                <span className="text-[10px] font-bold uppercase tracking-[0.15em] text-primary/60">Document Approval</span>
+                <CheckCircle className="w-4 h-4 text-primary-tint" />
+                <span className="text-[10px] font-bold uppercase tracking-[0.15em] text-primary-tint/60">Document Approval</span>
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-xs">
                 <div className="p-3 rounded-lg bg-background/80 border border-border/20">
@@ -214,7 +214,7 @@ export default function ISOManualPage() {
                 <span>Rev {MANUAL_METADATA.revisionNo}</span>
                 <span>{MANUAL_METADATA.updateDate}</span>
               </div>
-              <Badge variant="outline" className="h-4 px-1.5 text-[8px] bg-success/10 text-success border-success/20">ACTIVE</Badge>
+              <Badge variant="outline" className="h-4 px-1.5 text-[8px] bg-success/10 text-success-tint border-success/20">ACTIVE</Badge>
             </div>
           </div>
         </div>
@@ -253,7 +253,7 @@ function SectionBlock({
     <div id={`section-${section.id}`} className={cn("scroll-mt-20", !isLast && "pb-8 mb-8 border-b border-border/20")}>
       {/* Section Header */}
       <div className="mb-5 space-y-2">
-        <div className="flex items-center gap-2 text-[10px] font-bold text-primary/50 uppercase tracking-[0.2em]">
+        <div className="flex items-center gap-2 text-[10px] font-bold text-primary-tint/50 uppercase tracking-[0.2em]">
           <div className="w-8 h-px bg-primary/20" />
           <span>Clause {sectionIdx + 1}</span>
         </div>

@@ -10,6 +10,8 @@ import {
   type ISOClause,
   type TraceableRecord,
   type RelatedRecord,
+  RELATIONSHIP_CLASSES,
+  RELATIONSHIP_LABELS,
 } from "@/lib/traceability";
 import {
   AlertTriangle,
@@ -54,32 +56,6 @@ import {
 // ============================================================================
 // A. CONFIGURATION
 // ============================================================================
-
-/** Color coding for relationship types */
-const RELATIONSHIP_COLORS: Record<RelationshipType, string> = {
-  TRIGGERS: "bg-blue-500",
-  RESOLVES: "bg-green-500",
-  IMPACTS: "bg-amber-500",
-  REFERENCES: "bg-gray-500",
-  UPDATES_PROCEDURE: "bg-purple-500",
-  TRIGGERS_REVIEW: "bg-indigo-500",
-  REQUIRES_TRAINING: "bg-cyan-500",
-  IDENTIFIES_RISK: "bg-red-500",
-  MATERIALIZES_RISK: "bg-rose-500",
-};
-
-/** Display labels for relationships */
-const RELATIONSHIP_LABELS: Record<RelationshipType, string> = {
-  TRIGGERS: "Triggers",
-  RESOLVES: "Resolves",
-  IMPACTS: "Impacts",
-  REFERENCES: "References",
-  UPDATES_PROCEDURE: "Updates Procedure",
-  TRIGGERS_REVIEW: "Triggers Review",
-  REQUIRES_TRAINING: "Requires Training",
-  IDENTIFIES_RISK: "Identifies Risk",
-  MATERIALIZES_RISK: "Materializes Risk",
-};
 
 /** ISO Clause descriptions for tooltips */
 const CLAUSE_DESCRIPTIONS: Record<ISOClause, string> = {
@@ -139,10 +115,10 @@ const FORM_ICONS: Record<string, React.ElementType> = {
 /** Status Badge for record status */
 function StatusBadge({ status }: { status: string }) {
   const configs = {
-    OPEN: { color: "bg-amber-100 text-amber-800", icon: Clock },
-    IN_PROGRESS: { color: "bg-blue-100 text-blue-800", icon: Activity },
-    CLOSED: { color: "bg-green-100 text-green-800", icon: CheckCircle2 },
-    CANCELLED: { color: "bg-gray-100 text-gray-800", icon: X },
+    OPEN: { color: "bg-warning/10 text-warning-tint", icon: Clock },
+    IN_PROGRESS: { color: "bg-primary/10 text-primary-tint", icon: Activity },
+    CLOSED: { color: "bg-success/10 text-success-tint", icon: CheckCircle2 },
+    CANCELLED: { color: "bg-muted text-foreground", icon: X },
   } as const;
 
   const config = configs[status as keyof typeof configs] || configs.CANCELLED;
@@ -169,10 +145,7 @@ function RelationshipBadge({
       <Tooltip>
         <TooltipTrigger asChild>
           <Badge
-            className={cn(
-              "text-white font-medium text-xs",
-              RELATIONSHIP_COLORS[relationship]
-            )}
+            className={cn("font-medium text-xs", RELATIONSHIP_CLASSES[relationship])}
           >
             {RELATIONSHIP_LABELS[relationship]}
             <span className="ml-1 opacity-75">[{isoClause}]</span>
@@ -180,7 +153,7 @@ function RelationshipBadge({
         </TooltipTrigger>
         <TooltipContent side="top" className="max-w-xs">
           <p className="font-medium">ISO 9001:2015 Clause {isoClause}</p>
-          <p className="text-xs text-slate-300 mt-1">
+          <p className="text-xs text-ink-3 mt-1">
             {CLAUSE_DESCRIPTIONS[isoClause]}
           </p>
         </TooltipContent>
@@ -214,15 +187,15 @@ function TraceRecordCard({
     <Card
       className={cn(
         "relative transition-all",
-        isRoot && "border-2 border-indigo-500",
-        hasBrokenLinks && "border-amber-400"
+        isRoot && "border-2 border-primary/50",
+        hasBrokenLinks && "border-warning/40"
       )}
       style={{ marginLeft: depth * 24 }}
     >
       {/* Depth indicator line */}
       {depth > 0 && (
         <div
-          className="absolute -left-6 top-1/2 w-6 h-0.5 bg-slate-300"
+          className="absolute -left-6 top-1/2 w-6 h-0.5 bg-track"
           aria-hidden="true"
         />
       )}
@@ -233,14 +206,14 @@ function TraceRecordCard({
             <div
               className={cn(
                 "p-2 rounded-lg",
-                isRoot ? "bg-indigo-100 text-indigo-600" : "bg-slate-100 text-slate-600"
+                isRoot ? "bg-primary/10 text-primary-tint" : "bg-muted text-ink"
               )}
             >
               <Icon className="w-4 h-4" />
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <span className="text-sm font-mono text-slate-500">
+                <span className="text-sm font-mono text-ink-2">
                   {node.record.form}-{node.record.number}
                 </span>
                 {isRoot && (
@@ -268,7 +241,7 @@ function TraceRecordCard({
       {expanded && (
         <CardContent className="pt-0">
           {/* Date and metadata */}
-          <div className="flex items-center gap-4 text-sm text-slate-500 mb-3">
+          <div className="flex items-center gap-4 text-sm text-ink-2 mb-3">
             <span>{node.record.date}</span>
             <span>•</span>
             <span>{node.record.isoClauses?.join(", ") || "N/A"}</span>
@@ -277,7 +250,7 @@ function TraceRecordCard({
           {/* Related Records */}
           {node.record.relatedRecords.length > 0 && (
             <div className="space-y-2">
-              <p className="text-xs font-medium text-slate-500 uppercase">
+              <p className="text-xs font-medium text-ink-2 uppercase">
                 Related Records
               </p>
               <div className="flex flex-wrap gap-2">
@@ -295,12 +268,12 @@ function TraceRecordCard({
                             onClick={() => onOpenRecord(targetId)}
                             className={cn(
                               "text-xs h-auto py-1",
-                              isBroken && "border-amber-400 bg-amber-50"
+                              isBroken && "border-warning/40 bg-warning/10"
                             )}
                           >
                             <div className="flex items-center gap-1">
                               {isBroken && (
-                                <AlertTriangle className="w-3 h-3 text-amber-600" />
+                                <AlertTriangle className="w-3 h-3 text-warning-tint" />
                               )}
                               <span>{targetId}</span>
                               <ArrowRight className="w-3 h-3 mx-1" />
@@ -313,7 +286,10 @@ function TraceRecordCard({
                         </TooltipTrigger>
                         <TooltipContent>
                           {isBroken ? (
-                            <p className="text-amber-600">⚠️ Broken link: Target not found</p>
+                            <p className="flex items-center gap-1.5 text-warning-tint">
+                              <AlertTriangle className="w-3.5 h-3.5 shrink-0" aria-hidden="true" />
+                              Broken link: Target not found
+                            </p>
                           ) : (
                             <p>Click to open {targetId}</p>
                           )}
@@ -352,24 +328,24 @@ function TraceStats({ chain }: { chain: TraceChain }) {
     <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
       <Card>
         <CardContent className="pt-6">
-          <p className="text-sm text-slate-500">Total Records</p>
+          <p className="text-sm text-ink-2">Total Records</p>
           <p className="text-2xl font-bold">{chain.stats.totalRecords}</p>
         </CardContent>
       </Card>
 
       <Card>
         <CardContent className="pt-6">
-          <p className="text-sm text-slate-500">Trace Depth</p>
+          <p className="text-sm text-ink-2">Trace Depth</p>
           <p className="text-2xl font-bold">{chain.stats.maxDepth}</p>
-          <p className="text-xs text-slate-400">levels</p>
+          <p className="text-xs text-ink-3">levels</p>
         </CardContent>
       </Card>
 
       <Card>
         <CardContent className="pt-6">
-          <p className="text-sm text-slate-500">ISO Clauses</p>
+          <p className="text-sm text-ink-2">ISO Clauses</p>
           <p className="text-2xl font-bold">{coverage.clauses.length}</p>
-          <p className="text-xs text-slate-400">
+          <p className="text-xs text-ink-3">
             {coverage.gaps.length > 0 && `${coverage.gaps.length} gaps`}
           </p>
         </CardContent>
@@ -377,11 +353,11 @@ function TraceStats({ chain }: { chain: TraceChain }) {
 
       <Card>
         <CardContent className="pt-6">
-          <p className="text-sm text-slate-500">Broken Links</p>
+          <p className="text-sm text-ink-2">Broken Links</p>
           <p
             className={cn(
               "text-2xl font-bold",
-              chain.gaps.length > 0 ? "text-amber-600" : "text-green-600"
+              chain.gaps.length > 0 ? "text-warning-tint" : "text-success-tint"
             )}
           >
             {chain.gaps.length}
@@ -410,9 +386,9 @@ function TraceStats({ chain }: { chain: TraceChain }) {
             ))}
           </div>
           {coverage.gaps.length > 0 && (
-            <div className="mt-3 p-2 bg-amber-50 border border-amber-200 rounded text-sm">
-              <AlertTriangle className="w-4 h-4 inline mr-1 text-amber-600" />
-              <span className="text-amber-800">
+            <div className="mt-3 p-2 bg-warning/10 border border-warning/25 rounded text-sm">
+              <AlertTriangle className="w-4 h-4 inline mr-1 text-warning-tint" />
+              <span className="text-warning-tint">
                 Expected clauses not found: {coverage.gaps.join(", ")}
               </span>
             </div>
@@ -511,9 +487,9 @@ export function TraceView({
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-2xl font-bold">Traceability Chain</h2>
-          <p className="text-slate-500">
+          <p className="text-ink-2">
             Starting from{" "}
-            <span className="font-mono font-medium text-slate-700">
+            <span className="font-mono font-medium text-foreground">
               {rootRecord.form}-{rootRecord.number}
             </span>{" "}
             {rootRecord.title}
@@ -584,7 +560,7 @@ export function TraceView({
                               {isBroken ? (
                                 <Badge
                                   variant="outline"
-                                  className="text-amber-600 border-amber-400"
+                                  className="text-warning-tint border-warning/40"
                                 >
                                   <AlertTriangle className="w-3 h-3 mr-1" />
                                   Broken
@@ -592,7 +568,7 @@ export function TraceView({
                               ) : (
                                 <Badge
                                   variant="outline"
-                                  className="text-green-600 border-green-400"
+                                  className="text-success-tint border-success/40"
                                 >
                                   <CheckCircle2 className="w-3 h-3 mr-1" />
                                   Valid

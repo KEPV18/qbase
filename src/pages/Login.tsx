@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
 import { Spinner } from "@/components/ui/LoadingSpinner";
-import { Lock, Mail, Loader2, Eye, EyeOff, ArrowRight, Trash2 } from "lucide-react";
+import { Lock, Mail, Loader2, Eye, EyeOff, ArrowRight, Trash2, Check } from "lucide-react";
 import logoImg from "@/assets/logo.png";
 
 /* ── Nuclear cache clear ──────────────────────────────────────────── */
@@ -113,7 +113,7 @@ export default function Login() {
 
       {/* Soft gradient accents */}
       <div className="absolute top-0 right-0 w-[600px] h-[600px] bg-primary/5 rounded-full blur-[120px] -translate-y-1/2 translate-x-1/3 pointer-events-none" />
-      <div className="absolute bottom-0 left-0 w-[400px] h-[400px] bg-indigo-500/5 rounded-full blur-[100px] translate-y-1/3 -translate-x-1/4 pointer-events-none" />
+      <div className="absolute bottom-0 left-0 w-[400px] h-[400px] bg-primary/5 rounded-full blur-[100px] translate-y-1/3 -translate-x-1/4 pointer-events-none" />
 
       <div className="w-full max-w-md relative z-10 animate-fade-up">
         {/* Logo & Brand */}
@@ -143,7 +143,7 @@ export default function Login() {
                   autoComplete="email"
                 />
               </div>
-              {errors.email && <p className="text-xs text-destructive">{errors.email}</p>}
+              {errors.email && <p className="text-xs text-destructive-tint">{errors.email}</p>}
             </div>
 
             {/* Password */}
@@ -169,19 +169,21 @@ export default function Login() {
                   {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                 </button>
               </div>
-              {errors.password && <p className="text-xs text-destructive">{errors.password}</p>}
+              {errors.password && <p className="text-xs text-destructive-tint">{errors.password}</p>}
             </div>
 
             {/* Forgot Password */}
             <div className="text-right -mt-2">
               {resetSent ? (
-                <p className="text-xs text-success font-medium">✓ Reset link sent! Check your inbox.</p>
+                <p className="flex items-center gap-1 text-xs text-success-tint font-medium">
+                  <Check className="w-3 h-3" aria-hidden="true" /> Reset link sent! Check your inbox.
+                </p>
               ) : (
                 <button
                   type="button"
                   onClick={handleForgotPassword}
                   disabled={resetLoading}
-                  className="text-xs text-primary hover:underline font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="text-xs text-primary-tint hover:underline font-medium disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   {resetLoading ? "Sending..." : "Forgot password?"}
                 </button>

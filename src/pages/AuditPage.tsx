@@ -71,61 +71,61 @@ export default function AuditPage() {
 
         {/* Decision banner */}
         {stats.issues > 0 ? (
-          <Card className="border-red-500/20 bg-red-500/5">
+          <Card className="border-destructive/20 bg-destructive/5">
             <CardContent className="p-4 flex items-center gap-3">
-              <AlertTriangle className="w-5 h-5 text-red-400" />
+              <AlertTriangle className="w-5 h-5 text-destructive-tint" />
               <div className="flex-1">
-                <p className="text-sm font-medium text-red-200">{stats.issues} forms have issues</p>
-                <p className="text-xs text-red-300/70">Resolve these before your next audit review.</p>
+                <p className="text-sm font-medium text-destructive-tint">{stats.issues} forms have issues</p>
+                <p className="text-xs text-destructive-tint">Resolve these before your next audit review.</p>
               </div>
-              <Button size="sm" variant="outline" className="border-red-500/30 text-red-300 hover:bg-red-500/10" onClick={() => setActiveTab("issues")}>
+              <Button size="sm" variant="outline" className="border-destructive/30 text-destructive-tint hover:bg-destructive/10" onClick={() => setActiveTab("issues")}>
                 Fix Issues
               </Button>
             </CardContent>
           </Card>
         ) : stats.overdue > 0 ? (
-          <Card className="border-amber-500/20 bg-amber-500/5">
+          <Card className="border-warning/20 bg-warning/5">
             <CardContent className="p-4 flex items-center gap-3">
-              <CalendarClock className="w-5 h-5 text-amber-400" />
+              <CalendarClock className="w-5 h-5 text-warning-tint" />
               <div className="flex-1">
-                <p className="text-sm font-medium text-amber-200">{stats.overdue} overdue forms</p>
-                <p className="text-xs text-amber-300/70">These forms missed their filing deadline.</p>
+                <p className="text-sm font-medium text-warning-tint">{stats.overdue} overdue forms</p>
+                <p className="text-xs text-warning-tint">These forms missed their filing deadline.</p>
               </div>
-              <Button size="sm" variant="outline" className="border-amber-500/30 text-amber-300 hover:bg-amber-500/10" onClick={() => setActiveTab("overdue")}>
+              <Button size="sm" variant="outline" className="border-warning/30 text-warning-tint hover:bg-warning/10" onClick={() => setActiveTab("overdue")}>
                 Resolve
               </Button>
             </CardContent>
           </Card>
         ) : stats.neverFilled > 0 ? (
-          <Card className="border-amber-500/20 bg-amber-500/5">
+          <Card className="border-warning/20 bg-warning/5">
             <CardContent className="p-4 flex items-center gap-3">
-              <FileX className="w-5 h-5 text-amber-400" />
+              <FileX className="w-5 h-5 text-warning-tint" />
               <div className="flex-1">
-                <p className="text-sm font-medium text-amber-200">{stats.neverFilled} forms never filled</p>
-                <p className="text-xs text-amber-300/70">These forms need at least one record for compliance.</p>
+                <p className="text-sm font-medium text-warning-tint">{stats.neverFilled} forms never filled</p>
+                <p className="text-xs text-warning-tint">These forms need at least one record for compliance.</p>
               </div>
-              <Button size="sm" variant="outline" className="border-amber-500/30 text-amber-300 hover:bg-amber-500/10" onClick={() => navigate('/create')}>
+              <Button size="sm" variant="outline" className="border-warning/30 text-warning-tint hover:bg-warning/10" onClick={() => navigate('/create')}>
                 <FilePlus className="w-4 h-4 mr-1" /> Create
               </Button>
             </CardContent>
           </Card>
         ) : (
-          <Card className="border-emerald-500/20 bg-emerald-500/5">
+          <Card className="border-success/20 bg-success/5">
             <CardContent className="p-4 flex items-center gap-3">
-              <CheckCircle className="w-5 h-5 text-emerald-400" />
-              <p className="text-sm font-medium text-emerald-200">All forms compliant — no outstanding audit actions.</p>
+              <CheckCircle className="w-5 h-5 text-success-tint" />
+              <p className="text-sm font-medium text-success-tint">All forms compliant — no outstanding audit actions.</p>
             </CardContent>
           </Card>
         )}
 
         {/* Stats */}
         <div className="grid grid-cols-2 md:grid-cols-6 gap-3">
-          <StatBadge icon={FileText} label="Total Records" value={stats.totalRecords} color="cyan" />
-          <StatBadge icon={Clock} label="Pending" value={stats.pending} color="amber" />
-          <StatBadge icon={CheckCircle} label="Compliant" value={stats.compliant} color="emerald" />
-          <StatBadge icon={AlertTriangle} label="Issues" value={stats.issues} color="red" />
-          <StatBadge icon={CalendarClock} label="Overdue" value={stats.overdue} color="amber" />
-          <StatBadge icon={FileX} label="Never Filled" value={stats.neverFilled} color="amber" />
+          <StatBadge icon={FileText} label="Total Records" value={stats.totalRecords} tone="info" />
+          <StatBadge icon={Clock} label="Pending" value={stats.pending} tone="warning" />
+          <StatBadge icon={CheckCircle} label="Compliant" value={stats.compliant} tone="success" />
+          <StatBadge icon={AlertTriangle} label="Issues" value={stats.issues} tone="danger" />
+          <StatBadge icon={CalendarClock} label="Overdue" value={stats.overdue} tone="warning" />
+          <StatBadge icon={FileX} label="Never Filled" value={stats.neverFilled} tone="warning" />
         </div>
 
         {/* Compliance bar */}
@@ -133,10 +133,10 @@ export default function AuditPage() {
           <CardContent className="p-5">
             <div className="flex items-center justify-between mb-3">
               <span className="text-sm font-semibold">Form Population Rate</span>
-              <span className="text-2xl font-bold text-emerald-400">{complianceRate}%</span>
+              <span className="text-2xl font-bold text-success-tint">{complianceRate}%</span>
             </div>
             <div className="w-full bg-muted/30 rounded-full h-2 overflow-hidden">
-              <div className="bg-emerald-500 h-2 rounded-full transition-all duration-700" style={{ width: `${complianceRate}%` }} />
+              <div className="bg-success h-2 rounded-full transition-all duration-700" style={{ width: `${complianceRate}%` }} />
             </div>
             <p className="text-[10px] text-muted-foreground mt-2">
               {stats.filledForms} of {stats.totalForms} forms have records
@@ -207,14 +207,14 @@ export default function AuditPage() {
                         <div className={cn(
                           "w-8 h-8 rounded-full flex items-center justify-center border shrink-0",
                           auditStatus === 'overdue' || auditStatus === 'never-filled'
-                            ? "bg-amber-500/10 border-amber-500/20"
+                            ? "bg-warning/10 border-warning/20"
                             : activeTab === 'issues'
-                            ? "bg-red-500/10 border-red-500/20"
-                            : "bg-emerald-500/10 border-emerald-500/20"
+                            ? "bg-destructive/10 border-destructive/20"
+                            : "bg-success/10 border-success/20"
                         )}>
-                          {auditStatus === 'overdue' || auditStatus === 'never-filled' ? <AlertTriangle className="w-4 h-4 text-amber-400" /> :
-                           activeTab === 'issues' ? <AlertTriangle className="w-4 h-4 text-red-400" /> :
-                           <CheckCircle className="w-4 h-4 text-emerald-400" />}
+                          {auditStatus === 'overdue' || auditStatus === 'never-filled' ? <AlertTriangle className="w-4 h-4 text-warning-tint" /> :
+                           activeTab === 'issues' ? <AlertTriangle className="w-4 h-4 text-destructive-tint" /> :
+                           <CheckCircle className="w-4 h-4 text-success-tint" />}
                         </div>
 
                         <div className="flex-1 min-w-0">
@@ -243,19 +243,32 @@ export default function AuditPage() {
   );
 }
 
-function StatBadge({ icon: Icon, label, value, color }: { icon: React.ElementType; label: string; value: number; color: string }) {
-  const colors: Record<string, string> = {
-    cyan: "text-cyan-400",
-    amber: "text-amber-400",
-    emerald: "text-emerald-400",
-    red: "text-red-400",
-  };
+/**
+ * One stat tile.
+ *
+ * `tone` is a semantic name, not a raw palette key.  The old map keyed on
+ * `cyan` / `amber` / `emerald` / `red` — the Tailwind-500 hue names — so
+ * the same semantic state had to be spelled differently on every page, and
+ * `purple` did not exist at all.  The four states below are the four the
+ * design system actually has, and each resolves to a token.
+ */
+type StatTone = 'neutral' | 'info' | 'success' | 'warning' | 'danger';
+
+const STAT_TONE_CLASS: Record<StatTone, string> = {
+  neutral: 'text-muted-foreground',
+  info: 'text-primary-tint',
+  success: 'text-success-tint',
+  warning: 'text-warning-tint',
+  danger: 'text-destructive-tint',
+};
+
+function StatBadge({ icon: Icon, label, value, tone = 'neutral' }: { icon: React.ElementType; label: string; value: number; tone?: StatTone }) {
   return (
     <Card className="border-border/30">
       <CardContent className="p-3 flex items-center gap-2">
-        <Icon className={cn("w-4 h-4", colors[color] || "text-muted-foreground")} />
+        <Icon className={cn("w-4 h-4", STAT_TONE_CLASS[tone])} />
         <div>
-          <p className="text-lg font-bold">{value}</p>
+          <p className="text-lg font-bold tabular-nums">{value}</p>
           <p className="text-[9px] text-muted-foreground uppercase">{label}</p>
         </div>
       </CardContent>

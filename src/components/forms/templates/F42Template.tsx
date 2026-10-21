@@ -173,7 +173,7 @@ export function F42Template({ data, isTemplate = true, editMode = false, onChang
                 {editMode && (
                   <td className="border border-border p-0.5 text-center">
                     {rows.length > 1 && (
-                      <button onClick={() => removeRow(idx)} className="text-destructive hover:text-red-600">
+                      <button onClick={() => removeRow(idx)} className="text-destructive-tint hover:text-destructive-tint">
                         <Trash2 className="w-3 h-3" />
                       </button>
                     )}
@@ -186,7 +186,7 @@ export function F42Template({ data, isTemplate = true, editMode = false, onChang
       </div>
 
       {editMode && (
-        <button onClick={addRow} className="mt-1 flex items-center gap-1 text-xs text-primary hover:underline mx-auto">
+        <button onClick={addRow} className="mt-1 flex items-center gap-1 text-xs text-primary-tint hover:underline mx-auto">
           <Plus className="w-3 h-3" /> Add Row
         </button>
       )}

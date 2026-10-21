@@ -82,8 +82,8 @@ export default function FormCodeRedirect() {
       <div className="flex flex-col items-center justify-center py-20">
         {error ? (
           <>
-            <p className="text-destructive mb-2">Error: {error}</p>
-            <button onClick={() => navigate('/')} className="text-primary underline">Back to Dashboard</button>
+            <p className="text-destructive-tint mb-2">Error: {error}</p>
+            <button onClick={() => navigate('/')} className="text-primary-tint underline">Back to Dashboard</button>
           </>
         ) : (
           <StateScreen state="loading" title={`Loading ${decodedSerial}…`} />

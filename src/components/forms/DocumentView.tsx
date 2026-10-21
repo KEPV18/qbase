@@ -5,6 +5,7 @@
 // ============================================================================
 
 import React from "react";
+import { Calendar, Clipboard } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface DocumentViewProps {
@@ -80,11 +81,13 @@ export function DocHeader({ serial, formName, formCode, sectionName, projectScop
       </div>
       {/* Project Scope & Coverage Period badges */}
       <div className="flex items-center gap-2 mt-2">
-        <span className="px-2 py-0.5 rounded-sm bg-primary/5 text-primary border border-primary/10 text-[10px] font-semibold tracking-wider">
-          📋 {projectScope || 'Company-Wide'}
+        <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full border border-foreground/10 bg-foreground/[0.05] text-[10px] font-semibold tracking-wider text-foreground/70">
+          <Clipboard className="w-3 h-3 shrink-0" aria-hidden="true" />
+          {projectScope || 'Company-Wide'}
         </span>
-        <span className="px-2 py-0.5 rounded-sm bg-secondary/50 text-secondary-foreground border border-border/50 text-[10px] font-semibold tracking-wider">
-          🗓 {coveragePeriod || 'Continuous / Open-Ended'}
+        <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full border border-foreground/10 bg-foreground/[0.05] text-[10px] font-semibold tracking-wider text-foreground/70">
+          <Calendar className="w-3 h-3 shrink-0" aria-hidden="true" />
+          {coveragePeriod || 'Continuous / Open-Ended'}
         </span>
       </div>
     </div>

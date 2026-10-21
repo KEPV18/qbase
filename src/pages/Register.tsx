@@ -79,7 +79,7 @@ export default function Register() {
       {/* Brand mark */}
       <div className="absolute top-8 left-8 flex items-center gap-3 animate-fade-in">
         <div className="w-10 h-10 bg-neon-cyan/10 rounded-sm flex items-center justify-center border border-neon-cyan/20">
-          <span className="text-primary font-mono font-black text-[10px] tracking-tighter">QB</span>
+          <span className="text-primary-tint font-mono font-black text-[10px] tracking-tighter">QB</span>
         </div>
         <div>
           <div className="text-xl font-black text-foreground tracking-tight">QBase</div>
@@ -87,7 +87,7 @@ export default function Register() {
         </div>
       </div>
 
-      <Card className="w-full max-w-[420px] shadow-xl border-neon-violet/10 rounded-sm overflow-hidden animate-fade-in bg-card/95 backdrop-blur-xl accent-line-top">
+      <Card className="w-full max-w-[420px] shadow-xl border-neon-violet/10 rounded-sm overflow-hidden animate-fade-in bg-card accent-line-top">
         <CardHeader className="text-center pt-10 pb-4">
           <div className="mb-5 relative mx-auto w-14 h-14">
             <div className="absolute inset-0 bg-neon-violet/15 rounded-sm blur-xl animate-glow-pulse" />
@@ -110,7 +110,7 @@ export default function Register() {
                 className={`pl-10 h-11 rounded-sm bg-muted/30 border-border/40 focus:border-neon-cyan/50 focus:ring-neon-cyan/20 transition-all text-sm font-mono ${errors.name ? 'border-destructive' : ''}`}
               />
             </div>
-            {errors.name && <p className="text-xs text-destructive flex items-center gap-1"><AlertCircle className="w-3 h-3" /> {errors.name}</p>}
+            {errors.name && <p className="text-xs text-destructive-tint flex items-center gap-1"><AlertCircle className="w-3 h-3" /> {errors.name}</p>}
           </div>
 
           {/* Email */}
@@ -123,7 +123,7 @@ export default function Register() {
                 className={`pl-10 h-11 rounded-sm bg-muted/30 border-border/40 focus:border-neon-cyan/50 focus:ring-neon-cyan/20 transition-all text-sm font-mono ${errors.email ? 'border-destructive' : ''}`}
               />
             </div>
-            {errors.email && <p className="text-xs text-destructive flex items-center gap-1"><AlertCircle className="w-3 h-3" /> {errors.email}</p>}
+            {errors.email && <p className="text-xs text-destructive-tint flex items-center gap-1"><AlertCircle className="w-3 h-3" /> {errors.email}</p>}
           </div>
 
           {/* Password */}
@@ -141,7 +141,7 @@ export default function Register() {
                 {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
               </button>
             </div>
-            {errors.password && <p className="text-xs text-destructive flex items-center gap-1"><AlertCircle className="w-3 h-3" /> {errors.password}</p>}
+            {errors.password && <p className="text-xs text-destructive-tint flex items-center gap-1"><AlertCircle className="w-3 h-3" /> {errors.password}</p>}
 
             {strength && (
               <div className="space-y-1.5 px-0.5 pt-1">
@@ -157,7 +157,7 @@ export default function Register() {
                     { met: /[0-9]/.test(password), text: "Number" },
                     { met: /[^A-Za-z0-9]/.test(password), text: "Special char" },
                   ].map((r, i) => (
-                    <span key={i} className={`text-[10px] flex items-center gap-1 font-mono ${r.met ? 'text-success' : 'text-muted-foreground/40'}`}>
+                    <span key={i} className={`text-[10px] flex items-center gap-1 font-mono ${r.met ? 'text-success-tint' : 'text-muted-foreground/40'}`}>
                       <CheckCircle2 className="w-3 h-3" />
                       {r.text}
                     </span>
@@ -178,13 +178,13 @@ export default function Register() {
                 className={`pl-10 h-11 rounded-sm bg-muted/30 border-border/40 focus:border-neon-cyan/50 focus:ring-neon-cyan/20 transition-all text-sm font-mono ${errors.confirmPassword ? 'border-destructive' : ''}`}
               />
             </div>
-            {errors.confirmPassword && <p className="text-xs text-destructive flex items-center gap-1"><AlertCircle className="w-3 h-3" /> {errors.confirmPassword}</p>}
+            {errors.confirmPassword && <p className="text-xs text-destructive-tint flex items-center gap-1"><AlertCircle className="w-3 h-3" /> {errors.confirmPassword}</p>}
           </div>
         </CardContent>
 
         <CardFooter className="flex flex-col gap-4 px-7 pb-9">
           <Button
-            className="w-full h-11 rounded-sm bg-primary hover:bg-primary/90 text-primary-foreground font-semibold transition-all active:scale-[0.98] group"
+            className="w-full h-11 rounded-sm bg-primary hover:bg-primary-hover text-primary-foreground font-semibold transition-all active:scale-[0.98] group"
             onClick={handleRegister}
             disabled={isLoading}
           >
@@ -203,7 +203,7 @@ export default function Register() {
 
           <p className="text-center text-xs text-muted-foreground font-mono">
             Already have an account?{" "}
-            <button onClick={() => navigate("/login")} className="text-primary hover:underline font-semibold transition-colors">
+            <button onClick={() => navigate("/login")} className="text-primary-tint hover:underline font-semibold transition-colors">
               Sign in
             </button>
           </p>

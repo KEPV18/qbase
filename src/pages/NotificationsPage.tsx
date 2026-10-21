@@ -27,17 +27,17 @@ import { Input } from "@/components/ui/input";
 type FilterTab = "all" | "unread" | NotificationCategory;
 
 const CATEGORY_CONFIG: Record<string, { icon: typeof Bell; color: string; bg: string; label: string }> = {
-  records:   { icon: FileText,      color: "text-primary",     bg: "bg-primary/10",     label: "Records" },
-  users:     { icon: Users,         color: "text-blue-500",    bg: "bg-blue-500/10",    label: "Users" },
-  security:  { icon: Shield,        color: "text-destructive", bg: "bg-destructive/10", label: "Security" },
-  system:    { icon: Server,        color: "text-amber-500",  bg: "bg-amber-500/10",   label: "System" },
-  tenant:    { icon: Building2,     color: "text-violet-500", bg: "bg-violet-500/10",  label: "Tenant" },
+  records:   { icon: FileText,      color: "text-primary-tint",     bg: "bg-primary/10",     label: "Records" },
+  users:     { icon: Users,         color: "text-primary-tint",    bg: "bg-primary/10",    label: "Users" },
+  security:  { icon: Shield,        color: "text-destructive-tint", bg: "bg-destructive/10", label: "Security" },
+  system:    { icon: Server,        color: "text-warning-tint",  bg: "bg-warning/10",   label: "System" },
+  tenant:    { icon: Building2,     color: "text-primary-tint", bg: "bg-primary/10",  label: "Tenant" },
   default:   { icon: Info,          color: "text-muted-foreground", bg: "bg-muted/50",  label: "Info" },
 };
 
 const PRIORITY_CONFIG: Record<string, { color: string; bg: string; dot: string; label: string }> = {
-  critical:  { color: "text-destructive", bg: "bg-destructive/10", dot: "bg-destructive", label: "Critical" },
-  important: { color: "text-amber-500",  bg: "bg-amber-500/10",   dot: "bg-amber-500",   label: "Important" },
+  critical:  { color: "text-destructive-tint", bg: "bg-destructive/10", dot: "bg-destructive", label: "Critical" },
+  important: { color: "text-warning-tint",  bg: "bg-warning/10",   dot: "bg-warning",   label: "Important" },
   info:      { color: "text-muted-foreground", bg: "bg-muted/50", dot: "bg-muted-foreground/50", label: "Info" },
 };
 
@@ -166,7 +166,7 @@ export default function NotificationsPage() {
         {/* ─── Header ──────────────────────────────────── */}
         <PageHeader
           icon={Bell}
-          iconClassName="text-primary"
+          iconClassName="text-primary-tint"
           title="Notifications"
           description={unreadCount > 0 ? `${unreadCount} unread · ${criticalCount} critical` : "All caught up"}
           actions={[
@@ -188,7 +188,7 @@ export default function NotificationsPage() {
                 className={cn(
                   "flex items-center gap-1.5 px-3 py-2 text-sm font-medium transition-colors border-b-2 -mb-px",
                   active
-                    ? "border-primary text-primary"
+                    ? "border-primary text-primary-tint"
                     : "border-transparent text-muted-foreground hover:text-foreground"
                 )}
               >
@@ -197,7 +197,7 @@ export default function NotificationsPage() {
                 {count > 0 && tab.id !== 'all' && (
                   <span className={cn(
                     "text-[10px] font-bold px-1.5 py-0.5 rounded-sm",
-                    active ? "bg-primary/10 text-primary" : "bg-muted text-muted-foreground"
+                    active ? "bg-primary/10 text-primary-tint" : "bg-muted text-muted-foreground"
                   )}>
                     {count}
                   </span>

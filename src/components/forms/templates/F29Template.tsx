@@ -12,6 +12,7 @@
 // ============================================================================
 
 import React, { useMemo } from "react";
+import { CheckSquare } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { FormDocument, val } from "../FormKit";
 
@@ -70,10 +71,10 @@ export function F29Template({ data, isTemplate = true, editMode = false, onChang
 
   const inp = (key: string, label: string, width = "w-full") =>
     editMode ? (
-      <input className={cn("border-b border-dashed border-amber-400 dark:border-amber-700 bg-transparent text-[12px] font-semibold px-1 outline-none", width)}
+      <input className={cn("border-b border-dashed border-warning/40 dark:border-warning/45 bg-transparent text-[12px] font-semibold px-1 outline-none", width)}
         value={val(d, key)} onChange={e => onChange?.(key, e.target.value)} placeholder={label} />
     ) : (
-      <span className={cn("border-b border-dashed border-amber-300 dark:border-amber-700 px-1 inline-block min-w-[4rem] text-[12px] font-semibold", width)}>
+      <span className={cn("border-b border-dashed border-warning/30 dark:border-warning/45 px-1 inline-block min-w-[4rem] text-[12px] font-semibold", width)}>
         {val(d, key) || (isTemplate ? "___" : "\u00A0")}
       </span>
     );
@@ -84,13 +85,13 @@ export function F29Template({ data, isTemplate = true, editMode = false, onChang
     <FormDocument formCode={FC} formName="Employee Training & Competence Record Sheet" serial={val(d, "serial")} sectionName="HR & Training" className={className}>
       <div className="p-5 space-y-4">
         {/* ── Annual Assessment Header (matches DOCX R0-R1) ── */}
-        <div className="flex flex-wrap items-center justify-between gap-3 px-4 py-3 rounded-lg bg-amber-50 dark:bg-amber-950/25 border border-amber-200 dark:border-amber-800">
+        <div className="flex flex-wrap items-center justify-between gap-3 px-4 py-3 rounded-lg bg-warning/10 dark:bg-warning/20 border border-warning/25 dark:border-warning/45">
           <div className="flex items-center gap-2">
-            <span className="text-[9px] font-bold text-amber-700 dark:text-amber-300 uppercase tracking-wide">Annual Assessment Done By</span>
-            <span className="text-[12px] font-bold text-foreground border-b border-dashed border-amber-400 dark:border-amber-700 px-2">{val(d, "assessed_by") || "Top Management"}</span>
+            <span className="text-[9px] font-bold text-warning-tint uppercase tracking-wide">Annual Assessment Done By</span>
+            <span className="text-[12px] font-bold text-foreground border-b border-dashed border-warning/40 dark:border-warning/45 px-2">{val(d, "assessed_by") || "Top Management"}</span>
           </div>
           <div className="flex items-center gap-2">
-            <span className="text-[9px] font-bold text-amber-700 dark:text-amber-300 uppercase tracking-wide">Annual Assessment Done On</span>
+            <span className="text-[9px] font-bold text-warning-tint uppercase tracking-wide">Annual Assessment Done On</span>
             {inp("assessed_on", "Date", "w-32")}
           </div>
         </div>
@@ -100,22 +101,22 @@ export function F29Template({ data, isTemplate = true, editMode = false, onChang
           <table className="w-full border-collapse text-[10px]" style={{ minWidth: "1200px" }}>
             <thead>
               {/* Header row 1 */}
-              <tr className="bg-amber-50 dark:bg-amber-950/30">
-                <th className="border border-border px-1 py-1.5 text-[9px] font-bold text-amber-700 dark:text-amber-300 uppercase text-center" rowSpan={2} style={{ minWidth: "30px" }}>Sr. No.</th>
-                <th className="border border-border px-1 py-1.5 text-[9px] font-bold text-amber-700 dark:text-amber-300 uppercase text-center" rowSpan={2} style={{ minWidth: "120px" }}>Name Of Employee And Designation</th>
-                <th className="border border-border px-1 py-1 text-[9px] font-bold text-amber-700 dark:text-amber-300 uppercase text-center" colSpan={2}>Qualification</th>
-                <th className="border border-border px-1 py-1 text-[9px] font-bold text-amber-700 dark:text-amber-300 uppercase text-center" colSpan={2}>Experience</th>
-                <th className="border border-border px-1 py-1.5 text-[9px] font-bold text-amber-700 dark:text-amber-300 uppercase text-center" rowSpan={2} style={{ minWidth: "50px" }}>Skill Available</th>
-                <th className="border border-border px-1 py-1 text-[9px] font-bold text-amber-700 dark:text-amber-300 uppercase text-center" colSpan={NUM_TOPICS}>Type Of Training (Topic No. As Per Training Need Form)</th>
+              <tr className="bg-warning/10 dark:bg-warning/20">
+                <th className="border border-border px-1 py-1.5 text-[9px] font-bold text-warning-tint uppercase text-center" rowSpan={2} style={{ minWidth: "30px" }}>Sr. No.</th>
+                <th className="border border-border px-1 py-1.5 text-[9px] font-bold text-warning-tint uppercase text-center" rowSpan={2} style={{ minWidth: "120px" }}>Name Of Employee And Designation</th>
+                <th className="border border-border px-1 py-1 text-[9px] font-bold text-warning-tint uppercase text-center" colSpan={2}>Qualification</th>
+                <th className="border border-border px-1 py-1 text-[9px] font-bold text-warning-tint uppercase text-center" colSpan={2}>Experience</th>
+                <th className="border border-border px-1 py-1.5 text-[9px] font-bold text-warning-tint uppercase text-center" rowSpan={2} style={{ minWidth: "50px" }}>Skill Available</th>
+                <th className="border border-border px-1 py-1 text-[9px] font-bold text-warning-tint uppercase text-center" colSpan={NUM_TOPICS}>Type Of Training (Topic No. As Per Training Need Form)</th>
               </tr>
               {/* Header row 2 — Req/Avail + topic numbers 1-15 */}
-              <tr className="bg-amber-50 dark:bg-amber-950/30">
-                <th className="border border-border px-0.5 py-0.5 text-[8px] font-bold text-amber-600 dark:text-amber-400 text-center">Req.</th>
-                <th className="border border-border px-0.5 py-0.5 text-[8px] font-bold text-amber-600 dark:text-amber-400 text-center">Avail.</th>
-                <th className="border border-border px-0.5 py-0.5 text-[8px] font-bold text-amber-600 dark:text-amber-400 text-center">Req.</th>
-                <th className="border border-border px-0.5 py-0.5 text-[8px] font-bold text-amber-600 dark:text-amber-400 text-center">Avail.</th>
+              <tr className="bg-warning/10 dark:bg-warning/20">
+                <th className="border border-border px-0.5 py-0.5 text-[8px] font-bold text-warning-tint text-center">Req.</th>
+                <th className="border border-border px-0.5 py-0.5 text-[8px] font-bold text-warning-tint text-center">Avail.</th>
+                <th className="border border-border px-0.5 py-0.5 text-[8px] font-bold text-warning-tint text-center">Req.</th>
+                <th className="border border-border px-0.5 py-0.5 text-[8px] font-bold text-warning-tint text-center">Avail.</th>
                 {Array.from({ length: NUM_TOPICS }, (_, i) => (
-                  <th key={i} className="border border-border px-0.5 py-0.5 text-[8px] font-bold text-amber-600 dark:text-amber-400 text-center" style={{ width: "28px" }}>{i + 1}</th>
+                  <th key={i} className="border border-border px-0.5 py-0.5 text-[8px] font-bold text-warning-tint text-center" style={{ width: "28px" }}>{i + 1}</th>
                 ))}
               </tr>
             </thead>
@@ -134,7 +135,7 @@ export function F29Template({ data, isTemplate = true, editMode = false, onChang
                     return (
                       <td key={i} className="border border-border px-0.5 py-1 text-center">
                         {isChecked(v) ? (
-                          <span className="text-amber-600 dark:text-amber-400 font-bold">☑</span>
+                          <CheckSquare className="w-3 h-3 text-warning-tint inline-block" aria-hidden="true" />
                         ) : (v ? (
                           <span className="text-foreground text-[9px]">{v}</span>
                         ) : null)}
@@ -159,10 +160,10 @@ export function F29Template({ data, isTemplate = true, editMode = false, onChang
             const checked = isChecked(trainingStatus[item.key]);
             return (
               <div key={item.key} className="flex items-center gap-1.5 text-[11px]">
-                <span className="text-amber-600 dark:text-amber-400 text-[12px]">→</span>
+                <span className="text-warning-tint text-[12px]">→</span>
                 <span className={cn("font-medium", checked ? "text-foreground" : "text-muted-foreground")}>{item.label}</span>
                 {checked && (
-                  <span className="text-amber-600 dark:text-amber-400 font-bold text-[12px]">☑</span>
+                  <CheckSquare className="w-3 h-3 text-warning-tint inline-block" aria-hidden="true" />
                 )}
               </div>
             );
@@ -174,20 +175,20 @@ export function F29Template({ data, isTemplate = true, editMode = false, onChang
           {/* Text line: course name + reviewed by + authorised person */}
           <div className="flex flex-col gap-1.5 text-[11px]">
             <div className="flex items-center gap-2">
-              <span className="font-bold text-amber-700 dark:text-amber-300 uppercase tracking-wide text-[9px] whitespace-nowrap">Type Of Training Given:</span>
-              <span className="font-semibold text-foreground border-b border-dashed border-amber-300 dark:border-amber-700 flex-1 px-2">
+              <span className="font-bold text-warning-tint uppercase tracking-wide text-[9px] whitespace-nowrap">Type Of Training Given:</span>
+              <span className="font-semibold text-foreground border-b border-dashed border-warning/30 dark:border-warning/45 flex-1 px-2">
                 {val(d, "training_type") || val(d, "course_name") || "\u00A0"}
               </span>
             </div>
             <div className="flex items-center gap-2">
-              <span className="font-bold text-amber-700 dark:text-amber-300 uppercase tracking-wide text-[9px] whitespace-nowrap">Reviewed By:</span>
-              <span className="font-semibold text-foreground border-b border-dashed border-amber-300 dark:border-amber-700 flex-1 px-2">
+              <span className="font-bold text-warning-tint uppercase tracking-wide text-[9px] whitespace-nowrap">Reviewed By:</span>
+              <span className="font-semibold text-foreground border-b border-dashed border-warning/30 dark:border-warning/45 flex-1 px-2">
                 {val(d, "trainer") || "\u00A0"}
               </span>
             </div>
             <div className="flex items-center gap-2">
-              <span className="font-bold text-amber-700 dark:text-amber-300 uppercase tracking-wide text-[9px] whitespace-nowrap">Authorised Person:</span>
-              <span className="font-semibold text-foreground border-b border-dashed border-amber-300 dark:border-amber-700 flex-1 px-2">
+              <span className="font-bold text-warning-tint uppercase tracking-wide text-[9px] whitespace-nowrap">Authorised Person:</span>
+              <span className="font-semibold text-foreground border-b border-dashed border-warning/30 dark:border-warning/45 flex-1 px-2">
                 {val(d, "authorised_by") || "\u00A0"}
               </span>
             </div>
@@ -197,13 +198,13 @@ export function F29Template({ data, isTemplate = true, editMode = false, onChang
           <div className="border border-border rounded overflow-hidden">
             <table className="w-full border-collapse text-[10px]">
               <thead>
-                <tr className="bg-amber-50 dark:bg-amber-950/30">
-                  <th className="border border-border px-1.5 py-1 text-[9px] font-bold text-amber-700 dark:text-amber-300 uppercase text-center">Sr. No.</th>
-                  <th className="border border-border px-1.5 py-1 text-[9px] font-bold text-amber-700 dark:text-amber-300 uppercase text-center">Topic No.</th>
-                  <th className="border border-border px-1.5 py-1 text-[9px] font-bold text-amber-700 dark:text-amber-300 uppercase text-center">Sr. No.</th>
-                  <th className="border border-border px-1.5 py-1 text-[9px] font-bold text-amber-700 dark:text-amber-300 uppercase text-center">Topic No.</th>
-                  <th className="border border-border px-1.5 py-1 text-[9px] font-bold text-amber-700 dark:text-amber-300 uppercase text-center">Sr. No.</th>
-                  <th className="border border-border px-1.5 py-1 text-[9px] font-bold text-amber-700 dark:text-amber-300 uppercase text-center">Topic No.</th>
+                <tr className="bg-warning/10 dark:bg-warning/20">
+                  <th className="border border-border px-1.5 py-1 text-[9px] font-bold text-warning-tint uppercase text-center">Sr. No.</th>
+                  <th className="border border-border px-1.5 py-1 text-[9px] font-bold text-warning-tint uppercase text-center">Topic No.</th>
+                  <th className="border border-border px-1.5 py-1 text-[9px] font-bold text-warning-tint uppercase text-center">Sr. No.</th>
+                  <th className="border border-border px-1.5 py-1 text-[9px] font-bold text-warning-tint uppercase text-center">Topic No.</th>
+                  <th className="border border-border px-1.5 py-1 text-[9px] font-bold text-warning-tint uppercase text-center">Sr. No.</th>
+                  <th className="border border-border px-1.5 py-1 text-[9px] font-bold text-warning-tint uppercase text-center">Topic No.</th>
                 </tr>
               </thead>
               <tbody>
@@ -221,15 +222,15 @@ export function F29Template({ data, isTemplate = true, editMode = false, onChang
         </div>
 
         {/* ── Note (DOCX R20) ── */}
-        <div className="px-4 py-2.5 rounded-md bg-amber-50/40 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-800 text-[10px] text-amber-800 dark:text-amber-200">
+        <div className="px-4 py-2.5 rounded-md bg-warning/40 dark:bg-warning/20 border border-warning/25 dark:border-warning/45 text-[10px] text-warning-tint">
           <span className="font-bold">Note:</span> Req. Means Min. Required, Avail. Means Available. Skill Should Be Required Min. As Per E/HRD/01
         </div>
 
         {/* ── Review of competence on (DOCX R21) ── */}
         <div className="flex items-center gap-2 text-[11px]">
-          <span className="font-bold text-amber-700 dark:text-amber-300 uppercase tracking-wide">Review of employees competence on</span>
-          <span className="font-bold text-amber-600 dark:text-amber-400 text-[12px]">→</span>
-          <span className="text-[12px] font-semibold text-foreground border-b border-dashed border-amber-300 dark:border-amber-700 px-2">
+          <span className="font-bold text-warning-tint uppercase tracking-wide">Review of employees competence on</span>
+          <span className="font-bold text-warning-tint text-[12px]">→</span>
+          <span className="text-[12px] font-semibold text-foreground border-b border-dashed border-warning/30 dark:border-warning/45 px-2">
             {val(d, "assessed_on") || "\u00A0"}
           </span>
         </div>
@@ -240,13 +241,13 @@ export function F29Template({ data, isTemplate = true, editMode = false, onChang
             <div className="min-h-[28px] border-b border-border pb-1 mb-1">
               <span className="text-[12px] font-semibold text-foreground">{val(d, "prepared_by") || "\u00A0"}</span>
             </div>
-            <p className="text-[9px] font-bold text-amber-700 dark:text-amber-300 uppercase tracking-wider">Prepared By</p>
+            <p className="text-[9px] font-bold text-warning-tint uppercase tracking-wider">Prepared By</p>
           </div>
           <div className="flex flex-col">
             <div className="min-h-[28px] border-b border-border pb-1 mb-1">
               <span className="text-[12px] font-semibold text-foreground">{val(d, "recorded_by") || "\u00A0"}</span>
             </div>
-            <p className="text-[9px] font-bold text-amber-700 dark:text-amber-300 uppercase tracking-wider">Recorded By</p>
+            <p className="text-[9px] font-bold text-warning-tint uppercase tracking-wider">Recorded By</p>
           </div>
         </div>
       </div>

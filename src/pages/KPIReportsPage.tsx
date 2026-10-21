@@ -6,7 +6,7 @@ import {
 } from "lucide-react";
 import {
   KPI_DATA, getAllCategories, getKPIStatistics,
-  getCategoryColor, calculateRoleKPIScore,
+  getCategoryChip, calculateRoleKPIScore,
   type RoleKPIData,
 } from "@/data/kpiData";
 import { AppShell } from "@/components/layout/AppShell";
@@ -210,7 +210,7 @@ export default function KPIReportsPage() {
                             {idx === 0 && <TableCell rowSpan={role.kpis.length} className="font-medium align-top">{role.title}</TableCell>}
                             {idx === 0 && <TableCell rowSpan={role.kpis.length} className="align-top text-muted-foreground">{role.department}</TableCell>}
                             <TableCell>
-                              <Badge style={{ backgroundColor: getCategoryColor(kpi.category), color: "#fff" }} className="text-xs">
+                              <Badge variant="secondary" className={cn("text-xs border-transparent", getCategoryChip(kpi.category).chip)}>
                                 {kpi.category}
                               </Badge>
                             </TableCell>
@@ -247,10 +247,10 @@ export default function KPIReportsPage() {
                         <p className="text-xs text-muted-foreground">{role.department}</p>
                       </div>
                       <div className="flex items-center gap-2">
-                        <span className={cn("font-bold", isValid ? "text-success" : "text-destructive")}>
+                        <span className={cn("font-bold", isValid ? "text-success-tint" : "text-destructive-tint")}>
                           {(totalWeight * 100).toFixed(0)}%
                         </span>
-                        {isValid ? <CheckCircle2 className="w-5 h-5 text-success" /> : <AlertCircle className="w-5 h-5 text-destructive" />}
+                        {isValid ? <CheckCircle2 className="w-5 h-5 text-success-tint" /> : <AlertCircle className="w-5 h-5 text-destructive-tint" />}
                       </div>
                     </div>
                   );
@@ -259,17 +259,17 @@ export default function KPIReportsPage() {
             </CardContent>
           </Card>
 
-          <Card className="mt-6 bg-amber-50 dark:bg-amber-950/30 border-amber-200 dark:border-amber-800/40">
+          <Card className="mt-6 bg-warning/10 dark:bg-warning/15 border-warning/30 dark:border-warning/40">
             <CardContent className="pt-6">
               <div className="flex items-start gap-3">
-                <Info className="w-5 h-5 text-amber-600 dark:text-amber-400 mt-0.5 shrink-0" />
+                <Info className="w-5 h-5 text-warning-tint dark:text-warning-tint mt-0.5 shrink-0" />
                 <div>
-                  <h4 className="font-medium text-amber-800 dark:text-amber-300">ISO 9001:2015 Compliance Note</h4>
-                  <p className="text-sm text-amber-700 dark:text-amber-400 mt-1">
+                  <h4 className="font-medium text-warning-tint">ISO 9001:2015 Compliance Note</h4>
+                  <p className="text-sm text-warning-tint dark:text-warning-tint mt-1">
                     This report documents Individual Performance Management (IPM) KPIs as required for
                     Management Review inputs (Clause 9.3.2). All KPI weights should sum to 100% per role.
                   </p>
-                  <p className="text-xs text-amber-600 dark:text-amber-500 mt-2">
+                  <p className="text-xs text-warning-tint mt-2">
                     Generated: {new Date().toLocaleString()}
                   </p>
                 </div>

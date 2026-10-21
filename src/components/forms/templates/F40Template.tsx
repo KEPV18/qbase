@@ -8,7 +8,7 @@
 import React, { useState, useCallback } from "react";
 import { cn } from "@/lib/utils";
 import { FormDocument, val } from "../FormKit";
-import { Plus, Trash2 } from "lucide-react";
+import { Plus, Trash2, Check } from "lucide-react";
 
 export interface F40Props {
   data?: Record<string, unknown>;
@@ -216,7 +216,7 @@ export function F40Template({ data, isTemplate = true, editMode = false, onChang
                 {editMode && (
                   <td className="border border-border p-0.5 text-center">
                     {rows.length > 1 && (
-                      <button onClick={() => setRows(prev => prev.filter((_, i) => i !== idx))} className="text-destructive hover:text-red-600">
+                      <button onClick={() => setRows(prev => prev.filter((_, i) => i !== idx))} className="text-destructive-tint hover:text-destructive-tint">
                         <Trash2 className="w-3 h-3" />
                       </button>
                     )}
@@ -229,7 +229,7 @@ export function F40Template({ data, isTemplate = true, editMode = false, onChang
       </div>
 
       {editMode && (
-        <button onClick={() => setRows(prev => [...prev, emptyRow(prev.length)])} className="mt-1 flex items-center gap-1 text-xs text-primary hover:underline mx-auto">
+        <button onClick={() => setRows(prev => [...prev, emptyRow(prev.length)])} className="mt-1 flex items-center gap-1 text-xs text-primary-tint hover:underline mx-auto">
           <Plus className="w-3 h-3" /> Add Row
         </button>
       )}
@@ -239,16 +239,16 @@ export function F40Template({ data, isTemplate = true, editMode = false, onChang
         <div className="text-[10px] font-bold mb-2 text-foreground">Training Status</div>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-1 text-[10px] text-muted-foreground">
           <div className="flex items-center gap-2">
-            <span className="inline-block w-4 text-center font-bold text-foreground">✔</span>
+            <Check className="w-3 h-3 text-foreground shrink-0" aria-hidden="true" />
             <span>Training Is required</span>
           </div>
           <div className="flex items-center gap-2">
-            <span className="inline-block w-4 text-center font-bold text-foreground">✔</span>
-            <span>Training Is Given <span className="font-bold text-foreground">✔</span></span>
+            <Check className="w-3 h-3 text-foreground shrink-0" aria-hidden="true" />
+            <span>Training Is Given <Check className="w-3 h-3 text-foreground inline-block align-middle" aria-hidden="true" /></span>
           </div>
           <div className="flex items-center gap-2">
-            <span className="inline-block w-4 text-center font-bold text-foreground">✔</span>
-            <span>Training Is Effective <span className="font-bold text-foreground">✔</span></span>
+            <Check className="w-3 h-3 text-foreground shrink-0" aria-hidden="true" />
+            <span>Training Is Effective <Check className="w-3 h-3 text-foreground inline-block align-middle" aria-hidden="true" /></span>
           </div>
           <div className="flex items-center gap-2">
             <span className="inline-block w-4 text-center border border-border rounded-sm">&nbsp;</span>

@@ -62,35 +62,35 @@ export function todayDDMMYYYY(): string {
 
 /** Label — small, muted, uppercase (Word style) */
 export const labelCls =
-  "text-[11px] font-medium text-gray-400 dark:text-gray-500 uppercase tracking-wider bg-transparent px-3 py-2 align-top w-[180px]";
+  "text-[11px] font-medium text-ink-3 uppercase tracking-wider bg-transparent px-3 py-2 align-top w-[180px]";
 
 /** Value — clean dark text */
 export const valueCls =
-  "text-sm text-gray-900 dark:text-gray-100 px-3 py-2 leading-relaxed";
+  "text-sm text-foreground px-3 py-2 leading-relaxed";
 
 /** Empty value — dimmed italic */
 export const emptyValueCls =
-  "text-sm text-gray-300 dark:text-gray-600 italic px-3 py-2";
+  "text-sm text-ink-3 italic px-3 py-2";
 
 /** Title row — centered, bold */
 export const titleCls =
-  "text-lg font-bold text-gray-900 dark:text-gray-100 text-center py-3";
+  "text-lg font-bold text-foreground text-center py-3";
 
 /** Header row — section header inside table */
 export const headerCls =
-  "text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400 px-3 py-1.5 bg-transparent";
+  "text-xs font-bold uppercase tracking-wider text-ink-2 px-3 py-1.5 bg-transparent";
 
 /** Input field — clean underline style (Word-like) */
 export const inputCls =
-  "w-full text-sm px-2 py-1 bg-transparent border-0 border-b border-gray-300 dark:border-gray-600 focus:border-gray-900 dark:focus:border-gray-300 focus:outline-none transition-colors";
+  "w-full text-sm px-2 py-1 bg-transparent border-0 border-b border-border dark:border-ink-2 focus:border-ink-2 dark:focus:border-border focus:outline-none transition-colors";
 
 /** Table cell with bottom border only (Word-like) */
 export const tableCellCls =
-  "px-3 py-2 text-sm text-left border-b border-gray-100 dark:border-gray-800";
+  "px-3 py-2 text-sm text-left border-b border-border dark:border-ink-2";
 
 /** Word-style cell wrapper */
 export const cellCls =
-  "border-b border-gray-100 dark:border-gray-800 align-top";
+  "border-b border-border dark:border-ink-2 align-top";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // BACKWARD-COMPATIBLE Components
@@ -175,7 +175,7 @@ export const TextAreaCell: React.FC<{
       <td className={cellCls} colSpan={99}>
         <div className="px-3 py-2">
           <textarea
-            className="w-full text-sm px-2 py-1 bg-transparent border border-gray-200 dark:border-gray-700 rounded-sm focus:border-gray-400 focus:outline-none resize-y min-h-[60px]"
+            className="w-full text-sm px-2 py-1 bg-transparent border border-border dark:border-ink-2 rounded-sm focus:border-faint focus:outline-none resize-y min-h-[60px]"
             rows={rows}
             value={value}
             onChange={(e) => onChange(field, e.target.value)}
@@ -223,11 +223,11 @@ export const TitleRow: React.FC<{
   onChange?: (field: string, value: string) => void;
 }> = ({ title, serial, revision, date, editMode, onChange }) => (
   <tr>
-    <td colSpan={99} className="border-b border-gray-200 dark:border-gray-700">
+    <td colSpan={99} className="border-b border-border dark:border-ink-2">
       <div className="text-center py-4">
-        <h2 className="text-lg font-bold text-gray-900 dark:text-gray-100">{title}</h2>
+        <h2 className="text-lg font-bold text-foreground">{title}</h2>
         {(serial || revision || date) && (
-          <div className="flex justify-center gap-4 text-[11px] text-gray-400 dark:text-gray-500 mt-1">
+          <div className="flex justify-center gap-4 text-[11px] text-ink-3 mt-1">
             {serial && <span className="font-mono">Serial: {serial}</span>}
             {revision && <span>Rev: {revision}</span>}
             {date && <span>Date: {date}</span>}
@@ -250,7 +250,7 @@ export const FooterRow: React.FC<{
   onChange?: (field: string, value: string) => void;
 }> = ({ preparedBy, reviewedBy, approvedBy, editMode, onChange }) => (
   <tr>
-    <td colSpan={99} className="border-t border-gray-200 dark:border-gray-700">
+    <td colSpan={99} className="border-t border-border dark:border-ink-2">
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 px-3 py-3">
         <div>
           <span className={labelCls}>Prepared By</span>
@@ -295,8 +295,8 @@ export const ResponsiveTemplate: React.FC<{
     <div className="block md:hidden space-y-2">
       {cardData?.map((card, idx) => (
         <div key={idx} className="bg-card border border-border rounded-sm p-3 space-y-1">
-          <p className="text-[10px] uppercase tracking-wider text-gray-400 font-semibold">{card.label}</p>
-          <p className={cn("text-sm", card.value ? "text-gray-900 dark:text-gray-100" : "text-gray-300 dark:text-gray-600 italic")}>
+          <p className="text-[10px] uppercase tracking-wider text-ink-3 font-semibold">{card.label}</p>
+          <p className={cn("text-sm", card.value ? "text-foreground" : "text-ink-3 italic")}>
             {card.value || "—"}
           </p>
         </div>

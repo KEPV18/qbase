@@ -7,7 +7,7 @@
  * - Displays evidence status before closure allowed
  * - Generates Management Review trigger queue
  * 
- * CONNECTED: Pulls real CAPA data from useCAPAData() (Google Sheets)
+ * CONNECTED: Pulls real CAPA data from useCAPAData() (Supabase)
  */
 
 import React, { useState, useMemo } from 'react';
@@ -169,13 +169,13 @@ const mapCAPAToEvidence = (capa: CAPA): CAPAWithEvidence => {
 const getEvidenceIcon = (type: EvidenceType): React.ReactNode => {
   switch (type) {
     case 'KPI_IMPROVEMENT':
-      return <TrendingUp className="h-5 w-5 text-primary" />;
+      return <TrendingUp className="h-5 w-5 text-primary-tint" />;
     case 'AUDIT_FINDING_CLOSED':
-      return <Shield className="h-5 w-5 text-green-600 dark:text-green-400" />;
+      return <Shield className="h-5 w-5 text-success-tint" />;
     case 'TRAINING_COMPLETED':
-      return <Users className="h-5 w-5 text-purple-600 dark:text-purple-400" />;
+      return <Users className="h-5 w-5 text-primary-tint" />;
     case 'PROCEDURE_UPDATED':
-      return <FileText className="h-5 w-5 text-yellow-600 dark:text-yellow-400" />;
+      return <FileText className="h-5 w-5 text-warning-tint" />;
     case 'OTHER':
       return <FileText className="h-5 w-5 text-muted-foreground" />;
   }
@@ -186,13 +186,13 @@ const getStatusBadge = (status: EvidenceStatus): { color: string; label: string 
     case 'open':
       return { color: 'bg-muted text-muted-foreground', label: 'Open' };
     case 'in-progress':
-      return { color: 'bg-blue-500/10 text-blue-700 dark:text-blue-300', label: 'In Progress' };
+      return { color: 'bg-primary/10 text-primary-tint', label: 'In Progress' };
     case 'under-verification':
-      return { color: 'bg-yellow-500/10 dark:bg-yellow-500/20 text-yellow-700 dark:text-yellow-300', label: 'Under Verification' };
+      return { color: 'bg-warning/10 dark:bg-warning/20 text-warning-tint', label: 'Under Verification' };
     case 'evidence-pending':
-      return { color: 'bg-orange-500/10 text-orange-700 dark:text-orange-300', label: 'Evidence Pending' };
+      return { color: 'bg-warning/10 text-warning-tint', label: 'Evidence Pending' };
     case 'closed':
-      return { color: 'bg-green-500/10 text-green-700 dark:text-green-300', label: 'Closed' };
+      return { color: 'bg-success/10 text-success-tint', label: 'Closed' };
   }
 };
 
@@ -226,7 +226,7 @@ const EvidenceRow: React.FC<{
         <div>
           <div className="font-medium text-sm text-foreground">{evidence.description}</div>
           {evidence.linkedId && (
-            <div className="text-xs text-primary flex items-center mt-1">
+            <div className="text-xs text-primary-tint flex items-center mt-1">
               <LinkIcon className="h-3 w-3 mr-1" />
               {evidence.linkedId}
             </div>
@@ -242,18 +242,18 @@ const EvidenceRow: React.FC<{
 
       <div className="flex items-center space-x-2">
         {evidence.status === 'verified' ? (
-          <span className="flex items-center text-green-600 dark:text-green-400 text-sm">
+          <span className="flex items-center text-success-tint text-sm">
             <CheckCircle className="h-4 w-4 mr-1" />
             Verified
           </span>
         ) : evidence.status === 'rejected' ? (
-          <span className="flex items-center text-destructive text-sm">
+          <span className="flex items-center text-destructive-tint text-sm">
             <XCircle className="h-4 w-4 mr-1" />
             Rejected
           </span>
         ) : (
           <>
-            <XCircle className="h-4 w-4 text-yellow-500 mr-1" />
+            <XCircle className="h-4 w-4 text-warning-tint mr-1" />
             {editable && (
               <Button variant="outline" size="sm" onClick={onVerify}>
                 Verify
@@ -376,7 +376,7 @@ const CAPACard: React.FC<{
       <div className="flex items-center gap-2 mb-1">
         <div className="flex-1 h-1.5 bg-muted rounded-full overflow-hidden">
           <div
-            className="h-full bg-green-500 rounded-full transition-all"
+            className="h-full bg-success rounded-full transition-all"
             style={{ width: `${progress}%` }}
           />
         </div>
@@ -390,7 +390,7 @@ const CAPACard: React.FC<{
 
       {/* Linked risk */}
       {capa.related_risk && (
-        <div className="mt-2 text-[10px] text-primary flex items-center">
+        <div className="mt-2 text-[10px] text-primary-tint flex items-center">
           <LinkIcon className="h-3 w-3 mr-1" />
           Risk: {capa.related_risk}
         </div>
@@ -436,7 +436,7 @@ const CAPAEvidenceDashboard: React.FC = () => {
   }), [capas]);
 
   const handleVerifyEvidence = (capaId: string, evidenceIndex: number) => {
-    // This is a local UI interaction - actual verification requires writing to Google Sheets
+    // This is a local UI interaction - actual verification requires writing to the CAPA register
     // For now, this updates the local state to reflect verification intent
     setSelectedCapa(prev => {
       if (!prev || prev.id !== capaId) return prev;
@@ -509,7 +509,7 @@ const CAPAEvidenceDashboard: React.FC = () => {
         <div className="flex items-center justify-between">
           <div>
             <h2 className="text-xl font-bold text-foreground flex items-center">
-              <Shield className="h-6 w-6 text-primary mr-2" />
+              <Shield className="h-6 w-6 text-primary-tint mr-2" />
               CAPA Effectiveness Evidence Dashboard
             </h2>
             <p className="text-muted-foreground mt-1">
@@ -529,17 +529,17 @@ const CAPAEvidenceDashboard: React.FC = () => {
             <div className="text-2xl font-bold text-foreground">{stats.total}</div>
             <div className="text-sm text-muted-foreground">Total CAPAs</div>
           </div>
-          <div className="bg-yellow-500/10 dark:bg-yellow-500/20 rounded-lg p-4">
-            <div className="text-2xl font-bold text-yellow-700 dark:text-yellow-400">{stats.pendingVerification}</div>
-            <div className="text-sm text-yellow-600 dark:text-yellow-400">Pending Verification</div>
+          <div className="bg-warning/10 dark:bg-warning/20 rounded-lg p-4">
+            <div className="text-2xl font-bold text-warning-tint">{stats.pendingVerification}</div>
+            <div className="text-sm text-warning-tint">Pending Verification</div>
           </div>
-          <div className="bg-green-500/10 dark:bg-green-500/20 rounded-lg p-4">
-            <div className="text-2xl font-bold text-green-700 dark:text-green-400">{stats.readyToClose}</div>
-            <div className="text-sm text-green-600 dark:text-green-400">Ready to Close</div>
+          <div className="bg-success/10 dark:bg-success/20 rounded-lg p-4">
+            <div className="text-2xl font-bold text-success-tint">{stats.readyToClose}</div>
+            <div className="text-sm text-success-tint">Ready to Close</div>
           </div>
           <div className="bg-primary/10 rounded-lg p-4">
-            <div className="text-2xl font-bold text-primary">{stats.closed}</div>
-            <div className="text-sm text-primary">Closed</div>
+            <div className="text-2xl font-bold text-primary-tint">{stats.closed}</div>
+            <div className="text-sm text-primary-tint">Closed</div>
           </div>
         </div>
 
@@ -616,7 +616,7 @@ const CAPAEvidenceDashboard: React.FC = () => {
                     <span className="flex items-center"><Users className="h-3 w-3 mr-1" /> {selectedCapa.responsible_person}</span>
                   )}
                   {selectedCapa.type && (
-                    <span className={`px-2 py-0.5 rounded-full text-xs ${selectedCapa.type === 'Corrective' ? 'bg-red-500/10 text-red-700 dark:text-red-300' : 'bg-blue-500/10 text-blue-700 dark:text-blue-300'}`}>
+                    <span className={`px-2 py-0.5 rounded-full text-xs ${selectedCapa.type === 'Corrective' ? 'bg-destructive/10 text-destructive-tint' : 'bg-primary/10 text-primary-tint'}`}>
                       {selectedCapa.type}
                     </span>
                   )}
@@ -626,13 +626,13 @@ const CAPAEvidenceDashboard: React.FC = () => {
                 </div>
 
                 {selectedCapa.linkedToF09 && (
-                  <div className="mt-3 flex items-center text-sm text-primary">
+                  <div className="mt-3 flex items-center text-sm text-primary-tint">
                     <LinkIcon className="h-4 w-4 mr-1" />
                     Traces to: {selectedCapa.linkedToF09}
                   </div>
                 )}
                 {selectedCapa.related_risk && (
-                  <div className="mt-1 flex items-center text-sm text-primary">
+                  <div className="mt-1 flex items-center text-sm text-primary-tint">
                     <AlertTriangle className="h-4 w-4 mr-1" />
                     Related Risk: {selectedCapa.related_risk}
                   </div>
@@ -684,12 +684,12 @@ const CAPAEvidenceDashboard: React.FC = () => {
                     </div>
 
                     {selectedCapaEvidenceStatus.canClose ? (
-                      <div className="flex items-center text-green-600 dark:text-green-400">
+                      <div className="flex items-center text-success-tint">
                         <CheckCircle className="h-5 w-5 mr-1" />
                         <span className="font-semibold">Ready for closure verification</span>
                       </div>
                     ) : (
-                      <div className="flex items-center text-yellow-600 dark:text-yellow-400">
+                      <div className="flex items-center text-warning-tint">
                         <AlertTriangle className="h-5 w-5 mr-1" />
                         <span>{selectedCapaEvidenceStatus.pending} evidence item(s) pending</span>
                       </div>
@@ -705,7 +705,7 @@ const CAPAEvidenceDashboard: React.FC = () => {
                     <Button variant="outline" className="mr-3">
                       Preview Closure Report
                     </Button>
-                    <Button className="bg-green-600 hover:bg-green-700 text-white flex items-center">
+                    <Button className="bg-success hover:bg-success-hover text-success-foreground flex items-center">
                       <CheckCircle className="h-4 w-4 mr-2" />
                       Verify &amp; Close CAPA
                     </Button>

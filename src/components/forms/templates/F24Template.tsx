@@ -166,7 +166,7 @@ export function F24Template({ data, isTemplate = true, editMode = false, onChang
                   <td className="border border-border px-1 py-0.5 text-center">
                     <button
                       onClick={() => removeRow(idx)}
-                      className="text-destructive hover:text-destructive/80"
+                      className="text-destructive-tint hover:text-destructive-tint/80"
                     >
                       <Trash2 className="w-3 h-3" />
                     </button>
@@ -181,7 +181,7 @@ export function F24Template({ data, isTemplate = true, editMode = false, onChang
       {editMode && (
         <button
           onClick={addRow}
-          className="mt-2 flex items-center gap-1 text-xs text-primary hover:underline mx-auto"
+          className="mt-2 flex items-center gap-1 text-xs text-primary-tint hover:underline mx-auto"
         >
           <Plus className="w-3 h-3" /> Add Row
         </button>

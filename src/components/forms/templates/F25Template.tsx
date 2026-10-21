@@ -196,7 +196,7 @@ export function F25Template({ data, isTemplate = true, editMode = false, onChang
                   {editMode && matrix.length > 1 && (
                     <button
                       onClick={() => removeRow(idx)}
-                      className="text-destructive opacity-0 group-hover:opacity-100 transition-opacity shrink-0"
+                      className="text-destructive-tint opacity-0 group-hover:opacity-100 transition-opacity shrink-0"
                     >
                       <Trash2 className="w-3 h-3" />
                     </button>
@@ -212,7 +212,7 @@ export function F25Template({ data, isTemplate = true, editMode = false, onChang
               <td colSpan={9} className="border border-border">
                 <button
                   onClick={addRow}
-                  className="w-full py-1 flex items-center justify-center gap-1 text-[11px] text-primary hover:bg-muted/50 transition-colors"
+                  className="w-full py-1 flex items-center justify-center gap-1 text-[11px] text-primary-tint hover:bg-muted/50 transition-colors"
                 >
                   <Plus className="w-3 h-3" /> Add Row
                 </button>

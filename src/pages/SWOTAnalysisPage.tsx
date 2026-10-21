@@ -20,25 +20,18 @@ import {
   ArrowDownRight,
   Lightbulb,
   Shield,
-  Target,
   Download,
   ChevronDown,
   ChevronUp,
-  BarChart3,
+  UserRound,
+  Calendar,
+  BookMarked,
   Zap,
   Eye,
   FileText,
 } from 'lucide-react';
 import { AppShell } from '@/components/layout/AppShell';
 import { Button } from '@/components/ui/button';
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
 import {
   Dialog,
   DialogContent,
@@ -468,61 +461,72 @@ const WT_STRATEGIES: WTStrategy[] = [
 // COMPONENT
 // ============================================================================
 
+/**
+ * Quadrant presentation.
+ *
+ * The quadrants are four SIBLING GROUPS of the same kind — four lists of
+ * factors.  The design system says sibling items belong on one surface
+ * separated by hairlines, not on four separately-bordered, separately-
+ * tinted cards, so each quadrant is a single white panel whose rows are
+ * divided by hairlines.  The panel header carries the quadrant's name and
+ * its count in grayscale; the only colour on the panel is the risk chip,
+ * which is coloured by RISK LEVEL (a real signal), not by quadrant.
+ *
+ * The previous version painted a saturated fill behind each header and
+ * white text on it.  In dark mode that measured 2.02:1 (success), 2.08:1
+ * (warning) and 3.65:1 (primary) — hard WCAG failures — and the row
+ * badges measured 1.88–2.64:1 on their own tinted row.  Every pairing
+ * below is measured: the panel body is `text-foreground` on `bg-card`
+ * (16.83:1 light / 15.63:1 dark) and the risk chips are 5.44–7.76:1.
+ */
 const QUADRANT_CONFIG: Record<Quadrant, {
   title: string;
   icon: React.ElementType;
-  bgColor: string;
-  borderColor: string;
-  headerBg: string;
-  headerText: string;
-  itemBg: string;
-  badgeColor: string;
+  /** One-line gloss shown under the quadrant name. */
+  hint: string;
   arrowIcon: React.ElementType;
 }> = {
   strengths: {
     title: 'Strengths',
     icon: CheckCircle,
-    bgColor: 'bg-green-50 dark:bg-green-950/30',
-    borderColor: 'border-green-300 dark:border-green-700',
-    headerBg: 'bg-green-600',
-    headerText: 'text-white',
-    itemBg: 'bg-green-100/60 dark:bg-green-900/20',
-    badgeColor: 'bg-green-200 dark:bg-green-800 text-green-800 dark:text-green-200',
+    hint: 'Internal capabilities that give us an advantage',
     arrowIcon: ArrowUpRight,
   },
   weaknesses: {
     title: 'Weaknesses',
     icon: TrendingDown,
-    bgColor: 'bg-red-50 dark:bg-red-950/30',
-    borderColor: 'border-red-300 dark:border-red-700',
-    headerBg: 'bg-red-600',
-    headerText: 'text-white',
-    itemBg: 'bg-red-100/60 dark:bg-red-900/20',
-    badgeColor: 'bg-red-200 dark:bg-red-800 text-red-800 dark:text-red-200',
+    hint: 'Internal gaps that limit what we can deliver',
     arrowIcon: ArrowDownRight,
   },
   opportunities: {
     title: 'Opportunities',
     icon: TrendingUp,
-    bgColor: 'bg-blue-50 dark:bg-blue-950/30',
-    borderColor: 'border-blue-300 dark:border-blue-700',
-    headerBg: 'bg-blue-600',
-    headerText: 'text-white',
-    itemBg: 'bg-blue-100/60 dark:bg-blue-900/20',
-    badgeColor: 'bg-blue-200 dark:bg-blue-800 text-blue-800 dark:text-blue-200',
+    hint: 'External trends we could turn to our benefit',
     arrowIcon: ArrowUpRight,
   },
   threats: {
     title: 'Threats',
     icon: AlertTriangle,
-    bgColor: 'bg-amber-50 dark:bg-amber-950/30',
-    borderColor: 'border-amber-300 dark:border-amber-700',
-    headerBg: 'bg-amber-600',
-    headerText: 'text-white',
-    itemBg: 'bg-amber-100/60 dark:bg-amber-900/20',
-    badgeColor: 'bg-amber-200 dark:bg-amber-800 text-amber-800 dark:text-amber-200',
+    hint: 'External pressures that could hurt us',
     arrowIcon: ArrowDownRight,
   },
+};
+
+/**
+ * Risk chip classes.
+ *
+ * The risk LEVEL is the meaningful signal, so the chip is coloured by
+ * level: red for High, amber for Medium, and plain grayscale for Low.
+ * (The old chip was tinted by quadrant, which made four Low-risk items in
+ * four different colours — colour carrying no information.)  Each pairing
+ * is measured on a 10% wash of its own family over the white panel:
+ * High 6.21:1 light / 6.69:1 dark · Medium 5.86:1 / 7.76:1 ·
+ * Low 5.44:1 / 7.48:1.
+ */
+const RISK_CHIP_CLASS: Record<SWOTItem['riskLevel'], string> = {
+  High: 'border-destructive/20 bg-destructive/10 text-destructive-tint',
+  Medium: 'border-warning/20 bg-warning/10 text-warning-tint',
+  Low: 'border-foreground/10 bg-foreground/5 text-foreground/70',
 };
 
 const ALL_ITEMS: Record<Quadrant, SWOTItem[]> = {
@@ -564,16 +568,22 @@ export default function SWOTAnalysisPage(): JSX.Element {
 
   return (
     <AppShell breadcrumbs={[{ label: 'Dashboard', path: '/' }, { label: 'SWOT Analysis' }]}>
-      <div className="space-y-6 p-6">
-        {/* Header */}
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+      <div className="space-y-10 p-6">
+        {/* Page header — eyebrow, negative-tracked title, one lede line */}
+        <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
           <div>
-            <h1 className="text-2xl font-bold text-foreground">SWOT Analysis</h1>
-            <p className="text-muted-foreground mt-1">
-              ISO 9001:2015 Clause 4.1 & 6.1 — Strategic analysis of Strengths, Weaknesses, Opportunities & Threats
+            <div className="text-[11px] font-semibold uppercase tracking-[0.14em] text-ink-2">
+              ISO 9001:2015 · Clause 4.1 &amp; 6.1
+            </div>
+            <h1 className="mt-2 text-3xl md:text-4xl font-bold tracking-[-0.02em] text-foreground">
+              SWOT Analysis
+            </h1>
+            <p className="mt-2 text-[15px] leading-[1.7] text-muted-foreground max-w-2xl">
+              Strategic analysis of the organisation&apos;s internal strengths and weaknesses
+              against its external opportunities and threats.
             </p>
           </div>
-          <div className="flex gap-2">
+          <div className="flex gap-2 shrink-0">
             <Button variant="outline" size="sm" onClick={handleExport}>
               <Download className="h-4 w-4 mr-2" />
               Export CSV
@@ -585,36 +595,38 @@ export default function SWOTAnalysisPage(): JSX.Element {
           </div>
         </div>
 
-        {/* Stats */}
-        <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-3">
-          <div className="bg-green-500/10 rounded-lg p-3 text-center">
-            <div className="text-2xl font-bold text-green-700 dark:text-green-400">{stats.strengths}</div>
-            <div className="text-xs text-green-600 dark:text-green-400">Strengths</div>
-          </div>
-          <div className="bg-red-500/10 rounded-lg p-3 text-center">
-            <div className="text-2xl font-bold text-red-700 dark:text-red-400">{stats.weaknesses}</div>
-            <div className="text-xs text-red-600 dark:text-red-400">Weaknesses</div>
-          </div>
-          <div className="bg-blue-500/10 rounded-lg p-3 text-center">
-            <div className="text-2xl font-bold text-blue-700 dark:text-blue-400">{stats.opportunities}</div>
-            <div className="text-xs text-blue-600 dark:text-blue-400">Opportunities</div>
-          </div>
-          <div className="bg-amber-500/10 rounded-lg p-3 text-center">
-            <div className="text-2xl font-bold text-amber-700 dark:text-amber-400">{stats.threats}</div>
-            <div className="text-xs text-amber-600 dark:text-amber-400">Threats</div>
-          </div>
-          <div className="bg-destructive/10 rounded-lg p-3 text-center">
-            <div className="text-2xl font-bold text-destructive">{stats.highRisk}</div>
-            <div className="text-xs text-muted-foreground">High Risk Items</div>
-          </div>
-          <div className="bg-primary/10 rounded-lg p-3 text-center">
-            <div className="text-2xl font-bold text-primary">{stats.withActionPlan}</div>
-            <div className="text-xs text-muted-foreground">With Action Plan</div>
-          </div>
+        {/* Stats — ONE panel of hairline-separated cells, not six tinted cards.
+            The numbers are the content; the label is the quiet part.  The
+            hairline technique: every cell carries a bottom+right border and
+            is pulled 1px out, so the outermost lines merge into the panel's
+            own border instead of doubling it. */}
+        <div className="ds-panel grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 overflow-hidden">
+          {([
+            { value: stats.strengths, label: 'Strengths', tone: '' },
+            { value: stats.weaknesses, label: 'Weaknesses', tone: '' },
+            { value: stats.opportunities, label: 'Opportunities', tone: '' },
+            { value: stats.threats, label: 'Threats', tone: '' },
+            { value: stats.highRisk, label: 'High risk items', tone: 'text-destructive-tint' },
+            { value: stats.withActionPlan, label: 'With action plan', tone: '' },
+          ] as const).map((stat) => (
+            <div
+              key={stat.label}
+              className="px-5 py-4 text-center border-b border-r border-border -mb-px -mr-px"
+            >
+              <div className={cn('text-2xl font-bold tracking-[-0.01em] tabular-nums text-foreground', stat.tone)}>
+                {stat.value}
+              </div>
+              <div className="mt-0.5 text-xs text-muted-foreground">{stat.label}</div>
+            </div>
+          ))}
         </div>
 
-        {/* SWOT Matrix */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        {/* SWOT Matrix — four sibling panels, one surface each, hairlines
+            between the rows inside them.  The quadrants are the same KIND of
+            thing, so they get the same treatment; nothing is tinted per
+            quadrant.  Colour appears only where it carries information: the
+            risk chip, coloured by RISK LEVEL. */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
           {(Object.entries(QUADRANT_CONFIG) as [Quadrant, typeof QUADRANT_CONFIG[Quadrant]][]).map(([key, config]) => {
             const items = ALL_ITEMS[key];
             const Icon = config.icon;
@@ -622,262 +634,359 @@ export default function SWOTAnalysisPage(): JSX.Element {
             const isExpanded = expandedQuadrant === key;
 
             return (
-              <div key={key} className={cn('rounded-lg border', config.borderColor, config.bgColor, 'overflow-hidden')}>
-                {/* Header */}
-                <div className={cn('px-4 py-3 flex items-center justify-between', config.headerBg)}>
-                  <div className="flex items-center gap-2">
-                    <Icon className="h-5 w-5 text-white" />
-                    <h3 className={cn('font-bold text-lg', config.headerText)}>{config.title}</h3>
-                    <Badge variant="secondary" className="ml-2">{items.length}</Badge>
-                  </div>
-                  <button
-                    onClick={() => setExpandedQuadrant(isExpanded ? null : key)}
-                    className="text-white/80 hover:text-white transition-colors"
-                  >
-                    {isExpanded ? <ChevronUp className="h-5 w-5" /> : <ChevronDown className="h-5 w-5" />}
-                  </button>
-                </div>
-
-                {/* Items */}
-                <div className="p-3 space-y-2">
-                  {items.map(item => (
-                    <div
-                      key={item.id}
-                      className={cn(
-                        'rounded-md p-3 cursor-pointer transition-all hover:shadow-md',
-                        config.itemBg,
-                        selectedItem?.id === item.id && 'ring-2 ring-primary'
-                      )}
-                      onClick={() => setSelectedItem(item)}
+              <section key={key} className="ds-card overflow-hidden flex flex-col">
+                {/* Panel header — name, count and one gloss line, all grayscale. */}
+                <header className="px-5 pt-4 pb-3">
+                  <div className="flex items-center gap-2.5">
+                    <Icon className="h-[18px] w-[18px] text-muted-foreground" aria-hidden />
+                    <h2 className="text-[17px] font-semibold tracking-[-0.01em] text-foreground">
+                      {config.title}
+                    </h2>
+                    <span className="ml-auto text-[13px] tabular-nums text-muted-foreground">
+                      {items.length}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => setExpandedQuadrant(isExpanded ? null : key)}
+                      aria-expanded={isExpanded}
+                      aria-label={isExpanded ? `Collapse ${config.title}` : `Expand ${config.title}`}
+                      className="-mr-1 flex h-8 w-8 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-foreground/5 hover:text-foreground"
                     >
-                      <div className="flex items-start gap-2">
-                        <ArrowIcon className="h-4 w-4 mt-0.5 flex-shrink-0" />
-                        <div className="flex-1 min-w-0">
-                          <div className="text-sm font-medium text-foreground">{item.text}</div>
-                          <div className="flex items-center gap-2 mt-1 flex-wrap">
-                            <Badge variant="outline" className="text-[10px]">{item.category}</Badge>
-                            <Badge className={cn('text-[10px]', config.badgeColor)} variant="secondary">
-                              {item.riskLevel} Risk
-                            </Badge>
-                            {item.actionPlan && (
-                              <Badge variant="outline" className="text-[10px]">
-                                <Target className="h-2.5 w-2.5 mr-1" />
-                                Has Action Plan
-                              </Badge>
-                            )}
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
+                      {isExpanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+                    </button>
+                  </div>
+                  <p className="mt-1.5 pl-[26px] text-[13px] leading-[1.6] text-muted-foreground">
+                    {config.hint}
+                  </p>
+                </header>
 
-                {/* Expanded detail */}
+                {/* The items — one continuous list, hairline-separated. */}
+                <ul className="border-t border-border">
+                  {items.map(item => (
+                    <li key={item.id}>
+                      <button
+                        type="button"
+                        onClick={() => setSelectedItem(item)}
+                        className={cn(
+                          'flex w-full items-start gap-3 px-5 py-3.5 text-left transition-colors',
+                          'border-b border-border last:border-b-0',
+                          'hover:bg-foreground/[0.03]',
+                          selectedItem?.id === item.id && 'bg-foreground/[0.06]'
+                        )}
+                      >
+                        <ArrowIcon
+                          className="mt-[3px] h-4 w-4 flex-shrink-0 text-ink-3"
+                          aria-hidden
+                        />
+                        <span className="min-w-0 flex-1">
+                          <span className="block text-[14.5px] font-medium leading-[1.45] text-foreground">
+                            {item.text}
+                          </span>
+                          <span className="mt-1.5 flex flex-wrap items-center gap-1.5">
+                            <span className="rounded-full border border-foreground/10 bg-foreground/5 px-2 py-[1px] text-[11px] font-medium text-foreground/70">
+                              {item.category}
+                            </span>
+                            <span
+                              className={cn(
+                                'rounded-full border px-2 py-[1px] text-[11px] font-medium',
+                                RISK_CHIP_CLASS[item.riskLevel]
+                              )}
+                            >
+                              {item.riskLevel} risk
+                            </span>
+                            {item.actionPlan && (
+                              <span className="inline-flex items-center gap-1 rounded-full px-2 py-[1px] text-[11px] font-medium text-primary-tint">
+                                <Zap className="h-3 w-3" aria-hidden />
+                                Action plan
+                              </span>
+                            )}
+                          </span>
+                        </span>
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+
+                {/* Expanded detail — the same list, unwrapped.  A hairline
+                    separates it from the summary rows above. */}
                 {isExpanded && (
-                  <div className="px-3 pb-3">
-                    <Card className="bg-card">
-                      <CardContent className="p-4">
-                        <h4 className="text-sm font-semibold text-foreground mb-3">
-                          All {config.title} Items — Detailed View
-                        </h4>
-                        <div className="space-y-3">
-                          {items.map(item => (
-                            <div key={item.id} className="flex items-start gap-3 text-sm border-b border-border pb-2 last:border-b-0">
-                              <Badge variant="outline" className="text-[10px] mt-0.5 flex-shrink-0">{item.id}</Badge>
-                              <div className="flex-1 min-w-0">
-                                <div className="font-medium text-foreground">{item.text}</div>
-                                {item.actionPlan && (
-                                  <div className="text-muted-foreground mt-1">
-                                    <Zap className="h-3 w-3 inline mr-1" />
-                                    {item.actionPlan}
-                                  </div>
-                                )}
-                                <div className="flex gap-2 mt-1 flex-wrap">
-                                  {item.responsible && (
-                                    <span className="text-[10px] text-muted-foreground">📋 {item.responsible}</span>
-                                  )}
-                                  {item.targetDate && (
-                                    <span className="text-[10px] text-muted-foreground">📅 {item.targetDate}</span>
-                                  )}
-                                  {item.isoClause && (
-                                    <span className="text-[10px] text-muted-foreground">📐 ISO {item.isoClause}</span>
-                                  )}
-                                </div>
-                              </div>
-                            </div>
-                          ))}
-                        </div>
-                      </CardContent>
-                    </Card>
+                  <div className="border-t border-border bg-muted/40 px-5 py-4">
+                    <h3 className="text-[13px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">
+                      {config.title} — full detail
+                    </h3>
+                    <ul className="mt-3 space-y-3">
+                      {items.map(item => (
+                        <li key={item.id} className="flex items-start gap-3">
+                          <span className="mt-[1px] flex-shrink-0 rounded-sm bg-muted px-1.5 py-[1px] font-mono text-[11px] tabular-nums text-foreground">
+                            {item.id}
+                          </span>
+                          <span className="min-w-0 flex-1">
+                            <span className="block text-[13.5px] font-medium leading-[1.5] text-foreground">
+                              {item.text}
+                            </span>
+                            {item.actionPlan && (
+                              <span className="mt-1 flex items-start gap-1.5 text-[12.5px] leading-[1.6] text-foreground/70">
+                                <Zap className="mt-[2px] h-3 w-3 flex-shrink-0 text-primary-tint" aria-hidden />
+                                {item.actionPlan}
+                              </span>
+                            )}
+                            <span className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-[12px] text-foreground/70">
+                              {item.responsible && (
+                                <span className="inline-flex items-center gap-1">
+                                  <UserRound className="h-3 w-3 text-ink-3" aria-hidden />
+                                  {item.responsible}
+                                </span>
+                              )}
+                              {item.targetDate && (
+                                <span className="inline-flex items-center gap-1">
+                                  <Calendar className="h-3 w-3 text-ink-3" aria-hidden />
+                                  {item.targetDate}
+                                </span>
+                              )}
+                              {item.isoClause && (
+                                <span className="inline-flex items-center gap-1">
+                                  <BookMarked className="h-3 w-3 text-ink-3" aria-hidden />
+                                  ISO {item.isoClause}
+                                </span>
+                              )}
+                            </span>
+                          </span>
+                        </li>
+                      ))}
+                    </ul>
                   </div>
                 )}
-              </div>
+              </section>
             );
           })}
         </div>
 
-        {/* TOWS Strategies */}
+        {/* TOWS Strategies — two panels, one per cross-impact.  The accent is
+            carried by the icon and the strategy name, not by a saturated
+            header band: the old `bg-success` / `bg-destructive` headers
+            measured 1.00:1 and 1.49:1 for their own description text. */}
         {showStrategies && (
-          <div className="space-y-6">
-            <div className="flex items-center gap-2">
-              <Lightbulb className="h-6 w-6 text-yellow-500" />
-              <h2 className="text-xl font-bold text-foreground">TOWS Cross-Impact Strategies</h2>
+          <section className="space-y-5">
+            <div>
+              <div className="text-[11px] font-semibold uppercase tracking-[0.14em] text-ink-2">
+                Cross-impact matrix
+              </div>
+              <h2 className="mt-2 text-xl font-bold tracking-[-0.02em] text-foreground">
+                TOWS Strategies
+              </h2>
+              <p className="mt-1.5 max-w-2xl text-[14px] leading-[1.7] text-ink">
+                Internal factors combined with external ones — strengths with opportunities,
+                weaknesses with threats.
+              </p>
             </div>
-            <p className="text-sm text-muted-foreground">
-              Derived from combining internal (Strengths/Weaknesses) with external (Opportunities/Threats) factors.
-            </p>
 
-            {/* SO Strategies */}
-            <Card className="border-green-300 dark:border-green-700">
-              <CardHeader className="bg-green-600 text-white rounded-t-lg">
-                <CardTitle className="text-lg flex items-center gap-2">
-                  <ArrowUpRight className="h-5 w-5" />
-                  SO Strategies (Strengths × Opportunities)
-                </CardTitle>
-                <CardDescription className="text-green-100">
-                  Use strengths to capitalize on opportunities
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="p-4 space-y-4">
-                {SO_STRATEGIES.map(strategy => (
-                  <div key={strategy.name} className="bg-green-50 dark:bg-green-950/20 rounded-lg p-4">
-                    <h4 className="font-semibold text-green-800 dark:text-green-300 mb-2">{strategy.name}</h4>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-sm">
-                      <div><span className="text-muted-foreground">Strength:</span> <span className="text-foreground">{strategy.strength}</span></div>
-                      <div><span className="text-muted-foreground">Opportunity:</span> <span className="text-foreground">{strategy.opportunity}</span></div>
-                    </div>
-                    <div className="mt-2 text-sm bg-white dark:bg-green-900/30 rounded p-2">
-                      <Zap className="h-3 w-3 inline mr-1 text-green-600" />
-                      {strategy.action}
-                    </div>
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+              {/* SO — strengths × opportunities */}
+              <div className="ds-card overflow-hidden">
+                <header className="flex items-center gap-2.5 border-b border-border px-5 py-4">
+                  <ArrowUpRight className="h-[18px] w-[18px] text-success-tint" aria-hidden />
+                  <div className="min-w-0">
+                    <h3 className="text-[15.5px] font-semibold tracking-[-0.01em] text-foreground">
+                      SO — Strengths × Opportunities
+                    </h3>
+                    <p className="mt-0.5 text-[12.5px] text-muted-foreground">
+                      Use strengths to capitalize on opportunities
+                    </p>
                   </div>
-                ))}
-              </CardContent>
-            </Card>
+                </header>
+                <ul className="divide-y divide-border">
+                  {SO_STRATEGIES.map(strategy => (
+                    <li key={strategy.name} className="px-5 py-4">
+                      <h4 className="text-[14px] font-semibold text-foreground">{strategy.name}</h4>
+                      <dl className="mt-2 grid grid-cols-1 gap-1.5 text-[13px]">
+                        <div className="flex gap-2">
+                          <dt className="w-[86px] flex-shrink-0 text-foreground/70">Strength</dt>
+                          <dd className="min-w-0 flex-1 text-foreground">{strategy.strength}</dd>
+                        </div>
+                        <div className="flex gap-2">
+                          <dt className="w-[86px] flex-shrink-0 text-foreground/70">Opportunity</dt>
+                          <dd className="min-w-0 flex-1 text-foreground">{strategy.opportunity}</dd>
+                        </div>
+                      </dl>
+                      <p className="mt-2.5 flex items-start gap-1.5 rounded-lg bg-muted/50 px-3 py-2 text-[13px] leading-[1.6] text-foreground">
+                        <Zap className="mt-[2px] h-3.5 w-3.5 flex-shrink-0 text-success-tint" aria-hidden />
+                        {strategy.action}
+                      </p>
+                    </li>
+                  ))}
+                </ul>
+              </div>
 
-            {/* WT Strategies */}
-            <Card className="border-red-300 dark:border-red-700">
-              <CardHeader className="bg-red-600 text-white rounded-t-lg">
-                <CardTitle className="text-lg flex items-center gap-2">
-                  <Shield className="h-5 w-5" />
-                  WT Strategies (Weaknesses × Threats)
-                </CardTitle>
-                <CardDescription className="text-red-100">
-                  Minimize weaknesses and avoid threats
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="p-4 space-y-4">
-                {WT_STRATEGIES.map(strategy => (
-                  <div key={strategy.name} className="bg-red-50 dark:bg-red-950/20 rounded-lg p-4">
-                    <h4 className="font-semibold text-red-800 dark:text-red-300 mb-2">{strategy.name}</h4>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-sm">
-                      <div><span className="text-muted-foreground">Weakness:</span> <span className="text-foreground">{strategy.weakness}</span></div>
-                      <div><span className="text-muted-foreground">Threat:</span> <span className="text-foreground">{strategy.threat}</span></div>
-                    </div>
-                    <div className="mt-2 text-sm bg-white dark:bg-red-900/30 rounded p-2">
-                      <Shield className="h-3 w-3 inline mr-1 text-red-600" />
-                      {strategy.action}
-                    </div>
+              {/* WT — weaknesses × threats */}
+              <div className="ds-card overflow-hidden">
+                <header className="flex items-center gap-2.5 border-b border-border px-5 py-4">
+                  <Shield className="h-[18px] w-[18px] text-destructive-tint" aria-hidden />
+                  <div className="min-w-0">
+                    <h3 className="text-[15.5px] font-semibold tracking-[-0.01em] text-foreground">
+                      WT — Weaknesses × Threats
+                    </h3>
+                    <p className="mt-0.5 text-[12.5px] text-muted-foreground">
+                      Minimize weaknesses and avoid threats
+                    </p>
                   </div>
-                ))}
-              </CardContent>
-            </Card>
-          </div>
+                </header>
+                <ul className="divide-y divide-border">
+                  {WT_STRATEGIES.map(strategy => (
+                    <li key={strategy.name} className="px-5 py-4">
+                      <h4 className="text-[14px] font-semibold text-foreground">{strategy.name}</h4>
+                      <dl className="mt-2 grid grid-cols-1 gap-1.5 text-[13px]">
+                        <div className="flex gap-2">
+                          <dt className="w-[86px] flex-shrink-0 text-foreground/70">Weakness</dt>
+                          <dd className="min-w-0 flex-1 text-foreground">{strategy.weakness}</dd>
+                        </div>
+                        <div className="flex gap-2">
+                          <dt className="w-[86px] flex-shrink-0 text-foreground/70">Threat</dt>
+                          <dd className="min-w-0 flex-1 text-foreground">{strategy.threat}</dd>
+                        </div>
+                      </dl>
+                      <p className="mt-2.5 flex items-start gap-1.5 rounded-lg bg-muted/50 px-3 py-2 text-[13px] leading-[1.6] text-foreground">
+                        <Shield className="mt-[2px] h-3.5 w-3.5 flex-shrink-0 text-destructive-tint" aria-hidden />
+                        {strategy.action}
+                      </p>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            </div>
+          </section>
         )}
 
-        {/* ISO Compliance Summary */}
-        <Card className="border-border">
-          <CardHeader>
-            <CardTitle className="text-lg flex items-center gap-2">
-              <FileText className="h-5 w-5 text-primary" />
-              ISO 9001:2015 Compliance Mapping
-            </CardTitle>
-            <CardDescription>How SWOT items align with ISO 9001:2015 clauses</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-              {[
-                { clause: '4.1', title: 'Context of Organization', items: [...STRENGTHS, ...WEAKNESSES, ...OPPORTUNITIES, ...THREATS].filter(i => i.isoClause?.includes('4.1')).length },
-                { clause: '4.2', title: 'Interested Parties', items: [...STRENGTHS, ...WEAKNESSES, ...OPPORTUNITIES, ...THREATS].filter(i => i.isoClause?.includes('4.2')).length },
-                { clause: '6.1', title: 'Risk & Opportunity', items: [...STRENGTHS, ...WEAKNESSES, ...OPPORTUNITIES, ...THREATS].filter(i => i.isoClause?.includes('6.1')).length },
-                { clause: '7.1', title: 'Resources', items: [...STRENGTHS, ...WEAKNESSES, ...OPPORTUNITIES, ...THREATS].filter(i => i.isoClause?.includes('7.1')).length },
-                { clause: '7.2', title: 'Competence', items: [...STRENGTHS, ...WEAKNESSES, ...OPPORTUNITIES, ...THREATS].filter(i => i.isoClause?.includes('7.2')).length },
-                { clause: '8.x', title: 'Operations', items: [...STRENGTHS, ...WEAKNESSES, ...OPPORTUNITIES, ...THREATS].filter(i => i.isoClause?.includes('8.')).length },
-              ].map(item => (
-                <div key={item.clause} className="bg-muted rounded-lg p-3">
-                  <div className="flex items-center justify-between">
-                    <Badge variant="secondary" className="font-mono">Clause {item.clause}</Badge>
-                    <span className="text-lg font-bold text-foreground">{item.items}</span>
-                  </div>
-                  <div className="text-sm text-muted-foreground mt-1">{item.title}</div>
-                </div>
-              ))}
+        {/* ISO Compliance Summary — one panel, hairline-separated rows. */}
+        <section className="ds-card overflow-hidden">
+          <header className="flex items-center gap-2.5 border-b border-border px-5 py-4">
+            <FileText className="h-[18px] w-[18px] text-primary-tint" aria-hidden />
+            <div className="min-w-0">
+              <h2 className="text-[15.5px] font-semibold tracking-[-0.01em] text-foreground">
+                ISO 9001:2015 compliance mapping
+              </h2>
+              <p className="mt-0.5 text-[12.5px] text-muted-foreground">
+                How the SWOT factors align with the clauses they answer
+              </p>
             </div>
-          </CardContent>
-        </Card>
+          </header>
+          <ul className="-mb-px -mr-px grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
+            {[
+              { clause: '4.1', title: 'Context of Organization' },
+              { clause: '4.2', title: 'Interested Parties' },
+              { clause: '6.1', title: 'Risk & Opportunity' },
+              { clause: '7.1', title: 'Resources' },
+              { clause: '7.2', title: 'Competence' },
+              { clause: '8.x', title: 'Operations' },
+            ].map(item => {
+              const count = [...STRENGTHS, ...WEAKNESSES, ...OPPORTUNITIES, ...THREATS]
+                .filter(i => i.isoClause?.includes(item.clause)).length;
+              return (
+                <li
+                  key={item.clause}
+                  className="flex items-center justify-between gap-3 border-b border-r border-border px-5 py-3.5"
+                >
+                  <span className="min-w-0">
+                    <span className="block font-mono text-[11.5px] font-semibold tracking-[0.06em] text-muted-foreground">
+                      Clause {item.clause}
+                    </span>
+                    <span className="mt-0.5 block text-[13.5px] text-foreground">{item.title}</span>
+                  </span>
+                  <span className="text-xl font-bold tabular-nums tracking-[-0.01em] text-foreground">
+                    {count}
+                  </span>
+                </li>
+              );
+            })}
+          </ul>
+        </section>
       </div>
 
       {/* Detail Dialog */}
       <Dialog open={!!selectedItem} onOpenChange={() => setSelectedItem(null)}>
-        <DialogContent className="max-w-lg">
+        <DialogContent className="max-w-lg bg-card">
           <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <Eye className="h-5 w-5" />
+            <DialogTitle className="flex items-center gap-2 text-[17px] font-semibold tracking-[-0.01em] text-foreground">
+              <Eye className="h-[18px] w-[18px] text-muted-foreground" aria-hidden />
               {selectedItem?.id} — {selectedItem?.category}
             </DialogTitle>
-            <DialogDescription>{selectedItem?.text}</DialogDescription>
+            <DialogDescription className="text-[13.5px] leading-[1.7] text-foreground/70">
+              {selectedItem?.text}
+            </DialogDescription>
           </DialogHeader>
           {selectedItem && (
             <div className="space-y-4">
-              <div className="grid grid-cols-2 gap-3">
-                <div className="bg-muted rounded-lg p-3">
-                  <div className="text-xs text-muted-foreground">Source</div>
-                  <div className="text-sm font-medium text-foreground">{selectedItem.source}</div>
-                </div>
-                <div className="bg-muted rounded-lg p-3">
-                  <div className="text-xs text-muted-foreground">Risk Level</div>
-                  <div className="text-sm font-medium text-foreground">{selectedItem.riskLevel}</div>
-                </div>
-                {selectedItem.responsible && (
-                  <div className="bg-muted rounded-lg p-3">
-                    <div className="text-xs text-muted-foreground">Responsible</div>
-                    <div className="text-sm font-medium text-foreground">{selectedItem.responsible}</div>
+              {/* Details — one panel of hairline-separated rows, not four
+                  separately-filled tiles.  The old tiles put 12px muted text
+                  on `bg-muted` (4.50:1, exactly on the AA line) and made
+                  each field its own card. */}
+              <dl className="overflow-hidden rounded-lg border border-border">
+                {([
+                  { label: 'Source', value: selectedItem.source },
+                  { label: 'Risk level', value: selectedItem.riskLevel },
+                  selectedItem.responsible
+                    ? { label: 'Responsible', value: selectedItem.responsible }
+                    : null,
+                  selectedItem.targetDate
+                    ? { label: 'Target date', value: selectedItem.targetDate }
+                    : null,
+                ].filter(Boolean) as { label: string; value: string }[]).map((row, i, arr) => (
+                  <div
+                    key={row.label}
+                    className={cn(
+                      'flex items-baseline justify-between gap-4 px-4 py-2.5',
+                      i < arr.length - 1 && 'border-b border-border'
+                    )}
+                  >
+                    <dt className="text-[12.5px] text-foreground/70">{row.label}</dt>
+                    <dd className="text-[13.5px] font-medium text-foreground">{row.value}</dd>
                   </div>
-                )}
-                {selectedItem.targetDate && (
-                  <div className="bg-muted rounded-lg p-3">
-                    <div className="text-xs text-muted-foreground">Target Date</div>
-                    <div className="text-sm font-medium text-foreground">{selectedItem.targetDate}</div>
-                  </div>
-                )}
-              </div>
+                ))}
+              </dl>
 
               {selectedItem.actionPlan && (
-                <div className="bg-primary/5 dark:bg-primary/10 rounded-lg p-4">
-                  <div className="text-xs font-semibold text-primary mb-1 flex items-center gap-1">
-                    <Zap className="h-3 w-3" />
-                    Action Plan
+                <div className="rounded-lg border border-primary/15 bg-primary/5 p-4">
+                  <div className="mb-1 flex items-center gap-1.5 text-[12px] font-semibold text-primary-tint">
+                    <Zap className="h-3 w-3" aria-hidden />
+                    Action plan
                   </div>
-                  <div className="text-sm text-foreground">{selectedItem.actionPlan}</div>
+                  <div className="text-[13.5px] leading-[1.7] text-foreground">
+                    {selectedItem.actionPlan}
+                  </div>
                 </div>
               )}
 
-              {selectedItem.isoClause && (
-                <div className="bg-muted rounded-lg p-3">
-                  <div className="text-xs text-muted-foreground mb-1">ISO 9001:2015 Clause</div>
-                  <Badge variant="secondary" className="font-mono">Clause {selectedItem.isoClause}</Badge>
-                </div>
-              )}
-
-              {selectedItem.linkedTo && selectedItem.linkedTo.length > 0 && (
-                <div className="bg-muted rounded-lg p-3">
-                  <div className="text-xs text-muted-foreground mb-1">Linked Context Issues</div>
-                  <div className="flex gap-2 flex-wrap">
-                    {selectedItem.linkedTo.map(link => (
-                      <Badge key={link} variant="outline">{link}</Badge>
-                    ))}
-                  </div>
-                </div>
+              {(selectedItem.isoClause ||
+                (selectedItem.linkedTo && selectedItem.linkedTo.length > 0)) && (
+                <dl className="overflow-hidden rounded-lg border border-border">
+                  {selectedItem.isoClause && (
+                    <div className="flex items-baseline justify-between gap-4 border-b border-border px-4 py-2.5">
+                      <dt className="text-[12.5px] text-foreground/70">ISO 9001:2015 clause</dt>
+                      <dd className="font-mono text-[12.5px] tabular-nums text-foreground">
+                        {selectedItem.isoClause}
+                      </dd>
+                    </div>
+                  )}
+                  {selectedItem.linkedTo && selectedItem.linkedTo.length > 0 && (
+                    <div
+                      className={cn(
+                        'flex items-baseline justify-between gap-4 px-4 py-2.5',
+                        selectedItem.isoClause && 'border-t border-border'
+                      )}
+                    >
+                      <dt className="text-[12.5px] text-foreground/70">Linked context issues</dt>
+                      <dd className="flex flex-wrap justify-end gap-1.5">
+                        {selectedItem.linkedTo.map(link => (
+                          <span
+                            key={link}
+                            className="rounded-full border border-foreground/10 bg-foreground/5 px-2 py-[1px] font-mono text-[11px] text-foreground/80"
+                          >
+                            {link}
+                          </span>
+                        ))}
+                      </dd>
+                    </div>
+                  )}
+                </dl>
               )}
             </div>
           )}
