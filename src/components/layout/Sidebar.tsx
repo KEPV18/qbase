@@ -1,6 +1,7 @@
 // ============================================================================
-// QBase - Sidebar (NotionWarm)
-// Warm cream sidebar with serif section headers and soft active states
+// QBase — Sidebar
+// One unified surface with hairline dividers. The active item is a filled
+// foreground pill; everything else stays grayscale.
 // ============================================================================
 
 import { useMemo } from "react";
@@ -164,7 +165,7 @@ function ProjectFilterDropdown() {
       <select
         value={currentProject}
         onChange={handleChange}
-        className="w-full pl-9 pr-4 py-2.5 rounded-lg bg-background dark:bg-[#1a1a18] border border-border dark:border-border text-sm text-foreground dark:text-foreground appearance-none cursor-pointer focus:outline-none focus:ring-2 focus:ring-foreground/10"
+        className="w-full pl-9 pr-4 py-2.5 rounded-lg bg-background dark:bg-card border border-border dark:border-border text-sm text-foreground dark:text-foreground appearance-none cursor-pointer focus:outline-none focus:ring-2 focus:ring-foreground/10"
       >
         <option value="">All Projects</option>
         {PROJECTS.map(p => (
@@ -204,7 +205,7 @@ function MonthFilterDropdown() {
       <select
         value={currentMonth}
         onChange={handleChange}
-        className="w-full pl-9 pr-4 py-2.5 rounded-lg bg-background dark:bg-[#1a1a18] border border-border dark:border-border text-sm text-foreground dark:text-foreground appearance-none cursor-pointer focus:outline-none focus:ring-2 focus:ring-foreground/10"
+        className="w-full pl-9 pr-4 py-2.5 rounded-lg bg-background dark:bg-card border border-border dark:border-border text-sm text-foreground dark:text-foreground appearance-none cursor-pointer focus:outline-none focus:ring-2 focus:ring-foreground/10"
       >
         <option value="">All Months</option>
         {availableMonths.map(m => (
@@ -256,7 +257,7 @@ export function Sidebar({ mobileOpen, onClose, sidebarOpen, onToggle }: { mobile
               <div className="w-9 h-9 rounded-lg bg-foreground dark:bg-card flex items-center justify-center">
                 <img src={brandLogo} alt="logo" className="w-5 h-5 object-contain invert" />
               </div>
-              <span className="text-lg font-heading font-bold text-foreground tracking-tight">
+              <span className="text-lg font-display font-bold text-foreground tracking-tight">
                 {displayName || "QBase"}
               </span>
             </button>
@@ -278,7 +279,7 @@ export function Sidebar({ mobileOpen, onClose, sidebarOpen, onToggle }: { mobile
         <div className={cn("flex-1 space-y-6 overflow-y-auto", sidebarOpen ? "px-4" : "px-2")}>
           <div className="space-y-1">
             {sidebarOpen && (
-              <p className="px-3 mb-2 text-[11px] font-heading font-semibold text-muted-foreground/70 uppercase tracking-wider">
+              <p className="px-3 mb-2 text-[11px] font-display font-semibold text-muted-foreground/70 uppercase tracking-wider">
                 {MAIN_NAV.title}
               </p>
             )}
@@ -303,7 +304,7 @@ export function Sidebar({ mobileOpen, onClose, sidebarOpen, onToggle }: { mobile
 
           <div className="space-y-1">
             {sidebarOpen && (
-              <p className="px-3 mb-2 text-[11px] font-heading font-semibold text-muted-foreground/70 uppercase tracking-wider">
+              <p className="px-3 mb-2 text-[11px] font-display font-semibold text-muted-foreground/70 uppercase tracking-wider">
                 {TOOLS_NAV.title}
               </p>
             )}
@@ -336,7 +337,7 @@ export function Sidebar({ mobileOpen, onClose, sidebarOpen, onToggle }: { mobile
 
           <div className="space-y-1">
             {sidebarOpen && (
-              <p className="px-3 mb-2 text-[11px] font-heading font-semibold text-muted-foreground/70 uppercase tracking-wider">
+              <p className="px-3 mb-2 text-[11px] font-display font-semibold text-muted-foreground/70 uppercase tracking-wider">
                 {SETTINGS_NAV.title}
               </p>
             )}
@@ -363,7 +364,7 @@ export function Sidebar({ mobileOpen, onClose, sidebarOpen, onToggle }: { mobile
         {/* Filters */}
         {sidebarOpen && (
           <div className="px-4 pb-2 space-y-2">
-            <p className="px-3 mb-2 text-[11px] font-heading font-semibold text-muted-foreground/70 uppercase tracking-wider">
+            <p className="px-3 mb-2 text-[11px] font-display font-semibold text-muted-foreground/70 uppercase tracking-wider">
               FILTERS
             </p>
             <ProjectFilterDropdown />

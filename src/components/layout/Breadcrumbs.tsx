@@ -43,7 +43,7 @@ export function Breadcrumbs({ items, className }: BreadcrumbsProps) {
                     {index === 0 ? (
                         <Link
                             to={item.path || "/"}
-                            className="flex items-center gap-1.5 hover:text-primary transition-colors group"
+                            className="flex items-center gap-1.5 hover:text-primary-tint transition-colors group"
                         >
                             <Home className="w-3 h-3 transition-transform group-hover:scale-110" />
                             <span className="mt-0.5">{item.label}</span>
@@ -51,7 +51,7 @@ export function Breadcrumbs({ items, className }: BreadcrumbsProps) {
                     ) : item.path ? (
                         <Link
                             to={item.path}
-                            className="hover:text-primary transition-colors"
+                            className="hover:text-primary-tint transition-colors"
                         >
                             {item.label}
                         </Link>

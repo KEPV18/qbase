@@ -1,5 +1,5 @@
 // ============================================================================
-// QBase - Mobile Bottom Navigation (NotionWarm)
+// QBase — Mobile Bottom Navigation
 // Shows on mobile only — 5 main tabs + hamburger for full sidebar
 // ============================================================================
 
@@ -24,7 +24,7 @@ export function MobileBottomNav({ onMenuClick }: { onMenuClick: () => void }) {
   };
 
   return (
-    <nav aria-label="Primary mobile navigation" className="fixed bottom-0 left-0 right-0 z-50 lg:hidden bg-white dark:bg-[#1a1a18] border-t border-[#e8e3db] dark:border-[#3a3834] safe-area-bottom">
+    <nav aria-label="Primary mobile navigation" className="fixed bottom-0 left-0 right-0 z-50 lg:hidden bg-card/95 backdrop-blur-xl border-t border-border safe-area-bottom">
       <div className="flex items-center justify-around h-16 px-2">
         {NAV_ITEMS.map((item) => (
           <NavLink
@@ -34,13 +34,13 @@ export function MobileBottomNav({ onMenuClick }: { onMenuClick: () => void }) {
             className={cn(
               "flex flex-col items-center justify-center gap-0.5 px-3 py-1.5 rounded-lg min-w-[56px] transition-colors",
               isActive(item.path)
-                ? "text-[#2d2d2d] dark:text-[#e8e3db]"
-                : "text-[#9f9a8f] hover:text-[#7a756a]"
+                ? "text-foreground dark:text-foreground"
+                : "text-ink-3 hover:text-ink-2"
             )}
           >
             <item.icon className={cn(
               "w-5 h-5",
-              isActive(item.path) ? "text-[#2d2d2d] dark:text-[#e8e3db]" : "text-[#9f9a8f]"
+              isActive(item.path) ? "text-foreground dark:text-foreground" : "text-ink-3"
             )} />
             <span className={cn(
               "text-[10px] font-medium",
@@ -54,7 +54,7 @@ export function MobileBottomNav({ onMenuClick }: { onMenuClick: () => void }) {
         {/* Menu button — opens the full sidebar drawer */}
         <button
           onClick={onMenuClick}
-          className="flex flex-col items-center justify-center gap-0.5 px-3 py-1.5 rounded-lg min-w-[56px] text-[#9f9a8f] hover:text-[#7a756a] transition-colors"
+          className="flex flex-col items-center justify-center gap-0.5 px-3 py-1.5 rounded-lg min-w-[56px] text-ink-3 hover:text-ink-2 transition-colors"
         >
           <Menu className="w-5 h-5" />
           <span className="text-[10px] font-medium">Menu</span>

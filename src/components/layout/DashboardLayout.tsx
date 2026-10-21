@@ -1,6 +1,7 @@
 // ============================================================================
-// QBase - Dashboard Layout (NotionWarm Shell)
-// Warm beige background + floating paper frame + soft borders
+// QBase — Dashboard Layout
+// Cool #f5f5f7 ground + a single white content surface. The sidebar and
+// top nav are the only layers that overlap, so they carry the blur.
 // ============================================================================
 
 import { useState } from "react";

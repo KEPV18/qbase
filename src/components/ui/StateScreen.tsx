@@ -21,9 +21,9 @@ interface StateScreenProps {
 const stateConfig: Record<StateType, { icon: typeof Loader2; iconClass: string; titleDefault: string }> = {
   loading: { icon: Loader2, iconClass: "animate-spin text-muted-foreground", titleDefault: "Loading..." },
   empty: { icon: Inbox, iconClass: "text-muted-foreground/40", titleDefault: "No data yet" },
-  error: { icon: AlertTriangle, iconClass: "text-destructive", titleDefault: "Something went wrong" },
-  success: { icon: CheckCircle, iconClass: "text-success", titleDefault: "All good" },
-  critical: { icon: AlertTriangle, iconClass: "text-destructive", titleDefault: "Action required" },
+  error: { icon: AlertTriangle, iconClass: "text-destructive-tint", titleDefault: "Something went wrong" },
+  success: { icon: CheckCircle, iconClass: "text-success-tint", titleDefault: "All good" },
+  critical: { icon: AlertTriangle, iconClass: "text-destructive-tint", titleDefault: "Action required" },
 };
 
 export function StateScreen({ state, icon: customIcon, title, message, action, className }: StateScreenProps) {
@@ -57,7 +57,7 @@ export function StateScreen({ state, icon: customIcon, title, message, action, c
           variant={state === "critical" || state === "error" ? "default" : "outline"}
           onClick={action.onClick}
           className={cn(
-            state === "critical" && "bg-destructive hover:bg-destructive/90 text-destructive-foreground"
+            state === "critical" && "bg-destructive hover:bg-destructive-hover text-destructive-foreground"
           )}
         >
           {action.label}

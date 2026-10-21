@@ -15,12 +15,24 @@ interface StatsRowProps {
   className?: string;
 }
 
-const variantStyles: Record<string, { icon: string; value: string; bg: string; border: string }> = {
-  default: { icon: "text-primary", value: "text-foreground", bg: "bg-primary/10", border: "border-primary/20" },
-  success: { icon: "text-success", value: "text-success", bg: "bg-success/10", border: "border-success/20" },
-  warning: { icon: "text-warning", value: "text-warning", bg: "bg-warning/10", border: "border-warning/20" },
-  destructive: { icon: "text-destructive", value: "text-destructive", bg: "bg-destructive/10", border: "border-destructive/20" },
-  info: { icon: "text-info", value: "text-info", bg: "bg-info/10", border: "border-info/20" },
+/**
+ * The semantic colour of the NUMBER, not of the whole cell.
+ *
+ * The old implementation tinted the icon, the value AND gave the icon a
+ * coloured chip, so a row of six metrics read as a rainbow of chips —
+ * the "colour as decoration" anti-pattern.  Now the number carries the
+ * meaning (a red "3" says "three overdue", which the digit alone does
+ * not) and everything else stays grayscale.
+ *
+ * Every pairing below is measured against the card surface in BOTH
+ * modes:  light 6.66–7.42:1 · dark 7.20–8.32:1 — all clear AA.
+ */
+const variantStyles: Record<NonNullable<StatItem["variant"]>, string> = {
+  default: "text-foreground",
+  success: "text-success-tint",
+  warning: "text-warning-tint",
+  destructive: "text-destructive-tint",
+  info: "text-info-tint",
 };
 
 const colStyles: Record<number, string> = {
@@ -35,38 +47,48 @@ export function StatsRow({ stats, columns, className }: StatsRowProps) {
   const cols = columns || (stats.length <= 4 ? 4 : stats.length <= 5 ? 5 : 6);
 
   return (
-    <div className={cn(
-      "grid gap-3 animate-fade-in",
-      colStyles[cols],
-      className
-    )}>
-      {stats.map((stat, i) => {
-        const Icon = stat.icon;
-        const variant = stat.variant || "default";
-        const styles = variantStyles[variant];
+    /* One panel of hairline-separated cells — not a pile of separate
+       cards.  The negative margins collapse the cell borders into a
+       single grid of hairlines, and `overflow-hidden` on the panel
+       trims the outer edge. */
+    <div className={cn("ds-panel overflow-hidden", className)}>
+      <div className={cn("grid -mb-px -mr-px", colStyles[cols])}>
+        {stats.map((stat, i) => {
+          const Icon = stat.icon;
+          const variant = stat.variant || "default";
+          const clickable = Boolean(stat.onClick);
 
-        return (
-          <div
-            key={i}
-            className={cn(
-              "bg-card border border-border/50 rounded-md p-4 flex items-center gap-3 transition-colors duration-150 group",
-              stat.onClick && "cursor-pointer"
-            )}
-            onClick={stat.onClick}
-          >
-            
-            <div className="flex items-center gap-3 w-full">
-              <div className={cn("w-10 h-10 rounded-md flex items-center justify-center shrink-0 border", styles.bg, styles.border)}>
-                <Icon className={cn("w-5 h-5", styles.icon)} />
-              </div>
+          const body = (
+            <>
+              <Icon className="h-[18px] w-[18px] shrink-0 text-ink-3" aria-hidden="true" />
               <div className="min-w-0">
-                <p className={cn("text-xl font-black leading-none", styles.value)}>{stat.value}</p>
-                <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mt-0.5">{stat.label}</p>
+                <p className={cn("text-[22px] font-bold leading-none tracking-[-0.01em] tabular-nums", variantStyles[variant])}>
+                  {stat.value}
+                </p>
+                <p className="mt-1 text-[12px] font-medium leading-[1.4] text-muted-foreground">{stat.label}</p>
               </div>
+            </>
+          );
+
+          return clickable ? (
+            <button
+              key={i}
+              type="button"
+              onClick={stat.onClick}
+              className="flex items-center gap-3 border-b border-r border-border px-5 py-4 text-left transition-colors hover:bg-foreground/[0.03]"
+            >
+              {body}
+            </button>
+          ) : (
+            <div
+              key={i}
+              className="flex items-center gap-3 border-b border-r border-border px-5 py-4"
+            >
+              {body}
             </div>
-          </div>
-        );
-      })}
+          );
+        })}
+      </div>
     </div>
   );
 }

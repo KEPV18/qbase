@@ -126,7 +126,7 @@ export function TemplateWrapper({ formCode, ...props }: { formCode: string } & T
   const Template = getTemplateComponent(formCode);
   if (!Template) {
     return (
-      <div className="p-4 text-destructive">
+      <div className="p-4 text-destructive-tint">
         Template not found for form code: {formCode}
       </div>
     );

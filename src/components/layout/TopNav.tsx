@@ -123,15 +123,22 @@ export function TopNav() {
 
   return (
     <>
-      {/* TopNav Capsule */}
-      <div className="bg-background/80 backdrop-blur-xl border border-border rounded-xl px-5 py-3 flex items-center justify-between grow shrink-0">
+      {/* TopNav bar.
+          This bar is a solid surface, not glass: it does not overlay
+          anything — it sits above the page in normal flow, with the
+          scrolling content starting below it.  The previous
+          `bg-background/80 backdrop-blur-xl` blurred nothing, because
+          there was no layer beneath it to refract; the skill reserves
+          `backdrop-filter` for surfaces that genuinely overlap content
+          (the sticky page headers, the sidebar, the mobile tab bar). */}
+      <div className="bg-card border border-border rounded-xl px-5 py-3 flex items-center justify-between grow shrink-0">
         {/* Left — Active Page */}
         <div className="flex items-center gap-3">
           <div className="w-8 h-8 rounded-lg bg-foreground dark:bg-card flex items-center justify-center">
             <img src={brandLogo} alt="" className="w-4 h-4 object-contain invert" />
           </div>
           <div>
-            <p className="text-[11px] font-heading font-semibold text-muted-foreground/70 uppercase tracking-wider">Active Page</p>
+            <p className="text-[11px] font-display font-semibold text-muted-foreground/70 uppercase tracking-wider">Active Page</p>
             <p className="text-sm font-semibold text-foreground">{pageLabel}</p>
           </div>
         </div>
@@ -158,7 +165,7 @@ export function TopNav() {
             ⌘ K
           </button>
           {showSearchDropdown && results.length > 0 && (
-            <div className="absolute top-full left-0 right-0 mt-2 bg-card border border-border dark:border-[#3a3834] rounded-lg py-1 max-h-80 overflow-y-auto z-50">
+            <div className="absolute top-full left-0 right-0 mt-2 bg-card border border-border rounded-lg py-1 max-h-80 overflow-y-auto z-50">
               {results.map(r => (
                 <button
                   key={r.serial}
@@ -167,16 +174,16 @@ export function TopNav() {
                 >
                   <FileText className="w-4 h-4 text-muted-foreground/70 shrink-0" />
                   <div className="min-w-0 flex-1">
-                    <p className="text-sm font-medium text-foreground dark:text-[#e8e3db] truncate">{r.serial}</p>
+                    <p className="text-sm font-medium text-foreground dark:text-ink-3 truncate">{r.serial}</p>
                     <p className="text-xs text-muted-foreground">{r.formName}</p>
                   </div>
-                  <span className="text-xs text-muted-foreground shrink-0 font-mono bg-background dark:bg-[#1a1a18] rounded px-1.5 py-0.5">{r.formCode}</span>
+                  <span className="text-xs text-muted-foreground shrink-0 font-mono bg-background dark:bg-card rounded px-1.5 py-0.5">{r.formCode}</span>
                   <span className={cn(
                     "text-[9px] uppercase tracking-wider px-1.5 py-0.5 rounded font-medium",
-                    r.match === 'serial' && "text-blue-500 bg-blue-50 dark:bg-blue-900/20",
-                    r.match === 'name' && "text-emerald-500 bg-emerald-50 dark:bg-emerald-900/20",
-                    r.match === 'code' && "text-purple-500 bg-purple-50 dark:bg-purple-900/20",
-                    r.match === 'data' && "text-amber-600 bg-amber-50 dark:bg-amber-900/20",
+                    r.match === 'serial' && "text-primary-tint bg-primary/10 dark:bg-primary/20",
+                    r.match === 'name' && "text-success-tint bg-success/10 dark:bg-success/20",
+                    r.match === 'code' && "text-primary-tint bg-primary/10 dark:bg-primary/20",
+                    r.match === 'data' && "text-warning-tint bg-warning/10 dark:bg-warning/20",
                   )}>{r.match}</span>
                 </button>
               ))}
@@ -188,19 +195,19 @@ export function TopNav() {
         <div className="flex items-center gap-2">
           <button
             onClick={() => setTheme(resolvedTheme === 'dark' ? 'light' : 'dark')}
-            className="p-2 rounded-lg text-muted-foreground/70 hover:text-foreground hover:bg-background dark:hover:bg-[#1a1a18] transition-colors"
+            className="p-2 rounded-lg text-muted-foreground/70 hover:text-foreground hover:bg-background dark:hover:bg-card transition-colors"
             title="Toggle theme"
           >
             {resolvedTheme === 'dark' ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
           </button>
           <button
             onClick={() => navigate('/notifications')}
-            className="p-2 rounded-lg text-muted-foreground/70 hover:text-foreground hover:bg-background dark:hover:bg-[#1a1a18] transition-colors relative"
+            className="p-2 rounded-lg text-muted-foreground/70 hover:text-foreground hover:bg-background dark:hover:bg-card transition-colors relative"
             title="Notifications"
           >
             <Bell className="w-4 h-4" />
           </button>
-          <div className="w-px h-5 bg-border dark:bg-[#3a3834] mx-1" />
+          <div className="w-px h-5 bg-border dark:bg-border mx-1" />
         </div>
       </div>
     </>
