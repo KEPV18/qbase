@@ -14,7 +14,7 @@
     "verify:schemas": "tsx scripts/verify-schema-parity.ts",
     "test": "vitest run",
     "test:watch": "vitest",
-    "typecheck": "tsc --noEmit",
+    "typecheck": "tsc -b --force",
     "ci": "npm run lint && npm run typecheck && npm run verify:schemas && npm run test && npm run build"
   },
   "dependencies": {

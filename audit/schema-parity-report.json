@@ -1,245 +1,45 @@
 {
-  "generatedFrom": {
-    "root": "/home/kepv/qbase-remediation",
-    "openapi": "/tmp/ghq/prod_openapi.json",
-    "productionTables": 17,
-    "productionRpcs": 24,
-    "sourceFilesScanned": 236,
-    "entryPoints": [
-      "src/main.tsx",
-      "api/auth/callback.js",
-      "api/auth/index.js",
-      "api/token.js",
-      "server/local.js"
-    ],
-    "reachableFiles": 174
+  "generatedAt": "2026-10-21T13:21:32.725Z",
+  "sources": {
+    "code": "192 source files under src/",
+    "migrations": "19 SQL files under supabase/migrations/",
+    "snapshot": "audit/rpc-args.json (readAt 2026-09-28T17:25:17.921Z)"
+  },
+  "counts": {
+    "tablesReferencedByCode": 10,
+    "rpcsCalledByCode": 14,
+    "functionsCreatedByMigrations": 37,
+    "tablesInSnapshot": 17,
+    "rpcsInSnapshot": 9
   },
   "summary": {
-    "bySeverity": {},
-    "totalFindings": 0,
-    "tablesReferencedButAbsent": []
+    "totalFindings": 3,
+    "bySeverity": {
+      "ERROR": 0,
+      "WARNING": 3
+    }
   },
-  "findings": [],
-  "typesDrift": [],
-  "unreferencedProductionColumns": {
-    "swot_strategies": [
-      "id",
-      "strategy_id",
-      "kind",
-      "combat",
-      "adj",
-      "action",
-      "created_at",
-      "updated_at"
-    ],
-    "capas": [
-      "id",
-      "status",
-      "effectiveness",
-      "verification_date",
-      "created_at"
-    ],
-    "records": [
-      "updated_at",
-      "form_name",
-      "created_by",
-      "modification_reason",
-      "section",
-      "section_name",
-      "frequency",
-      "project_id"
-    ],
-    "process_interactions": [
-      "id",
-      "source_process_id",
-      "target_process_id",
-      "interaction_type",
-      "description",
-      "created_at"
-    ],
-    "document_reviews": [
-      "id",
-      "document_id",
-      "scheduled_date",
-      "reviewed_by",
-      "review_status",
-      "review_notes",
-      "completed_at",
-      "created_at"
-    ],
-    "audit_log": [
-      "id",
-      "action",
-      "changed_fields",
-      "previous_values",
-      "new_values",
-      "performed_by",
-      "action_type",
-      "form_code",
-      "serial",
-      "user_email"
-    ],
-    "profiles": [
-      "password"
-    ],
-    "error_reports": [
-      "id",
-      "version",
-      "user_email",
-      "page_url",
-      "error_message",
-      "error_stack",
-      "context",
-      "browser_info",
-      "created_at",
-      "resolved",
-      "resolved_at",
-      "resolution_notes"
-    ],
-    "risks": [
-      "id",
-      "risk_score",
-      "status",
-      "created_at"
-    ],
-    "projects": [
-      "id",
-      "name",
-      "description",
-      "status",
-      "start_date",
-      "team_allocation",
-      "created_at",
-      "updated_at"
-    ],
-    "swot_items": [
-      "id",
-      "item_id",
-      "quadrant",
-      "text",
-      "category",
-      "risk_level",
-      "source",
-      "action_plan",
-      "responsible",
-      "target_date",
-      "iso_clause",
-      "linked_to",
-      "is_custom",
-      "display_order",
-      "created_at",
-      "updated_at",
-      "created_by"
-    ],
-    "tenant_settings": [
-      "company_name",
-      "company_logo_url",
-      "theme_color",
-      "updated_at",
-      "updated_by"
-    ],
-    "user_roles": [
-      "department"
-    ],
-    "processes": [
-      "category",
-      "owner",
-      "inputs",
-      "outputs",
-      "resources",
-      "competence_needed",
-      "controls",
-      "effectiveness",
-      "status",
-      "created_at"
-    ],
-    "document_versions": [
-      "id",
-      "document_id",
-      "version",
-      "storage_path",
-      "change_reason",
-      "change_description",
-      "changed_by",
-      "changed_by_name",
-      "created_at",
-      "checksum"
-    ],
-    "document_metadata": [
-      "id",
-      "storage_path",
-      "bucket_id",
-      "document_number",
-      "version",
-      "previous_version",
-      "revision_date",
-      "author_id",
-      "author_name",
-      "reviewer_id",
-      "reviewer_name",
-      "approver_id",
-      "approver_name",
-      "approval_date",
-      "approval_status",
-      "classification",
-      "department",
-      "process_id",
-      "retention_years",
-      "retention_until",
-      "review_date",
-      "archival_date",
-      "created_at",
-      "updated_at",
-      "created_by",
-      "updated_by",
-      "parent_document_id",
-      "related_documents",
-      "title",
-      "description",
-      "keywords",
-      "checksum",
-      "file_size",
-      "mime_type",
-      "iso_clause",
-      "form_code",
-      "record_type",
-      "change_reason",
-      "change_description"
-    ],
-    "notifications": [
-      "title",
-      "message",
-      "type",
-      "link",
-      "data",
-      "created_by",
-      "category",
-      "priority",
-      "event_type",
-      "actor_id",
-      "target_id"
-    ]
-  },
-  "rpcsCalledButAbsent": [],
-  "prodRpcsNeverCalled": [
-    "_validate_form_required_fields",
-    "create_notification",
-    "current_user_department",
-    "emit_event",
-    "get_empty_records",
-    "get_next_serial",
-    "get_record_by_serial",
-    "get_record_count",
-    "has_role",
-    "is_admin",
-    "is_manager",
-    "jsonb_has_any_text",
-    "jsonb_has_user_content",
-    "notify_admins",
-    "notify_leadership",
-    "purge_all_empty_records",
-    "purge_empty_record",
-    "rls_auto_enable",
-    "update_record_with_lock"
+  "findings": [
+    {
+      "severity": "WARNING",
+      "code": "rpc-missing-migration",
+      "subject": "create_record_validated",
+      "detail": "RPC \"create_record_validated\" is called by the code and exists in production, but no migration in supabase/migrations/ creates it. It cannot be rebuilt from this repository alone.",
+      "evidence": "called from src/services/recordStorage.ts, src/services/recordStorage.ts"
+    },
+    {
+      "severity": "WARNING",
+      "code": "rpc-missing-migration",
+      "subject": "soft_delete_record",
+      "detail": "RPC \"soft_delete_record\" is called by the code and exists in production, but no migration in supabase/migrations/ creates it. It cannot be rebuilt from this repository alone.",
+      "evidence": "called from src/services/recordStorage.ts"
+    },
+    {
+      "severity": "WARNING",
+      "code": "rpc-missing-migration",
+      "subject": "admin_list_users",
+      "detail": "RPC \"admin_list_users\" is called by the code and exists in production, but no migration in supabase/migrations/ creates it. It cannot be rebuilt from this repository alone.",
+      "evidence": "called with no arguments"
+    }
   ]
 }
