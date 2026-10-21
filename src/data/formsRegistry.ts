@@ -501,11 +501,11 @@ export const FORMS_SECTIONS: SectionDef[] = [
 export function getImportanceColor(importance: FormImportance): string {
   switch (importance) {
     case "Critical":
-      return "bg-destructive/15 text-destructive border-destructive/20";
+      return "bg-destructive/15 text-destructive-tint border-destructive/20";
     case "High":
-      return "bg-orange-500/15 text-orange-400 border-orange-500/20";
+      return "bg-warning/15 text-warning-tint border-warning/20";
     case "Medium":
-      return "bg-yellow-500/15 text-yellow-400 border-yellow-500/20";
+      return "bg-warning/15 text-warning-tint border-warning/20";
     case "Low":
       return "bg-muted/30 text-muted-foreground border-border/50";
   }
@@ -516,30 +516,30 @@ export function getImportanceDotColor(importance: FormImportance): string {
     case "Critical":
       return "bg-destructive";
     case "High":
-      return "bg-orange-500";
+      return "bg-warning";
     case "Medium":
-      return "bg-yellow-500";
+      return "bg-warning";
     case "Low":
       return "bg-muted-foreground/50";
   }
 }
 
 export function getFrequencyBadgeColor(frequency: FormFrequency): string {
-  if (frequency === "On event") return "bg-primary/10 text-primary border-primary/20";
-  if (frequency.includes("Monthly") || frequency.includes("Semi")) return "bg-accent/10 text-accent border-accent/20";
-  if (frequency === "Annual" || frequency === "Quarterly") return "bg-success/10 text-success border-success/20";
+  if (frequency === "On event") return "bg-primary/10 text-primary-tint border-primary/20";
+  if (frequency.includes("Monthly") || frequency.includes("Semi")) return "bg-primary/10 text-primary-tint border-primary/20";
+  if (frequency === "Annual" || frequency === "Quarterly") return "bg-success/10 text-success-tint border-success/20";
   return "bg-muted/20 text-muted-foreground border-border/50";
 }
 
 export function getSectionColor(section: number): string {
   const colors: Record<number, string> = {
-    1: "bg-blue-500/10 text-blue-400 border-blue-500/20",
-    2: "bg-indigo-500/10 text-indigo-400 border-indigo-500/20",
-    3: "bg-emerald-500/10 text-emerald-400 border-emerald-500/20",
-    4: "bg-amber-500/10 text-amber-400 border-amber-500/20",
-    5: "bg-purple-500/10 text-purple-400 border-purple-500/20",
-    6: "bg-cyan-500/10 text-cyan-400 border-cyan-500/20",
-    7: "bg-rose-500/10 text-rose-400 border-rose-500/20",
+    1: "bg-primary/10 text-primary-tint border-primary/20",
+    2: "bg-primary/10 text-primary-tint border-primary/20",
+    3: "bg-success/10 text-success-tint border-success/20",
+    4: "bg-warning/10 text-warning-tint border-warning/20",
+    5: "bg-primary/10 text-primary-tint border-primary/20",
+    6: "bg-primary/10 text-primary-tint border-primary/20",
+    7: "bg-destructive/10 text-destructive-tint border-destructive/20",
   };
   return colors[section] || "bg-muted/20 text-muted-foreground border-border/50";
 }

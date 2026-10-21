@@ -1,6 +1,6 @@
 // ============================================================================
 // QBase — React Query hooks for record storage
-// Google Sheets is the ONLY source of truth.
+// The Supabase `records` table is the ONLY source of truth.
 // Hooks provide loading states, error handling, cache invalidation.
 // ============================================================================
 
@@ -122,7 +122,7 @@ export function useCreateRecord() {
       return { previousRecords };
     },
 
-    // On success: invalidate cache to refetch from Sheets
+    // On success: invalidate cache to refetch from the records table
     onSuccess: (result: StorageResult) => {
       if (result.success && result.record) {
         toast.success(`Record ${result.record.serial} created successfully`);
@@ -134,7 +134,7 @@ export function useCreateRecord() {
           queryClient.invalidateQueries({ queryKey: RECORD_KEYS.byForm(createdFormCode) });
         }
       }
-      // Invalidate all record queries (source of truth = Sheets)
+      // Invalidate all record queries (source of truth = the records table)
       queryClient.invalidateQueries({ queryKey: RECORD_KEYS.all });
     },
 
@@ -235,7 +235,7 @@ export function useUpdateRecord() {
       return { previousRecord };
     },
 
-    // On success: invalidate all caches to refetch from Sheets
+    // On success: invalidate all caches to refetch from the records table
     onSuccess: (result: StorageResult, { serial }) => {
       if (result.success) {
         toast.success(`Record ${serial} updated successfully`);

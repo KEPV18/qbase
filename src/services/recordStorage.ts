@@ -216,7 +216,6 @@ function logOperation(entry: OperationLogEntry) {
   if (OPERATION_LOG.length > MAX_LOG_ENTRIES) {
     OPERATION_LOG.shift();
   }
-  const prefix = entry.success ? '✅' : '❌';
   // Structured logging handled by logger.ts
 }
 

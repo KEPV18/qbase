@@ -89,18 +89,36 @@ export const calculateKPIAchievement = (kpi: KPI): number => {
   return (kpi.evaluation / kpi.target) * 100;
 };
 
-// Helper function to generate category color
-export const getCategoryColor = (category: string): string => {
-  const colors: Record<string, string> = {
-    'Data Quality & Accuracy': '#10b981', // emerald-500
-    'Team Management': '#3b82f6', // blue-500
-    'Project Delivery': '#f59e0b', // amber-500
-    'Quality Management': '#ef4444', // red-500
-    'Training & Development': '#8b5cf6', // violet-500
-    'Client Satisfaction': '#06b6d4', // cyan-500
-    'Strategic Objectives': '#ec4899', // pink-500
+/**
+ * KPI category → chip classes.
+ *
+ * These were raw Tailwind palette hexes painted as a filled badge with
+ * `#fff` text.  Measured against the design system's own surfaces, three
+ * of the seven failed WCAG AA on the fill:
+ *
+ *   emerald-500 #10b981  2.54:1  FAIL
+ *   amber-500   #f59e0b  2.15:1  FAIL
+ *   cyan-500    #06b6d4  2.43:1  FAIL
+ *
+ * The other four were AA-large-only, i.e. failing for 12px badge text.
+ *
+ * A KPI category is not a status — it is a categorical label, and the
+ * design system allows one accent per view.  Colour is therefore reserved
+ * for the axis that IS a status: the achievement badge (default / secondary
+ * / destructive).  The category chip itself is a neutral surface, and a
+ * small dot carries the identity in the legend.
+ */
+export const getCategoryChip = (category: string): { dot: string; chip: string } => {
+  const chips: Record<string, { dot: string; chip: string }> = {
+    'Data Quality & Accuracy': { dot: "bg-success", chip: "bg-success/10 dark:bg-success/15 text-success-tint" },
+    'Team Management': { dot: "bg-primary", chip: "bg-primary/10 dark:bg-primary/15 text-primary-tint" },
+    'Project Delivery': { dot: "bg-warning", chip: "bg-warning/10 dark:bg-warning/15 text-warning-tint" },
+    'Quality Management': { dot: "bg-destructive", chip: "bg-destructive/10 dark:bg-destructive/15 text-destructive-tint" },
+    'Training & Development': { dot: "bg-ink-3", chip: "bg-muted text-ink-2 dark:text-ink-2" },
+    'Client Satisfaction': { dot: "bg-primary", chip: "bg-primary/10 dark:bg-primary/15 text-primary-tint" },
+    'Strategic Objectives': { dot: "bg-ink-3", chip: "bg-muted text-ink-2 dark:text-ink-2" },
   };
-  return colors[category] || '#6b7280'; // gray-500
+  return chips[category] || { dot: "bg-ink-3", chip: "bg-muted text-ink-2 dark:text-ink-2" };
 };
 
 // Helper to map projects to team leaders

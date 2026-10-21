@@ -16,11 +16,20 @@ const STATUS_TRANSITIONS: Record<RecordStatus, RecordStatus[]> = {
 
 // ─── Labels ─────────────────────────────────────────────────────────────────
 
-export const STATUS_LABELS: Record<RecordStatus, { en: string; ar: string; color: string }> = {
-    draft:           { en: 'Draft',           ar: 'مسودة',        color: 'gray' },
-    pending_review:  { en: 'Pending Review',  ar: 'قيد المراجعة', color: 'yellow' },
-    approved:        { en: 'Approved',        ar: 'تمت الموافقة', color: 'green' },
-    rejected:        { en: 'Rejected',        ar: 'مرفوض',        color: 'red' },
+/**
+ * Status labels.
+ *
+ * The old entries carried a `color: 'gray' | 'yellow' | 'green' | 'red'`
+ * field — Tailwind's raw palette names, not classes, and read by nobody.
+ * A caller that wanted a colour had to reach for `getStatusBadgeClass`,
+ * which maps the status to the design system's semantic tint ramp.  The
+ * field is gone so there is exactly one source of truth for status colour.
+ */
+export const STATUS_LABELS: Record<RecordStatus, { en: string; ar: string }> = {
+    draft:           { en: 'Draft',           ar: 'مسودة' },
+    pending_review:  { en: 'Pending Review',  ar: 'قيد المراجعة' },
+    approved:        { en: 'Approved',        ar: 'تمت الموافقة' },
+    rejected:        { en: 'Rejected',        ar: 'مرفوض' },
 };
 
 // ─── Pure Functions ─────────────────────────────────────────────────────────
@@ -62,10 +71,10 @@ export function statusToAuditField(status: RecordStatus): string {
 
 export function getStatusBadgeClass(status: RecordStatus): string {
     const colors: Record<RecordStatus, string> = {
-        draft: 'bg-gray-100 text-gray-800 border-gray-300',
-        pending_review: 'bg-yellow-100 text-yellow-800 border-yellow-300',
-        approved: 'bg-green-100 text-green-800 border-green-300',
-        rejected: 'bg-red-100 text-red-800 border-red-300',
+        draft: 'bg-muted text-foreground border-border',
+        pending_review: 'bg-warning/10 text-warning-tint border-warning/30',
+        approved: 'bg-success/10 text-success-tint border-success/30',
+        rejected: 'bg-destructive/10 text-destructive-tint border-destructive/30',
     };
     return colors[status] || colors.draft;
 }

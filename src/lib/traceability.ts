@@ -224,6 +224,59 @@ export const RELATIONSHIP_INVERSE: Record<RelationshipType, RelationshipType> = 
 };
 
 /**
+ * Relationship identity — colour and label.
+ *
+ * These two maps were duplicated verbatim in `TraceView.tsx` and
+ * `RelationshipPicker.tsx`, which meant the two views could drift apart.
+ * They live here now, next to the `RelationshipType` they key off.
+ *
+ * `RELATIONSHIP_COLORS` is the FILL.  `RELATIONSHIP_CLASSES` is the same
+ * information as a complete class list, because every use of the fill
+ * also needs a foreground that clears AA on it — white on the light
+ * fills, near-black on the dark ones.  The old `bg-ink` + `text-white`
+ * pairing measured 1.72:1 in dark mode, where `--ink` is a light grey.
+ */
+export const RELATIONSHIP_COLORS: Record<RelationshipType, string> = {
+  TRIGGERS: "bg-primary",
+  RESOLVES: "bg-success",
+  IMPACTS: "bg-warning",
+  REFERENCES: "bg-foreground",
+  UPDATES_PROCEDURE: "bg-primary",
+  TRIGGERS_REVIEW: "bg-primary",
+  REQUIRES_TRAINING: "bg-primary",
+  IDENTIFIES_RISK: "bg-destructive",
+  MATERIALIZES_RISK: "bg-destructive",
+};
+
+/**
+ * A filled relationship badge: the fill plus the foreground that clears
+ * AA on it in both modes.
+ */
+export const RELATIONSHIP_CLASSES: Record<RelationshipType, string> = {
+  TRIGGERS: "bg-primary text-primary-foreground",
+  RESOLVES: "bg-success text-success-foreground",
+  IMPACTS: "bg-warning text-warning-foreground",
+  REFERENCES: "bg-foreground text-background",
+  UPDATES_PROCEDURE: "bg-primary text-primary-foreground",
+  TRIGGERS_REVIEW: "bg-primary text-primary-foreground",
+  REQUIRES_TRAINING: "bg-primary text-primary-foreground",
+  IDENTIFIES_RISK: "bg-destructive text-destructive-foreground",
+  MATERIALIZES_RISK: "bg-destructive text-destructive-foreground",
+};
+
+export const RELATIONSHIP_LABELS: Record<RelationshipType, string> = {
+  TRIGGERS: "Triggers",
+  RESOLVES: "Resolves",
+  IMPACTS: "Impacts",
+  REFERENCES: "References",
+  UPDATES_PROCEDURE: "Updates Procedure",
+  TRIGGERS_REVIEW: "Triggers Review",
+  REQUIRES_TRAINING: "Requires Training",
+  IDENTIFIES_RISK: "Identifies Risk",
+  MATERIALIZES_RISK: "Materializes Risk",
+};
+
+/**
  * Create bidirectional link
  * When A links to B, this generates B's link back to A
  */
@@ -494,12 +547,12 @@ export function exportTracePackage(
       }
       
       if (chain.gaps.length > 0) {
-        md += `## ⚠️ Broken Links\n\n`;
+        md += `## Broken Links\n\n`;
         chain.gaps.forEach(gap => md += `- ${gap}\n`);
       }
       
       if (chain.cycles.length > 0) {
-        md += `## ⚠️ Cycles Detected\n\n`;
+        md += `## Cycles Detected\n\n`;
         chain.cycles.forEach(cycle => md += `- ${cycle}\n`);
       }
       

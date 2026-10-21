@@ -65,10 +65,16 @@ describe('statusService', () => {
 
   describe('getStatusBadgeClass', () => {
     it('should return correct color classes', () => {
-      expect(getStatusBadgeClass('draft')).toContain('gray');
-      expect(getStatusBadgeClass('pending_review')).toContain('yellow');
-      expect(getStatusBadgeClass('approved')).toContain('green');
-      expect(getStatusBadgeClass('rejected')).toContain('red');
+      // The status chips are painted with the design system's semantic
+      // tint ramp (a /10 fill of the status hue + the `-tint` text
+      // variant, which is the value verified to clear AA on that fill).
+      // Asserting the old raw-palette names ('gray'/'yellow'/'green'/
+      // 'red') would lock the implementation back to Tailwind's default
+      // palette and reintroduce the contrast failure the ramp fixes.
+      expect(getStatusBadgeClass('draft')).toContain('bg-muted');
+      expect(getStatusBadgeClass('pending_review')).toContain('text-warning-tint');
+      expect(getStatusBadgeClass('approved')).toContain('text-success-tint');
+      expect(getStatusBadgeClass('rejected')).toContain('text-destructive-tint');
     });
   });
 

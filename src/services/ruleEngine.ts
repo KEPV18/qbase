@@ -8,6 +8,7 @@
 import { log } from "@/services/logger";
 
 import React, { useMemo } from 'react';
+import { AlertTriangle, CheckCircle2, XCircle } from 'lucide-react';
 import { FORM_SCHEMAS, getFormSchema } from '../data/formSchemas';
 import { useRecords } from '../hooks/useRecordStorage';
 import type { RecordData } from '../components/forms/DynamicFormRenderer';
@@ -526,30 +527,37 @@ export function useDataIntegrityReport() {
 
 export function getSeverityColor(severity: RuleSeverity): string {
   switch (severity) {
-    case 'clean': return 'text-green-400';
-    case 'warning': return 'text-amber-400';
-    case 'critical': return 'text-red-400';
+    case 'clean': return 'text-success-tint';
+    case 'warning': return 'text-warning-tint';
+    case 'critical': return 'text-destructive-tint';
   }
 }
 
 export function getSeverityBg(severity: RuleSeverity): string {
   switch (severity) {
-    case 'clean': return 'bg-green-500/10 border-green-500/30';
-    case 'warning': return 'bg-amber-500/10 border-amber-500/30';
-    case 'critical': return 'bg-red-500/10 border-red-500/30';
+    case 'clean': return 'bg-success/10 border-success/30';
+    case 'warning': return 'bg-warning/10 border-warning/30';
+    case 'critical': return 'bg-destructive/10 border-destructive/30';
   }
 }
 
-export function getSeverityIcon(severity: RuleSeverity): string {
+/**
+ * The line icon that marks a severity level.
+ *
+ * Returned as a component reference rather than a glyph: the design system
+ * uses real line icons, not text dingbats, and a glyph string could not be
+ * sized or coloured consistently with the surrounding text.
+ */
+export function getSeverityIcon(severity: RuleSeverity): React.ElementType {
   switch (severity) {
-    case 'clean': return '✓';
-    case 'warning': return '⚠';
-    case 'critical': return '✕';
+    case 'clean': return CheckCircle2;
+    case 'warning': return AlertTriangle;
+    case 'critical': return XCircle;
   }
 }
 
 export function getRuleModeColor(mode: RuleMode): string {
-  return mode === 'strict' ? 'text-red-400' : 'text-amber-400';
+  return mode === 'strict' ? 'text-destructive-tint' : 'text-warning-tint';
 }
 
 // ============================================================================

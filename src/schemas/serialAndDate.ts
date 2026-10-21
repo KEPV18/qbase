@@ -53,7 +53,7 @@ export function todayISO(): string {
 
 /**
  * Generate the next serial number for a given form code.
- * Queries Google Sheets to find the highest existing serial.
+ * Scans the existing serials for the form to find the highest one.
  * Format: F/XX-NNN where XX is form number, NNN is zero-padded sequence.
  * 
  * @param formCode - e.g. "F/12"
@@ -84,14 +84,14 @@ export function generateSerial(formCode: string, existingSerials: string[]): str
 }
 
 /**
- * Get existing serials for a form from local cache or Sheets.
+ * Get existing serials for a form from the local cache.
  * This is the data source for duplicate prevention.
  */
 export const SERIAL_CACHE: Record<string, string[]> = {};
 
 /**
  * Register existing serials into cache.
- * Called on app init after loading data from Sheets.
+ * Called on app init after loading the records.
  */
 export function registerSerials(formCode: string, serials: string[]): void {
   SERIAL_CACHE[formCode] = serials;
@@ -193,16 +193,16 @@ export function getFrequencyWarning(formCode: string, frequency: string): string
   const annual = ['F/15', 'F/16', 'F/42'];
   
   if (monthly.includes(formCode)) {
-    return `⚠️ ${formCode} is a MONTHLY form. Only one record per month is expected. Are you sure you need a new one this month?`;
+    return `${formCode} is a MONTHLY form. Only one record per month is expected. Are you sure you need a new one this month?`;
   }
   if (quarterly.includes(formCode)) {
-    return `⚠️ ${formCode} is a QUARTERLY form. Only one record per quarter is expected. Are you sure you need a new one this quarter?`;
+    return `${formCode} is a QUARTERLY form. Only one record per quarter is expected. Are you sure you need a new one this quarter?`;
   }
   if (semiAnnual.includes(formCode)) {
-    return `⚠️ ${formCode} is a SEMI-ANNUAL form. Only one record every 6 months is expected. Are you sure you need a new one?`;
+    return `${formCode} is a SEMI-ANNUAL form. Only one record every 6 months is expected. Are you sure you need a new one?`;
   }
   if (annual.includes(formCode)) {
-    return `⚠️ ${formCode} is an ANNUAL form. Only one record per year is expected. Are you sure you need a new one this year?`;
+    return `${formCode} is an ANNUAL form. Only one record per year is expected. Are you sure you need a new one this year?`;
   }
-  return `ℹ️ ${formCode} is created "${frequency}". A new record should be justified by a specific event.`;
+  return `${formCode} is created "${frequency}". A new record should be justified by a specific event.`;
 }

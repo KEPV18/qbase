@@ -847,8 +847,8 @@ export const UNIFIED_SCHEMAS: UnifiedFormSchema[] = [
       { key: "topics", label: "Induction Topics", type: "table", width: "full", columns: [
         { key: "srNo", label: "Sr. No.", type: "text", width: "full" },
         { key: "topic", label: "Topic", type: "text", width: "full" },
-        { key: "trainer_check", label: "Trainer ✔", type: "checkbox", width: "full" },
-        { key: "inductee_check", label: "Inductee ✔", type: "checkbox", width: "full" },
+        { key: "trainer_check", label: "Trainer", type: "checkbox", width: "full" },
+        { key: "inductee_check", label: "Inductee", type: "checkbox", width: "full" },
       ]},
       { key: "inductee_name", label: "Inductee Name", type: "text", width: "half" },
       { key: "inductee_signature", label: "Inductee Signature", type: "signature", required: true, width: "half" },

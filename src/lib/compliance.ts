@@ -129,7 +129,7 @@ export function applyFrequency(
 export function getUrgencyText(compliance: FormCompliance): string {
   if (compliance.frequencyType === 'Event-Driven') return 'On-Demand Event';
   if (compliance.frequencyType === 'Per-Project') return 'Required per Project';
-  if (compliance.isOverdue) return `🚨 Overdue by ${compliance.overdueDays} day${compliance.overdueDays === 1 ? '' : 's'}`;
+  if (compliance.isOverdue) return `Overdue by ${compliance.overdueDays} day${compliance.overdueDays === 1 ? '' : 's'}`;
   if (compliance.daysUntilDue === null) return 'Due date unknown';
   if (compliance.daysUntilDue <= 0) return `Due in ${Math.max(0, compliance.daysUntilDue)} day${compliance.daysUntilDue === 1 || compliance.daysUntilDue === -1 ? '' : 's'}`;
   if (compliance.daysUntilDue <= 7) return `Due in ${compliance.daysUntilDue} day${compliance.daysUntilDue === 1 ? '' : 's'}`;

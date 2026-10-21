@@ -29,7 +29,7 @@ function push(entry: StructuredLogEntry): void {
   if (LOG_BUFFER.length > MAX_BUFFER) LOG_BUFFER.shift();
 
   // Console output with structured format
-  const icon = { debug: '🔧', info: 'ℹ️', warn: '⚠️', error: '🔴', fatal: '💀' }[entry.level];
+  const levelTag = { debug: 'DEBUG', info: 'INFO', warn: 'WARN', error: 'ERROR', fatal: 'FATAL' }[entry.level];
   const extras: string[] = [];
   if (entry.serial) extras.push(`serial=${entry.serial}`);
   if (entry.formCode) extras.push(`form=${entry.formCode}`);
@@ -38,7 +38,7 @@ function push(entry: StructuredLogEntry): void {
 
   if (typeof import.meta !== 'undefined' && import.meta.env?.DEV) {
     console.log(
-      `${icon} [${entry.cat}] ${entry.action}${extras.length ? ' | ' + extras.join(' ') : ''}`
+      `${levelTag} [${entry.cat}] ${entry.action}${extras.length ? ' | ' + extras.join(' ') : ''}`
     );
   }
 }

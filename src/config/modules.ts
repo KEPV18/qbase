@@ -34,7 +34,6 @@ export interface ModuleConfig {
   description: string;
   isoClause: string;
   section: number;  // matches formSchema.section — the canonical linkage
-  moduleClass: string;
   path: string;
 }
 
@@ -47,7 +46,6 @@ export const MODULE_CONFIG: Record<string, ModuleConfig> = {
     description: "Plan, control, and execute operational activities with project timelines.",
     isoClause: "Clause 8.1, 8.5",
     section: 1,
-    moduleClass: "module-operations",
     path: "/module/operations",
   },
   quality: {
@@ -57,7 +55,6 @@ export const MODULE_CONFIG: Record<string, ModuleConfig> = {
     description: "Core module for quality control, nonconformity handling, and corrective actions.",
     isoClause: "Clause 9, 10",
     section: 2,
-    moduleClass: "module-quality",
     path: "/module/quality",
   },
   procurement: {
@@ -67,7 +64,6 @@ export const MODULE_CONFIG: Record<string, ModuleConfig> = {
     description: "Ensure all purchased items and vendors meet quality requirements.",
     isoClause: "Clause 8.4",
     section: 3,
-    moduleClass: "module-procurement",
     path: "/module/procurement",
   },
   hr: {
@@ -77,7 +73,6 @@ export const MODULE_CONFIG: Record<string, ModuleConfig> = {
     description: "Track personnel competence, training records, and performance appraisals.",
     isoClause: "Clause 7.2, 7.3",
     section: 4,
-    moduleClass: "module-hr",
     path: "/module/hr",
   },
   rnd: {
@@ -87,7 +82,6 @@ export const MODULE_CONFIG: Record<string, ModuleConfig> = {
     description: "Manage innovation, development requests, and technical validation.",
     isoClause: "Clause 8.3",
     section: 5,
-    moduleClass: "module-rnd",
     path: "/module/rnd",
   },
   management: {
@@ -97,7 +91,6 @@ export const MODULE_CONFIG: Record<string, ModuleConfig> = {
     description: "Control governance, documentation, KPI tracking, and leadership decisions.",
     isoClause: "Clause 5, 6, 7.5",
     section: 6,
-    moduleClass: "module-management",
     path: "/module/management",
   },
 };
@@ -116,7 +109,7 @@ export interface NavItem {
 
 /** Module navigation items — used by TopNav and Sidebar */
 export const MODULE_NAV_ITEMS: NavItem[] = Object.values(MODULE_CONFIG).map(
-  ({ id, name, icon, path, moduleClass, section }) => ({
+  ({ id, name, icon, path, section }) => ({
     id,
     label: name.replace(/&.*/, "").trim() || name,
     icon,
@@ -187,13 +180,6 @@ export const STATUS_TRANSITIONS: Record<RecordStatus, RecordStatus[]> = {
   pending_review: ["approved", "rejected"],
   approved: [],
   rejected: ["draft"],
-};
-
-export const STATUS_LABELS: Record<RecordStatus, { en: string; color: string }> = {
-  draft: { en: "Draft", color: "gray" },
-  pending_review: { en: "Pending Review", color: "yellow" },
-  approved: { en: "Approved", color: "green" },
-  rejected: { en: "Rejected", color: "red" },
 };
 
 /** Normalize a category string to a module id and name */
