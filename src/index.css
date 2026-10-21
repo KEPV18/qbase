@@ -1,9 +1,10 @@
 /* ══════════════════════════════════════════════════
   QBASE — Enterprise Quality Management System
-  Design: Soft Dark · Professional · Clean
-  Identity: Refined, Trustworthy, Clear.
+  Design system: Apple Liquid Glass
+  Principles: unified surface > fragmented cards ·
+  glass only where layers overlap · restraint ·
+  hierarchy from weight + size + grayscale.
 ═════════════════════════════════════════════════ */
-@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap');
 
 @tailwind base;
 @tailwind components;
@@ -16,156 +17,286 @@
   :root {
     color-scheme: light;
 
-    /* ── Typography ── */
-    --font-sans: 'Outfit', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-    --font-display: 'Outfit', system-ui, sans-serif;
-    --font-mono: 'JetBrains Mono', monospace;
+    /* ── Typography — system stack (SF / PingFang), never a webfont brand face ── */
+    --font-sans: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'SF Pro Display',
+      'Helvetica Neue', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif;
+    --font-display: var(--font-sans);
+    --font-mono: ui-monospace, 'SF Mono', Menlo, Monaco, 'Cascadia Mono', monospace;
 
-    /* ── Radius Scale — Rounded ── */
+    /* ── Radius — semantic tiers only, no ad-hoc in-between values ── */
     --radius: 0.5rem;
     --radius-sm: calc(var(--radius) - 0.125rem);
     --radius-md: var(--radius);
     --radius-lg: calc(var(--radius) + 0.125rem);
     --radius-xl: calc(var(--radius) + 0.375rem);
 
-    /* ── Motion Tokens ── */
-    --ease-standard: cubic-bezier(0.2, 0.8, 0.2, 1);
-    --ease-sharp: cubic-bezier(0.4, 0, 0.2, 1);
+    /* ── Motion — spring-like curves, never linear/default ease ── */
+    --ease-standard: cubic-bezier(0.25, 1, 0.5, 1);
+    --ease-sharp: cubic-bezier(0.32, 0.72, 0, 1);
+    --ease-spring: cubic-bezier(0.32, 0.72, 0, 1);
+    --ease-out-quart: cubic-bezier(0.25, 1, 0.5, 1);
     --duration-fast: 150ms;
     --duration-normal: 300ms;
     --duration-slow: 500ms;
 
-    /* ── Shadow Scale ── */
-    --shadow-sm: 0 1px 2px rgb(15 23 42 / 0.04), 0 1px 3px rgb(15 23 42 / 0.02);
-    --shadow-md: 0 4px 6px -1px rgb(15 23 42 / 0.06), 0 2px 4px -2px rgb(15 23 42 / 0.04);
-    --shadow-lg: 0 10px 15px -3px rgb(15 23 42 / 0.06), 0 4px 6px -4px rgb(15 23 42 / 0.04);
+    /* ── Shadow — two-layer only (tight contact + soft spread) ── */
+    --shadow-sm: 0 1px 2px rgb(0 0 0 / 0.04), 0 8px 24px rgb(0 0 0 / 0.05);
+    --shadow-md: 0 1px 3px rgb(0 0 0 / 0.05), 0 14px 40px rgb(0 0 0 / 0.05);
+    --shadow-lg: 0 12px 32px rgb(0 0 0 / 0.1);
+    --shadow-overlay: 0 2px 8px rgb(0 0 0 / 0.1), 0 30px 80px rgb(0 0 0 / 0.24);
 
-    /* ── Brand — Indigo ── */
-    --neon-cyan: 199 89% 48%;
-    --neon-violet: 239 84% 59%;
-    --neon-emerald: 160 84% 39%;
-    --neon-amber: 38 92% 50%;
-    --neon-red: 0 72% 51%;
+    /* ── Brand — Apple blue, one accent per view ── */
+    --neon-cyan: 210 100% 44.51%;
+    --neon-violet: 241 73% 63.14%;
+    --neon-emerald: 141 62% 29.61%;
+    --neon-amber: 26 90% 37.06%;
+    --neon-red: 354 100% 42.16%;
 
-    /* ── Glow Shadows (subtle, not neon) ── */
-    --glow-sm: 0 1px 3px hsl(var(--primary) / 0.08);
-    --glow-md: 0 2px 8px hsl(var(--primary) / 0.12), 0 1px 3px hsl(var(--primary) / 0.06);
-    --glow-lg: 0 8px 24px hsl(var(--primary) / 0.14), 0 2px 8px hsl(var(--primary) / 0.08);
+    /* ── Accent shadow (tinted, for the one colored CTA) ── */
+    --glow-sm: 0 1px 2px hsl(var(--primary) / 0.08), 0 4px 12px hsl(var(--primary) / 0.1);
+    --glow-md: 0 2px 6px hsl(var(--primary) / 0.1), 0 10px 28px hsl(var(--primary) / 0.14);
+    --glow-lg: 0 20px 54px hsl(var(--primary) / 0.24);
 
-    /* ── Surface Colors — Soft Cool ── */
-    --background: 210 15% 97%;     /* #f4f6f8 — soft off-white, gentle on eyes */
-    --foreground: 222 47% 11%;     /* #0f172a */
-    --card: 210 10% 99%;           /* #fbfcfd — lighter than bg for card contrast */
-    --card-foreground: 222 47% 11%;
-    --popover: 210 10% 99%;
-    --popover-foreground: 222 47% 11%;
+    /* ── Supporting accent — the gradient's second stop.
+       Apple indigo. It never competes with the accent: it only appears
+       as the far end of a gradient, never as a text or fill colour. ── */
+    --accent-support: 241 73% 63.14%;   /* #5e5ce6 */
 
-    /* ── Brand — Indigo ── */
-    --primary: 239 84% 59%;        /* #4f46e5 */
+    /* ── Document masthead gradient ──
+       The QMS document header carries white text at four alpha tiers
+       (100% wordmark, 90% chip, 80% serial, 70% section label) plus a
+       white/20 chip ground.  The UI accent (#0071e3) only reaches
+       4.70:1 with pure white and drops below AA at every alpha, so the
+       masthead uses a DEEPER pair of the same two hues.
+
+       Measured worst case across the 5-point ramp — every tier clears
+       AA (4.5:1) with margin:
+         white/60  4.52:1   white/70  5.56:1
+         white/80  6.74:1   white/90  8.02:1
+         white/100 9.50:1   chip (white/20 ground, white/90 text) 4.87:1
+       The previous pair (#0a4d94 → #4540b5) failed at white/60 (3.95:1)
+       and at the chip (4.29:1). ── */
+    --masthead-from: 216 70% 31%;     /* #184486 */
+    --masthead-to: 240 65% 44%;       /* #2727b9 */
+
+    /* ── Document ink — the grayscale ramp used inside printed/QMS
+       documents, where the accent is deliberately withheld so the page
+       reads as paper rather than as an app. ── */
+    --doc-ink: 240 2% 26.47%;       /* #424245 — body */
+    --doc-ink-2: 240 2% 44.12%;     /* #6e6e73 — labels, meta */
+    --doc-ink-3: 240 2% 53.53%;     /* #86868b — tertiary */
+    --doc-ink-4: 240 3% 69.02%;     /* #aeaeb2 — placeholder */
+    --doc-rule: 240 6% 89.61%;      /* #e3e3e6 — hairline */
+    --doc-rule-soft: 240 6% 93.33%; /* #ededef — the softest rule */
+
+    /* ── Surfaces — cool grey-white ground, never warm cream ── */
+    --background: 240 11% 96.47%;    /* #f5f5f7 — page ground */
+    --foreground: 240 3% 11.76%;     /* #1d1d1f */
+    --card: 0 0% 100%;               /* #ffffff — surface */
+    --card-foreground: 240 3% 11.76%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 240 3% 11.76%;
+
+    /* ── Brand — Apple blue ── */
+    --primary: 210 100% 44.51%;     /* #0071e3 */
     --primary-foreground: 0 0% 100%;
 
-    /* ── Neutral Variants (Warm) ── */
-    --secondary: 210 15% 93%;      /* #e8ebee */
-    --secondary-foreground: 222 47% 11%;
-    --muted: 210 15% 93%;
-    --muted-foreground: 215 16% 47%; /* #64748b */
-    --accent: 239 84% 95%;         /* indigo/50 */
-    --accent-foreground: 239 84% 30%; /* indigo-800 */
+    /* ── Neutrals ── */
+    --secondary: 240 6% 93.33%;     /* #ededef */
+    --secondary-foreground: 240 3% 11.76%;
+    --muted: 240 7% 94.51%;         /* #f0f0f2 */
+    --muted-foreground: 240 2% 44.12%; /* #6e6e73 */
+    --accent: 214 84% 95.1%;        /* #e8f1fd — accent wash */
+    --accent-foreground: 210 100% 40%; /* #0066cc — 4.89:1 on the wash */
 
-    /* ── Semantic Colors ── */
-    --destructive: 0 84% 60%;
+    /* ── Semantic ──
+       Each family has four roles, and their pairing is a contract:
+         --x              the base fill, and the icon/ring colour
+         --x-foreground   the text ON that fill
+         --x-tint         text sitting on a /10–/25 wash of its own family
+         --x-hover        the pressed/hover step of the base fill
+
+       The base fill flips lightness between modes (green #1d7a3d →
+       #30d158), so the foreground has to flip with it: white on the
+       light fill, near-black on the dark one.  Measured, both ends
+       clear AA (4.5:1) with margin:
+         primary     light 4.65:1   dark 5.13:1
+         success     light 5.38:1   dark 9.26:1
+         warning     light 5.02:1   dark 8.99:1
+         destructive light 5.38:1   dark 5.47:1
+
+       `-solid` is the FILLED variant (a saturated surface carrying white
+       text).  It is pinned — identical in light and dark — because the
+       semantic accent flips lightness between modes, and a bright
+       dark-mode accent behind white text falls to 2.0:1.  Every value
+       below is verified ≥ 4.5:1 against #ffffff. */
+    --destructive: 354 100% 42.16%; /* #d70015 */
     --destructive-foreground: 0 0% 100%;
-    --success: 142 71% 45%;
+    --destructive-solid: 354 100% 42.16%;  /* #d70016 — white on it 5.38:1 */
+    --destructive-tint: 354 100% 34.41%;  /* #af0012 — on a /25 tint 4.51:1 */
+    --destructive-hover: 354 100% 34.41%; /* #af0012 — white on it 7.42:1 */
+    --success: 141 62% 29.61%;      /* #1d7a3d */
     --success-foreground: 0 0% 100%;
-    --warning: 38 92% 50%;
+    --success-solid: 141 62% 29.61%;       /* #1d7a3d — white on it 5.38:1 */
+    --success-tint: 141 62% 25.61%;        /* #196a35 — on a /25 tint 4.54:1 */
+    --success-hover: 141 62% 25.61%;       /* #196a35 — white on it 6.66:1 */
+    --warning: 26 90% 37.06%;       /* #b45309 */
     --warning-foreground: 0 0% 100%;
-    --info: 199 89% 48%;
+    --warning-solid: 26 90% 37.06%;        /* #b45309 — white on it 5.02:1 */
+    --warning-tint: 26 90% 30.81%;         /* #954508 — on a /25 tint 4.54:1 */
+    --warning-hover: 26 90% 30.81%;        /* #954508 — white on it 6.70:1 */
+    --info: 210 100% 44.51%;
     --info-foreground: 0 0% 100%;
+    --info-tint: 210 100% 35.01%;          /* #0059b3 — on a /10 tint 5.96:1 */
+    --primary-solid: 210 100% 44.51%;     /* #0071e3 — white on it 4.70:1 */
+    --primary-tint: 210 100% 35.01%;      /* #0059b3 — on a /25 tint 4.56:1 */
+    --primary-hover: 210 100% 40%;        /* #0066cc — white on it 5.57:1 */
 
-    /* ── Interactive ── */
-    --border: 214 18% 86%;         /* #d5dbe2 — soft slate, clearly visible, comfy */
-    --input: 214 18% 86%;
-    --ring: 239 84% 59%;           /* #4f46e5 */
+    /* ── Interactive — hairline, not a hard rule ── */
+    --border: 240 6% 89.61%;        /* #e3e3e6 */
+    --input: 240 6% 89.61%;
+    --ring: 210 100% 44.51%;
 
-    /* Module colors */
-    --module-operations: 263 70% 58%;
-    --module-quality: 160 84% 39%;
-    --module-procurement: 25 95% 53%;
-    --module-hr: 330 65% 58%;
-    --module-rnd: 17 88% 55%;
-    --module-management: 226 100% 60%;
-    --module-sales: 186 100% 50%;
+    /* ── Component greys ── */
+    --track: 240 12% 91.96%;        /* #e8e8ed — meter / toggle-off track */
+    --faint: 240 6% 83.33%;         /* #d2d2d7 — index numbers, arrows */
 
-    /* ── Department Chromatic Identity ── */
-    --dept-sales: 217 71% 53%;        /* #3b82f6 — Blue */
-    --dept-operations: 25 95% 53%;    /* #f97316 — Orange */
-    --dept-quality: 226 100% 60%;     /* #2563eb — Sapphire */
-    --dept-procurement: 173 80% 40%;  /* #14b8a6 — Teal */
-    --dept-hr: 271 91% 65%;           /* #a855f7 — Violet */
-    --dept-rnd: 187 85% 53%;          /* #06b6d4 — Cyan */
-    --dept-management: 239 84% 64%;   /* #6366f1 — Indigo */
+    /* ── Text ramp (for callers that need the full grayscale scale) ── */
+    --text-body: 240 2% 26.47%;     /* #424245 */
+    --text-2: 240 2% 44.12%;        /* #6e6e73 */
+    --text-3: 240 2% 53.53%;        /* #86868b */
+    --text-4: 240 3% 69.02%;        /* #aeaeb2 */
+    --heat: 25 100% 50%;            /* #ff6b00 — heat / "hottest" */
+    --live: 135 64% 50.39%;         /* #30d158 — live / online */
+
+    /* ── Layout ── */
+    --max-read: 720px;
+    --max-grid: 1080px;
+    --pad-x: 22px;
+
+    /* Module colors — muted, they label sections, they don't shout.
+       Each one is the TEXT value of its family (the `-tint` step), not
+       the base fill: a module label sits on a card or a wash, never on
+       its own saturated fill, and the base fill only reaches 2.2–2.5:1
+       as text on a /10 wash. */
+    --module-sales: 210 100% 35.01%;       /* #0059b3 */
+    --module-operations: 210 100% 35.01%;  /* #0059b3 */
+    --module-quality: 141 62% 25.61%;      /* #196a35 */
+    --module-procurement: 26 90% 30.81%;   /* #954508 */
+    --module-hr: 241 73% 47.06%;           /* #5450c8 */
+    --module-rnd: 210 100% 35.01%;         /* #0059b3 */
+    --module-management: 240 2% 38%;       /* #4c4c50 */
   }
 
-  /* ── Dark Mode: Obsidian ── */
+  /* ── Dark Mode: obsidian, cool not warm ── */
   .dark {
     color-scheme: dark;
 
-    --background: 240 4% 4%;         /* #0a0a0c — obsidian black */
-    --foreground: 0 0% 98%;          /* #fafafa */
+    --background: 240 3% 7.25%;      /* #121213 */
+    --foreground: 240 11% 96.47%;   /* #f5f5f7 */
 
-    --card: 240 4% 10%;              /* #18181b */
-    --card-foreground: 0 0% 98%;
+    --card: 240 3% 11.37%;          /* #1c1c1e */
+    --card-foreground: 240 11% 96.47%;
 
-    --popover: 240 4% 10%;
-    --popover-foreground: 0 0% 98%;
+    --popover: 240 3% 14.51%;
+    --popover-foreground: 240 11% 96.47%;
 
-    --primary: 239 84% 64%;          /* #6366f1 */
-    --primary-foreground: 0 0% 100%;
+    --primary: 210 100% 51.96%;     /* #0a84ff */
+    --primary-foreground: 240 3% 7.25%;  /* #121213 — 5.13:1 on the fill */
 
-    --secondary: 240 4% 15%;         /* #27272a */
-    --secondary-foreground: 0 0% 98%;
+    --secondary: 240 2% 17.65%;     /* #2c2c2e */
+    --secondary-foreground: 240 11% 96.47%;
 
-    --muted: 240 4% 15%;
-    --muted-foreground: 215 8% 65%;  /* #94a3b8 */
+    --muted: 240 3% 14.51%;         /* #242426 */
+    --muted-foreground: 240 3% 64.12%; /* #a1a1a6 */
 
-    --accent: 239 84% 12%;
-    --accent-foreground: 0 0% 98%;
+    /* ── Accent wash ──
+       The light-mode accent is a pale blue wash (#e8f1fd).  Its dark
+       counterpart was the saturated accent itself (#0a84ff), which
+       made every `hover:bg-accent` paint a solid blue slab and put
+       white text on it at 3.65:1 — a hard failure.  This is the same
+       relationship the light mode has: a quiet blue-tinted wash that
+       LIFTS off the surface it sits on (1.20:1 over the card) and
+       carries its own foreground. */
+    --accent: 211 30% 23%;          /* #293a4c — blue-tinted wash */
+    --accent-foreground: 210 100% 68.46%; /* #5eafff — 5.02:1 on the wash */
 
-    --destructive: 0 72% 51%;
-    --destructive-foreground: 0 0% 98%;
+    --destructive: 3 100% 61.37%;   /* #ff453a */
+    --destructive-foreground: 240 3% 7.25%;
 
-    --success: 142 71% 45%;
-    --success-foreground: 0 0% 100%;
+    --success: 135 64% 50.39%;      /* #30d158 */
+    --success-foreground: 240 3% 7.25%;
 
-    --warning: 38 92% 50%;
-    --warning-foreground: 0 0% 100%;
+    --warning: 36 100% 51.96%;      /* #ff9f0a */
+    --warning-foreground: 240 3% 7.25%;
 
-    --info: 199 89% 55%;
-    --info-foreground: 0 0% 100%;
+    --info: 210 100% 51.96%;
+    --info-foreground: 240 3% 7.25%;
 
-    --border: 240 4% 15%;            /* #27272a */
-    --input: 240 4% 15%;
-    --ring: 239 84% 64%;
+    /* ── Filled variants are PINNED across modes ──
+       A saturated surface carrying white text must keep ≥ 4.5:1 in
+       BOTH modes.  The dark-mode accents are bright (#30d158 is
+       2.0:1 against white), so a filled surface keeps the darker
+       light-mode value. */
+    --destructive-solid: 354 100% 42.16%;  /* #d70016 */
+    --success-solid: 141 62% 29.61%;       /* #1d7a3d */
+    --warning-solid: 26 90% 37.06%;        /* #b45309 */
+    --primary-solid: 210 100% 44.51%;     /* #0071e3 */
 
-    /* ── Department Chromatic Identity (dark) ── */
-    --dept-sales: 217 71% 58%;
-    --dept-operations: 25 95% 58%;
-    --dept-quality: 226 100% 65%;
-    --dept-procurement: 173 80% 45%;
-    --dept-hr: 271 91% 70%;
-    --dept-rnd: 187 85% 58%;
-    --dept-management: 239 84% 69%;
+    /* ── Hover step ──
+       The hover state used to be `bg-x/90`, which LIGHENS the fill
+       while the text stays put: white on #1980e6 measured 3.98:1, and
+       the /80 step 3.39:1.  A hover step that darkens in light mode
+       and brightens in dark mode keeps the fill's luminance on the
+       safe side of its own foreground:
+         primary     light 5.57:1   dark 6.54:1
+         success     light 6.66:1   dark 9.97:1
+         warning     light 6.70:1   dark 10.50:1
+         destructive light 7.42:1   dark 6.72:1 */
+    --primary-hover: 211 100% 61.96%;      /* #3d9bff */
+    --success-hover: 140 68% 52.75%;       /* #35d86b */
+    --warning-hover: 36 100% 62.55%;       /* #ffb340 */
+    --destructive-hover: 3 100% 69.41%;    /* #ff6b63 */
+
+    /* ── On-tint text ──
+       Text that sits ON a tint of its own family needs a slightly
+       different value than text on a neutral surface: the tint
+       darkens the ground, so the text must be darker still.  Each
+       value below clears 4.5:1 against a /15 tint of its own family. */
+    --destructive-tint: 3 100% 75.62%;     /* #ff838f — on a /25 tint 4.50:1 */
+    --success-tint: 135 64% 50.39%;        /* #32cf69 — on a /25 tint 4.97:1 */
+    --warning-tint: 36 100% 60.71%;        /* #f58f41 — on a /25 tint 4.50:1 */
+    --primary-tint: 210 100% 68.46%;       /* #5eafff — on a /25 tint 4.52:1 */
+    --info-tint: 210 100% 68.46%;          /* #5eafff — on a /10 tint 6.59:1 */
+
+    --border: 240 2% 23.14%;        /* #3a3a3c */
+    --input: 240 2% 23.14%;
+    --ring: 210 100% 51.96%;
+
+    --track: 240 2% 23.14%;
+    --faint: 240 2% 23.14%;
+
+    --text-body: 240 3% 78%;
+    --text-2: 240 3% 64.12%;
+    --text-3: 240 2% 56.67%;
+    --text-4: 240 2% 45%;
+    --heat: 25 100% 50%;
+    --live: 135 64% 50.39%;
+
+    /* Module colors — the dark-mode steps of the same families. */
+    --module-sales: 210 100% 68.46%;       /* #5eafff */
+    --module-operations: 210 100% 68.46%;  /* #5eafff */
+    --module-quality: 135 64% 50.39%;      /* #30d158 */
+    --module-procurement: 36 100% 60.71%;  /* #f58f41 */
+    --module-hr: 241 75% 76%;              /* #9594f0 */
+    --module-rnd: 210 100% 68.46%;         /* #5eafff */
+    --module-management: 240 2% 68%;       /* #a1a1a6 */
+
+    --shadow-sm: 0 1px 2px rgb(0 0 0 / 0.3), 0 8px 24px rgb(0 0 0 / 0.28);
+    --shadow-md: 0 1px 3px rgb(0 0 0 / 0.35), 0 14px 40px rgb(0 0 0 / 0.32);
+    --shadow-lg: 0 12px 32px rgb(0 0 0 / 0.5);
+    --shadow-overlay: 0 2px 8px rgb(0 0 0 / 0.4), 0 30px 80px rgb(0 0 0 / 0.6);
   }
-
-  /* ── Accent Color Overrides ── */
-  [data-accent="cyan"] { --primary: 186 100% 50%; --ring: 186 100% 50%; --neon-cyan: 186 100% 50%; }
-  [data-accent="blue"] { --primary: 226 100% 60%; --ring: 226 100% 60%; --neon-cyan: 226 100% 60%; }
-  [data-accent="green"] { --primary: 142 71% 45%; --ring: 142 71% 45%; --neon-cyan: 142 71% 45%; }
-  [data-accent="purple"] { --primary: 263 70% 58%; --ring: 263 70% 58%; --neon-cyan: 263 70% 58%; }
-  [data-accent="red"] { --primary: 0 72% 51%; --ring: 0 72% 51%; --neon-cyan: 0 72% 51%; }
-  [data-accent="orange"] { --primary: 25 95% 53%; --ring: 25 95% 53%; --neon-cyan: 25 95% 53%; }
-  [data-accent="pink"] { --primary: 330 65% 58%; --ring: 330 65% 58%; --neon-cyan: 330 65% 58%; }
-  [data-accent="gold"] { --primary: 45 93% 47%; --ring: 45 93% 47%; --neon-cyan: 45 93% 47%; }
 }
 
 /* ══════════════════════════════════════════════════
@@ -175,6 +306,7 @@
   html {
     scroll-behavior: smooth;
     scrollbar-gutter: stable;
+    font-optical-sizing: auto;
   }
 
   *,
@@ -192,8 +324,14 @@
 
   h1, h2, h3, h4, h5, h6 {
     font-family: var(--font-display);
-    @apply tracking-tight font-bold;
+    @apply font-bold;
+    /* Bigger titles track tighter — negative, never positive. */
+    letter-spacing: -0.02em;
   }
+
+  h1 { letter-spacing: -0.03em; }
+  h2 { letter-spacing: -0.02em; }
+  h3, h4, h5, h6 { letter-spacing: -0.01em; }
 
   p, span, div {
     @apply text-foreground;
@@ -205,6 +343,11 @@
 
   code, pre, .font-mono {
     font-family: var(--font-mono);
+  }
+
+  /* Numbers read as data, not as prose. */
+  table, .tabular-nums, [class*="font-mono"] {
+    font-variant-numeric: tabular-nums;
   }
 
   ::selection {
@@ -241,87 +384,81 @@
    ══════════════════════════════════════════════════ */
 @layer components {
 
-  /* ── DS Input — Zero Ghost + Soft Glow ── */
+  /* ── Card — the standard surface. Solid white + soft two-layer shadow. ── */
+  .ds-card {
+    @apply bg-card text-card-foreground border border-border;
+    border-radius: 1.125rem; /* 18px — the card tier */
+    box-shadow: var(--shadow-sm);
+  }
+
+  /* ── Panel — a large section container. 22px tier. ── */
+  .ds-panel {
+    @apply bg-card text-card-foreground border border-border;
+    border-radius: 1.375rem; /* 22px — the panel tier */
+    box-shadow: var(--shadow-md);
+  }
+
+  /* ── DS Input — zero ghost, quiet surface ── */
   .ds-input {
-    @apply bg-background border border-border/80 rounded-lg px-3 py-2 text-sm;
-    transition: all var(--duration-fast) var(--ease-standard);
+    @apply bg-card border border-border rounded-lg px-3 py-2 text-sm;
+    transition: border-color var(--duration-fast) var(--ease-standard),
+      box-shadow var(--duration-fast) var(--ease-standard);
   }
 
   .ds-input:focus {
     outline: none;
-    border-color: hsl(var(--primary) / 0.4);
-    box-shadow: 0 0 0 3px hsl(var(--primary) / 0.08);
+    border-color: hsl(var(--primary) / 0.5);
+    box-shadow: 0 0 0 3px hsl(var(--primary) / 0.1);
   }
 
-  /* ── Glass Effect — Premium ── */
+  /* ── Glass — ONLY where layers overlap (sticky nav, overlay, colored CTA) ── */
   .glass {
-    @apply border border-border/50 rounded-xl;
-    backdrop-filter: blur(16px) saturate(1.2);
-    background: hsl(var(--background) / 0.85);
+    background: rgb(245 245 247 / 0.72);
+    backdrop-filter: saturate(180%) blur(20px);
+    -webkit-backdrop-filter: saturate(180%) blur(20px);
+    border-bottom: 1px solid rgb(0 0 0 / 0.07);
   }
 
-  .glass-card {
-    @apply rounded-xl border border-border/50 bg-card/85 backdrop-blur-md;
-    box-shadow: var(--shadow-sm);
-    transition: box-shadow var(--duration-normal) var(--ease-standard),
-      border-color var(--duration-normal) var(--ease-standard);
+  /* Glass element sitting on a colored ground (needs something to refract) */
+  .glass-chip {
+    background: rgb(255 255 255 / 0.16);
+    border: 1px solid rgb(255 255 255 / 0.22);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
   }
 
-  .glass-card:hover {
-    border-color: hsl(var(--primary) / 0.2);
-    box-shadow: var(--shadow-md);
-  }
-
-  /* ── Status Pills — Micro-Saturated ── */
+  /* ── Status Pills — micro-saturated, one hue per state ──
+     The TEXT uses the `-tint` variant, not the solid `--x`.  The solid
+     value is the fill colour; on a 10% tint of itself it only reached
+     AA in 4 of 8 mode/state combinations (light warning 4.39:1, light
+     info 4.06:1, dark destructive 4.48:1, dark info 4.19:1).  The
+     `-tint` ramp is the value measured to clear 4.5:1 on that same
+     fill in every mode — worst case now 5.82:1. */
   .status-pill {
     @apply inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium border;
     transition: color var(--duration-normal), background var(--duration-normal);
   }
 
   .status-pill-info {
-    @apply bg-info/10 text-info border-info/20;
+    @apply bg-info/10 text-primary-tint border-info/20;
   }
 
   .status-pill-success {
-    @apply bg-success/10 text-success border-success/20;
+    @apply bg-success/10 text-success-tint border-success/20;
   }
 
   .status-pill-warning {
-    @apply bg-warning/10 text-warning border-warning/20;
+    @apply bg-warning/10 text-warning-tint border-warning/20;
   }
 
   .status-pill-destructive {
-    @apply bg-destructive/10 text-destructive border-destructive/20;
+    @apply bg-destructive/10 text-destructive-tint border-destructive/20;
   }
 
-  /* ── Gradient Text ── */
-  .gradient-text {
-    background-image: linear-gradient(135deg,
-        hsl(var(--primary)) 0%,
-        hsl(var(--neon-violet)) 100%);
-    -webkit-background-clip: text;
-    background-clip: text;
-    -webkit-text-fill-color: transparent;
-    color: transparent;
-  }
-
-  /* ── Backgrounds ── */
-  .mesh-gradient {
-    background:
-      radial-gradient(circle at 20% 50%, hsl(var(--primary) / 0.15) 0%, transparent 50%),
-      radial-gradient(circle at 80% 20%, hsl(var(--neon-violet) / 0.08) 0%, transparent 50%),
-      hsl(var(--background));
-  }
-
-  .animated-gradient {
-    background-size: 200% 200%;
-    animation: gradient-shift 8s ease infinite;
-  }
-
-  /* ── Dot Pattern Background ── */
+  /* ── Backgrounds — restrained. A dot field, not a mesh wash. ── */
   .grid-bg {
     background-image:
-      radial-gradient(circle, hsl(var(--border) / 0.4) 1px, transparent 1px);
+      radial-gradient(circle, hsl(var(--faint) / 0.55) 1px, transparent 1px);
     background-size: 24px 24px;
   }
 
@@ -386,8 +523,7 @@
 
   /* ── Enhanced Input ── */
   .input-modern {
-    @apply border-border rounded-lg px-4 py-2.5;
-    background: hsl(var(--muted) / 0.4);
+    @apply border-border rounded-lg px-4 py-2.5 bg-card;
     transition:
       border-color var(--duration-fast),
       box-shadow var(--duration-fast);
@@ -395,7 +531,7 @@
 
   .input-modern:focus-visible {
     @apply border-primary outline-none;
-    box-shadow: 0 0 0 3px hsl(var(--primary) / 0.12);
+    box-shadow: 0 0 0 3px hsl(var(--primary) / 0.1);
   }
 
   /* ── Focus Ring ── */
@@ -406,7 +542,7 @@
 
   .focus-ring:focus-visible {
     @apply outline-none ring-2 ring-primary/50 ring-offset-2;
-    box-shadow: 0 0 0 3px hsl(var(--primary) / 0.1);
+    box-shadow: 0 0 0 3px hsl(var(--primary) / 0.08);
   }
 }
 
@@ -414,24 +550,20 @@
    4. UTILITIES
    ══════════════════════════════════════════════════ */
 @layer utilities {
-  .animate-glow-pulse {
-    animation: glow-breathe 3s cubic-bezier(0.4, 0, 0.6, 1) infinite;
-  }
-
   .animate-fade-up {
-    animation: fade-up 0.4s ease-out;
+    animation: fade-up 0.4s var(--ease-out-quart);
   }
 
   .animate-counter {
-    animation: counter-pop 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+    animation: counter-pop 0.5s var(--ease-out-quart);
   }
 
   .animate-slide-in-right {
-    animation: slide-in-right 0.3s ease-out;
+    animation: slide-in-right 0.3s var(--ease-out-quart);
   }
 
   .page-transition {
-    animation: fade-up 0.25s ease-out;
+    animation: fade-up 0.25s var(--ease-out-quart);
   }
 
   .stagger-1 { animation-delay: 50ms; }
@@ -448,26 +580,72 @@
   .fill-forwards { animation-fill-mode: forwards; }
   .fill-both { animation-fill-mode: both; }
 
-  /* ── Glow Utilities (subtle) ── */
-  .glow-sm { box-shadow: var(--glow-sm); }
-  .glow-md { box-shadow: var(--glow-md); }
-  .glow-lg { box-shadow: var(--glow-lg); }
+  /* ── Live / online pulsing dot ── */
+  .live-dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: hsl(var(--live));
+    animation: pulse-dot 2.2s infinite;
+  }
 
-  .text-glow-cyan { text-shadow: none; }
-  .text-glow-violet { text-shadow: none; }
+  /* ── Hover lift — the one motion affordance on an interactive surface.
+     A gentle 2px rise plus a deeper two-layer shadow, never a scale. ── */
+  .hover-lift {
+    transition: transform 0.2s var(--ease-out-quart), box-shadow 0.2s var(--ease-out-quart);
+  }
 
-  /* ── Semantic Status Glows (immutable — unaffected by primary picker) ── */
-  .glow-success {
-    box-shadow: 0 0 12px hsl(var(--success) / 0.25), 0 0 4px hsl(var(--success) / 0.1);
+  .hover-lift:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 12px 32px 0 rgb(0 0 0 / 0.1);
   }
-  .glow-destructive {
-    box-shadow: 0 0 12px hsl(var(--destructive) / 0.25), 0 0 4px hsl(var(--destructive) / 0.1);
+
+  /* ── Accent glow — a tinted breathing halo for the single colored CTA.
+     Two-layer, hue-matched, and disabled under reduced motion. ── */
+  .glow-primary {
+    animation: glow-breathe 3s var(--ease-out-quart) infinite;
   }
-  .glow-warning {
-    box-shadow: 0 0 12px hsl(var(--warning) / 0.25), 0 0 4px hsl(var(--warning) / 0.1);
+
+  /* ── Accent line — a 2px accent rule along the top of a surface.
+     The one place a colour may act as a structural edge. ── */
+  .accent-line-top {
+    position: relative;
   }
-  .glow-info {
-    box-shadow: 0 0 12px hsl(var(--info) / 0.25), 0 0 4px hsl(var(--info) / 0.1);
+
+  .accent-line-top::before {
+    content: "";
+    position: absolute;
+    inset-inline: 0;
+    top: 0;
+    height: 2px;
+    background: linear-gradient(
+      90deg,
+      hsl(var(--primary)),
+      hsl(var(--accent-support))
+    );
+    border-radius: inherit;
+  }
+
+  /* ── Aurora ground — a slow, wide radial wash behind an auth surface.
+     One hue, low opacity, blurred. Never a mesh of competing colours. ── */
+  .aurora-bg {
+    background:
+      radial-gradient(
+        ellipse 60% 50% at 50% 0%,
+        hsl(var(--primary) / 0.16),
+        transparent 70%
+      );
+  }
+
+  /* ── Glow pulse — a one-shot breathing halo for a busy indicator. ── */
+  .animate-glow-pulse {
+    animation: glow-breathe 2.4s var(--ease-out-quart) infinite;
+  }
+
+  /* ── Cyan text glow — reserved for the oversized 404 numeral, where a
+     low-contrast decorative treatment is intentional. ── */
+  .text-glow-cyan {
+    text-shadow: 0 0 60px hsl(var(--primary) / 0.28);
   }
 }
 
@@ -484,23 +662,10 @@
   100% { background-position: -200% 0; }
 }
 
-@keyframes glow-pulse {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.85; }
-}
-
-@keyframes glow-breathe {
-  0%, 100% {
-    box-shadow: 0 0 0 hsl(var(--primary) / 0);
-  }
-  50% {
-    box-shadow: 0 0 8px hsl(var(--primary) / 0.08);
-  }
-}
-
-@keyframes gradient-shift {
-  0%, 100% { background-position: 0% 50%; }
-  50% { background-position: 100% 50%; }
+@keyframes pulse-dot {
+  0%   { box-shadow: 0 0 0 0 hsl(135 64% 50% / 0.5); }
+  70%  { box-shadow: 0 0 0 7px hsl(135 64% 50% / 0); }
+  100% { box-shadow: 0 0 0 0 hsl(135 64% 50% / 0); }
 }
 
 @keyframes fade-up {
@@ -548,6 +713,32 @@
   }
 }
 
+/* Accent halo — a two-layer, hue-matched breathing shadow.
+   Used by the single colored CTA and by busy indicators. */
+@keyframes glow-breathe {
+  0%, 100% {
+    box-shadow:
+      0 1px 2px hsl(var(--primary-solid) / 0.18),
+      0 4px 12px hsl(var(--primary-solid) / 0.16);
+  }
+  50% {
+    box-shadow:
+      0 2px 6px hsl(var(--primary-solid) / 0.22),
+      0 10px 28px hsl(var(--primary-solid) / 0.24);
+  }
+}
+
+/* Fade-in — the entrance used by content that is not async-re-rendered.
+   4px rise, 200ms, no bounce. */
+@keyframes fade-in {
+  from { opacity: 0; transform: translateY(4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.animate-fade-in {
+  animation: fade-in 0.2s var(--ease-out-quart) both;
+}
+
 /* ══════════════════════════════════════════════════
    6. ACCESSIBILITY
    ══════════════════════════════════════════════════ */
@@ -562,6 +753,16 @@
     animation: none !important;
     transition: none !important;
     scroll-behavior: auto !important;
+  }
+}
+
+/* Reduced transparency — glass loses its blur, keeps its contrast. */
+@media (prefers-reduced-transparency: reduce) {
+  .glass,
+  .glass-chip {
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+    background: var(--card) !important;
   }
 }
 
@@ -753,25 +954,23 @@
    8. DESIGN SYSTEM — Unified Patterns
    ══════════════════════════════════════════════════ */
 
-
-/* ── Critical Item Highlighting ── */
+/* ── Severity surfaces — hierarchy from a tinted ground + icon, NOT a left bar ──
+   `text-destructive-tint`, not `text-destructive`: the tint ramp is the
+   value measured to clear 4.5:1 on the /5 fill. */
 .ds-critical {
-  @apply border-l-4 border-l-destructive bg-destructive/[0.03];
+  @apply bg-destructive/[0.05] text-destructive-tint;
 }
 
 .ds-critical-card {
-  @apply ds-card border-l-4 border-l-destructive;
-  box-shadow: inset 3px 0 0 hsl(var(--destructive) / 0.15), var(--shadow-sm);
+  @apply ds-card bg-destructive/[0.04];
 }
 
 .ds-warning-card {
-  @apply ds-card border-l-4 border-l-warning;
-  box-shadow: inset 3px 0 0 hsl(var(--warning) / 0.15), var(--shadow-sm);
+  @apply ds-card bg-warning/[0.05];
 }
 
 .ds-success-card {
-  @apply ds-card border-l-4 border-l-success;
-  box-shadow: inset 3px 0 0 hsl(var(--success) / 0.15), var(--shadow-sm);
+  @apply ds-card bg-success/[0.05];
 }
 
 /* ── State Transitions ── */
@@ -792,12 +991,15 @@
   @apply active:scale-[0.98] transition-transform duration-100;
 }
 
+/* Gentle hover lift — the only entrance-ish motion on content */
 .ds-hover-lift {
-  @apply transition-colors duration-150;
+  @apply transition-all duration-200;
+  transition-property: transform, box-shadow;
 }
 
-.ds-hover-glow {
-  @apply transition-colors duration-150;
+.ds-hover-lift:hover {
+  transform: translateY(-3px);
+  box-shadow: var(--shadow-lg);
 }
 
 .ds-focus-ring {
@@ -812,7 +1014,7 @@
     hsl(var(--muted-foreground) / 0.04) 50%,
     transparent 75%);
   background-size: 200% 100%;
-  animation: shimmer 1.5s infinite linear, pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+  animation: shimmer 1.5s infinite linear, pulse 2s var(--ease-standard) infinite;
 }
 
 /* ── Stagger entrance ── */
@@ -825,7 +1027,7 @@
 
 /* ── Smooth content transitions ── */
 .ds-fade-enter {
-  animation: ds-fade-in 0.25s ease-out both;
+  animation: ds-fade-in 0.25s var(--ease-out-quart) both;
 }
 
 @keyframes ds-fade-in {
