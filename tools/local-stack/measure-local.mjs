@@ -24,8 +24,11 @@ const CREDS = '/tmp/qbase-local/LOCAL_LOGIN.txt';
 mkdirSync('/tmp/shots', { recursive: true });
 
 const md = readFileSync(CREDS, 'utf8');
-const row = md.match(/- (\S+)\s+\(role: (\w+)\)\n\s+password: (\S+)/);
-if (!row) { console.error('could not locate the local credential'); process.exit(1); }
+// The LAST block for an address wins: a password reset replaces the earlier
+// block, and the earlier block's password is dead.
+const rows = [...md.matchAll(/- (\S+)\s+\(role: (\w+)\)\n\s+password: (\S+)/g)];
+if (!rows.length) { console.error('could not locate the local credential'); process.exit(1); }
+const row = rows[rows.length - 1];
 const EMAIL = row[1];
 const PASSWORD = row[3];
 console.log(`signing in as the local "${row[2]}" account (email/password not printed)`);

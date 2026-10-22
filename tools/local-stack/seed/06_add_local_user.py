@@ -22,6 +22,7 @@ account is appended to /tmp/qbase-local/LOCAL_LOGIN.txt (mode 0600).
 """
 import argparse
 import os
+import re
 import secrets
 import string
 import sys
@@ -39,16 +40,54 @@ def gen_password(n: int = 12) -> str:
     return "".join(secrets.choice(ALPHABET) for _ in range(n))
 
 
+BLOCK_RE = re.compile(
+    r"^- (?P<email>\S+)\s+\(role: (?P<role>\w+)\)\n"
+    r"  password: (?P<password>\S+)\n"
+    r"  name: .*\n",
+    re.MULTILINE,
+)
+
+
 def append_to_credential_file(email: str, password: str, role: str,
                                display_name: str) -> None:
-    block = [
-        f"- {email}  (role: {role})",
-        f"  password: {password}",
-        f"  name: {display_name or '-'}   department: -",
-        "",
-    ]
-    with open(OUT, "a", encoding="utf-8") as fh:
-        fh.write("\n".join(block))
+    """Upsert the account's block.
+
+    A reset must REPLACE the existing block, not append a second one: two
+    blocks for the same address leave the first (stale) password in the
+    file, and every reader that takes the first match then signs in with a
+    password that no longer exists — a 400 invalid_grant that looks like a
+    broken login.
+    """
+    block = (
+        f"- {email}  (role: {role})\n"
+        f"  password: {password}\n"
+        f"  name: {display_name or '-'}   department: -\n"
+    )
+
+    text = ""
+    if os.path.exists(OUT):
+        with open(OUT, encoding="utf-8") as fh:
+            text = fh.read()
+
+    replaced = False
+    out_lines = []
+    pos = 0
+    for m in BLOCK_RE.finditer(text):
+        if m.group("email").lower() == email.lower():
+            out_lines.append(text[pos:m.start()])
+            out_lines.append(block)
+            pos = m.end()
+            replaced = True
+    out_lines.append(text[pos:])
+    text = "".join(out_lines)
+
+    if not replaced:
+        if text and not text.endswith("\n"):
+            text += "\n"
+        text += block
+
+    with open(OUT, "w", encoding="utf-8") as fh:
+        fh.write(text)
     os.chmod(OUT, 0o600)
 
 
