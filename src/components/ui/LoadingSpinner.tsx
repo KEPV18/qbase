@@ -56,7 +56,7 @@ export function LoadingSkeleton({
       {Array.from({ length: lines }).map((_, i) => (
         <div 
           key={i} 
-          className="skeleton h-4 rounded"
+          className="skeleton h-4 rounded-md"
           style={{ width: i === lines - 1 ? '75%' : '100%' }}
         />
       ))}
@@ -68,12 +68,12 @@ export function LoadingSkeleton({
 export function CardSkeleton() {
   return (
     <div className="p-4 border rounded-sm space-y-3">
-      <div className="skeleton h-6 w-1/2 rounded" />
-      <div className="skeleton h-4 w-3/4 rounded" />
-      <div className="skeleton h-4 w-full rounded" />
+      <div className="skeleton h-6 w-1/2 rounded-md" />
+      <div className="skeleton h-4 w-3/4 rounded-md" />
+      <div className="skeleton h-4 w-full rounded-md" />
       <div className="flex gap-2">
-        <div className="skeleton h-8 w-16 rounded" />
-        <div className="skeleton h-8 w-16 rounded" />
+        <div className="skeleton h-8 w-16 rounded-md" />
+        <div className="skeleton h-8 w-16 rounded-md" />
       </div>
     </div>
   );
@@ -85,7 +85,7 @@ export function TableRowSkeleton({ columns = 4 }: { columns?: number }) {
     <tr className="border-b">
       {Array.from({ length: columns }).map((_, i) => (
         <td key={i} className="p-3">
-          <div className="skeleton h-4 rounded" style={{ width: `${60 + Math.random() * 40}%` }} />
+          <div className="skeleton h-4 rounded-md" style={{ width: `${60 + Math.random() * 40}%` }} />
         </td>
       ))}
     </tr>

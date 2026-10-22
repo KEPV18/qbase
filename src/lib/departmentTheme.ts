@@ -1,24 +1,39 @@
 // ============================================================================
-// QBase — Department Chromatic Identity
+// QBase — Department Identity
 //
-// Each department carries a quiet colour so a reader can tell the sections
-// apart at a glance.  The colours come from the design system's own module
-// ramp (`--module-*`), not from a second private palette.
+// A department label is TEXT, never a fill.
 //
-// Two rules the design system asks for, and that this file used to break:
+// The old implementation gave each of the seven departments its own hue
+// from a `--module-*` ramp, and painted that hue as the badge's text on a
+// 10% wash of itself.  Three separate problems with that:
 //
-//   1. A department label is TEXT, not a fill.  The old raw hexes
-//      (#f97316, #14b8a6, #06b8d4 …) were painted as the text colour on a
-//      10% wash of themselves and measured 2.22–4.49:1 — three hard WCAG
-//      failures and four AA-large-only results.  The `-tint` step of each
-//      family measures 5.43:1 in light and 5.39:1 in dark, worst case.
+//   1. THE COLOUR CARRIED NO INFORMATION.  `--module-sales`,
+//      `--module-operations` and `--module-rnd` were all the same blue
+//      (#0059b3), so three of the seven departments were
+//      indistinguishable from each other.  The badge always renders the
+//      department NAME right beside it, so the name was doing all the
+//      identifying work and the colour was decoration.
 //
-//   2. A coloured LEFT BAR is decoration, and the skill names it as
-//      anti-slop ("each item with its own border + tint + colored
-//      left-bar → one panel + hairlines").  `deptBorderStyle` used to paint
-//      exactly that.  It now returns an empty style and the department
-//      reads through its badge instead, with a hairline doing the
-//      separating.
+//   2. SEVEN HUES COMPETED WITH THE APP'S ONE ACCENT.  The design system
+//      allows a single accent (Apple blue) plus heat/live/brand.  A
+//      seven-hue categorical ramp is exactly the "multi-colour" the
+//      checklist rejects.
+//
+//   3. THE OLD RAW HEXES FAILED CONTRAST.  The original palette
+//      (#f97316, #14b8a6, #06b8d4 …) measured 2.22–4.49:1 on a 10% wash
+//      of itself — three hard WCAG failures and four AA-large-only
+//      results.
+//
+// So the badge is now GRAYSCALE: the department's own name in the
+// secondary-ink tone, on a 4% wash of the primary ink.  Measured, that
+// pairing is 4.69:1 in light mode — clears AA for the 12–13.5px badge
+// text it is used at.
+//
+// A coloured LEFT BAR is decoration of the same kind, and the design
+// system names it as anti-slop ("each item with its own border + tint +
+// colored left-bar → one panel + hairlines").  `deptBorderStyle` used to
+// paint exactly that; it now returns an empty style and the hairline does
+// the separating.
 //
 // Nothing here writes to a table or changes behaviour; this is presentation
 // only.
@@ -27,50 +42,18 @@
 import { FORM_SCHEMAS } from "@/data/formSchemas";
 
 export interface DeptTheme {
-  /** The text colour of the department — a token reference, not a raw hex. */
-  textVar: string;
-  /** The wash the badge sits on — a /10 tint of the department's own hue. */
-  washVar: string;
   /** Short label used where the full department name will not fit. */
   label: string;
 }
 
 const DEPT_THEMES: Record<string, DeptTheme> = {
-  "Sales & Customer Service": {
-    textVar: "var(--module-sales)",
-    washVar: "var(--primary)",
-    label: "Sales",
-  },
-  "Operations & Production": {
-    textVar: "var(--module-operations)",
-    washVar: "var(--warning)",
-    label: "Operations",
-  },
-  "Quality & Audit": {
-    textVar: "var(--module-quality)",
-    washVar: "var(--success)",
-    label: "Quality",
-  },
-  "Procurement & Vendors": {
-    textVar: "var(--module-procurement)",
-    washVar: "var(--warning)",
-    label: "Procurement",
-  },
-  "HR & Training": {
-    textVar: "var(--module-hr)",
-    washVar: "var(--accent-support)",
-    label: "HR",
-  },
-  "R&D & Design": {
-    textVar: "var(--module-rnd)",
-    washVar: "var(--primary)",
-    label: "R&D",
-  },
-  "Management & Documentation": {
-    textVar: "var(--module-management)",
-    washVar: "var(--foreground)",
-    label: "Management",
-  },
+  "Sales & Customer Service": { label: "Sales" },
+  "Operations & Production": { label: "Operations" },
+  "Quality & Audit": { label: "Quality" },
+  "Procurement & Vendors": { label: "Procurement" },
+  "HR & Training": { label: "HR" },
+  "R&D & Design": { label: "R&D" },
+  "Management & Documentation": { label: "Management" },
 };
 
 const FALLBACK_THEME = DEPT_THEMES["Management & Documentation"];
@@ -100,15 +83,17 @@ export function deptBorderStyle(_deptName: string): React.CSSProperties {
 }
 
 /**
- * Department badge — the text colour of the department, on a 10% wash of
- * its own hue.  Both values are CSS custom properties, so the badge follows
- * the light/dark mode automatically and never carries a raw hex.
+ * Department badge — grayscale by design (see the file header).
+ *
+ * A 4% wash of the primary ink as the ground, the secondary-ink tone as
+ * the text, and a hairline border at 12%.  All three are CSS custom
+ * properties, so the badge follows the light/dark mode automatically and
+ * never carries a raw hex.
  */
-export function deptAccentStyle(deptName: string): React.CSSProperties {
-  const t = getDeptTheme(deptName);
+export function deptAccentStyle(_deptName: string): React.CSSProperties {
   return {
-    backgroundColor: `hsl(${t.washVar} / 0.10)`,
-    color: `hsl(${t.textVar})`,
-    borderColor: `hsl(${t.washVar} / 0.30)`,
+    backgroundColor: "hsl(var(--foreground) / 0.04)",
+    color: "hsl(var(--text-2))",
+    borderColor: "hsl(var(--foreground) / 0.12)",
   };
 }

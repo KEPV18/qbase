@@ -149,22 +149,15 @@ export default {
           DEFAULT: "hsl(var(--card))",
           foreground: "hsl(var(--card-foreground))",
         },
-        /* ── Neon Palette ── */
-        "neon-cyan": "hsl(var(--neon-cyan))",
-        "neon-violet": "hsl(var(--neon-violet))",
-        "neon-emerald": "hsl(var(--neon-emerald))",
-        "neon-amber": "hsl(var(--neon-amber))",
-        "neon-red": "hsl(var(--neon-red))",
-        /* ── Module Palette ── */
-        module: {
-          sales: "hsl(var(--module-sales))",
-          operations: "hsl(var(--module-operations))",
-          quality: "hsl(var(--module-quality))",
-          procurement: "hsl(var(--module-procurement))",
-          hr: "hsl(var(--module-hr))",
-          rnd: "hsl(var(--module-rnd))",
-          management: "hsl(var(--module-management))",
-        },
+      },
+      // Easing — the design system's two curves, named.  `ease-spring` is
+      // for interactive layers (sheet, dialog, drawer): fast start, long
+      // settle.  `ease-out-quart` is for small moves (hover, segmented
+      // slide).  The Tailwind defaults include `linear` and the default
+      // `ease`, both of which the motion spec forbids.
+      transitionTimingFunction: {
+        spring: "cubic-bezier(0.32, 0.72, 0, 1)",
+        "out-quart": "cubic-bezier(0.25, 1, 0.5, 1)",
       },
       // Radius — named tiers only (pill 999 / chip 6 / thumb 12 / sheet 16 /
       // card 18 / panel 22 / hero 26). No ad-hoc in-between values.
@@ -192,13 +185,44 @@ export default {
         "3xl": "48px",
         "4xl": "64px",
       },
+      // The section rhythm — the gap between sibling sections of a page.
+      // The design system names it: `clamp(34px, 6vw, 56px)`.  It lives
+      // in `padding`/`margin` rather than `spacing`, because that is the
+      // scale Tailwind derives `py-*`/`mb-*` from.
+      padding: {
+        section: "var(--section-gap)",
+        // The container gutter named by the design system (22px).  It was
+        // declared as a CSS variable and never read; the shell now uses
+        // `px-pad` so the gutter is one value, not six.
+        pad: "var(--pad-x)",
+      },
+      margin: {
+        section: "var(--section-gap)",
+      },
+      // Reading column (720px) and grid/dense column (1080px).  Both were
+      // declared as CSS variables and never read; the app hardcoded
+      // `max-w-[1400px]` in seven places instead.
+      //
+      // A third tier, `--max-doc`, holds the QMS form facsimile.  Those
+      // documents are faithful reproductions of the source Word forms —
+      // up to 18 table columns — and squeezing them into the 1080 grid
+      // column would make every cell unreadable.  It is a named token
+      // rather than the ad-hoc `max-w-[1400px]` it replaces.
+      maxWidth: {
+        read: "var(--max-read)",
+        grid: "var(--max-grid)",
+        doc: "var(--max-doc)",
+      },
       // Shadow — two-layer only (tight contact + soft spread). Never one hard shadow.
       boxShadow: {
         sm: "0 1px 2px 0 rgb(0 0 0 / 0.04), 0 8px 24px rgb(0 0 0 / 0.05)",
         DEFAULT: "0 1px 2px 0 rgb(0 0 0 / 0.04), 0 8px 24px rgb(0 0 0 / 0.05)",
         md: "0 1px 3px 0 rgb(0 0 0 / 0.05), 0 14px 40px rgb(0 0 0 / 0.05)",
-        lg: "0 12px 32px 0 rgb(0 0 0 / 0.1)",
-        xl: "0 12px 32px 0 rgb(0 0 0 / 0.1)",
+        // The hover-lift step. Two layers like every other shadow — the
+        // tight contact layer is what keeps a lift from reading as a
+        // single hard drop-shadow.
+        lg: "0 1px 2px 0 rgb(0 0 0 / 0.04), 0 12px 32px 0 rgb(0 0 0 / 0.1)",
+        xl: "0 1px 2px 0 rgb(0 0 0 / 0.04), 0 12px 32px 0 rgb(0 0 0 / 0.1)",
         "2xl": "0 2px 8px 0 rgb(0 0 0 / 0.1), 0 30px 80px 0 rgb(0 0 0 / 0.24)",
         overlay: "0 2px 8px 0 rgb(0 0 0 / 0.1), 0 30px 80px 0 rgb(0 0 0 / 0.24)",
         // Tinted contact shadows for filled surfaces. These are the

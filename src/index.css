@@ -23,12 +23,11 @@
     --font-display: var(--font-sans);
     --font-mono: ui-monospace, 'SF Mono', Menlo, Monaco, 'Cascadia Mono', monospace;
 
-    /* ── Radius — semantic tiers only, no ad-hoc in-between values ── */
-    --radius: 0.5rem;
-    --radius-sm: calc(var(--radius) - 0.125rem);
-    --radius-md: var(--radius);
-    --radius-lg: calc(var(--radius) + 0.125rem);
-    --radius-xl: calc(var(--radius) + 0.375rem);
+    /* ── Radius — semantic tiers only, no ad-hoc in-between values.
+       The Tailwind `borderRadius` map is the single source of truth for
+       these; a parallel `--radius*` set used to live here and had
+       silently drifted from it (this file's xl was 14px, Tailwind's is
+       18px).  Every surface reads the Tailwind tier. ── */
 
     /* ── Motion — spring-like curves, never linear/default ease ── */
     --ease-standard: cubic-bezier(0.25, 1, 0.5, 1);
@@ -39,23 +38,16 @@
     --duration-normal: 300ms;
     --duration-slow: 500ms;
 
-    /* ── Shadow — two-layer only (tight contact + soft spread) ── */
+    /* ── Shadow — two-layer only (tight contact + soft spread) ──
+       `--shadow-lg` is the hover-lift step, and it used to be a SINGLE
+       layer (one 32px drop).  The design system never ships a one-hard-
+       shadow, so the tight contact layer was added back:
+         light  0 1px 2px rgba(0,0,0,.04) + 0 12px 32px rgba(0,0,0,.10)
+         dark   0 1px 2px rgba(0,0,0,.34) + 0 12px 32px rgba(0,0,0,.50)  ── */
     --shadow-sm: 0 1px 2px rgb(0 0 0 / 0.04), 0 8px 24px rgb(0 0 0 / 0.05);
     --shadow-md: 0 1px 3px rgb(0 0 0 / 0.05), 0 14px 40px rgb(0 0 0 / 0.05);
-    --shadow-lg: 0 12px 32px rgb(0 0 0 / 0.1);
+    --shadow-lg: 0 1px 2px rgb(0 0 0 / 0.04), 0 12px 32px rgb(0 0 0 / 0.1);
     --shadow-overlay: 0 2px 8px rgb(0 0 0 / 0.1), 0 30px 80px rgb(0 0 0 / 0.24);
-
-    /* ── Brand — Apple blue, one accent per view ── */
-    --neon-cyan: 210 100% 44.51%;
-    --neon-violet: 241 73% 63.14%;
-    --neon-emerald: 141 62% 29.61%;
-    --neon-amber: 26 90% 37.06%;
-    --neon-red: 354 100% 42.16%;
-
-    /* ── Accent shadow (tinted, for the one colored CTA) ── */
-    --glow-sm: 0 1px 2px hsl(var(--primary) / 0.08), 0 4px 12px hsl(var(--primary) / 0.1);
-    --glow-md: 0 2px 6px hsl(var(--primary) / 0.1), 0 10px 28px hsl(var(--primary) / 0.14);
-    --glow-lg: 0 20px 54px hsl(var(--primary) / 0.24);
 
     /* ── Supporting accent — the gradient's second stop.
        Apple indigo. It never competes with the accent: it only appears
@@ -168,24 +160,22 @@
     --text-4: 240 3% 69.02%;        /* #aeaeb2 */
     --heat: 25 100% 50%;            /* #ff6b00 — heat / "hottest" */
     --live: 135 64% 50.39%;         /* #30d158 — live / online */
-
-    /* ── Layout ── */
+    /* ── Layout ──
+       The design system names three container widths and a side padding.
+       These were declared here and never read: the app hardcoded
+       `max-w-[1400px]` in seven places and used `px-5`/`px-6` for the
+       gutter.  The Tailwind `maxWidth` map below now carries them, and
+       the shell reads `px-pad` / `max-w-read` / `max-w-grid`.  ── */
     --max-read: 720px;
     --max-grid: 1080px;
+    /* The QMS form facsimile.  The 37 document templates reproduce the
+       source Word forms — up to 18 table columns wide — and the grid
+       column would crush every cell.  Named here so the width is a
+       token rather than the ad-hoc `max-w-[1400px]` it replaces. */
+    --max-doc: 1400px;
     --pad-x: 22px;
-
-    /* Module colors — muted, they label sections, they don't shout.
-       Each one is the TEXT value of its family (the `-tint` step), not
-       the base fill: a module label sits on a card or a wash, never on
-       its own saturated fill, and the base fill only reaches 2.2–2.5:1
-       as text on a /10 wash. */
-    --module-sales: 210 100% 35.01%;       /* #0059b3 */
-    --module-operations: 210 100% 35.01%;  /* #0059b3 */
-    --module-quality: 141 62% 25.61%;      /* #196a35 */
-    --module-procurement: 26 90% 30.81%;   /* #954508 */
-    --module-hr: 241 73% 47.06%;           /* #5450c8 */
-    --module-rnd: 210 100% 35.01%;         /* #0059b3 */
-    --module-management: 240 2% 38%;       /* #4c4c50 */
+    /* Section rhythm — the gap between sibling sections of a page. */
+    --section-gap: clamp(34px, 6vw, 56px);
   }
 
   /* ── Dark Mode: obsidian, cool not warm ── */
@@ -283,18 +273,9 @@
     --heat: 25 100% 50%;
     --live: 135 64% 50.39%;
 
-    /* Module colors — the dark-mode steps of the same families. */
-    --module-sales: 210 100% 68.46%;       /* #5eafff */
-    --module-operations: 210 100% 68.46%;  /* #5eafff */
-    --module-quality: 135 64% 50.39%;      /* #30d158 */
-    --module-procurement: 36 100% 60.71%;  /* #f58f41 */
-    --module-hr: 241 75% 76%;              /* #9594f0 */
-    --module-rnd: 210 100% 68.46%;         /* #5eafff */
-    --module-management: 240 2% 68%;       /* #a1a1a6 */
-
     --shadow-sm: 0 1px 2px rgb(0 0 0 / 0.3), 0 8px 24px rgb(0 0 0 / 0.28);
     --shadow-md: 0 1px 3px rgb(0 0 0 / 0.35), 0 14px 40px rgb(0 0 0 / 0.32);
-    --shadow-lg: 0 12px 32px rgb(0 0 0 / 0.5);
+    --shadow-lg: 0 1px 2px rgb(0 0 0 / 0.34), 0 12px 32px rgb(0 0 0 / 0.5);
     --shadow-overlay: 0 2px 8px rgb(0 0 0 / 0.4), 0 30px 80px rgb(0 0 0 / 0.6);
   }
 }
@@ -378,6 +359,34 @@
   *::-webkit-scrollbar-thumb:hover {
     background: hsl(var(--muted-foreground) / 0.35);
   }
+
+  /* ── Focus visibility — every interactive element ──
+     186 raw <button> elements carried no focus indicator at all; only
+     the 9 that already had `ds-focus-ring` did, and the shared
+     <Button> primitive had its own ring.  A keyboard user tabbing
+     through a page was getting no feedback on most controls.
+
+     Rather than edit ~180 call sites, this base rule gives EVERY
+     focusable element a visible ring.  It is deliberately a base-layer
+     rule with no `!important`, so an element that already declares its
+     own focus style still wins — `ds-focus-ring`, the shadcn primitives
+     (input/checkbox/switch/tabs) and <Button> all set `focus-visible:ring-*`
+     in the components/utilities layers, which are emitted after base.
+
+     `:focus-visible` (not `:focus`) so a mouse click does not leave a
+     ring behind, and the ring is an OUTLINE, not a box-shadow, so it
+     survives on any background colour. */
+  :focus-visible {
+    outline: 2px solid hsl(var(--ring) / 0.85);
+    outline-offset: 2px;
+  }
+
+  /* Elements that manage their own focus ring opt out of the global
+     outline — a double ring reads as a rendering bug. */
+  .ds-focus-ring:focus-visible,
+  [class*="focus-visible:ring"]:focus-visible {
+    outline: none;
+  }
 }
 /* ══════════════════════════════════════════════════
    3. COMPONENTS
@@ -416,7 +425,24 @@
     background: rgb(245 245 247 / 0.72);
     backdrop-filter: saturate(180%) blur(20px);
     -webkit-backdrop-filter: saturate(180%) blur(20px);
-    border-bottom: 1px solid rgb(0 0 0 / 0.07);
+  }
+
+  /* ── Scroll edge ──
+     Sticky chrome shows its hairline only once content scrolls beneath
+     it.  At the top of the page the nav sits flush on the ground with
+     no divider; the moment the page moves, the rule appears.  The
+     `.scrolled` class is toggled by `useScrollEdge`. */
+  .glass,
+  .ds-sticky-bar {
+    border-bottom: 1px solid transparent;
+    transition: border-color var(--duration-normal) var(--ease-out-quart),
+      box-shadow var(--duration-normal) var(--ease-out-quart);
+  }
+
+  .glass.scrolled,
+  .ds-sticky-bar.scrolled {
+    border-bottom-color: rgb(0 0 0 / 0.07);
+    box-shadow: 0 1px 12px rgb(0 0 0 / 0.04);
   }
 
   /* Glass element sitting on a colored ground (needs something to refract) */
@@ -490,7 +516,7 @@
         transparent 25%,
         hsl(var(--muted-foreground) / 0.06) 50%,
         transparent 75%);
-    animation: shimmer 1.5s infinite linear;
+    animation: shimmer 1.5s infinite var(--ease-standard);
     will-change: transform;
   }
 
@@ -500,7 +526,7 @@
         hsl(var(--muted-foreground) / 0.08) 50%,
         hsl(var(--muted)) 75%);
     background-size: 200% 100%;
-    animation: skeleton-loading 1.5s linear infinite;
+    animation: skeleton-loading 1.5s var(--ease-standard) infinite;
   }
 
   .shimmer {
@@ -517,13 +543,18 @@
         transparent 25%,
         hsl(var(--muted-foreground) / 0.06) 50%,
         transparent 75%);
-    animation: shimmer 1.5s infinite linear;
+    animation: shimmer 1.5s infinite var(--ease-standard);
     will-change: transform;
   }
 
-  /* ── Enhanced Input ── */
+  /* ── Enhanced Input ──
+     `min-h-11` is the 44px touch target.  A form field cannot be given
+     a pseudo-element extension — the browser does not route a pointer
+     to an `<input>`'s ::before — so a text field has to be 44px tall
+     FOR REAL.  The design system's own reference does exactly this:
+     its text input is `height: 44px`. */
   .input-modern {
-    @apply border-border rounded-lg px-4 py-2.5 bg-card;
+    @apply border-border rounded-lg px-4 py-2.5 bg-card min-h-11;
     transition:
       border-color var(--duration-fast),
       box-shadow var(--duration-fast);
@@ -550,35 +581,15 @@
    4. UTILITIES
    ══════════════════════════════════════════════════ */
 @layer utilities {
-  .animate-fade-up {
-    animation: fade-up 0.4s var(--ease-out-quart);
-  }
-
-  .animate-counter {
-    animation: counter-pop 0.5s var(--ease-out-quart);
-  }
-
-  .animate-slide-in-right {
-    animation: slide-in-right 0.3s var(--ease-out-quart);
-  }
-
-  .page-transition {
-    animation: fade-up 0.25s var(--ease-out-quart);
-  }
-
-  .stagger-1 { animation-delay: 50ms; }
-  .stagger-2 { animation-delay: 100ms; }
-  .stagger-3 { animation-delay: 150ms; }
-  .stagger-4 { animation-delay: 200ms; }
-  .stagger-5 { animation-delay: 250ms; }
-  .stagger-6 { animation-delay: 300ms; }
-  .stagger-7 { animation-delay: 350ms; }
-  .stagger-8 { animation-delay: 400ms; }
-  .stagger-9 { animation-delay: 450ms; }
-  .stagger-10 { animation-delay: 500ms; }
-
-  .fill-forwards { animation-fill-mode: forwards; }
-  .fill-both { animation-fill-mode: both; }
+  /* The entrance-keyframe utilities that used to live here
+     (.page-transition, .animate-fade-up, .animate-counter,
+     .animate-slide-in-right, .stagger-1…10, .fill-forwards, .fill-both)
+     were all removed.  Every one of them animated opacity from 0, and
+     the design system's rule is explicit that async-rendered content
+     must not carry an opacity-fade entrance: "a re-render can stick it
+     at 0".  AppShell mounted every route inside `.page-transition`, so
+     the whole app was exposed to that trap.  Their keyframes are gone
+     too — dead motion code is still dead code. */
 
   /* ── Live / online pulsing dot ── */
   .live-dot {
@@ -586,7 +597,9 @@
     height: 7px;
     border-radius: 50%;
     background: hsl(var(--live));
-    animation: pulse-dot 2.2s infinite;
+    /* The named curve, not the browser default `ease` — the motion
+       spec forbids the default easing. */
+    animation: pulse-dot 2.2s infinite var(--ease-standard);
   }
 
   /* ── Hover lift — the one motion affordance on an interactive surface.
@@ -597,7 +610,7 @@
 
   .hover-lift:hover {
     transform: translateY(-2px);
-    box-shadow: 0 12px 32px 0 rgb(0 0 0 / 0.1);
+    box-shadow: var(--shadow-lg);
   }
 
   /* ── Accent glow — a tinted breathing halo for the single colored CTA.
@@ -668,42 +681,6 @@
   100% { box-shadow: 0 0 0 0 hsl(135 64% 50% / 0); }
 }
 
-@keyframes fade-up {
-  from {
-    opacity: 0;
-    transform: translateY(8px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-@keyframes counter-pop {
-  0% {
-    transform: scale(0.8);
-    opacity: 0;
-  }
-  70% {
-    transform: scale(1.03);
-  }
-  100% {
-    transform: scale(1);
-    opacity: 1;
-  }
-}
-
-@keyframes slide-in-right {
-  from {
-    transform: translateX(20px);
-    opacity: 0;
-  }
-  to {
-    transform: translateX(0);
-    opacity: 1;
-  }
-}
-
 @keyframes focus-ring-pulse {
   0%, 100% {
     box-shadow: 0 0 0 2px hsl(var(--ring) / 0.3);
@@ -763,6 +740,48 @@
     backdrop-filter: none !important;
     -webkit-backdrop-filter: none !important;
     background: var(--card) !important;
+  }
+}
+
+/* ── Increased contrast ──
+   The third of the three `prefers-reduced-*` signals the motion spec
+   requires, and it was missing.  A user who asks the OS for more
+   contrast needs the hairlines to actually read as lines, the muted
+   text to be legible, and the glass surfaces to become solid.
+
+   The border token moves from the 7% hairline to a 40% rule, and the
+   muted text steps up from #6e6e73 to the primary ink.  Both are
+   token changes, so every surface that reads them follows. */
+@media (prefers-contrast: more) {
+  :root {
+    --border: 240 4% 62%;
+    --input: 240 4% 62%;
+    --muted-foreground: 240 3% 34%;
+    --text-2: 240 3% 34%;
+    --text-3: 240 2% 42%;
+  }
+
+  .dark {
+    --border: 240 2% 58%;
+    --input: 240 2% 58%;
+    --muted-foreground: 240 3% 84%;
+    --text-2: 240 3% 84%;
+    --text-3: 240 2% 76%;
+  }
+
+  /* Glass becomes solid — a translucent panel over a busy page is the
+     opposite of what "more contrast" asks for. */
+  .glass,
+  .glass-chip {
+    background: var(--card) !important;
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+    border-color: var(--border) !important;
+  }
+
+  /* Focus rings get thicker, because the whole point is to see them. */
+  :focus-visible {
+    outline-width: 3px !important;
   }
 }
 
@@ -991,6 +1010,358 @@
   @apply active:scale-[0.98] transition-transform duration-100;
 }
 
+/* ── Hit area ──
+   The design system requires a ≥44px hit area on every control, even
+   when the visual is smaller: "an iOS-style toggle is ~26px tall but
+   its clickable box should reach 44px; pad the control or make the
+   whole row the target".  The `sm` button tier, the Switch and the
+   Checkbox all solve this with a transparent ::after that extends past
+   the painted box.
+
+   These classes generalise that trick to any control.  The pseudo-element
+   is a pseudo-element OF the control, so a click inside the enlarged
+   region still lands on the control and fires it — the region is part
+   of the control's own box, not a separate overlay floating above the
+   page.
+
+   `max(100%, 44px)` means the extension adapts to whatever the painted
+   size is: a 16px glyph reaches 44px and a 44px button is left alone.
+   The painted box never changes — the affordance stays compact, the
+   target becomes finger-sized.
+
+   THE PSEUDO IS ::before, NOT ::after.  Four controls in this codebase
+   already own a deliberate `::after` of their own — the Checkbox
+   (`after:-inset-[14px]`), the Switch (`after:-inset-y-[10px]`), the
+   Select trigger and the `sm` button tier (`after:-inset-y-1.5`).
+   Measured: a `::before` and a `::after` on the same element are
+   independent, and a hit on either one hit-tests to the control.  So
+   the shared default rides on `::before` and leaves all four of those
+   completely alone — no surgery, no cascade fight.
+
+   Three shapes, because the control's own geometry decides how the
+   extension can be laid out:
+     .ds-hit-44         centred, ≥44px in BOTH dimensions.
+     .ds-hit-44-h       full width, ≥44px tall only.  For a labelled
+                        control the width is already the label's, so
+                        stretching it would reach into the neighbour.
+     .ds-hit-44-anchored  the centred shape for a control that is
+                        already absolutely or fixed positioned, where
+                        `position: relative` would knock it out of its
+                        positioning context.
+     .ds-hit-44-off     opts a control OUT of the default below, for
+                        the dense grids where a centred extension would
+                        reach into the row above or below. */
+@layer components {
+  .ds-hit-44,
+  .ds-hit-44-h,
+  .ds-hit-44-anchored {
+    position: relative;
+  }
+
+  .ds-hit-44::before,
+  .ds-hit-44-h::before,
+  .ds-hit-44-anchored::before {
+    content: "";
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    width: max(100%, 44px);
+    height: max(100%, 44px);
+  }
+
+  /* The height-only shape.  It has to sit in the rule above as well:
+     a `::before` with no `content` is never generated at all, so the
+     extension would silently do nothing.  Measured: the breadcrumb
+     links carried this class and still measured 18x18 — the painted
+     box and nothing more. */
+  .ds-hit-44-h::before {
+    left: 0;
+    right: 0;
+    transform: translateY(-50%);
+    width: auto;
+    height: max(100%, 44px);
+  }
+}
+
+/* ── Default hit area ──
+   The classes above are opt-IN, and an opt-in rule only covers the
+   controls somebody remembered to mark.  Measured across 17 routes by
+   hit-testing every interactive control on a 2px grid, that left 410
+   control instances with a real target under 44x44 — 255 of them the
+   sidebar links alone, which are `<a>` and so were never covered by a
+   `button` rule at all.
+
+   So the default is now ON for every control that can carry one, and
+   the exceptions are named.
+
+   TWO THINGS WOULD BREAK, and both were caught by measurement:
+
+   1. `pointer-events: none` on the pseudo-element would make the
+      extended region inert — the tap would fall through to whatever
+      is behind the control instead of firing it.  The pseudo-element
+      has to be transparent but still HIT-TESTABLE, and a hit on a
+      pseudo-element of a control is a hit on the control itself.
+   2. Forcing `position: relative` onto every control would knock an
+      absolutely positioned control (the search field's clear button,
+      the password reveal) out of its positioning context.  THAT WAS
+      MEASURED AS A REAL BREAK: two controls that asked for
+      `position: absolute` through a Tailwind utility were computing
+      `relative` instead, because an un-layered rule outranks the
+      `utilities` layer no matter what the utility says.
+
+   The fix for the second is to put the default INSIDE `@layer
+   components`.  A layered rule always loses to Tailwind's `utilities`
+   layer, so `position: absolute` / `fixed` / `sticky` now win, and a
+   control that asks for no position at all still gets `relative` and
+   therefore a containing block for its own pseudo-element.
+
+   The exception that matters is the CLUSTER.  Two 28px buttons 2px
+   apart (the risk register's Edit / Create CAPA / Link CAPA) each
+   reach 8px past their own edge, so their 44px targets overlap by
+   14px — and the later sibling wins the contested band, so the earlier
+   button's real target is well under 44px.  That is why the risk
+   register's three action buttons are painted 44x44 REAL squares
+   (`.ds-icon-44`) instead of being extended.
+
+   `.ds-hit-44-h` is the answer for a control that sits NEXT TO a
+   neighbour: it extends the height only, within its own width, so it
+   never reaches sideways.
+
+   Form controls are deliberately NOT in this list.  A pseudo-element on
+   an `<input>`, `<select>` or `<textarea>` does not receive the pointer
+   — the extended region hit-tests to a neighbour or to nothing at all
+   (measured).  A form field has to GROW ITS REAL BOX to 44px, which is
+   exactly what the design system's own reference does: its text input
+   is `height: 44px`. */
+@layer components {
+  :is(button, a[href], [role="button"], summary):not(.ds-hit-44-off):not(.ds-icon-44):not(.ds-box-44):not(.ds-hit-44):not(.ds-hit-44-h):not(.ds-hit-44-anchored) {
+    position: relative;
+  }
+
+  :is(button, a[href], [role="button"], summary):not(.ds-hit-44-off):not(.ds-icon-44):not(.ds-box-44):not(.ds-hit-44):not(.ds-hit-44-h):not(.ds-hit-44-anchored)::before {
+    content: "";
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    width: max(100%, 44px);
+    height: max(100%, 44px);
+  }
+}
+
+/* ── Facsimile form fields: a 44px hit area on a 21px document ─────────
+   The 36 ISO form templates reproduce a printed document: every field is
+   a transparent underline, painting at 21px.
+
+   A form field cannot be extended the way a button is.  The pseudo
+   element that widens a button is painted over the button, so a tap
+   inside the extension still hits the button; a pseudo element on an
+   `<input>` is never painted at all, and the extended region hit-tests
+   to whatever is behind it.  Only the input's OWN box is its hit area,
+   so a form field has to grow for real.
+
+   Growing it naively would drag the underline 23px away from the text
+   and break the facsimile.  So the growth goes BELOW the text
+   (padding-bottom) and the underline is redrawn as a background line
+   pinned to the text's baseline.  The document reads the same and the
+   field owns 44px.
+
+   The growth is GEOMETRY, not decoration: the text keeps its place
+   inside the box (it sits in the same 16px content box the 21px field
+   used) and the rule keeps its place under it, so the line the reader
+   sees is the line that was there before — only the empty space below
+   the rule is new, and that is the space the tap target occupies.
+
+   Scope: the fields of a facsimile document.  `.ds-doc` is the root of
+   the shared `<FormDocument>` wrapper, which every one of the 36
+   templates renders inside; `table` is kept for the same fields on
+   the read-only record view.  The shared `<Input>` (`.input-modern`,
+   `h-11`) and every other already-44px field are excluded, and so are
+   checkboxes and radios — a radio is targeted through its wrapping
+   <label>, the pattern the design system itself allows ("pad the
+   control or make the whole row the target"). */
+:is(table, .ds-doc) input:not(.input-modern):not(.h-11):not(.min-h-11):not([type="checkbox"]):not([type="radio"]):not([type="file"]):not([type="submit"]) {
+  height: 44px;
+  min-width: 44px;
+  padding-top: 2px;
+  padding-bottom: 26px;
+}
+
+/* A `<select>` in a document is a filled cell, not a ruled line: it
+   keeps its own padding and its text stays centred in the taller box.
+   It is the control's own box that has to grow, so the height is the
+   whole of the change. */
+:is(table, .ds-doc) select:not(.h-11):not(.min-h-11) {
+  height: 44px;
+  min-width: 44px;
+}
+
+/* The underline, redrawn at the text's baseline.  A solid hairline for
+   the solid rules, a dashed run for the dashed ones, each keeping the
+   colour the template asked for.
+
+   The class is matched as a class TOKEN (`[class~="border-b"]`), not as a
+   class selector (`.border-b`).  The two match exactly the same elements
+   and carry exactly the same specificity — one class-level qualifier each
+   — but the token form is not a compound of UTILITY names, so Tailwind
+   leaves the rule alone.
+
+   That matters: written as `.border-b.border-dashed.border-border`,
+   Tailwind reads the selector as a utility chain and expands the rule
+   into pseudo-element variants of itself, one of which came out with a
+   `*` spliced into the selector — `input.border-b.border-dashed*:not(…)`
+   — which is not valid CSS 2.1 and made the production build warn
+   (`Unexpected "*"`) and drop the rule.  The token form produces no
+   expansion and no warning, and the underlines are unchanged: same
+   elements, same specificity, same declarations. */
+:is(table, .ds-doc) input[class~="border-b"]:not(.input-modern):not(.h-11):not(.min-h-11):not([type="checkbox"]):not([type="radio"]) {
+  border-bottom-width: 0;
+  background-repeat: no-repeat;
+  background-position: 0 20px;
+  background-size: 100% 1px;
+  background-image: linear-gradient(hsl(var(--border)) 0 1px, transparent 1px);
+}
+
+:is(table, .ds-doc) input[class~="border-b"][class~="border-dashed"]:not(.input-modern):not(.h-11):not(.min-h-11):not([type="checkbox"]):not([type="radio"]) {
+  background-image: repeating-linear-gradient(to right, hsl(var(--foreground) / 0.4) 0 4px, transparent 4px 7px);
+}
+
+:is(table, .ds-doc) input[class~="border-b"][class~="border-dashed"][class~="border-border"]:not(.input-modern):not(.h-11):not(.min-h-11):not([type="checkbox"]):not([type="radio"]) {
+  background-image: repeating-linear-gradient(to right, hsl(var(--border)) 0 4px, transparent 4px 7px);
+}
+
+:is(table, .ds-doc) input[class~="border-b"][class~="border-dashed"][class~="border-warning/40"]:not(.input-modern):not(.h-11):not(.min-h-11):not([type="checkbox"]):not([type="radio"]) {
+  background-image: repeating-linear-gradient(to right, hsl(var(--warning) / 0.4) 0 4px, transparent 4px 7px);
+}
+
+:is(table, .ds-doc) input[class~="border-b"][class~="border-dashed"][class~="border-foreground/30"]:not(.input-modern):not(.h-11):not(.min-h-11):not([type="checkbox"]):not([type="radio"]) {
+  background-image: repeating-linear-gradient(to right, hsl(var(--foreground) / 0.3) 0 4px, transparent 4px 7px);
+}
+
+/* A radio in a facsimile is a 10px dot beside a 10px word — the option
+   label is its target, and the design system allows exactly that
+   ("pad the control or make the whole row the target").  So the LABEL
+   is grown to a real 44x44 target.
+
+   The growth is inside the cell the label already occupies, and the dot
+   and the word keep their printed size: only the label's box gets
+   bigger, and the words are centred inside it.  In the wide cells
+   (a rating option with its own cell) this costs nothing at all; in the
+   narrow ones (the F/47 "Yes / No / N/A" triad) the column has room to
+   spare — it is 15% of a 1400px document, 210px, for a triad that
+   needs 148px. */
+:is(table, .ds-doc) label:has(input[type="radio"]),
+:is(table, .ds-doc) label:has(input[type="checkbox"]),
+:is(table, .ds-doc) label:has(button[role="radio"]),
+:is(table, .ds-doc) label:has(button[role="checkbox"]) {
+  min-width: 44px;
+  min-height: 44px;
+  justify-content: center;
+}
+
+/* The Radix `<button role="checkbox">` is the same control as the native
+   input, and it needed the same treatment for the same reason — but it
+   is a BUTTON, so the rule above did not reach it, and the label around
+   it stayed 17px tall while the button's own 44px overlay spilled into
+   the next row.
+
+   Measured on F/22 at 1024x768: the option row wrapped onto two rows
+   20px apart, and each button's 44x44 overlay covered 10px of the
+   button above it.  The later row painted over the earlier one, so
+   tapping the LOWER HALF of a checkbox hit the checkbox in the row
+   below — a different field of the form.  The label is what names the
+   option, and the label is a form control's target, so the label is
+   what grows; the row grows with it, the overlay fits inside the label,
+   and no two fields' targets overlap any more.
+
+   The row height that results (44px) is the height every other field
+   row in a document already has — the rule above gives the document's
+   inputs a real 44px box for exactly the same reason. */
+
+/* ── A REAL 44x44 button ──
+   The cluster problem has one clean answer: when a row carries several
+   icon actions side by side, no extension is safe — three 28px buttons
+   2px apart reach 8px past their own edges, so their 44px targets
+   overlap and the later sibling steals the contested band from the
+   earlier one.
+
+   So for a cluster the target has to be REAL geometry: a button that
+   is genuinely 44x44, holding its small glyph in the centre.  The
+   visible mark stays the small glyph; only the hit surface grows, and
+   it grows inside its own cell, so it can never reach a neighbour.
+
+   `.ds-box-44` is the neutral version of that shape — the hover
+   affordance is a quiet neutral tint, because a cluster of actions is
+   not a destructive gesture.  `.ds-icon-44` below is the destructive
+   one. */
+.ds-box-44 {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  transition: background-color var(--duration-fast) var(--ease-standard),
+    color var(--duration-fast) var(--ease-standard);
+}
+
+.ds-box-44:hover {
+  background-color: hsl(var(--muted) / 0.7);
+}
+
+.ds-box-44:active {
+  background-color: hsl(var(--muted));
+}
+
+.ds-box-44:focus-visible {
+  outline: 2px solid hsl(var(--ring) / 0.45);
+  outline-offset: 2px;
+}
+
+/* ── Icon control in a dense grid ──
+   The ::after trick above extends a target over whatever is around it.
+   That is safe for a control standing alone on a page, but NOT for a
+   control inside a dense table: in the facsimile grids the row pitch is
+   19-26px, so a centred 44px box makes the NEXT row's button steal the
+   current row's glyph — a tap aimed at "delete row 3" would delete row 4.
+
+   (That was measured, not assumed: 24 overlapping hit boxes and 12
+   mis-targeted taps on F/11 alone.)
+
+   So for grid cells the target has to be REAL geometry — a button that is
+   genuinely 44x44, painted as a quiet square, holding the small glyph in
+   its centre.  The visible mark stays the small destructive-tint trash
+   icon; only the hit surface grows, and it grows inside its own cell, so
+   it can never reach a neighbour.
+
+   The glyph is centred, and the hover/focus affordance is a soft tint on
+   the square — the same restraint the design system uses elsewhere
+   (a quiet surface that only speaks on interaction). */
+.ds-icon-44 {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  transition: background-color var(--duration-fast) var(--ease-standard),
+    color var(--duration-fast) var(--ease-standard);
+}
+
+.ds-icon-44:hover {
+  background-color: hsl(var(--destructive) / 0.08);
+}
+
+.ds-icon-44:active {
+  background-color: hsl(var(--destructive) / 0.14);
+}
+
+.ds-icon-44:focus-visible {
+  outline: 2px solid hsl(var(--destructive) / 0.45);
+  outline-offset: 2px;
+}
+
 /* Gentle hover lift — the only entrance-ish motion on content */
 .ds-hover-lift {
   @apply transition-all duration-200;
@@ -1014,23 +1385,17 @@
     hsl(var(--muted-foreground) / 0.04) 50%,
     transparent 75%);
   background-size: 200% 100%;
-  animation: shimmer 1.5s infinite linear, pulse 2s var(--ease-standard) infinite;
+  animation: shimmer 1.5s infinite var(--ease-standard), pulse 2s var(--ease-standard) infinite;
 }
 
-/* ── Stagger entrance ── */
-.ds-stagger > *:nth-child(1) { animation-delay: 0ms; }
-.ds-stagger > *:nth-child(2) { animation-delay: 50ms; }
-.ds-stagger > *:nth-child(3) { animation-delay: 100ms; }
-.ds-stagger > *:nth-child(4) { animation-delay: 150ms; }
-.ds-stagger > *:nth-child(5) { animation-delay: 200ms; }
-.ds-stagger > *:nth-child(6) { animation-delay: 250ms; }
+/* ── Stagger entrance ──
+   Removed.  `.ds-stagger` only set `animation-delay` on children that
+   carried no animation, so it was a no-op in both places it was used —
+   a filter bar and a KPI grid.  With the entrance keyframes gone there
+   is nothing left for a delay to stagger. */
 
-/* ── Smooth content transitions ── */
-.ds-fade-enter {
-  animation: ds-fade-in 0.25s var(--ease-out-quart) both;
-}
-
-@keyframes ds-fade-in {
-  from { opacity: 0; transform: translateY(6px); }
-  to { opacity: 1; transform: translateY(0); }
-}
+/* ── Smooth content transitions ──
+   Removed.  `.ds-fade-enter` was an opacity-fade entrance applied to
+   async content (empty states, dropdown menus, modals) — exactly the
+   pattern the design system rejects, because a re-render can leave the
+   content stuck at opacity 0. */

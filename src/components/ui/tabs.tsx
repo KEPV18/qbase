@@ -27,7 +27,14 @@ const TabsTrigger = React.forwardRef<
   <TabsPrimitive.Trigger
     ref={ref}
     className={cn(
-      "inline-flex items-center justify-center whitespace-nowrap rounded-full px-3.5 py-1.5 text-sm font-medium ring-offset-background transition-all data-[state=active]:bg-card data-[state=active]:text-foreground data-[state=active]:shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50",
+      // `min-w-11` is the 44px half of the touch-target rule.  A tab
+      // that is narrower than 44px cannot reach it by extension alone:
+      // the pseudo-element that widens it is clipped by the tab strip
+      // it sits in, and where two tabs share a grid column the LATER
+      // sibling steals the contested pixel from the earlier one
+      // (measured: a 42px tab owned 42x42, not 44x44).  A real
+      // minimum width has nothing to steal.
+      "inline-flex min-w-11 items-center justify-center whitespace-nowrap rounded-full px-3.5 py-1.5 text-sm font-medium ring-offset-background transition-all data-[state=active]:bg-card data-[state=active]:text-foreground data-[state=active]:shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50",
       className,
     )}
     {...props}

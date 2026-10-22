@@ -100,7 +100,10 @@ export const SafeHtmlContent: React.FC<SafeHtmlContentProps> = ({ html, classNam
   // If no HTML tags, render as plain text with whitespace preservation
   if (!containsHtml(html)) {
     return (
-      <div className={`text-foreground whitespace-pre-wrap text-sm leading-relaxed ${className || ''}`}>
+      /* Long-form body copy.  The design system's floor for running text
+         is a 1.85 line-height — `leading-relaxed` (1.625) is a UI-label
+         value and is too tight for a paragraph of record content. */
+      <div className={`text-foreground whitespace-pre-wrap text-sm leading-[1.85] ${className || ''}`}>
         {html}
       </div>
     );
@@ -110,7 +113,7 @@ export const SafeHtmlContent: React.FC<SafeHtmlContentProps> = ({ html, classNam
   const sanitized = sanitizeHtml(html);
   return (
     <div
-      className={`prose prose-sm max-w-none text-foreground text-sm leading-relaxed ${className || ''}`}
+      className={`prose prose-sm max-w-none text-foreground text-sm leading-[1.85] ${className || ''}`}
       dangerouslySetInnerHTML={{ __html: sanitized }}
     />
   );
