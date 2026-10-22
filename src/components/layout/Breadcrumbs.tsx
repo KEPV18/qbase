@@ -37,13 +37,13 @@ export function Breadcrumbs({ items, className }: BreadcrumbsProps) {
     }
 
     return (
-        <nav className={cn("flex items-center space-x-2 text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground/60 mb-6 animate-fade-in", className)}>
+        <nav className={cn("flex items-center space-x-2 text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground/60 mb-6", className)}>
             {breadcrumbs.map((item, index) => (
                 <div key={index} className="flex items-center">
                     {index === 0 ? (
                         <Link
                             to={item.path || "/"}
-                            className="flex items-center gap-1.5 hover:text-primary-tint transition-colors group"
+                            className="flex items-center gap-1.5 hover:text-primary-tint transition-colors group ds-hit-44-h"
                         >
                             <Home className="w-3 h-3 transition-transform group-hover:scale-110" />
                             <span className="mt-0.5">{item.label}</span>
@@ -51,7 +51,7 @@ export function Breadcrumbs({ items, className }: BreadcrumbsProps) {
                     ) : item.path ? (
                         <Link
                             to={item.path}
-                            className="hover:text-primary-tint transition-colors"
+                            className="inline-flex items-center hover:text-primary-tint transition-colors ds-hit-44-h"
                         >
                             {item.label}
                         </Link>

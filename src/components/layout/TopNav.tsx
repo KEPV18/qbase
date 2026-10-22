@@ -153,14 +153,14 @@ export function TopNav() {
             onChange={(e) => setSearchTerm(e.target.value)}
             onFocus={() => { if (results.length > 0) setShowSearchDropdown(true); }}
             onKeyDown={(e) => { if (e.key === 'Escape') setShowSearchDropdown(false); }}
-            className="w-full pl-9 pr-10 py-2 rounded-lg bg-background border border-border text-sm text-foreground dark:text-foreground dark:bg-card dark:border-border placeholder:text-muted-foreground/70 focus:outline-none focus:ring-2 focus:ring-foreground/10 focus:border-foreground/20 transition-all"
+            className="w-full h-11 pl-9 pr-10 rounded-lg bg-background border border-border text-sm text-foreground dark:text-foreground dark:bg-card dark:border-border placeholder:text-muted-foreground/70 focus:outline-none focus:ring-2 focus:ring-foreground/10 focus:border-foreground/20 transition-all"
           />
             <button
               type="button"
               onClick={() => openCommandPalette()}
               title="Open command palette (⌘K)"
               aria-label="Open command palette"
-              className="absolute right-3 top-1/2 -translate-y-1/2 hidden lg:inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-md bg-muted dark:bg-muted border border-border dark:border-border text-[10px] font-medium text-muted-foreground/70 hover:text-foreground transition-colors cursor-pointer"
+              className="absolute right-3 top-1/2 -translate-y-1/2 hidden lg:inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-md bg-muted dark:bg-muted border border-border dark:border-border text-[10px] font-medium text-muted-foreground/70 hover:text-foreground transition-colors cursor-pointer ds-hit-44"
             >
             ⌘ K
           </button>
@@ -170,16 +170,16 @@ export function TopNav() {
                 <button
                   key={r.serial}
                   onClick={() => { navigate(`/records/${encodeURIComponent(r.serial)}`); setShowSearchDropdown(false); setSearchTerm(''); }}
-                  className="w-full text-left px-4 py-2.5 hover:bg-background dark:hover:bg-muted flex items-center gap-3 transition-colors"
+                  className="w-full min-h-11 text-left px-4 py-2.5 hover:bg-background dark:hover:bg-muted flex items-center gap-3 transition-colors"
                 >
                   <FileText className="w-4 h-4 text-muted-foreground/70 shrink-0" />
                   <div className="min-w-0 flex-1">
                     <p className="text-sm font-medium text-foreground dark:text-ink-3 truncate">{r.serial}</p>
                     <p className="text-xs text-muted-foreground">{r.formName}</p>
                   </div>
-                  <span className="text-xs text-muted-foreground shrink-0 font-mono bg-background dark:bg-card rounded px-1.5 py-0.5">{r.formCode}</span>
+                  <span className="text-xs text-muted-foreground shrink-0 font-mono bg-background dark:bg-card rounded-sm px-1.5 py-0.5">{r.formCode}</span>
                   <span className={cn(
-                    "text-[9px] uppercase tracking-wider px-1.5 py-0.5 rounded font-medium",
+                    "text-[9px] uppercase tracking-wider px-1.5 py-0.5 rounded-sm font-medium",
                     r.match === 'serial' && "text-primary-tint bg-primary/10 dark:bg-primary/20",
                     r.match === 'name' && "text-success-tint bg-success/10 dark:bg-success/20",
                     r.match === 'code' && "text-primary-tint bg-primary/10 dark:bg-primary/20",
@@ -191,18 +191,22 @@ export function TopNav() {
           )}
         </div>
 
-        {/* Right — Utilities + Avatar */}
-        <div className="flex items-center gap-2">
+        {/* Right — Utilities + Avatar.
+            The two icon controls are painted 32px, so each reaches 6px
+            past its own edge for the 44px target.  `gap-3` (12px) is
+            exactly 6 + 6, so the two targets meet without ever
+            overlapping — the earlier control keeps its full 44px. */}
+        <div className="flex items-center gap-3">
           <button
             onClick={() => setTheme(resolvedTheme === 'dark' ? 'light' : 'dark')}
-            className="p-2 rounded-lg text-muted-foreground/70 hover:text-foreground hover:bg-background dark:hover:bg-card transition-colors"
+            className="p-2 rounded-lg text-muted-foreground/70 hover:text-foreground hover:bg-background dark:hover:bg-card transition-colors ds-hit-44"
             title="Toggle theme"
           >
             {resolvedTheme === 'dark' ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
           </button>
           <button
             onClick={() => navigate('/notifications')}
-            className="p-2 rounded-lg text-muted-foreground/70 hover:text-foreground hover:bg-background dark:hover:bg-card transition-colors relative"
+            className="p-2 rounded-lg text-muted-foreground/70 hover:text-foreground hover:bg-background dark:hover:bg-card transition-colors relative ds-hit-44"
             title="Notifications"
           >
             <Bell className="w-4 h-4" />

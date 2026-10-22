@@ -110,7 +110,7 @@ function SidebarIconItem({
       aria-current={isActive ? "page" : undefined}
       title={item.label}
       className={cn(
-        "w-full flex items-center justify-center px-2 py-2.5 rounded-lg transition-all duration-200",
+        "w-full min-h-11 flex items-center justify-center px-2 py-2.5 rounded-lg transition-all duration-200",
         isActive
           ? "bg-foreground text-white dark:bg-muted dark:text-foreground"
           : "text-muted-foreground hover:text-foreground hover:bg-muted"
@@ -165,7 +165,7 @@ function ProjectFilterDropdown() {
       <select
         value={currentProject}
         onChange={handleChange}
-        className="w-full pl-9 pr-4 py-2.5 rounded-lg bg-background dark:bg-card border border-border dark:border-border text-sm text-foreground dark:text-foreground appearance-none cursor-pointer focus:outline-none focus:ring-2 focus:ring-foreground/10"
+        className="w-full h-11 pl-9 pr-4 rounded-lg bg-background dark:bg-card border border-border dark:border-border text-sm text-foreground dark:text-foreground appearance-none cursor-pointer focus:outline-none focus:ring-2 focus:ring-foreground/10"
       >
         <option value="">All Projects</option>
         {PROJECTS.map(p => (
@@ -205,7 +205,7 @@ function MonthFilterDropdown() {
       <select
         value={currentMonth}
         onChange={handleChange}
-        className="w-full pl-9 pr-4 py-2.5 rounded-lg bg-background dark:bg-card border border-border dark:border-border text-sm text-foreground dark:text-foreground appearance-none cursor-pointer focus:outline-none focus:ring-2 focus:ring-foreground/10"
+        className="w-full h-11 pl-9 pr-4 rounded-lg bg-background dark:bg-card border border-border dark:border-border text-sm text-foreground dark:text-foreground appearance-none cursor-pointer focus:outline-none focus:ring-2 focus:ring-foreground/10"
       >
         <option value="">All Months</option>
         {availableMonths.map(m => (
@@ -245,13 +245,23 @@ export function Sidebar({ mobileOpen, onClose, sidebarOpen, onToggle }: { mobile
       <aside
         className={cn(
           "fixed lg:static inset-y-0 left-0 z-50 bg-background/80 backdrop-blur-xl border-r border-border",
-          "flex flex-col transition-all duration-300 ease-in-out",
+          "flex flex-col transition-all duration-300 ease-spring",
+          // `lg:h-screen` keeps the rail exactly one viewport tall.  The
+          // rail's content (16 nav items + the filters + the profile card)
+          // is ~1137px, so without a bound the STATIC rail stretched the
+          // whole document to 1137px: the page scrolled 369px at
+          // 1024x768 while the content column beside it stayed put, and
+          // the last nav item's 44px target ended up below the fold with
+          // the window itself as the only thing that could clip it.  Bounding
+          // the rail lets the nav scroll inside itself, which is what its
+          // `overflow-y-auto` was always meant to do.
+          "lg:h-screen",
           mobileOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0",
           sidebarOpen ? "w-64" : "w-0 lg:w-16 overflow-hidden lg:overflow-visible"
         )}
       >
         {/* Logo + Toggle */}
-        <div className={cn("px-6 pt-8 pb-6 flex items-center", sidebarOpen ? "justify-between" : "justify-center")}>
+        <div className={cn("px-6 pt-8 pb-6 flex items-center shrink-0", sidebarOpen ? "justify-between" : "justify-center")}>
           {sidebarOpen ? (
             <button onClick={() => handleNav("/")} className="flex items-center gap-3">
               <div className="w-9 h-9 rounded-lg bg-foreground dark:bg-card flex items-center justify-center">
@@ -268,7 +278,7 @@ export function Sidebar({ mobileOpen, onClose, sidebarOpen, onToggle }: { mobile
           )}
           <button
             onClick={onToggle}
-            className="hidden lg:flex p-1.5 rounded-lg text-muted-foreground/70 hover:text-foreground hover:bg-muted transition-colors shrink-0"
+            className="hidden lg:flex p-1.5 rounded-lg text-muted-foreground/70 hover:text-foreground hover:bg-muted transition-colors shrink-0 ds-hit-44"
             title={sidebarOpen ? "Collapse sidebar" : "Expand sidebar"}
           >
             <X className="w-4 h-4" />
@@ -276,7 +286,15 @@ export function Sidebar({ mobileOpen, onClose, sidebarOpen, onToggle }: { mobile
         </div>
 
         {/* Navigation */}
-        <div className={cn("flex-1 space-y-6 overflow-y-auto", sidebarOpen ? "px-4" : "px-2")}>
+        {/*
+          `min-h-0` lets the rail's scroll area shrink below its content
+          (a flex item's automatic minimum size is its content height
+          unless it is zeroed), and `py-2` gives the first and the last
+          item room: a scroll container clips at its padding box, so the
+          2px of overhang a 44px target needs would otherwise be thrown
+          away at either end of the list.
+        */}
+        <div className={cn("flex-1 min-h-0 space-y-6 overflow-y-auto py-2", sidebarOpen ? "px-4" : "px-2")}>
           <div className="space-y-1">
             {sidebarOpen && (
               <p className="px-3 mb-2 text-[11px] font-display font-semibold text-muted-foreground/70 uppercase tracking-wider">
@@ -363,7 +381,7 @@ export function Sidebar({ mobileOpen, onClose, sidebarOpen, onToggle }: { mobile
 
         {/* Filters */}
         {sidebarOpen && (
-          <div className="px-4 pb-2 space-y-2">
+          <div className="px-4 pb-2 space-y-2 shrink-0">
             <p className="px-3 mb-2 text-[11px] font-display font-semibold text-muted-foreground/70 uppercase tracking-wider">
               FILTERS
             </p>
@@ -373,7 +391,7 @@ export function Sidebar({ mobileOpen, onClose, sidebarOpen, onToggle }: { mobile
         )}
 
         {/* User Profile */}
-        <div className={cn("pb-6 pt-4", sidebarOpen ? "px-4" : "px-2")}>
+        <div className={cn("pb-6 pt-4 shrink-0", sidebarOpen ? "px-4" : "px-2")}>
           <div className={cn("flex items-center rounded-lg border border-border bg-card", sidebarOpen ? "gap-3 px-3 py-3" : "gap-2 p-2 justify-center")}>
             <div className="w-9 h-9 rounded-full bg-foreground dark:bg-card flex items-center justify-center shrink-0">
               <span className="text-xs font-bold text-white dark:text-foreground">{userInitials}</span>
@@ -386,7 +404,7 @@ export function Sidebar({ mobileOpen, onClose, sidebarOpen, onToggle }: { mobile
                 </div>
                 <button
                   onClick={logout}
-                  className="p-1.5 rounded-lg text-muted-foreground/70 hover:text-foreground hover:bg-muted transition-colors"
+                  className="p-1.5 rounded-lg text-muted-foreground/70 hover:text-foreground hover:bg-muted transition-colors ds-hit-44"
                   title="Logout"
                 >
                   <LogOut className="w-4 h-4" />

@@ -6,10 +6,19 @@ interface AppShellProps {
   children: React.ReactNode;
   breadcrumbs?: { label: string; path?: string }[];
   className?: string;
+  /**
+   * The container tier.  The design system names two columns — a 720px
+   * reading column and a 1080px grid/dense column — plus a document
+   * tier for the QMS form facsimiles, whose Word-origin tables run up
+   * to 18 columns wide and would be unreadable in either.
+   *
+   * Default is the grid column: most QBase routes are scannable
+   * (dashboards, indexes, queues), not read top-to-bottom.
+   */
   maxWidth?: string;
 }
 
-export function AppShell({ children, breadcrumbs, className, maxWidth = "max-w-[1400px]" }: AppShellProps) {
+export function AppShell({ children, breadcrumbs, className, maxWidth = "max-w-grid" }: AppShellProps) {
   useEffect(() => {
     window.scrollTo(0, 0);
   }, []);
@@ -22,7 +31,12 @@ export function AppShell({ children, breadcrumbs, className, maxWidth = "max-w-[
             <Breadcrumbs items={breadcrumbs} />
           </div>
         )}
-        <div className="page-transition">
+        {/* No entrance keyframe here.  This wrapper is the ONE place every
+            route's content is mounted, and the content is async — a
+            re-render could restart a keyframe and leave the page at
+            opacity 0.  The design system's rule is explicit: "no
+            opacity-fade entrance keyframes on async-rendered content". */}
+        <div>
           {children}
         </div>
       </div>
