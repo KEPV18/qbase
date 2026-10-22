@@ -14,17 +14,22 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
   FileText, Activity, Clock, CheckCircle, AlertTriangle,
-  Pencil, PlusCircle, RefreshCw, ArrowRight,
+  Pencil, PlusCircle, RefreshCw, ArrowRight, RotateCcw, Sparkles,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { isoToDisplay } from "@/schemas";
+import type { AuditAction } from "@/services/auditLog";
 
-type AuditAction = 'create' | 'update' | 'delete';
-
-const ACTION_CONFIG: Record<string, { icon: React.ElementType; color: string; label: string }> = {
+const ACTION_CONFIG: Record<AuditAction, { icon: React.ElementType; color: string; label: string }> = {
   create: { icon: PlusCircle, color: "text-success-tint", label: "Created" },
   update: { icon: Pencil, color: "text-primary-tint", label: "Updated" },
   delete: { icon: AlertTriangle, color: "text-destructive-tint", label: "Deleted" },
+  status_change: { icon: ArrowRight, color: "text-primary-tint", label: "Status changed" },
+  workflow_transition: { icon: ArrowRight, color: "text-primary-tint", label: "Status changed" },
+  ai_assisted_create: { icon: Sparkles, color: "text-primary-tint", label: "AI assisted" },
+  discard: { icon: AlertTriangle, color: "text-destructive-tint", label: "Draft discarded" },
+  restore: { icon: RotateCcw, color: "text-success-tint", label: "Restored" },
+  error_report_resolved: { icon: CheckCircle, color: "text-success-tint", label: "Error resolved" },
 };
 
 export default function ActivityPage() {
@@ -65,7 +70,7 @@ export default function ActivityPage() {
       ) : (
         <div className="space-y-2 mt-4">
           {entries.map((entry, idx) => {
-            const config = ACTION_CONFIG[entry.action as string] || ACTION_CONFIG.update;
+            const config = ACTION_CONFIG[entry.action] || ACTION_CONFIG.update;
             const Icon = config.icon;
 
             return (

@@ -10,12 +10,33 @@ import { supabase } from '@/integrations/supabase/client';
 
 // ─── Types ──────────────────────────────────────────────────────────────────
 
+/**
+ * The vocabulary of public.audit_log.action.
+ *
+ * The column carries a CHECK constraint, so this list and the database's
+ * constraint have to be the same closed set — that is what migration
+ * 20260929_00_audit_action_vocabulary.sql guarantees. The first four are the
+ * original vocabulary; 'ai_assisted_create' is written by the app; the rest
+ * are written by the Prime engine (record_transition, record_discard_draft,
+ * record_restore, error_report_resolve).
+ */
+export type AuditAction =
+  | 'create'
+  | 'update'
+  | 'delete'
+  | 'status_change'
+  | 'ai_assisted_create'
+  | 'workflow_transition'
+  | 'discard'
+  | 'restore'
+  | 'error_report_resolved';
+
 export interface AuditLogEntry {
   id: string;
   timestamp: string;
   serial: string;
   formCode: string;
-  action: 'create' | 'update' | 'delete' | 'status_change';
+  action: AuditAction;
   user: string;
   changedFields: string;
   previousValues: string;
@@ -89,8 +110,8 @@ export async function appendAuditLog(
   serial: string,
   // 'ai_assisted_create' (Prime §D5): provenance tag appended right after the
   // AI-proposed content was accepted and written through the validated paths.
-  // The audit_log.action column is unconstrained text server-side.
-  action: 'create' | 'update' | 'delete' | 'status_change' | 'ai_assisted_create',
+  // The action column is a closed vocabulary server-side — see AuditAction.
+  action: AuditAction,
   _userIgnored: string,
   changedFields: string[],
   previousValues: Record<string, unknown>,
@@ -144,7 +165,7 @@ export interface AuditLogReadEntry {
   timestamp: string;
   serial: string;
   formCode: string;
-  action: 'create' | 'update' | 'delete' | 'status_change';
+  action: AuditAction;
   user: string;
   changedFields: string[];
   previousValues: Record<string, unknown>;
@@ -186,7 +207,7 @@ export async function getAuditLogForSerial(serial: string): Promise<AuditLogRead
     timestamp: row.created_at as string,
     serial: (row.serial as string) || serial,
     formCode: (row.form_code as string) || '',
-    action: row.action as 'create' | 'update' | 'delete' | 'status_change',
+    action: row.action as AuditAction,
     user: row.performed_by as string,
     changedFields: Array.isArray(row.changed_fields) ? row.changed_fields : [],
     previousValues: (row.previous_values as Record<string, unknown>) || {},
@@ -221,7 +242,7 @@ export async function getAllAuditLogs(limit = 100): Promise<AuditLogReadEntry[]>
     timestamp: row.created_at as string,
     serial: (row.serial as string) || (recordRef?.serial as string) || '',
     formCode: (row.form_code as string) || (recordRef?.form_code as string) || '',
-    action: row.action as 'create' | 'update' | 'delete' | 'status_change',
+    action: row.action as AuditAction,
     user: row.performed_by as string,
     changedFields: Array.isArray(row.changed_fields) ? row.changed_fields : [],
     previousValues: (row.previous_values as Record<string, unknown>) || {},
