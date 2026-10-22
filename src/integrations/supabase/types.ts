@@ -820,28 +820,22 @@ export type Database = {
             }
             Returns: Json
           }
-      create_notifications_batch:
-        | {
-            Args: {
-              p_message: string
-              p_title: string
-              p_type?: string
-              p_user_ids: string[]
-            }
-            Returns: Json
-          }
-        | {
-            Args: {
-              p_created_by?: string
-              p_data?: Json
-              p_link?: string
-              p_message: string
-              p_title: string
-              p_type?: string
-              p_user_ids: string[]
-            }
-            Returns: Json
-          }
+      create_notifications_batch: {
+        Args: {
+          p_actor_id?: string | null
+          p_category?: string
+          p_created_by?: string | null
+          p_data?: Json
+          p_event_type?: string
+          p_link?: string | null
+          p_message: string
+          p_priority?: string
+          p_target_id?: string | null
+          p_title: string
+          p_user_ids: string[]
+        }
+        Returns: number
+      }
       has_role: { Args: { _role: string }; Returns: boolean }
       soft_delete_record: { Args: { p_record_id: string }; Returns: Json }
     }
