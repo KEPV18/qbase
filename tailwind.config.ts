@@ -71,7 +71,7 @@ export default {
         support: "hsl(var(--accent-support))",
         // The document masthead gradient. These are DEEPER than the UI
         // accent so that the white text sitting on them — including the
-        // 70–90% white labels in the header — clears AA at every stop.
+        // 70–100% white labels in the header — clears AA at every stop.
         masthead: {
           from: "hsl(var(--masthead-from))",
           to: "hsl(var(--masthead-to))",

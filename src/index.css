@@ -55,21 +55,23 @@
     --accent-support: 241 73% 63.14%;   /* #5e5ce6 */
 
     /* ── Document masthead gradient ──
-       The QMS document header carries white text at four alpha tiers
-       (100% wordmark, 90% chip, 80% serial, 70% section label) plus a
-       white/20 chip ground.  The UI accent (#0071e3) only reaches
-       4.70:1 with pure white and drops below AA at every alpha, so the
-       masthead uses a DEEPER pair of the same two hues.
+       The QMS document header carries white text at three alpha tiers
+       (100% wordmark and code chip, 80% revision, 70% section label and
+       page number) plus a white/20 chip ground.  The UI accent (#0071e3)
+       only reaches 4.70:1 with pure white and drops below AA at every
+       alpha, so the masthead uses a DEEPER pair of the same two hues.
 
        Measured worst case across the ramp (21 stops sampled from
-       #184486 to #2727b9) — every tier clears AA (4.5:1):
-         white/60  4.52:1   white/70  5.56:1
-         white/80  6.74:1   white/90  8.02:1
-         white/100 9.50:1   chip (white/20 ground, white/90 text) 4.66:1
-       The previous pair (#0a4d94 → #4540b5) failed at white/60 (3.96:1)
-       and at the chip (4.16:1). ── */
-    --masthead-from: 216 70% 31%;     /* #184486 */
-    --masthead-to: 240 65% 44%;       /* #2727b9 */
+       #1e3a8a to #172554) — every tier clears AA (4.5:1):
+         white/70  5.94:1   white/80  7.24:1
+         white/90  8.71:1   white/100 10.36:1
+         chip (white/20 ground, white/100 text) 5.93:1
+       The previous pair (#184486 → #2727b9) was LIGHTER than the
+       seventeen accent ramps beside it and fell to 4.52:1 at white/70;
+       this pair is the blue 900/950 step the other slots use, so all
+       eighteen forms now read at the same depth. ── */
+    --masthead-from: 224.4 64.3% 32.94%;   /* #1e3a8a */
+    --masthead-to: 226.2 57% 20.98%;       /* #172554 */
 
     /* ── Document ink — the grayscale ramp used inside printed/QMS
        documents, where the accent is deliberately withheld so the page
