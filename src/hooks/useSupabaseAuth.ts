@@ -122,6 +122,9 @@ export function useSupabaseAuth({
 
   const isFetchingRef = React.useRef<string | null>(null);
   const lastSyncTimestampRef = React.useRef<number>(0);
+  // The profile sync that is currently in flight.  Concurrent callers SHARE
+  // it instead of returning early — see syncUserProfile.
+  const inflightSyncRef = React.useRef<Promise<void> | null>(null);
   // Guards against SIGNED_IN event racing with login() — prevents
   // syncUserProfile from wiping user state set by login().
   const loginInProgressRef = React.useRef<boolean>(false);
@@ -150,63 +153,77 @@ export function useSupabaseAuth({
 
     const now = Date.now();
     if (isFetchingRef.current === authUserId && (now - lastSyncTimestampRef.current < 5000)) {
+      // A sync for this user is ALREADY in flight — share it instead of
+      // returning empty.  Both callers clear `loading` as soon as this
+      // resolves, and returning early cleared it while `user` was still
+      // null: the bootstrap's getSession() and the INITIAL_SESSION auth
+      // event both call this within a millisecond of each other, so every
+      // cold load bounced the user through /login before the profile
+      // arrived.  Awaiting the in-flight sync keeps `loading` true until
+      // the user is actually set.
+      await inflightSyncRef.current;
       return;
     }
     isFetchingRef.current = authUserId;
     lastSyncTimestampRef.current = now;
 
-    try {
-      const [profile, role, department] = await Promise.all([
-        fetchUserProfile(authUserId),
-        fetchUserRole(authUserId),
-        fetchUserDepartment(authUserId),
-      ]);
+    const run = (async () => {
+      try {
+        const [profile, role, department] = await Promise.all([
+          fetchUserProfile(authUserId),
+          fetchUserRole(authUserId),
+          fetchUserDepartment(authUserId),
+        ]);
 
-      if (profile) {
-        const isActive = !!(profile.is_active ?? false);
-        if (!isActive) {
-          await supabase.auth.signOut();
-          saveSession(null);
-          setUser(null);
-          return;
+        if (profile) {
+          const isActive = !!(profile.is_active ?? false);
+          if (!isActive) {
+            await supabase.auth.signOut();
+            saveSession(null);
+            setUser(null);
+            return;
+          }
+          const appUser = mapProfileToAppUser(profile, role, department);
+          setUser(appUser);
+          saveSession(appUser.id, appUser.role, appUser.name, appUser.department);
+          setUsers(prev => prev.some(u => u.id === appUser.id) ? prev : [appUser, ...prev]);
+        } else {
+          // No profile — self-provision through the Prime spine: the RPC derives
+          // the email from auth.users server-side (never client-asserted) and
+          // self-assigns the employee-class 'user' role server-side. Failures
+          // fall back to the basic-user path below (non-fatal by design).
+          const emailName = email.split("@")[0] || "User";
+          try {
+            await selfProvisionProfile(emailName);
+          } catch {
+            log.auth.unauthorized("profile_autocreate_failed", authUserId);
+          }
+          // Set minimal user so UI doesn't hang; setLoading guaranteed in finally below.
+          setUser({
+            id: authUserId,
+            name: emailName,
+            email, password: "", role: "user", department: null, active: true, lastLoginAt: Date.now(),
+          });
         }
-        const appUser = mapProfileToAppUser(profile, role, department);
-        setUser(appUser);
-        saveSession(appUser.id, appUser.role, appUser.name, appUser.department);
-        setUsers(prev => prev.some(u => u.id === appUser.id) ? prev : [appUser, ...prev]);
-      } else {
-        // No profile — self-provision through the Prime spine: the RPC derives
-        // the email from auth.users server-side (never client-asserted) and
-        // self-assigns the employee-class 'user' role server-side. Failures
-        // fall back to the basic-user path below (non-fatal by design).
-        const emailName = email.split("@")[0] || "User";
-        try {
-          await selfProvisionProfile(emailName);
-        } catch {
-          log.auth.unauthorized("profile_autocreate_failed", authUserId);
-        }
-        // Set minimal user so UI doesn't hang; setLoading guaranteed in finally below.
+      } catch (err: unknown) {
+        // Auth OK but profile fetch failed — set basic user so loading stops.
+        // The finally block guarantees setLoading(false) is called in every path.
+        log.auth.unauthorized("profile_sync_fallback", authUserId);
         setUser({
           id: authUserId,
-          name: emailName,
+          name: email.split("@")[0] || "User",
           email, password: "", role: "user", department: null, active: true, lastLoginAt: Date.now(),
         });
+      } finally {
+        // CRITICAL: setLoading(false) must run in every path — including exceptions —
+        // so the UI never hangs on a spinner if profile sync rejects or hangs.
+        setLoading(false);
+        isFetchingRef.current = null;
       }
-    } catch (err: unknown) {
-      // Auth OK but profile fetch failed — set basic user so loading stops.
-      // The finally block guarantees setLoading(false) is called in every path.
-      log.auth.unauthorized("profile_sync_fallback", authUserId);
-      setUser({
-        id: authUserId,
-        name: email.split("@")[0] || "User",
-        email, password: "", role: "user", department: null, active: true, lastLoginAt: Date.now(),
-      });
-    } finally {
-      // CRITICAL: setLoading(false) must run in every path — including exceptions —
-      // so the UI never hangs on a spinner if profile sync rejects or hangs.
-      setLoading(false);
-      isFetchingRef.current = null;
-    }
+    })();
+
+    inflightSyncRef.current = run;
+    await run;
   }, [setUser, setUsers, setLoading]);
 
   /* ── Bootstrap Effect ─────────────────────────────────────────────────── */

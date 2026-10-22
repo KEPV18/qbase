@@ -39,12 +39,23 @@ export default function Login() {
   const [resetLoading, setResetLoading] = useState(false);
   const { login, resetPassword, user, loading } = useAuth();
 
+  // Where to land after signing in.  `RequireAuth` hands over the whole
+  // location object it bounced the user from, so the QUERY STRING has to
+  // travel with it: a deep link like /create?formCode=F/08 or
+  // /kpi/reports?tab=quarterly used to lose its query on the login
+  // round-trip and dropped the user on the dashboard instead.
+  const fromLocation = location.state?.from as
+    | { pathname?: string; search?: string; hash?: string }
+    | undefined;
+  const fromPath = fromLocation?.pathname
+    ? `${fromLocation.pathname}${fromLocation.search || ""}${fromLocation.hash || ""}`
+    : "/";
+
   useEffect(() => {
     if (!loading && user) {
-      const from = location.state?.from?.pathname || "/";
-      navigate(from, { replace: true });
+      navigate(fromPath, { replace: true });
     }
-  }, [user, loading, navigate, location]);
+  }, [user, loading, navigate, fromPath]);
 
   const validate = () => {
     const errs: typeof errors = {};
@@ -74,8 +85,7 @@ export default function Login() {
     }
     // Explicit navigate on success — don't rely solely on useEffect redirect
     // (useEffect still handles session-restore on refresh; this handles fresh login)
-    const from = location.state?.from?.pathname || "/";
-    navigate(from, { replace: true });
+    navigate(fromPath, { replace: true });
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
