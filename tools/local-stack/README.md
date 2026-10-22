@@ -77,12 +77,12 @@ VITE_SUPABASE_URL=http://127.0.0.1:54351 VITE_SUPABASE_ANON_KEY="$ANON" \
 bash tools/local-stack/start-local.sh
 ```
 
-Then open <http://127.0.0.1:5211> and sign in with an account from
+Then open <http://127.0.0.1:5210> and sign in with an account from
 `/tmp/qbase-local/LOCAL_LOGIN.txt`.
 
 The stack dies with the session; `start-local.sh` brings it back.
 
-## The two previews — do not mix them up
+## The two stacks — do not mix them up
 
 There are two static previews on this machine, and each one has its own
 database **and its own password**. Every preview stamps a banner in the
@@ -90,13 +90,20 @@ top-right corner saying which one it is.
 
 | preview | build | talks to | password |
 |---|---|---|---|
-| <http://127.0.0.1:5211> | `dist-local` | the local database (`127.0.0.1:5433/qbase_local`) via `54351` | `/tmp/qbase-local/LOCAL_LOGIN.txt` |
-| <http://127.0.0.1:5210> | `dist` | the live project `hkkdbxvmvvcxpgfqlrnp` via `54341` | the production one (restore notes) |
+| <http://127.0.0.1:5210> | `dist-local` | the local database (`127.0.0.1:5433/qbase_local`) via `54351` | `/tmp/qbase-local/LOCAL_LOGIN.txt` |
+| <http://127.0.0.1:5211> | `dist-local` | the same local build | same file |
+| <http://127.0.0.1:5212> | `dist` | the live project `hkkdbxvmvvcxpgfqlrnp` via `54341` | the production one (restore notes) |
 
-Signing in to 5210 with the local password answers `400 invalid_grant`,
-because the local password was generated locally and exists nowhere else —
-that is the expected answer, not a fault. The API port in the browser's
-console tells you which stack you are on: `54351` = local, `54343` = live.
+**5210 and 5211 both serve the LOCAL stack on purpose.** 5210 is the port
+that gets opened, and it used to point at the live project — so every local
+password answered `400 invalid_grant` there, which is indistinguishable
+from a broken login. The live stack moved to 5212.
+
+Signing in to 5212 with the local password still answers `400
+invalid_grant`, because the local password was generated locally and
+exists nowhere else — that is the expected answer, not a fault. The API
+port in the browser's console tells you which stack you are on:
+`54351` = local, `54343` = live.
 
 ## Verifying it
 

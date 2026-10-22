@@ -33,16 +33,24 @@ if ! ss -ltn 2>/dev/null | grep -q "127.0.0.1:54351"; then
   sleep 1
 fi
 
-# 3. the static preview server for the local build
-if ! ss -ltn 2>/dev/null | grep -q "127.0.0.1:5211"; then
-  nohup node "$TOOLS/server.mjs" --port 5211 \
-    --root "$REPO/dist-local" \
-    --label "LOCAL STACK — local database (127.0.0.1:5433/qbase_local)" \
-    --note "login: /tmp/qbase-local/LOCAL_LOGIN.txt" \
-    > /tmp/qbase-local/server-local.log 2>&1 &
-  sleep 1
-fi
+# 3. the static preview server for the local build.
+#    It answers on BOTH 5210 and 5211: 5210 is the port the owner habitually
+#    opens, and it must never point at the live project by accident — a
+#    local password against the live stack answers 400 invalid_grant, which
+#    looks exactly like a broken login.
+for p in 5210 5211; do
+  if ! ss -ltn 2>/dev/null | grep -q "127.0.0.1:$p"; then
+    nohup node "$TOOLS/server.mjs" --port "$p" \
+      --root "$REPO/dist-local" \
+      --label "LOCAL STACK — the local database on this machine" \
+      --note "login: /tmp/qbase-local/LOCAL_LOGIN.txt" \
+      > "/tmp/qbase-local/server-local-$p.log" 2>&1 &
+    sleep 1
+  fi
+done
 
-echo "preview : http://127.0.0.1:5211   (local database)"
+echo "preview : http://127.0.0.1:5210   (local database)  <- open this one"
+echo "         http://127.0.0.1:5211   (the same local build)"
 echo "api     : http://127.0.0.1:54351  (proxy) -> 54350 (shim) -> 127.0.0.1:5433/qbase_local"
-ss -ltn 2>/dev/null | grep -E "5211|54350|54351"
+echo "live    : http://127.0.0.1:5212   (the real project — production password)"
+ss -ltn 2>/dev/null | grep -E "5210|5211|5212|54350|54351"
