@@ -180,7 +180,7 @@ export function F25Template({ data, isTemplate = true, editMode = false, onChang
 
           {/* Rows 6-17: audit matrix rows (up to 12) */}
           {matrix.map((row, idx) => (
-            <tr key={idx}>
+            <tr key={idx} className="group">
               <td colSpan={3} className={cls}>
                 {cellInp(idx, "department", "Department")}
               </td>
@@ -193,10 +193,15 @@ export function F25Template({ data, isTemplate = true, editMode = false, onChang
               <td colSpan={2} className={cls}>
                 <div className="flex items-center gap-1">
                   {cellInp(idx, "auditor", "Auditor")}
+                  {/* The row now carries the `group` class, so this reveal
+                      can actually fire — it never did before, which left the
+                      button permanently invisible. */}
                   {editMode && matrix.length > 1 && (
                     <button
                       onClick={() => removeRow(idx)}
-                      className="text-destructive-tint opacity-0 group-hover:opacity-100 transition-opacity shrink-0"
+                      className="ds-icon-44 text-destructive-tint hover:text-destructive-tint opacity-0 group-hover:opacity-100 focus-visible:opacity-100 transition-opacity shrink-0"
+                      title="Remove row"
+                      aria-label={`Remove row ${idx + 1}`}
                     >
                       <Trash2 className="w-3 h-3" />
                     </button>

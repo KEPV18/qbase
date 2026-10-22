@@ -110,7 +110,7 @@ export function DocField({ label, value, fullWidth }: DocFieldProps) {
       <p className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider">
         {label}
       </p>
-      <div className="text-sm text-foreground leading-relaxed">
+      <div className="text-sm text-foreground leading-[1.85]">
         {value}
       </div>
     </div>

@@ -105,7 +105,11 @@ export function F20Template({ data, isTemplate = true, editMode = false, onChang
             ))}
           </ul>
           {/* Sub-items */}
-          <ul className="ml-8 space-y-1.5 border-l-2 border-primary/25 dark:border-primary/45 pl-4">
+          {/* A neutral rule, not a coloured bar.  The design system puts
+              the "coloured left-bar" on its anti-slop list; the tree
+              hierarchy this line shows is carried by the indent and the
+              bullet, so the rule can be a plain hairline. */}
+          <ul className="ml-8 space-y-1.5 border-l-2 border-border pl-4">
             {SUB_ITEMS.map((item, i) => (
               <li key={i} className="flex gap-2 text-[11px] text-muted-foreground">
                 <span className="text-primary-tint">•</span>

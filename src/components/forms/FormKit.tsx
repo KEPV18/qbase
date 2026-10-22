@@ -9,6 +9,7 @@
 import React from "react";
 import { Check } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { Checkbox } from "@/components/ui/checkbox";
 
 // ── Props shared by all templates ──────────────────────────────────────
 export interface BaseTemplateProps {
@@ -153,18 +154,41 @@ export function FormDocument({
   return (
     <div className={cn(
       "w-full bg-card text-foreground font-sans text-[11px]",
-      "border border-border rounded-sm shadow-sm overflow-hidden",
+      // NOT `overflow-hidden`.  The clip was there to round the gradient
+      // header's corners, but it also truncated the hit area of any
+      // control that sits near the document's edge: a 44px target
+      // centred on a 16px checkbox that is 8px from the left edge
+      // overhangs the document, and the clip threw that overhang away
+      // — measured, the control owned 37x44 of its 44x44.  The header
+      // and footer round their own corners instead, so the document
+      // body is free to extend a control's target to its full size.
+      "border border-border rounded-sm shadow-sm",
       "print:bg-white print:text-black print:shadow-none print:rounded-none print:border-black",
+      // `ds-doc` is the hook the facsimile's 44px hit-area rules are
+      // scoped to — every one of the 36 templates render inside this
+      // wrapper, so the fields of a document are found by their
+      // container rather than by a fragile per-template selector.
+      "ds-doc",
       className,
     )}>
       {/* ── VEZLOO HEADER — big, gradient, prominent ── */}
+      {/*
+        The band is a flex row with the brand on the left and the
+        document's identity on the right.  At 390px the 28px brand plus
+        the identity block is wider than the document, and the identity
+        was cut off at the edge ("PROCUREMENT & VENDORS" and the
+        revision line were half outside the sheet).  The brand steps
+        down on the narrowest width and the identity block is allowed
+        to shrink, so the whole band fits instead of overflowing.
+      */}
       <div className={cn(
-        "bg-gradient-to-r px-6 py-4 flex items-center justify-between",
+        "bg-gradient-to-r px-4 sm:px-6 py-4 flex items-center justify-between gap-3",
+        "rounded-t-sm print:rounded-t-none",
         a.gradient, a.gradientDark,
       )}>
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-3 sm:gap-4 shrink-0">
           {/* VEZLOO brand — bigger, white, with tracking */}
-          <span className="text-[28px] font-black tracking-[0.15em] text-white drop-shadow-sm leading-none">
+          <span className="text-[21px] sm:text-[28px] font-black tracking-[0.15em] text-white drop-shadow-sm leading-none">
             VEZLOO
           </span>
           {/* Form code chip */}
@@ -174,12 +198,12 @@ export function FormDocument({
             {formCode}
           </span>
         </div>
-        <div className="flex flex-col items-end gap-1">
+        <div className="flex flex-col items-end gap-1 min-w-0 text-right">
           {sectionName && (
-            <span className="text-[10px] font-semibold text-white/70 uppercase tracking-wider">{sectionName}</span>
+            <span className="text-[10px] font-semibold text-white/70 uppercase tracking-wider truncate">{sectionName}</span>
           )}
           {serial && (
-            <span className="text-[10px] font-mono text-white/80">Rev: {serial}</span>
+            <span className="text-[10px] font-mono text-white/80 truncate">Rev: {serial}</span>
           )}
           <span className="text-[10px] font-mono text-white/60">P.{pageNumber}</span>
         </div>
@@ -195,7 +219,7 @@ export function FormDocument({
         </span>
         {/* Date badge */}
         <span className={cn(
-          "text-[10px] font-mono px-2 py-0.5 rounded",
+          "text-[10px] font-mono px-2 py-0.5 rounded-sm",
           a.chip, a.chipDark, a.text, a.textDark,
         )}>
           Quality Management System
@@ -210,6 +234,7 @@ export function FormDocument({
       {/* ── FOOTER ── */}
       <div className={cn(
         "flex items-center justify-between px-6 py-2 border-t border-border",
+        "rounded-b-sm print:rounded-b-none",
         a.bg, a.bgDark,
       )}>
         <span className={cn("text-[9px] font-mono", a.text, a.textDark)}>
@@ -674,12 +699,15 @@ export function TextBlock({ label, data, fieldKey, editMode, onChange, formCode,
       <div className={cn("border rounded-md p-3", a.border, a.borderDark, "bg-muted/10")}>
         {editMode ? (
           <textarea
-            className={cn("w-full bg-transparent text-[12px] leading-relaxed outline-none resize-y text-foreground", minHeight)}
+            className={cn("w-full bg-transparent text-[12px] leading-[1.85] outline-none resize-y text-foreground", minHeight)}
             value={val(data, fieldKey)}
             onChange={e => onChange?.(fieldKey, e.target.value)}
           />
         ) : (
-          <div className={cn("text-[12px] leading-relaxed whitespace-pre-wrap text-foreground", minHeight)}>
+          /* Long-form record body copy — the design system's floor for
+             running text is a 1.85 line-height, not the 1.625 that
+             `leading-relaxed` gives. */
+          <div className={cn("text-[12px] leading-[1.85] whitespace-pre-wrap text-foreground", minHeight)}>
             {val(data, fieldKey) || "\u00A0"}
           </div>
         )}
@@ -719,19 +747,22 @@ export function CheckboxGroup({ title, items, formCode, onToggle, editMode, clas
       <div className={cn("grid gap-2", colClass)}>
         {items.map(item => (
           <div key={item.key} className={cn(
-            "flex items-center gap-2 px-3 py-1.5 rounded border text-[11px]",
+            "flex items-center gap-2 px-3 py-1.5 rounded-lg border text-[11px]",
             item.checked ? cn(a.bg, a.bgDark, a.border, a.borderDark, a.text, a.textDark) : "border-border text-muted-foreground",
           )}>
             {editMode ? (
-              <input
-                type="checkbox"
-                className="w-3.5 h-3.5"
+              /* The shared `Checkbox` primitive, not a bare native input.
+                 The native one had no visible focus ring and no 44px hit
+                 area, and the templates render it at 14px, below the
+                 design system's touch-target floor. */
+              <Checkbox
+                className="h-3.5 w-3.5"
                 checked={item.checked}
-                onChange={e => onToggle?.(item.key, e.target.checked)}
+                onCheckedChange={(checked) => onToggle?.(item.key, checked === true)}
               />
             ) : (
               <span className={cn(
-                "inline-flex items-center justify-center w-3.5 h-3.5 border rounded",
+                "inline-flex items-center justify-center w-3.5 h-3.5 border rounded-sm",
                 item.checked ? cn(a.text, a.textDark, "border-current") : "border-border",
               )}>
                 {item.checked && <Check className="w-2.5 h-2.5" aria-hidden="true" />}
@@ -807,7 +838,7 @@ export function SectionDivider({ title, formCode, icon, className }: SectionDivi
   const a = useAccent(formCode || 'F/00');
   return (
     <div className={cn("flex items-center gap-2 py-2 mt-2", className)}>
-      <div className={cn("h-7 w-7 rounded flex items-center justify-center", a.bg, a.bgDark)}>
+      <div className={cn("h-7 w-7 rounded-full flex items-center justify-center", a.bg, a.bgDark)}>
         {icon || <span className={cn("text-[12px] font-black", a.text, a.textDark)}>§</span>}
       </div>
       <span className={cn("text-[11px] font-bold uppercase tracking-wider", a.text, a.textDark)}>{title}</span>

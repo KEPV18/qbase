@@ -86,15 +86,27 @@ export function F15Template({ data, isTemplate = true, editMode = false, onChang
                 <td className="border border-border p-1">{cellInp(idx, "date_of_approval", "Date")}</td>
                 <td className="border border-border p-1">{cellInp(idx, "supplier_name", "Supplier")}</td>
                 <td className="border border-border p-1">{cellInp(idx, "scope_of_supply", "Scope")}</td>
-                <td colSpan={2} className="border border-border p-1 relative">
+                <td colSpan={2} className="border border-border p-1">
                   {cellInp(idx, "approval_criteria", "Criteria")}
-                  {editMode && rows.length > 1 && (
-                    <button onClick={() => removeRow(idx)} className="absolute -right-6 top-1/2 -translate-y-1/2 text-destructive-tint opacity-0 group-hover:opacity-100 transition-opacity">
-                      <Trash2 className="w-3 h-3" />
-                    </button>
-                  )}
                 </td>
                 <td className="border border-border p-1">{cellInp(idx, "remarks", "Remarks")}</td>
+                {/* The delete control lives in its own trailing cell.  It used
+                    to hang OUTSIDE the table (`-right-6`) and was revealed
+                    only on row hover: the `overflow-x-auto` container clipped
+                    it, so the click landed on the card behind the glyph and
+                    the row could never actually be deleted. */}
+                {editMode && rows.length > 1 && (
+                  <td className="border border-border p-0 text-center align-middle">
+                    <button
+                      onClick={() => removeRow(idx)}
+                      className="ds-icon-44 text-destructive-tint hover:text-destructive-tint"
+                      title="Remove row"
+                      aria-label={`Remove row ${idx + 1}`}
+                    >
+                      <Trash2 className="w-3 h-3" />
+                    </button>
+                  </td>
+                )}
               </tr>
             ))}
           </tbody>
@@ -116,7 +128,12 @@ export function F15Template({ data, isTemplate = true, editMode = false, onChang
               <div className="col-span-2"><span className="text-muted-foreground">Remarks:</span> {cellInp(idx, "remarks", "Remarks")}</div>
             </div>
             {editMode && rows.length > 1 && (
-              <button onClick={() => removeRow(idx)} className="absolute top-1 right-1 text-destructive-tint">
+              <button
+                onClick={() => removeRow(idx)}
+                className="ds-icon-44 absolute top-0 right-0 text-destructive-tint hover:text-destructive-tint"
+                title="Remove row"
+                aria-label={`Remove row ${idx + 1}`}
+              >
                 <Trash2 className="w-3 h-3" />
               </button>
             )}

@@ -283,10 +283,11 @@ export function F12Template({
                 {editMode ? (
                   <button
                     onClick={() => removeRow(idx)}
-                    className="text-destructive-tint hover:text-destructive-tint/80"
+                    className="ds-icon-44 text-destructive-tint hover:text-destructive-tint"
                     title="Remove row"
+                    aria-label={`Remove row ${idx + 1}`}
                   >
-                    <Trash2 className="w-3 h-3 inline" />
+                    <Trash2 className="w-3 h-3" />
                   </button>
                 ) : (
                   cellInp(idx, "authorised_sign", "Sign")

@@ -7,6 +7,7 @@ import React from "react";
 import { Check } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { FormDocument, val } from "../FormKit";
+import { Checkbox } from "@/components/ui/checkbox";
 
 export interface F22Props {
   data?: Record<string, unknown>;
@@ -55,7 +56,7 @@ export function F22Template({ data, isTemplate = true, editMode = false, onChang
       </span>
     );
 
-  const txtArea = (key: string, placeholder: string, minH: string = "min-h-[40px]") =>
+  const txtArea = (key: string, placeholder: string, minH: string = "min-h-[44px]") =>
     editMode ? (
       <textarea
         className={cn("w-full bg-transparent text-[11px] px-1 border-none outline-none resize-none", minH)}
@@ -64,7 +65,7 @@ export function F22Template({ data, isTemplate = true, editMode = false, onChang
         placeholder={placeholder}
       />
     ) : (
-      <div className={cn("whitespace-pre-wrap text-[11px] leading-relaxed min-h-[20px]")}>
+      <div className={cn("whitespace-pre-wrap text-[11px] leading-[1.85] min-h-[20px]")}>
         {val(d, key) || (ph ? "" : "")}
       </div>
     );
@@ -72,13 +73,12 @@ export function F22Template({ data, isTemplate = true, editMode = false, onChang
   const chk = (src: string) => {
     const checked = nestedBool(d, "nc_sources", src);
     return editMode ? (
-      <input
-        type="checkbox"
-        className="mr-1"
+      <Checkbox
+        className="mr-1 h-4 w-4"
         checked={checked}
-        onChange={e => {
+        onCheckedChange={(next) => {
           const current = (d.nc_sources as Record<string, unknown>) || {};
-          onChange?.("nc_sources", { ...current, [src]: e.target.checked });
+          onChange?.("nc_sources", { ...current, [src]: next === true });
         }}
       />
     ) : (

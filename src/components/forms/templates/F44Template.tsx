@@ -150,7 +150,7 @@ export function F44Template({ data, isTemplate = true, editMode = false, onChang
               { icon: Building, label: 'Department', value: val(d, "department") },
               { icon: Calendar, label: 'Date', value: val(d, "date") },
             ].map(({ icon: Icon, label, value }) => (
-              <div key={label} className="border border-border rounded p-2 bg-muted/10">
+              <div key={label} className="border border-border rounded-xl p-2 bg-muted/10">
                 <div className="flex items-center gap-1 text-muted-foreground mb-0.5">
                   <Icon size={11} /> {label}
                 </div>
@@ -262,14 +262,14 @@ export function F44Template({ data, isTemplate = true, editMode = false, onChang
                   <span className="text-[11px] font-bold text-foreground">{section.heading}</span>
                   {section.tag && (
                     <span className={cn(
-                      "text-[8px] font-bold px-1.5 py-0.5 rounded uppercase tracking-wide",
+                      "text-[8px] font-bold px-1.5 py-0.5 rounded-sm uppercase tracking-wide",
                       section.tag.includes('PRIMARY') ? "bg-primary/15 text-primary-tint" : "bg-muted text-muted-foreground"
                     )}>
                       {section.tag}
                     </span>
                   )}
                   {section.isPlain && !section.tag && (
-                    <span className="text-[8px] font-bold px-1.5 py-0.5 rounded uppercase tracking-wide bg-primary/15 text-primary-tint">
+                    <span className="text-[8px] font-bold px-1.5 py-0.5 rounded-sm uppercase tracking-wide bg-primary/15 text-primary-tint">
                       Details
                     </span>
                   )}
@@ -306,7 +306,7 @@ export function F44Template({ data, isTemplate = true, editMode = false, onChang
                     if (item.includes(':') && !item.includes('Clause')) {
                       const [k, ...v] = item.split(':');
                       return (
-                        <li key={i} className="text-[11px] flex items-start gap-1.5 leading-relaxed">
+                        <li key={i} className="text-[11px] flex items-start gap-1.5 leading-[1.85]">
                           <span className="text-muted-foreground shrink-0">▸</span>
                           <span><span className="font-semibold text-foreground">{k}:</span> <span className="text-muted-foreground">{v.join(':').trim()}</span></span>
                         </li>
@@ -314,7 +314,7 @@ export function F44Template({ data, isTemplate = true, editMode = false, onChang
                     }
                     // Regular bullet
                     return (
-                      <li key={i} className="text-[11px] flex items-start gap-1.5 leading-relaxed">
+                      <li key={i} className="text-[11px] flex items-start gap-1.5 leading-[1.85]">
                         <span className="text-muted-foreground shrink-0">▸</span>
                         <span className="text-foreground/90">{item}</span>
                       </li>
@@ -334,7 +334,7 @@ export function F44Template({ data, isTemplate = true, editMode = false, onChang
             <div className="bg-muted px-3 py-2 border-b border-border">
               <span className="text-xs font-bold text-foreground">Feedback / Remarks</span>
             </div>
-            <div className="p-3 text-[11px] whitespace-pre-wrap leading-relaxed">
+            <div className="p-3 text-[11px] whitespace-pre-wrap leading-[1.85]">
               {val(d, "feedback")}
             </div>
           </div>
@@ -348,7 +348,7 @@ export function F44Template({ data, isTemplate = true, editMode = false, onChang
             <div className="bg-muted px-3 py-2 border-b border-border">
               <span className="text-xs font-bold text-foreground">Reason for Leaving</span>
             </div>
-            <div className="p-3 text-[11px] whitespace-pre-wrap leading-relaxed">
+            <div className="p-3 text-[11px] whitespace-pre-wrap leading-[1.85]">
               {val(d, "reason_for_leaving")}
             </div>
           </div>

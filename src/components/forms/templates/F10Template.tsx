@@ -136,11 +136,20 @@ export function F10Template({ data, isTemplate = true, editMode = false, onChang
                   return (
                     <td key={option} className={cn(cellCls, "text-center")}>
                       {editMode && !isTemplate ? (
-                        <input type="radio"
-                          name={field.key}
-                          checked={isSelected}
-                          onChange={() => onChange?.(field.key, option)}
-                          className="accent-primary w-4 h-4" />
+                        /* The radio is 16px of glyph, so the tap target
+                           has to be the label around it: a 44x44 box
+                           that holds the dot in its centre.  The label
+                           also gives the dot its accessible name, which
+                           a bare radio in a cell never had. */
+                        <label className="inline-flex items-center justify-center w-11 h-11 cursor-pointer">
+                          <input type="radio"
+                            name={field.key}
+                            value={option}
+                            checked={isSelected}
+                            onChange={() => onChange?.(field.key, option)}
+                            aria-label={option}
+                            className="accent-primary w-4 h-4" />
+                        </label>
                       ) : (
                         isSelected ? <Check className="w-4 h-4 text-primary-tint inline-block" aria-hidden="true" /> : ""
                       )}

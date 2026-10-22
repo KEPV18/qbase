@@ -255,9 +255,14 @@ export function F11Template({ data, isTemplate = true, editMode = false, onChang
                 <td className="border border-border p-1">{cellInp(idx, "actual_status", "Status")}</td>
                 <td className="border border-border p-1 text-center">{cellInp(idx, "yield_percent", "%")}</td>
                 {editMode && (
-                  <td className="border border-border p-1 text-center">
-                    <button onClick={() => removeRow(idx)} className="text-destructive-tint hover:text-destructive-tint/80">
-                      <Trash2 className="w-3 h-3 inline" />
+                  <td className="border border-border p-0 text-center align-middle">
+                    <button
+                      onClick={() => removeRow(idx)}
+                      className="ds-icon-44 text-destructive-tint hover:text-destructive-tint"
+                      title="Remove row"
+                      aria-label={`Remove row ${idx + 1}`}
+                    >
+                      <Trash2 className="w-3 h-3" />
                     </button>
                   </td>
                 )}

@@ -277,8 +277,8 @@ export function CapaRegisterTab() {
                                             <span className="text-[10px] text-muted-foreground">—</span>
                                         )}
                                     </TableCell>
-                                    <TableCell>
-                                        <Button variant="ghost" size="icon" className="h-7 w-7 hover:text-primary-tint" onClick={() => handleEditClick(capa)}>
+                                    <TableCell className="p-2">
+                                        <Button variant="ghost" className="ds-box-44 hover:text-primary-tint" onClick={() => handleEditClick(capa)} title="Edit CAPA">
                                             <Pencil className="w-3 h-3" />
                                         </Button>
                                     </TableCell>
@@ -404,7 +404,7 @@ export function CapaRegisterTab() {
                                 {editingCapa.related_risk && (() => {
                                     const lr = risks.find(r => r.risk_id === editingCapa.related_risk);
                                     return lr ? (
-                                        <div className="text-[10px] text-muted-foreground mt-1 p-2 rounded bg-muted/30 border border-border/30">
+                                        <div className="text-[10px] text-muted-foreground mt-1 p-2 rounded-md bg-muted/30 border border-border/30">
                                             <span className="font-bold">{lr.risk_id}</span> — {lr.risk_description?.substring(0, 60)} — Status: <Badge variant="outline" className={cn("text-[7px]", getRiskBadgeColor(lr.status))}>{lr.status}</Badge>
                                         </div>
                                     ) : null;

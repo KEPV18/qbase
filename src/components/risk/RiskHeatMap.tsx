@@ -126,7 +126,7 @@ export function RiskHeatMap({ risks }: RiskHeatMapProps) {
           { label: "Critical (13-25)", color: "bg-destructive/30" },
         ].map(l => (
           <div key={l.label} className="flex items-center gap-1.5">
-            <div className={cn("w-3 h-3 rounded", l.color)} />
+            <div className={cn("w-3 h-3 rounded-sm", l.color)} />
             <span className="text-[9px] text-muted-foreground font-medium">{l.label}</span>
           </div>
         ))}

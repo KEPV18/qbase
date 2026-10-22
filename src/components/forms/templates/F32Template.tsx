@@ -7,6 +7,7 @@ import React from "react";
 import { Check, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { FormDocument, val } from "../FormKit";
+import { Checkbox } from "@/components/ui/checkbox";
 
 export interface F32Props {
   data?: Record<string, unknown>;
@@ -32,10 +33,10 @@ export function F32Template({ data, isTemplate = true, editMode = false, onChang
       <span className={cn("text-xs", className)}>{val(d, key) || (ph ? "___" : "")}</span>
     );
 
-  const textArea = (key: string, placeholder: string, minH = "min-h-[40px]") =>
+  const textArea = (key: string, placeholder: string, minH = "min-h-[44px]") =>
     editMode ? (
       <textarea
-        className={cn("w-full bg-transparent text-xs p-1 border border-dashed border-foreground/30 rounded resize-none", minH)}
+        className={cn("w-full bg-transparent text-xs p-1 border border-dashed border-foreground/30 rounded-md resize-none", minH)}
         value={val(d, key) || ""}
         onChange={e => onChange?.(key, e.target.value)}
         placeholder={placeholder}
@@ -73,7 +74,7 @@ export function F32Template({ data, isTemplate = true, editMode = false, onChang
               {td(
                 <label className="flex items-center gap-1">
                   {editMode ? (
-                    <input type="checkbox" checked={val(d, "request_type") === "new"} onChange={() => onChange?.("request_type", "new")} />
+                    <Checkbox className="h-3.5 w-3.5" checked={val(d, "request_type") === "new"} onCheckedChange={(c) => c === true && onChange?.("request_type", "new")} />
                   ) : (
                     <span className="w-3 h-3 border border-foreground/30 inline-block text-center">{val(d, "request_type") === "new" && <Check className="w-2.5 h-2.5 align-middle" aria-hidden="true" />}</span>
                   )}
@@ -84,7 +85,7 @@ export function F32Template({ data, isTemplate = true, editMode = false, onChang
               {td(
                 <label className="flex items-center gap-1">
                   {editMode ? (
-                    <input type="checkbox" checked={val(d, "request_type") === "modification"} onChange={() => onChange?.("request_type", "modification")} />
+                    <Checkbox className="h-3.5 w-3.5" checked={val(d, "request_type") === "modification"} onCheckedChange={(c) => c === true && onChange?.("request_type", "modification")} />
                   ) : (
                     <span className="w-3 h-3 border border-foreground/30 inline-block text-center">{val(d, "request_type") === "modification" && <Check className="w-2.5 h-2.5 align-middle" aria-hidden="true" />}</span>
                   )}
@@ -199,13 +200,13 @@ export function F32Template({ data, isTemplate = true, editMode = false, onChang
                   {textArea("rd_remarks", "Remarks")}
                 </div>,
                 17,
-                "min-h-[40px]"
+                "min-h-[44px]"
               )}
             </tr>
 
             {/* Row 15: Feasibility Review label */}
             <tr>
-              {td(<span className="font-semibold bg-warning/10 dark:bg-warning/20 px-2 py-0.5 rounded">Feasibility Review by Research and Development Head</span>, 17)}
+              {td(<span className="font-semibold bg-warning/10 dark:bg-warning/20 px-2 py-0.5 rounded-sm">Feasibility Review by Research and Development Head</span>, 17)}
             </tr>
 
             {/* Row 16: Approved / Rejected */}
@@ -238,7 +239,7 @@ export function F32Template({ data, isTemplate = true, editMode = false, onChang
               {td(
                 <div>
                   <span className="font-semibold">Reason for rejection of request, if any:</span>
-                  <div className="mt-0.5">{textArea("rejection_reason", "N/A", "min-h-[30px]")}</div>
+                  <div className="mt-0.5">{textArea("rejection_reason", "N/A", "min-h-[44px]")}</div>
                 </div>,
                 17
               )}

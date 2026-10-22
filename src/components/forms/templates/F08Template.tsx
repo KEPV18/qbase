@@ -144,19 +144,29 @@ export function F08Template({ data, isTemplate = true, editMode = false, onChang
                   )}
                 </td>
                 <td colSpan={3} className="border border-border px-2 py-1.5 text-sm">
-                  {editMode ? (
-                    <input className="w-full text-xs px-1 py-0.5 bg-transparent border-0 border-b border-border focus:outline-none"
-                      value={item.qty}
-                      onChange={(e) => updateItem(idx, "qty", e.target.value)}
-                      placeholder="Qty" />
-                  ) : (
-                    <span className="text-foreground">{item.qty || "--"}</span>
-                  )}
-                  {editMode && (
-                    <button onClick={() => removeItem(idx)} className="ml-1 text-destructive-tint hover:text-destructive-tint">
-                      <Trash2 size={12} />
-                    </button>
-                  )}
+                  {/* The delete control shares this cell with the Qty input,
+                      so the cell lays out as a row: the input takes the
+                      slack, the button keeps a real 44x44 target. */}
+                  <div className="flex items-center gap-1">
+                    {editMode ? (
+                      <input className="flex-1 min-w-0 text-xs px-1 py-0.5 bg-transparent border-0 border-b border-border focus:outline-none"
+                        value={item.qty}
+                        onChange={(e) => updateItem(idx, "qty", e.target.value)}
+                        placeholder="Qty" />
+                    ) : (
+                      <span className="flex-1 min-w-0 text-foreground">{item.qty || "--"}</span>
+                    )}
+                    {editMode && (
+                      <button
+                        onClick={() => removeItem(idx)}
+                        className="ds-icon-44 shrink-0 text-destructive-tint hover:text-destructive-tint"
+                        title="Remove product"
+                        aria-label={`Remove product ${idx + 1}`}
+                      >
+                        <Trash2 size={12} />
+                      </button>
+                    )}
+                  </div>
                 </td>
               </tr>
             ))}

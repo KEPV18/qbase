@@ -92,13 +92,13 @@ export function ProcessInteractionTab() {
                             <TableRow key={proc.processName} className="align-top hover:bg-primary/5 transition-colors border-b border-border/10">
                                 <TableCell className="font-bold font-display align-top text-sm">{proc.processName}</TableCell>
                                 <TableCell className="align-top text-xs font-medium">{proc.processOwner}</TableCell>
-                                <TableCell className="whitespace-pre-wrap text-[11px] align-top text-muted-foreground leading-relaxed">{proc.inputs}</TableCell>
-                                <TableCell className="whitespace-pre-wrap text-[11px] align-top text-muted-foreground leading-relaxed">{proc.mainActivities}</TableCell>
-                                <TableCell className="whitespace-pre-wrap text-[11px] align-top text-primary-tint/80 font-mono leading-relaxed">{proc.outputs}</TableCell>
-                                <TableCell className="whitespace-pre-wrap text-[11px] align-top text-muted-foreground leading-relaxed">{proc.receiver}</TableCell>
-                                <TableCell className="whitespace-pre-wrap text-[11px] align-top font-bold text-foreground/70 leading-relaxed italic">{proc.kpi}</TableCell>
-                                <TableCell className="align-top">
-                                    <Button variant="ghost" size="icon" className="h-8 w-8 hover:text-primary-tint transition-colors" onClick={() => handleEditClick(proc)}>
+                                <TableCell className="whitespace-pre-wrap text-[11px] align-top text-muted-foreground leading-[1.85]">{proc.inputs}</TableCell>
+                                <TableCell className="whitespace-pre-wrap text-[11px] align-top text-muted-foreground leading-[1.85]">{proc.mainActivities}</TableCell>
+                                <TableCell className="whitespace-pre-wrap text-[11px] align-top text-primary-tint/80 font-mono leading-[1.85]">{proc.outputs}</TableCell>
+                                <TableCell className="whitespace-pre-wrap text-[11px] align-top text-muted-foreground leading-[1.85]">{proc.receiver}</TableCell>
+                                <TableCell className="whitespace-pre-wrap text-[11px] align-top font-bold text-foreground/70 leading-[1.85] italic">{proc.kpi}</TableCell>
+                                <TableCell className="align-top p-2">
+                                    <Button variant="ghost" className="ds-box-44 hover:text-primary-tint transition-colors" onClick={() => handleEditClick(proc)} title="Edit process">
                                         <Pencil className="w-3.5 h-3.5" />
                                     </Button>
                                 </TableCell>

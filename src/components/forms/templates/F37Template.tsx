@@ -45,10 +45,10 @@ export function F37Template({ data, isTemplate = true, editMode = false, onChang
       <span className={cn("text-xs", className)}>{val(d, key) || (ph ? "___" : "")}</span>
     );
 
-  const textArea = (key: string, placeholder: string, minH = "min-h-[40px]") =>
+  const textArea = (key: string, placeholder: string, minH = "min-h-[44px]") =>
     editMode ? (
       <textarea
-        className={cn("w-full bg-transparent text-xs p-1 border border-dashed border-foreground/30 rounded resize-none", minH)}
+        className={cn("w-full bg-transparent text-xs p-1 border border-dashed border-foreground/30 rounded-md resize-none", minH)}
         value={val(d, key) || ""}
         onChange={e => onChange?.(key, e.target.value)}
         placeholder={placeholder}

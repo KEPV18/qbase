@@ -222,7 +222,7 @@ export function RiskRegisterTab() {
                         placeholder="Search risks..."
                         value={search}
                         onChange={(e) => setSearch(e.target.value)}
-                        className="pl-9 h-9 text-sm bg-background border-border/50"
+                        className="pl-9 text-sm bg-background border-border/50"
                     />
                     {search && (
                         <button onClick={() => setSearch("")} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground">
@@ -268,7 +268,7 @@ export function RiskRegisterTab() {
                             <TableHead className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground py-3">Owner</TableHead>
                             <TableHead className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground py-3 w-[100px]">Status</TableHead>
                             <TableHead className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground py-3 hidden md:table-cell w-[150px]">CAPA</TableHead>
-                            <TableHead className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground py-3 w-[100px]">Actions</TableHead>
+                            <TableHead className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground py-3 w-[150px]">Actions</TableHead>
                         </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -315,17 +315,17 @@ export function RiskRegisterTab() {
                                             <span className="text-[10px] text-muted-foreground">—</span>
                                         )}
                                     </TableCell>
-                                    <TableCell>
-                                        <div className="flex items-center gap-0.5">
-                                            <Button variant="ghost" size="icon" className="h-7 w-7 hover:text-primary-tint" onClick={() => handleEditClick(risk)} title="Edit Risk">
+                                    <TableCell className="p-2">
+                                        <div className="flex items-center gap-1">
+                                            <Button variant="ghost" className="ds-box-44 hover:text-primary-tint" onClick={() => handleEditClick(risk)} title="Edit Risk">
                                                 <Pencil className="w-3 h-3" />
                                             </Button>
                                             {!risk.linked_capa && (
                                                 <>
-                                                    <Button variant="ghost" size="icon" className="h-7 w-7 hover:text-success-tint" onClick={() => handleCreateCAPAForRisk(risk)} title="Create CAPA">
+                                                    <Button variant="ghost" className="ds-box-44 hover:text-success-tint" onClick={() => handleCreateCAPAForRisk(risk)} title="Create CAPA">
                                                         <Plus className="w-3 h-3" />
                                                     </Button>
-                                                    <Button variant="ghost" size="icon" className="h-7 w-7 hover:text-primary-tint" onClick={() => handleLinkCAPAToRisk(risk)} title="Link existing CAPA">
+                                                    <Button variant="ghost" className="ds-box-44 hover:text-primary-tint" onClick={() => handleLinkCAPAToRisk(risk)} title="Link existing CAPA">
                                                         <Link2 className="w-3 h-3" />
                                                     </Button>
                                                 </>
@@ -432,7 +432,7 @@ export function RiskRegisterTab() {
                                     {editingRisk.linked_capa && (() => {
                                         const lc = capas.find(c => c.capa_id === editingRisk.linked_capa);
                                         return lc ? (
-                                            <div className="text-[10px] text-muted-foreground mt-1 p-2 rounded bg-muted/30 border border-border/30">
+                                            <div className="text-[10px] text-muted-foreground mt-1 p-2 rounded-md bg-muted/30 border border-border/30">
                                                 <span className="font-bold">{lc.capa_id}</span> — Status: <Badge variant="outline" className={cn("text-[7px]", getCAPABadgeColor(lc.status))}>{lc.status}</Badge>
                                             </div>
                                         ) : null;

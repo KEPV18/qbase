@@ -89,7 +89,7 @@ export function F42Template({ data, isTemplate = true, editMode = false, onChang
   const mobileView = (
     <div className="md:hidden space-y-2 text-xs p-2">
       {rows.map((row, idx) => (
-        <div key={idx} className="border border-border rounded p-2 space-y-1">
+        <div key={idx} className="border border-border rounded-xl p-2 space-y-1">
           <div className="font-semibold">{row.topicNo || idx + 1}. {row.title || "—"}</div>
           <div>Participants: {row.participants || "—"}</div>
           <div>Mode: {row.modeInternal ? "Int" : ""} {row.modeExternal ? "Ext" : ""}</div>
@@ -171,9 +171,14 @@ export function F42Template({ data, isTemplate = true, editMode = false, onChang
                 <td className="border border-border p-0.5">{cellInp(idx, "effNote", "")}</td>
                 <td className="border border-border p-0.5">{cellInp(idx, "remarks", "Remarks")}</td>
                 {editMode && (
-                  <td className="border border-border p-0.5 text-center">
+                  <td className="border border-border p-0 text-center align-middle">
                     {rows.length > 1 && (
-                      <button onClick={() => removeRow(idx)} className="text-destructive-tint hover:text-destructive-tint">
+                      <button
+                        onClick={() => removeRow(idx)}
+                        className="ds-icon-44 text-destructive-tint hover:text-destructive-tint"
+                        title="Remove row"
+                        aria-label={`Remove row ${idx + 1}`}
+                      >
                         <Trash2 className="w-3 h-3" />
                       </button>
                     )}

@@ -2,6 +2,7 @@ import React from "react";
 import { Check } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { FormDocument, val } from "../FormKit";
+import { Checkbox } from "@/components/ui/checkbox";
 
 export interface F16Props {
   data?: Record<string, unknown>;
@@ -25,7 +26,11 @@ export function F16Template({ data, isTemplate = true, editMode = false, onChang
   const chk = (key: string, label: string) => (
     <label className="flex items-center gap-1 text-xs">
       {editMode ? (
-        <input type="checkbox" className="mx-1" checked={val(d, key) === "true"} onChange={e => onChange?.(key, e.target.checked ? "true" : "false")} />
+        <Checkbox
+          className="mx-1 h-4 w-4"
+          checked={val(d, key) === "true"}
+          onCheckedChange={(checked) => onChange?.(key, checked === true ? "true" : "false")}
+        />
       ) : (
         <span className="inline-block w-4 h-4 border border-foreground/30 align-middle text-center">{val(d, key) === "true" && <Check className="w-3 h-3 align-middle" aria-hidden="true" />}</span>
       )}
@@ -43,7 +48,16 @@ export function F16Template({ data, isTemplate = true, editMode = false, onChang
   return (
     <FormDocument formCode="F/16" formName="Supplier Registration" serial={val(d, "serial")} sectionName="Procurement & Vendors">
       {/* ── Desktop: 16-column table (Word: 21 rows × 16 cols) ── */}
-      <div className="hidden md:block overflow-x-auto">
+      {/*
+        `px-2` is a hit-area requirement, not decoration.  This table is
+        wider than the document, so it scrolls; a scroll container clips
+        anything that reaches past its own edge.  A 16px checkbox in the
+        first column needs 14px of overhang to own a 44x44 target, and
+        flush against the clip edge it could only ever own 41px — no
+        scroll position recovers it, because scrolling moves the table
+        further left.  The inset gives the edge controls that room.
+      */}
+      <div className="hidden md:block overflow-x-auto px-2">
         <table className="w-full border-collapse border border-border text-xs">
           <tbody>
             {/* Row 0: Title merged 0-13, Rev merged 14-15 */}

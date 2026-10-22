@@ -159,11 +159,12 @@ export function F23Template({ data, isTemplate = true, editMode = false, onChang
                   </td>
                 ))}
                 {editMode && (
-                  <td className="border border-border px-1 py-0.5 text-center">
+                  <td className="border border-border p-0 text-center align-middle">
                     <button
                       onClick={() => removeRow(idx)}
-                      className="text-destructive-tint hover:text-destructive"
+                      className="ds-icon-44 text-destructive-tint hover:text-destructive"
                       title="Remove row"
+                      aria-label={`Remove row ${idx + 1}`}
                     >
                       <Trash2 className="h-3 w-3" />
                     </button>

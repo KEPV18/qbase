@@ -526,19 +526,19 @@ const CAPAEvidenceDashboard: React.FC = () => {
         {/* Stats */}
         <div className="grid grid-cols-4 gap-4 mt-6">
           <div className="bg-muted rounded-lg p-4">
-            <div className="text-2xl font-bold text-foreground">{stats.total}</div>
+            <div className="text-2xl font-bold tabular-nums text-foreground">{stats.total}</div>
             <div className="text-sm text-muted-foreground">Total CAPAs</div>
           </div>
           <div className="bg-warning/10 dark:bg-warning/20 rounded-lg p-4">
-            <div className="text-2xl font-bold text-warning-tint">{stats.pendingVerification}</div>
+            <div className="text-2xl font-bold tabular-nums text-warning-tint">{stats.pendingVerification}</div>
             <div className="text-sm text-warning-tint">Pending Verification</div>
           </div>
           <div className="bg-success/10 dark:bg-success/20 rounded-lg p-4">
-            <div className="text-2xl font-bold text-success-tint">{stats.readyToClose}</div>
+            <div className="text-2xl font-bold tabular-nums text-success-tint">{stats.readyToClose}</div>
             <div className="text-sm text-success-tint">Ready to Close</div>
           </div>
           <div className="bg-primary/10 rounded-lg p-4">
-            <div className="text-2xl font-bold text-primary-tint">{stats.closed}</div>
+            <div className="text-2xl font-bold tabular-nums text-primary-tint">{stats.closed}</div>
             <div className="text-sm text-primary-tint">Closed</div>
           </div>
         </div>
@@ -600,11 +600,11 @@ const CAPAEvidenceDashboard: React.FC = () => {
 
                 {/* CAPA Details */}
                 <div className="mt-4 grid grid-cols-2 gap-4">
-                  <div className="bg-muted rounded p-3">
+                  <div className="bg-muted rounded-xl p-3">
                     <div className="text-xs text-muted-foreground mb-1">Root Cause</div>
                     <div className="text-sm text-foreground">{selectedCapa.rootCause}</div>
                   </div>
-                  <div className="bg-muted rounded p-3">
+                  <div className="bg-muted rounded-xl p-3">
                     <div className="text-xs text-muted-foreground mb-1">Corrective Action</div>
                     <div className="text-sm text-foreground">{selectedCapa.corrective_action}</div>
                   </div>

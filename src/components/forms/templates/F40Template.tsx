@@ -127,7 +127,7 @@ export function F40Template({ data, isTemplate = true, editMode = false, onChang
   const mobileView = (
     <div className="md:hidden space-y-2 text-xs p-2">
       {rows.map((row, idx) => (
-        <div key={idx} className="border border-border rounded p-2 space-y-1">
+        <div key={idx} className="border border-border rounded-xl p-2 space-y-1">
           <div className="font-semibold">#{idx + 1} — {row.designation || "—"}</div>
           <div>Qual: {row.qualReq || "—"} / {row.qualAvail || "—"}</div>
           <div>Exp: {row.expReq || "—"} / {row.expAvail || "—"}</div>
@@ -214,9 +214,14 @@ export function F40Template({ data, isTemplate = true, editMode = false, onChang
                   <td key={tIdx} className="border border-border p-0 text-center">{tInp(idx, tIdx)}</td>
                 ))}
                 {editMode && (
-                  <td className="border border-border p-0.5 text-center">
+                  <td className="border border-border p-0 text-center align-middle">
                     {rows.length > 1 && (
-                      <button onClick={() => setRows(prev => prev.filter((_, i) => i !== idx))} className="text-destructive-tint hover:text-destructive-tint">
+                      <button
+                        onClick={() => setRows(prev => prev.filter((_, i) => i !== idx))}
+                        className="ds-icon-44 text-destructive-tint hover:text-destructive-tint"
+                        title="Remove row"
+                        aria-label={`Remove row ${idx + 1}`}
+                      >
                         <Trash2 className="w-3 h-3" />
                       </button>
                     )}

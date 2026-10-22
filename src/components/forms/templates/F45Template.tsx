@@ -223,11 +223,12 @@ export function F45Template({ data, isTemplate = true, editMode = false, onChang
                   </td>
                 ))}
                 {editMode && (
-                  <td className="border border-border px-0.5 py-0.5 text-center" colSpan={0}>
+                  <td className="border border-border p-0 text-center align-middle" colSpan={0}>
                     <button
                       onClick={() => removeRow(idx)}
-                      className="text-destructive-tint hover:text-destructive-tint"
+                      className="ds-icon-44 text-destructive-tint hover:text-destructive-tint"
                       title="Remove row"
+                      aria-label={`Remove row ${idx + 1}`}
                     >
                       <Trash2 className="h-2.5 w-2.5" />
                     </button>

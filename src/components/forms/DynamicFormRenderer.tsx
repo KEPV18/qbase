@@ -22,6 +22,7 @@ import {
   type PreCreationGateData,
 } from '../../schemas';
 import { Shield, Loader2, Plus, X, AlertTriangle, FileText, Check } from 'lucide-react';
+import { Checkbox } from '@/components/ui/checkbox';
 
 // ============================================================================
 // Types
@@ -133,7 +134,7 @@ const PreCreationGate: React.FC<{
 
   return (
     <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50">
-      <div className="bg-card border border-warning/30 rounded-lg p-6 max-w-lg w-full mx-4 shadow-xl ds-fade-enter">
+      <div className="bg-card border border-warning/30 rounded-lg p-6 max-w-lg w-full mx-4 shadow-overlay">
         <div className="flex items-center gap-3 mb-4">
           <div className="w-10 h-10 rounded-full bg-warning/10 border border-warning/20 flex items-center justify-center">
             <Shield className="w-5 h-5 text-warning-tint" />
@@ -183,11 +184,9 @@ const PreCreationGate: React.FC<{
 
           <div>
             <label className="flex items-center gap-2 text-sm text-foreground">
-              <input
-                type="checkbox"
+              <Checkbox
                 checked={confirmed}
-                onChange={e => setConfirmed(e.target.checked)}
-                className="rounded border-border accent-primary"
+                onCheckedChange={(checked) => setConfirmed(checked === true)}
               />
               3. I confirm this record is needed per its frequency schedule
             </label>
@@ -357,12 +356,14 @@ const CheckboxField: React.FC<{
 }> = ({ field, value, onChange, readOnly }) => (
   <div className="form-field col-span-2">
     <label className="flex items-center gap-2 text-sm text-foreground">
-      <input
-        type="checkbox"
+      {/* The shared `Checkbox` primitive, not a bare native input.  The
+          native one had no visible focus ring, no 44px hit area, and
+          tinted itself with `accent-primary` — a browser-native colour
+          that is not the design system's accent token. */}
+      <Checkbox
         checked={!!value}
-        onChange={e => onChange(e.target.checked)}
+        onCheckedChange={(checked) => onChange(checked === true)}
         disabled={readOnly}
-        className="rounded border-border accent-primary"
       />
       {field.label}
     </label>
@@ -475,11 +476,12 @@ const TableField: React.FC<{
                   </td>
                 ))}
                 {!readOnly && (
-                  <td className="px-2 py-1">
+                  <td className="p-0 text-center align-middle">
                     <button
                       onClick={() => removeRow(ri)}
-                      className="text-destructive-tint hover:text-destructive-tint/80 text-sm ds-press"
+                      className="ds-icon-44 ds-press text-destructive-tint hover:text-destructive-tint"
                       title="Remove row"
+                      aria-label={`Remove row ${ri + 1}`}
                     >
                       <X className="w-4 h-4" />
                     </button>

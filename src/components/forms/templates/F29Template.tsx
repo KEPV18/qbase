@@ -195,7 +195,7 @@ export function F29Template({ data, isTemplate = true, editMode = false, onChang
           </div>
 
           {/* Sub-table: Sr. No. | Topic No. — 3 column pairs like DOCX */}
-          <div className="border border-border rounded overflow-hidden">
+          <div className="border border-border rounded-xl overflow-hidden">
             <table className="w-full border-collapse text-[10px]">
               <thead>
                 <tr className="bg-warning/10 dark:bg-warning/20">

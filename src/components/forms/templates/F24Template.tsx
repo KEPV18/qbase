@@ -163,10 +163,12 @@ export function F24Template({ data, isTemplate = true, editMode = false, onChang
                 <td colSpan={2} className="border border-border px-1.5 py-0.5">{cellInp(idx, "program", "Program")}</td>
                 <td colSpan={8} className="border border-border px-1.5 py-0.5 text-center">{cellInp(idx, "results", "Results")}</td>
                 {editMode && rows.length > 1 && (
-                  <td className="border border-border px-1 py-0.5 text-center">
+                  <td className="border border-border p-0 text-center align-middle">
                     <button
                       onClick={() => removeRow(idx)}
-                      className="text-destructive-tint hover:text-destructive-tint/80"
+                      className="ds-icon-44 text-destructive-tint hover:text-destructive-tint"
+                      title="Remove row"
+                      aria-label={`Remove row ${idx + 1}`}
                     >
                       <Trash2 className="w-3 h-3" />
                     </button>
