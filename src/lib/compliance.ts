@@ -1,9 +1,28 @@
 // ============================================================================
 // QBase — ISO Compliance & SLA Engine
 // Frequency rules, due-date calculation, and health scoring.
+//
+// "Is this recurring form late, and by how much?" is answered by the period
+// coverage engine in ./compliancePeriods. This module turns that answer into
+// the snapshots the dashboard and the audit page render, so both read the
+// same model and can never contradict each other.
 // ============================================================================
 
-export type FrequencyType = 'Monthly' | 'Yearly' | 'Per-Project' | 'Event-Driven';
+import {
+  getMissingPeriods,
+  getNextDueDate,
+  toPeriodicFrequency,
+  type PeriodicFrequency,
+  type Period,
+} from './compliancePeriods';
+
+export type FrequencyType =
+  | 'Monthly'
+  | 'Quarterly'
+  | 'Semi-annual'
+  | 'Yearly'
+  | 'Per-Project'
+  | 'Event-Driven';
 
 export interface FrequencyRule {
   type: FrequencyType;
@@ -13,20 +32,33 @@ export interface FrequencyRule {
 }
 
 export const FREQUENCY_RULES: Record<FrequencyType, FrequencyRule> = {
-  Monthly:     { type: 'Monthly',     label: 'Monthly',     graceDays: 5,  intervalDays: 30 },
-  Yearly:      { type: 'Yearly',      label: 'Yearly',      graceDays: 14, intervalDays: 365 },
-  'Per-Project': { type: 'Per-Project', label: 'Per Project', graceDays: 0,  intervalDays: 0 },
-  'Event-Driven': { type: 'Event-Driven', label: 'Event-Driven', graceDays: 0,  intervalDays: 0 },
+  Monthly:       { type: 'Monthly',       label: 'Monthly',       graceDays: 5,  intervalDays: 30 },
+  Quarterly:     { type: 'Quarterly',     label: 'Quarterly',     graceDays: 10, intervalDays: 91 },
+  'Semi-annual': { type: 'Semi-annual',   label: 'Semi-annual',   graceDays: 15, intervalDays: 182 },
+  Yearly:        { type: 'Yearly',        label: 'Yearly',        graceDays: 14, intervalDays: 365 },
+  'Per-Project': { type: 'Per-Project',   label: 'Per Project',   graceDays: 0,  intervalDays: 0 },
+  'Event-Driven': { type: 'Event-Driven', label: 'Event-Driven',  graceDays: 0,  intervalDays: 0 },
 };
 
 /**
- * Map legacy free-text frequency strings into strict FrequencyType enum.
+ * Map a schema frequency string into the strict FrequencyType enum.
+ *
+ * Quarterly and semi-annual used to collapse into 'Monthly' here, which gave
+ * them a 30-day cycle and flagged them overdue a month after they were filed.
+ * They are distinct cadences and now stay distinct.
  */
 export function parseFrequency(raw: string): FrequencyType {
-  const lower = raw.toLowerCase();
-  if (lower.includes('month') || lower.includes('semi-annual') || lower.includes('quarter')) return 'Monthly';
-  if (lower.includes('year') || lower.includes('annual')) return 'Yearly';
-  if (lower.includes('project') || lower.includes('per project')) return 'Per-Project';
+  const periodic = toPeriodicFrequency(raw);
+  if (periodic) {
+    switch (periodic) {
+      case 'monthly': return 'Monthly';
+      case 'quarterly': return 'Quarterly';
+      case 'semi-annual': return 'Semi-annual';
+      case 'annual': return 'Yearly';
+    }
+  }
+  const lower = String(raw ?? '').toLowerCase();
+  if (lower.includes('per project')) return 'Per-Project';
   return 'Event-Driven';
 }
 
@@ -40,23 +72,14 @@ export function daysBetween(from: string, to: string = new Date().toISOString())
 }
 
 /**
- * Compute next due date for a cyclical form.
- */
-export function computeNextDueDate(lastDate: string | null, freqType: FrequencyType): string | null {
-  if (!lastDate || freqType === 'Event-Driven' || freqType === 'Per-Project') return null;
-  const rule = FREQUENCY_RULES[freqType];
-  const last = new Date(lastDate);
-  const next = new Date(last);
-  next.setDate(next.getDate() + rule.intervalDays);
-  return next.toISOString();
-}
-
-/**
  * Compliance status for a single form.
  */
 export interface FormCompliance {
   formCode: string;
+  formName: string;
   frequencyType: FrequencyType;
+  frequencyLabel: string;   // the schema's own wording, e.g. "On event", "Daily"
+  isPeriodic: boolean;
   lastRecordDate: string | null;
   nextDueDate: string | null;
   daysSinceLast: number | null;
@@ -64,77 +87,105 @@ export interface FormCompliance {
   isOverdue: boolean;
   overdueDays: number;
   recordCount: number;
+  missingPeriods: Period[]; // the periods that were due and were not filed
+  missingCount: number;
+}
+
+/** A filing, reduced to what the engine needs. */
+export interface ComplianceRecord {
+  formCode: string;
+  createdAt: string;    // when the filing was made
+  month: string | null; // 'YYYY-MM' the filing covers
+}
+
+/** A form definition, reduced to what the engine needs. */
+export interface ComplianceForm {
+  code: string;
+  name: string;
+  frequency: string;
 }
 
 /**
- * Build compliance snapshot for all forms from existing records.
+ * Build the compliance snapshot for every form.
+ *
+ * A form is late when it owes a filing for a period that has closed and that
+ * no record covers. The same gaps drive the dashboard counter, the department
+ * health card and the compliance radar — one model, one number.
  */
 export function buildComplianceMap(
-  records: { formCode: string; createdAt: string }[]
+  records: ComplianceRecord[],
+  forms: ComplianceForm[],
+  asOf: Date = new Date(),
 ): Map<string, FormCompliance> {
+  const byForm = new Map<string, { latest: string; count: number; months: Set<string> }>();
+  for (const r of records) {
+    const code = String(r.formCode ?? '');
+    if (!code) continue;
+    let entry = byForm.get(code);
+    if (!entry) {
+      entry = { latest: r.createdAt, count: 0, months: new Set<string>() };
+      byForm.set(code, entry);
+    }
+    entry.count += 1;
+    if (r.createdAt && (!entry.latest || r.createdAt > entry.latest)) {
+      entry.latest = r.createdAt;
+    }
+    if (r.month) entry.months.add(r.month);
+  }
+
   const map = new Map<string, FormCompliance>();
+  for (const form of forms) {
+    const entry = byForm.get(form.code);
+    const frequencyType = parseFrequency(form.frequency);
+    const periodic: PeriodicFrequency | null = toPeriodicFrequency(form.frequency);
+    const months = entry?.months ?? new Set<string>();
+    const lastRecordDate = entry?.latest || null;
 
-  // Aggregate latest record per form
-  const latestByForm = new Map<string, string>();
-  records.forEach(r => {
-    const prev = latestByForm.get(r.formCode);
-    if (!prev || r.createdAt > prev) latestByForm.set(r.formCode, r.createdAt);
-  });
+    const missingPeriods = periodic ? getMissingPeriods(months, periodic, asOf) : [];
+    const nextPeriod = periodic ? getNextDueDate(months, periodic, asOf) : null;
+    const nextDueDate = nextPeriod?.dueDate ?? null;
+    const daysUntilDue = nextDueDate ? daysBetween(asOf.toISOString(), nextDueDate) : null;
 
-  // Fill map for every known form code
-  latestByForm.forEach((lastDate, code) => {
-    // We don't know frequency here — caller injects from FormSchema
-    map.set(code, {
-      formCode: code,
-      frequencyType: 'Event-Driven',
-      lastRecordDate: lastDate,
-      nextDueDate: null,
-      daysSinceLast: daysBetween(lastDate),
-      daysUntilDue: null,
-      isOverdue: false,
-      overdueDays: 0,
-      recordCount: records.filter(r => r.formCode === code).length,
+    // How long the form has been late: measured from the oldest missed deadline.
+    const overdueDays = missingPeriods.length > 0
+      ? daysBetween(`${missingPeriods[0].dueDate}T00:00:00`, asOf.toISOString())
+      : 0;
+
+    map.set(form.code, {
+      formCode: form.code,
+      formName: form.name,
+      frequencyType,
+      frequencyLabel: form.frequency,
+      isPeriodic: periodic !== null,
+      lastRecordDate,
+      nextDueDate,
+      daysSinceLast: lastRecordDate ? daysBetween(lastRecordDate, asOf.toISOString()) : null,
+      daysUntilDue,
+      isOverdue: missingPeriods.length > 0,
+      overdueDays,
+      recordCount: entry?.count ?? 0,
+      missingPeriods,
+      missingCount: missingPeriods.length,
     });
-  });
+  }
 
   return map;
-}
-
-/**
- * Inject frequency metadata into a compliance snapshot.
- */
-export function applyFrequency(
-  compliance: FormCompliance,
-  freqType: FrequencyType
-): FormCompliance {
-  const nextDue = computeNextDueDate(compliance.lastRecordDate, freqType);
-  const daysUntil = nextDue ? daysBetween(new Date().toISOString(), nextDue) : null;
-  const rule = FREQUENCY_RULES[freqType];
-  const isOverdue = daysUntil !== null && daysUntil < -rule.graceDays;
-  const overdueDays = isOverdue && daysUntil !== null ? Math.abs(daysUntil) : 0;
-
-  return {
-    ...compliance,
-    frequencyType: freqType,
-    nextDueDate: nextDue,
-    daysUntilDue: daysUntil,
-    isOverdue,
-    overdueDays,
-  };
 }
 
 /**
  * Human-readable countdown / urgency text.
  */
 export function getUrgencyText(compliance: FormCompliance): string {
-  if (compliance.frequencyType === 'Event-Driven') return 'On-Demand Event';
-  if (compliance.frequencyType === 'Per-Project') return 'Required per Project';
-  if (compliance.isOverdue) return `Overdue by ${compliance.overdueDays} day${compliance.overdueDays === 1 ? '' : 's'}`;
-  if (compliance.daysUntilDue === null) return 'Due date unknown';
-  if (compliance.daysUntilDue <= 0) return `Due in ${Math.max(0, compliance.daysUntilDue)} day${compliance.daysUntilDue === 1 || compliance.daysUntilDue === -1 ? '' : 's'}`;
-  if (compliance.daysUntilDue <= 7) return `Due in ${compliance.daysUntilDue} day${compliance.daysUntilDue === 1 ? '' : 's'}`;
-  if (compliance.daysUntilDue <= 30) return `Due in ${Math.ceil(compliance.daysUntilDue / 7)} weeks`;
-  return `Due in ${Math.ceil(compliance.daysUntilDue / 30)} months`;
+  if (!compliance.isPeriodic) return compliance.frequencyLabel;
+  if (compliance.isOverdue) {
+    return `Overdue by ${compliance.overdueDays} day${compliance.overdueDays === 1 ? '' : 's'}`;
+  }
+  if (compliance.daysUntilDue === null) return 'No deadline';
+  const d = compliance.daysUntilDue;
+  if (d <= 0) return 'Due now';
+  if (d <= 7) return `Due in ${d} day${d === 1 ? '' : 's'}`;
+  if (d <= 30) return `Due in ${Math.ceil(d / 7)} weeks`;
+  return `Due in ${Math.ceil(d / 30)} months`;
 }
 
 /**
@@ -157,16 +208,18 @@ export interface DeptHealth {
   totalForms: number;
   totalSubmissions: number;
   overdueCount: number;
-  cyclicalForms: number;   // forms with Monthly/Yearly frequency
-  healthyCyclical: number;   // cyclical forms that are NOT overdue
+  cyclicalForms: number;   // forms with a fixed cadence
+  healthyCyclical: number; // cyclical forms that are NOT overdue
   status: 'healthy' | 'warning' | 'critical';
 }
+
+const PERIODIC_TYPES: FrequencyType[] = ['Monthly', 'Quarterly', 'Semi-annual', 'Yearly'];
 
 /**
  * Compute SLA health for a department from compliance data.
  */
 export function computeDeptHealth(
-  forms: { code: string; frequency: FrequencyType }[],
+  forms: { code: string; frequencyType: FrequencyType }[],
   complianceMap: Map<string, FormCompliance>
 ): DeptHealth {
   let totalSubmissions = 0;
@@ -176,21 +229,13 @@ export function computeDeptHealth(
 
   forms.forEach(f => {
     const c = complianceMap.get(f.code);
-    if (c) {
-      totalSubmissions += c.recordCount;
-      if (f.frequency === 'Monthly' || f.frequency === 'Yearly') {
-        cyclicalForms++;
-        if (!c.isOverdue) healthyCyclical++;
-        else overdueCount++;
-      }
-    } else {
-      // No records yet
-      if (f.frequency === 'Monthly' || f.frequency === 'Yearly') {
-        cyclicalForms++;
-        // Never filed = overdue
-        overdueCount++;
-      }
-    }
+    if (c) totalSubmissions += c.recordCount;
+    if (!PERIODIC_TYPES.includes(f.frequencyType)) return;
+
+    cyclicalForms++;
+    // A form with no record at all is late for every period it owes.
+    if (c && !c.isOverdue) healthyCyclical++;
+    else overdueCount++;
   });
 
   let status: DeptHealth['status'] = 'healthy';

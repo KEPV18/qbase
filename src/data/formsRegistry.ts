@@ -1,6 +1,13 @@
 // ============================================================================
 // QBase Forms Registry — ISO 9001:2015
-// Complete catalogue of all 35 QBase forms organized by section
+// Complete catalogue of all 36 QBase forms organized by section.
+//
+// This catalogue is the identity source for every form: its names and its
+// section numbers are the ones the production records carry (F/11 is
+// "Production Plan" in section 2 — the unified schema in
+// src/schemas/unifiedSchema.ts re-numbered and re-named a subset of the
+// forms and never carried the change here). See src/data/formCatalog.ts for
+// the merged catalogue every surface reads.
 // ============================================================================
 
 export type FormFrequency =
@@ -70,7 +77,12 @@ export const FORMS_REGISTRY: FormEntry[] = [
     section: 1,
     sectionName: "Sales & Customer Service",
     isoClause: "Clause 8.2",
-    frequency: "On event",
+    // Monthly, not "On event": the form template (src/schemas/unifiedSchema.ts)
+    // declares a monthly cadence, and the restored production records file it
+    // in Jan, Jul and Aug 2026. The "On event" entry here was documentation
+    // drift — and because the compliance engine read this catalogue, it hid
+    // six missed monthly filings behind the wrong cadence.
+    frequency: "Monthly",
     importance: "High",
     lastRecordCount: 4,
     lastRecordDate: "Feb 2026",
@@ -471,6 +483,19 @@ export const FORMS_REGISTRY: FormEntry[] = [
     lastRecordCount: 1,
     lastRecordDate: "Jan 2026",
     notes: "F/46-001 — change management request",
+  },
+  {
+    code: "F/49",
+    name: "Document Master List",
+    section: 7,
+    sectionName: "Management & Documentation",
+    isoClause: "Clause 7.5",
+    // Monthly, per src/schemas/unifiedSchema.ts. The registry never listed
+    // this form, so the compliance surfaces had no way to report it — it is
+    // the one form in the catalogue with no filing at all.
+    frequency: "Monthly",
+    importance: "High",
+    notes: "Master list of all controlled documents — never filed",
   },
 ];
 
