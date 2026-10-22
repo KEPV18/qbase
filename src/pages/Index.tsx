@@ -10,7 +10,7 @@ import { useState, useMemo, useEffect } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { useRecords } from "@/hooks/useRecordStorage";
-import { FORM_SCHEMAS, type FormSchema } from "@/data/formSchemas";
+import { CANONICAL_FORMS } from "@/data/formCatalog";
 import { cn } from "@/lib/utils";
 import {
   FileText, Folder, Search, ChevronRight, Plus,
@@ -20,14 +20,14 @@ import {
 import { toast } from "sonner";
 import type { RecordData } from "@/components/forms/DynamicFormRenderer";
 import {
-  parseFrequency, applyFrequency, getUrgencyText, getLastFiledText,
+  parseFrequency, buildComplianceMap, getUrgencyText, getLastFiledText,
   computeDeptHealth, type FormCompliance, type DeptHealth,
 } from "@/lib/compliance";
+import type { Period } from "@/lib/compliancePeriods";
 import { deptBorderStyle, deptAccentStyle } from "@/lib/departmentTheme";
 import {
   getMonthsFromRecords, monthLabel, monthShortLabel,
-  getRecordMonth, getAllMissingPeriods, RECURRING_FORMS,
-  formatPeriodLabel,
+  getRecordMonth,
 } from "@/lib/temporalUtils";
 import { PROJECTS } from "@/data/projectsData";
 import { discardRecordDraft } from "@/services/recordStorage";
@@ -124,21 +124,21 @@ function DeptMetricCard({
 
 /* ─── Compliance Micro Badge ────────────────────────────────────── */
 function ComplianceBadge({ compliance }: { compliance: FormCompliance }) {
-  const { frequencyType, daysSinceLast, isOverdue, overdueDays } = compliance;
+  const { isPeriodic, frequencyLabel, daysSinceLast, isOverdue, overdueDays, missingCount } = compliance;
 
-  if (frequencyType === 'Event-Driven') {
-    return <span className="text-[10px] text-muted-foreground/70 font-medium">On-Demand Event</span>;
+  // Forms without a fixed cadence ("On event", "Daily", "Per project") owe no
+  // deadline — say what they are instead of showing a countdown to nothing.
+  if (!isPeriodic) {
+    return <span className="text-[10px] text-muted-foreground/70 font-medium">{frequencyLabel}</span>;
   }
-  if (frequencyType === 'Per-Project') {
-    return <span className="text-[10px] text-muted-foreground/70 font-medium">Required per Project</span>;
-  }
-  if (!daysSinceLast) {
+  if (daysSinceLast === null) {
     return <span className="text-[10px] text-warning-tint font-medium">Never filed</span>;
   }
   if (isOverdue) {
     return (
       <span className="inline-flex items-center gap-1 text-[10px] text-destructive-tint font-medium">
         <ShieldAlert className="w-3 h-3" /> Overdue by {overdueDays}d
+        {missingCount > 1 ? ` · ${missingCount} periods` : ''}
       </span>
     );
   }
@@ -150,12 +150,21 @@ function ComplianceBadge({ compliance }: { compliance: FormCompliance }) {
 }
 
 /* ─── Compliance Radar Card ─────────────────────────────────────── */
+interface ComplianceGap {
+  code: string;
+  name: string;
+  frequency: string;
+  periods: Period[];
+  overdueDays: number;
+  recordCount: number;
+}
+
 function ComplianceRadarCard({
-  missingPeriodsMap,
+  gaps,
 }: {
-  missingPeriodsMap: Map<string, string[]>;
+  gaps: ComplianceGap[];
 }) {
-  if (missingPeriodsMap.size === 0) {
+  if (gaps.length === 0) {
     return (
       <div className="px-4 py-3 bg-success/10 border border-success/20 rounded-xl">
         <div className="flex items-center gap-2">
@@ -176,29 +185,24 @@ function ComplianceRadarCard({
       <div className="flex items-center gap-2 mb-3">
         <Radar className="w-4 h-4 text-warning-tint" />
         <span className="text-sm font-semibold text-warning-tint">
-          Compliance Radar — {missingPeriodsMap.size} Gap{missingPeriodsMap.size > 1 ? 's' : ''} Detected
+          Compliance Radar — {gaps.length} Form{gaps.length > 1 ? 's' : ''} With Gaps
         </span>
       </div>
       <div className="space-y-2">
-        {Array.from(missingPeriodsMap.entries()).map(([code, missing]) => {
-          const def = RECURRING_FORMS[code];
-          if (!def) return null;
-          const freqLabel = def.frequency.charAt(0).toUpperCase() + def.frequency.slice(1);
+        {gaps.map(gap => {
+          const shown = gap.periods.slice(0, 3);
+          const rest = gap.periods.length - shown.length;
           return (
-            <div key={code} className="flex items-start gap-3 ml-2">
+            <div key={gap.code} className="flex items-start gap-3 ml-2">
               <AlertTriangle className="w-3.5 h-3.5 text-warning-tint mt-0.5 shrink-0" />
               <div>
                 <p className="text-xs font-medium text-warning-tint">
-                  Compliance Gap: {code} ({def.name}) — Missing for{' '}
-                  {/* Array.map passes (value, index, array), so passing the function
-                      straight to map handed the array INDEX to `frequency`, which is
-                      never 'quarterly'/'semi-annual'/'annual' — every label fell
-                      through to the monthly branch. The form's real frequency is in
-                      scope here. */}
-                  {missing.map(ym => formatPeriodLabel(ym, def.frequency)).join(', ')}
+                  {gap.code} · {gap.name} — {gap.recordCount === 0 ? 'never filed' : 'missing for'}{' '}
+                  {shown.map(p => p.label).join(', ')}
+                  {rest > 0 ? ` +${rest} more` : ''}
                 </p>
                 <p className="text-[10px] text-warning-tint/70 mt-0.5">
-                  {freqLabel} form — expected {missing.length} period{missing.length > 1 ? 's' : ''} in 2026
+                  {gap.frequency} form — {gap.periods.length} period{gap.periods.length > 1 ? 's' : ''} overdue ({gap.overdueDays} days)
                 </p>
               </div>
             </div>
@@ -343,66 +347,48 @@ export default function Index() {
   useEffect(() => { localStorage.setItem('qms_globalProject', globalProject); }, [globalProject]);
   useEffect(() => { localStorage.setItem('qms_sortOrder', sortOrder); }, [sortOrder]);
 
-  // ── COMPLIANCE RADAR — Gap analysis for ALL recurring forms ──────
-  const missingPeriodsMap = useMemo(() => getAllMissingPeriods(records || []), [records]);
-  const hasMissingPeriods = missingPeriodsMap.size > 0;
-
-  // ── Build compliance map ─────────────────────────────────────────
+  // ── COMPLIANCE — one model, one number ───────────────────────────
+  // The dashboard counter, the department health cards and the Compliance
+  // Radar all read the same period coverage engine, so they cannot contradict
+  // each other (they used to: "All Recurring Forms Are Up to Date" sat next to
+  // "8 overdue forms" because the radar checked a fixed Jan–Jun 2026 window
+  // while the counter used a different rule).
   const complianceMap = useMemo(() => {
-    const recordMeta = (records || []).map(r => ({
+    const filings = (records || []).map(r => ({
       formCode: String(r.formCode),
-      createdAt: String(r._createdAt || r.createdAt || new Date().toISOString()),
+      createdAt: String(r._createdAt || ''),
+      month: getRecordMonth(r),
     }));
-    const map = new Map<string, FormCompliance>();
-    // Build from records
-    const latestByForm = new Map<string, string>();
-    recordMeta.forEach(r => {
-      const prev = latestByForm.get(r.formCode);
-      if (!prev || r.createdAt > prev) latestByForm.set(r.formCode, r.createdAt);
-    });
-    latestByForm.forEach((lastDate, code) => {
-      const freq = parseFrequency(FORM_SCHEMAS.find(f => f.code === code)?.frequency || '');
-      let c: FormCompliance = {
-        formCode: code,
-        frequencyType: freq,
-        lastRecordDate: lastDate,
-        nextDueDate: null,
-        daysSinceLast: Math.floor((Date.now() - new Date(lastDate).getTime()) / (1000 * 60 * 60 * 24)),
-        daysUntilDue: null,
-        isOverdue: false,
-        overdueDays: 0,
-        recordCount: recordMeta.filter(r => r.formCode === code).length,
-      };
-      c = applyFrequency(c, freq);
-      map.set(code, c);
-    });
-    // Pre-fill forms that have NO records yet
-    FORM_SCHEMAS.forEach(f => {
-      if (!map.has(f.code)) {
-        const freq = parseFrequency(f.frequency);
-        map.set(f.code, {
-          formCode: f.code,
-          frequencyType: freq,
-          lastRecordDate: null,
-          nextDueDate: null,
-          daysSinceLast: null,
-          daysUntilDue: null,
-          isOverdue: freq === 'Monthly' || freq === 'Yearly',
-          overdueDays: 0,
-          recordCount: 0,
-        });
-      }
-    });
-    return map;
+    return buildComplianceMap(
+      filings,
+      CANONICAL_FORMS.map(f => ({ code: f.code, name: f.name, frequency: f.frequency })),
+    );
   }, [records]);
+
+  // ── COMPLIANCE RADAR — the forms that owe a filing and have not filed ──
+  const complianceGaps = useMemo<ComplianceGap[]>(() => {
+    const gaps: ComplianceGap[] = [];
+    complianceMap.forEach(c => {
+      if (c.missingCount === 0) return;
+      gaps.push({
+        code: c.formCode,
+        name: c.formName,
+        frequency: c.frequencyLabel,
+        periods: c.missingPeriods,
+        overdueDays: c.overdueDays,
+        recordCount: c.recordCount,
+      });
+    });
+    return gaps.sort((a, b) => b.overdueDays - a.overdueDays);
+  }, [complianceMap]);
 
   // ── Department health ────────────────────────────────────────────
   const deptHealthMap = useMemo(() => {
     const map = new Map<string, DeptHealth>();
     DEPT_ORDER.forEach(dept => {
-      const deptForms = FORM_SCHEMAS.filter(f => f.sectionName === dept).map(f => ({
+      const deptForms = CANONICAL_FORMS.filter(f => f.sectionName === dept).map(f => ({
         code: f.code,
-        frequency: parseFrequency(f.frequency),
+        frequencyType: parseFrequency(f.frequency),
       }));
       map.set(dept, computeDeptHealth(deptForms, complianceMap));
     });
@@ -425,7 +411,7 @@ export default function Index() {
 
   // ── Forms list ───────────────────────────────────────────────────
   const filteredForms = useMemo(() => {
-    let f = FORM_SCHEMAS.filter(s => s.sectionName === activeDept);
+    let f = CANONICAL_FORMS.filter(s => s.sectionName === activeDept);
     if (formSearch.trim()) {
       const q = formSearch.toLowerCase();
       f = f.filter((s) => s.code.toLowerCase().includes(q) || s.name.toLowerCase().includes(q));
@@ -441,7 +427,7 @@ export default function Index() {
     if (activeProject) r = r.filter((rec) => rec.project_id === activeProject);
     if (selectedForm) r = r.filter((rec) => rec.formCode === selectedForm);
     else {
-      const deptCodes = FORM_SCHEMAS.filter(f => f.sectionName === activeDept).map(f => f.code);
+      const deptCodes = CANONICAL_FORMS.filter(f => f.sectionName === activeDept).map(f => f.code);
       r = r.filter((rec) => deptCodes.includes(String(rec.formCode)));
     }
     const sorted = r.sort((a, b) => String(a.serial || '').localeCompare(String(b.serial || ''), undefined, { numeric: true, sensitivity: 'base' }));
@@ -575,7 +561,7 @@ export default function Index() {
       )}
 
       {/* COMPLIANCE RADAR — Prominent Gap Alert Card */}
-      {!activeMonth && !activeProject && <ComplianceRadarCard missingPeriodsMap={missingPeriodsMap} />}
+      {!activeMonth && !activeProject && <ComplianceRadarCard gaps={complianceGaps} />}
 
       {/* QUALITY PULSE — org KPIs via the ONE dashboard_stats RPC (Prime §D6) */}
       {!activeMonth && !activeProject && <DashboardStatsCard stats={stats} isLoading={statsLoading} error={statsError} />}
@@ -663,7 +649,7 @@ export default function Index() {
               <div>
                 <h2 className="text-sm font-display font-bold text-foreground dark:text-foreground">
                   {selectedForm
-                    ? `Records — ${FORM_SCHEMAS.find((f: FormSchema) => f.code === selectedForm)?.name || selectedForm}`
+                    ? `Records — ${CANONICAL_FORMS.find(f => f.code === selectedForm)?.name || selectedForm}`
                     : `${activeDept} Records`}
                 </h2>
                 <p className="text-[11px] text-muted-foreground mt-0.5">{displayedRecords.length} entries</p>

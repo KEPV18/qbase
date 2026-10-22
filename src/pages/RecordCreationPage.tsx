@@ -15,7 +15,7 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import {
   FileText, Search, CheckCircle, XCircle, ArrowLeft, Loader2,
   ChevronRight, Layers, Building2, FolderKanban, CloudUpload, AlertTriangle,
-  Handshake, Settings, FileCheck,
+  Handshake,
 } from 'lucide-react';
 import { useQueryClient } from '@tanstack/react-query';
 import { FORM_SCHEMAS, getFormSchema } from '../data/formSchemas';
@@ -64,14 +64,11 @@ Object.values(MODULE_CONFIG).forEach(m => {
 });
 
 /**
- * The three sections the module config does not name exactly: two have no
- * module at all, and one is spelled "Production & Operations" there against
- * the schema's "Production & Operations".
+ * The one section the module config does not name: Sales & Customer Service
+ * has no module of its own.
  */
 const SECTION_ICON_OVERRIDES: Record<string, SectionIcon> = {
   'Sales & Customer Service': Handshake,
-  'Production & Operations': Settings,
-  'Document Control & Records': FileCheck,
 };
 
 const sectionIcon = (name: string): SectionIcon =>

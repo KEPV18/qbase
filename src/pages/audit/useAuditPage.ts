@@ -7,8 +7,9 @@ import { useState, useMemo, useEffect, useCallback } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useQueryClient } from "@tanstack/react-query";
 import { useRecords } from "@/hooks/useRecordStorage";
-import { FORM_SCHEMAS } from "@/data/formSchemas";
-import { getModuleForSection } from "@/config/modules";
+import { CANONICAL_FORMS, getCanonicalSectionLabel } from "@/data/formCatalog";
+import { buildComplianceMap } from "@/lib/compliance";
+import { getRecordMonth } from "@/lib/temporalUtils";
 import type { RecordData } from "@/components/forms/DynamicFormRenderer";
 import { toast } from "sonner";
 
@@ -61,6 +62,23 @@ export function useAuditPage() {
     refetch();
   }, [queryClient, refetch]);
 
+  // One model, shared with the dashboard: a form is overdue when it owes a
+  // filing for a period that has closed and that no record covers. The audit
+  // page used to apply its own thresholds (35/95/190/380 days plus a 60-day
+  // catch-all), which is why it said "5 overdue forms" while the dashboard
+  // said "8" about the very same records.
+  const compliance = useMemo(
+    () => buildComplianceMap(
+      (records || []).map(r => ({
+        formCode: String(r.formCode),
+        createdAt: String(r._createdAt || ''),
+        month: getRecordMonth(r),
+      })),
+      CANONICAL_FORMS.map(f => ({ code: f.code, name: f.name, frequency: f.frequency })),
+    ),
+    [records],
+  );
+
   // Compute audit stats from real Supabase data
   const stats = useMemo((): AuditStats => {
     const recordByForm = new Map<string, RecordData[]>();
@@ -70,8 +88,8 @@ export function useAuditPage() {
       recordByForm.set(r.formCode as string, existing);
     });
 
-    const totalForms = FORM_SCHEMAS.length;
-    const filledForms = FORM_SCHEMAS.filter(s => (recordByForm.get(s.code)?.length || 0) > 0).length;
+    const totalForms = CANONICAL_FORMS.length;
+    const filledForms = CANONICAL_FORMS.filter(s => (recordByForm.get(s.code)?.length || 0) > 0).length;
     const neverFilled = totalForms - filledForms;
     const totalRecords = records?.length ?? 0;
 
@@ -80,30 +98,36 @@ export function useAuditPage() {
     let pending = 0;
     let issues = 0;
     let overdue = 0;
+    let overdueFilled = 0;
 
-    FORM_SCHEMAS.forEach(form => {
+    CANONICAL_FORMS.forEach(form => {
       const formRecords = recordByForm.get(form.code) || [];
-      if (formRecords.length === 0) return; // counted in neverFilled
+      const isOverdue = compliance.get(form.code)?.isOverdue ?? false;
 
-      // Check if form has overdue records based on frequency
-      const isOverdue = checkOverdue(form, formRecords);
       if (isOverdue) {
         overdue++;
-      } else {
+        if (formRecords.length > 0) overdueFilled++;
+      }
+
+      if (formRecords.length === 0) return; // counted in neverFilled
+
+      if (!isOverdue) {
         // Simple heuristic: if records exist and not overdue, it's compliant
         compliant++;
       }
 
-      // Check for issues — records with status fields indicating problems
+      // Check for issues — records with status fields indicating problems.
+      // form_data is spread onto the top level of the record (see
+      // parseRowToRecord), so the business status lives at `r.status` — reading
+      // it from `r.formData` always found nothing.
       const hasIssues = formRecords.some(r => {
-        const fd = (r.formData as Record<string, unknown>) || {};
-        const status = (fd.status as string || '').toLowerCase();
+        const status = (r.status as string || '').toLowerCase();
         return status === 'open' || status === 'rejected' || status.includes('nc');
       });
       if (hasIssues) issues++;
     });
 
-    pending = filledForms - compliant - overdue;
+    pending = filledForms - compliant - overdueFilled;
 
     return { pending: Math.max(0, pending), compliant, issues, overdue, neverFilled, totalForms, filledForms, totalRecords };
   }, [records]);
@@ -118,7 +142,7 @@ export function useAuditPage() {
       recordByForm.set(r.formCode as string, existing);
     });
 
-    FORM_SCHEMAS.forEach(form => {
+    CANONICAL_FORMS.forEach(form => {
       if (!sections.has(form.section)) {
         sections.set(form.section, { compliant: 0, pending: 0, issues: 0 });
       }
@@ -128,8 +152,7 @@ export function useAuditPage() {
         sec.pending++;
       } else {
         const hasIssues = formRecords.some(r => {
-          const fd = (r.formData as Record<string, unknown>) || {};
-          const status = (fd.status as string || '').toLowerCase();
+          const status = (r.status as string || '').toLowerCase();
           return status === 'open' || status === 'rejected' || status.includes('nc');
         });
         if (hasIssues) sec.issues++;
@@ -138,7 +161,7 @@ export function useAuditPage() {
     });
 
     return Array.from(sections.entries()).map(([section, counts]) => ({
-      category: getModuleForSection(section)?.name || `Section ${section}`,
+      category: getCanonicalSectionLabel(section),
       ...counts,
     }));
   }, [records]);
@@ -158,7 +181,7 @@ export function useAuditPage() {
     switch (activeTab) {
       case "pending":
         // Forms with no records
-        FORM_SCHEMAS.filter(s => !recordByForm.has(s.code)).forEach(s => {
+        CANONICAL_FORMS.filter(s => !recordByForm.has(s.code)).forEach(s => {
           result.push({
             serial: '',
             formCode: s.code,
@@ -177,8 +200,7 @@ export function useAuditPage() {
       case "compliant":
         // Records without issue status
         records.forEach(r => {
-          const fd = (r.formData as Record<string, unknown>) || {};
-          const status = (fd.status as string || '').toLowerCase();
+          const status = (r.status as string || '').toLowerCase();
           if (status !== 'open' && status !== 'rejected' && !status.includes('nc')) {
             result.push(r);
           }
@@ -188,8 +210,7 @@ export function useAuditPage() {
       case "issues":
         // Records with issue status
         records.forEach(r => {
-          const fd = (r.formData as Record<string, unknown>) || {};
-          const status = (fd.status as string || '').toLowerCase();
+          const status = (r.status as string || '').toLowerCase();
           if (status === 'open' || status === 'rejected' || status.includes('nc')) {
             result.push(r);
           }
@@ -197,10 +218,10 @@ export function useAuditPage() {
         break;
 
       case "overdue":
-        // Forms that are overdue based on frequency
-        FORM_SCHEMAS.forEach(form => {
+        // Forms that owe a filing for a closed period and have not filed it
+        CANONICAL_FORMS.forEach(form => {
           const formRecords = recordByForm.get(form.code) || [];
-          if (checkOverdue(form, formRecords)) {
+          if (compliance.get(form.code)?.isOverdue) {
             result.push(...(formRecords.length > 0 ? formRecords : [{
               serial: '',
               formCode: form.code,
@@ -218,7 +239,7 @@ export function useAuditPage() {
         break;
 
       case "never-filled":
-        FORM_SCHEMAS.filter(s => !recordByForm.has(s.code)).forEach(s => {
+        CANONICAL_FORMS.filter(s => !recordByForm.has(s.code)).forEach(s => {
           result.push({
             serial: '',
             formCode: s.code,
@@ -246,7 +267,7 @@ export function useAuditPage() {
     }
 
     return result;
-  }, [records, activeTab, search]);
+  }, [records, activeTab, search, compliance]);
 
   return {
     records: filteredRecords,
@@ -264,30 +285,4 @@ export function useAuditPage() {
     setSectionFilter,
     navigate,
   };
-}
-
-// Check if a form is overdue based on its frequency and latest record date
-function checkOverdue(form: { frequency: string; code: string }, formRecords: RecordData[]): boolean {
-  if (formRecords.length === 0) return form.frequency !== 'On event';
-
-  const latestDate = formRecords
-    .map(r => r._createdAt as string || '')
-    .filter(d => d)
-    .sort()
-    .pop();
-
-  if (!latestDate) return true;
-
-  const now = new Date();
-  const lastDate = new Date(latestDate);
-  const daysSince = (now.getTime() - lastDate.getTime()) / (1000 * 60 * 60 * 24);
-
-  const freq = form.frequency.toLowerCase();
-  if (freq.includes('monthly')) return daysSince > 35;
-  if (freq.includes('quarterly')) return daysSince > 95;
-  if (freq.includes('semi')) return daysSince > 190;
-  if (freq.includes('annual')) return daysSince > 380;
-  if (freq.includes('on event') || freq.includes('per project') || freq.includes('per person')) return false;
-
-  return daysSince > 60; // default threshold
 }

@@ -12,7 +12,7 @@ import {
   CheckSquare, Square, XCircle, XCircle as DeselectAll, ListFilter,
   Calendar, LayoutGrid, List,
 } from 'lucide-react';
-import { FORM_SCHEMAS } from '../data/formSchemas';
+import { CANONICAL_FORMS } from '../data/formCatalog';
 import { PROJECTS } from '../data/projectsData';
 import { isoToDisplay } from '../schemas';
 import { useRecords } from '../hooks/useRecordStorage';
@@ -84,7 +84,7 @@ const RecordListPage: React.FC = () => {
   const { data: records, isLoading, error, refetch } = useRecords();
   const activeFormCodes = [...new Set(records?.map(r => r.formCode as string) || [])].sort();
   const formNames: Record<string, string> = {};
-  FORM_SCHEMAS.forEach(f => { formNames[f.code] = f.name; });
+  CANONICAL_FORMS.forEach(f => { formNames[f.code] = f.name; });
 
   const availableMonths = useMemo(() => getMonthsFromRecords(records || []), [records]);
 
@@ -92,13 +92,18 @@ const RecordListPage: React.FC = () => {
   const sectionFormCodes = useMemo(() => {
     if (!urlSection) return null;
     const sectionNum = parseInt(urlSection, 10);
-    return new Set(FORM_SCHEMAS.filter(f => f.section === sectionNum).map(f => f.code));
+    return new Set(CANONICAL_FORMS.filter(f => f.section === sectionNum).map(f => f.code));
   }, [urlSection]);
 
   // ── Timeline: records grouped by month × formCode ──────────────────
   const timelineData = useMemo(() => {
     if (!records) return [];
-    const businessMonths = getAllBusinessMonths();
+    // The current year's open months plus every month that actually holds
+    // records — the window used to stop at June 2026 and hid the rest.
+    const businessMonths = [...new Set([
+      ...getAllBusinessMonths(),
+      ...getMonthsFromRecords(records),
+    ])].sort();
     const monthMap = new Map<string, Set<string>>();
     for (const r of records) {
       const m = getRecordMonth(r);

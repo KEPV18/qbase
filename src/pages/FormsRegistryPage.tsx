@@ -33,8 +33,10 @@ import {
   List,
 } from "lucide-react";
 import { getFormSchema } from "@/data/formSchemas";
+import { CANONICAL_FORMS } from "@/data/formCatalog";
 import { useRecords } from "@/hooks/useRecordStorage";
-import { getMissingMonths, isMonthlyForm, monthLabel } from "@/lib/temporalUtils";
+import { buildComplianceMap } from "@/lib/compliance";
+import { getRecordMonth, monthLabel } from "@/lib/temporalUtils";
 import type { RecordData } from "@/components/forms/DynamicFormRenderer";
 
 // ============================================================================
@@ -57,16 +59,23 @@ export default function FormsRegistryPage() {
   const [importanceFilter, setImportanceFilter] = useState<FormImportance | null>(null);
   const [viewMode, setViewMode] = useState<ViewMode>("grid");
 
-  // ── Missing months per form ──
+  // ── Missing periods per form ──
+  // The same period coverage engine the dashboard and the audit page use, so
+  // the registry cannot disagree with them about the same records.
   const missingMonthsMap = useMemo(() => {
     const map = new Map<string, string[]>();
     if (!records) return map;
-    for (const code of [...new Set(records.map(r => String(r.formCode)))]) {
-      if (isMonthlyForm(code)) {
-        const missing = getMissingMonths(records as RecordData[], code);
-        if (missing.length > 0) map.set(code, missing);
-      }
-    }
+    const compliance = buildComplianceMap(
+      (records as RecordData[]).map(r => ({
+        formCode: String(r.formCode),
+        createdAt: String(r._createdAt || ''),
+        month: getRecordMonth(r),
+      })),
+      CANONICAL_FORMS.map(f => ({ code: f.code, name: f.name, frequency: f.frequency })),
+    );
+    compliance.forEach((c, code) => {
+      if (c.missingCount > 0) map.set(code, c.missingPeriods.map(p => p.label));
+    });
     return map;
   }, [records]);
 
@@ -102,8 +111,26 @@ export default function FormsRegistryPage() {
   const hasActiveFilters = sectionFilter !== null || importanceFilter !== null || searchTerm.trim();
   const importanceOptions: FormImportance[] = ["Critical", "High", "Medium", "Low"];
 
+  // ── Live record counts ──
+  // The catalogue used to carry hard-coded `lastRecordCount` / `lastRecordDate`
+  // values (254 records in total) that no longer matched the records
+  // themselves (316). The count and the last filing now come from the data.
+  const recordStats = useMemo(() => {
+    const counts = new Map<string, number>();
+    const lastMonth = new Map<string, string>();
+    for (const r of (records || []) as RecordData[]) {
+      const code = String(r.formCode);
+      counts.set(code, (counts.get(code) ?? 0) + 1);
+      const month = getRecordMonth(r);
+      if (month && (!lastMonth.get(code) || month > lastMonth.get(code)!)) {
+        lastMonth.set(code, month);
+      }
+    }
+    return { counts, lastMonth };
+  }, [records]);
+
   // ── Total records count ──
-  const totalRecords = FORMS_REGISTRY.reduce((sum, f) => sum + (f.lastRecordCount ?? 0), 0);
+  const totalRecords = records?.length ?? 0;
 
   return (
     <AppShell>
@@ -293,6 +320,8 @@ export default function FormsRegistryPage() {
                         <FormCardGrid
                           key={form.code}
                           form={form}
+                          recordCount={recordStats.counts.get(form.code) ?? 0}
+                          lastRecordMonth={recordStats.lastMonth.get(form.code)}
                           missingMonths={missingMonthsMap.get(form.code)}
                           onClick={() => navigate(`/form/${form.code}`)}
                         />
@@ -304,6 +333,8 @@ export default function FormsRegistryPage() {
                         <FormCardList
                           key={form.code}
                           form={form}
+                          recordCount={recordStats.counts.get(form.code) ?? 0}
+                          lastRecordMonth={recordStats.lastMonth.get(form.code)}
                           missingMonths={missingMonthsMap.get(form.code)}
                           onClick={() => navigate(`/form/${form.code}`)}
                         />
@@ -326,16 +357,20 @@ export default function FormsRegistryPage() {
 
 function FormCardGrid({
   form,
+  recordCount,
+  lastRecordMonth,
   missingMonths,
   onClick,
 }: {
   form: FormEntry;
+  recordCount: number;
+  lastRecordMonth?: string;
   missingMonths?: string[];
   onClick: () => void;
 }) {
   const schema = getFormSchema(form.code);
   const fieldCount = schema?.fields?.length ?? 0;
-  const hasRecords = (form.lastRecordCount ?? 0) > 0;
+  const hasRecords = recordCount > 0;
 
   return (
     <button
@@ -371,7 +406,7 @@ function FormCardGrid({
         {hasRecords && (
           <Badge variant="outline" className="text-[9px] px-1.5 py-0 h-4 font-mono bg-success/10 text-success-tint border-success/20">
             <Database className="w-2.5 h-2.5 mr-0.5" />
-            {form.lastRecordCount}
+            {recordCount}
           </Badge>
         )}
         {missingMonths && missingMonths.length > 0 && (
@@ -390,7 +425,7 @@ function FormCardGrid({
       {/* Bottom row: last record date + arrow */}
       <div className="flex items-center justify-between mt-3 pt-2.5 border-t border-border/40">
         <span className="text-[10px] text-muted-foreground font-mono">
-          Last: {form.lastRecordDate || "—"}
+          Last: {lastRecordMonth ? monthLabel(lastRecordMonth) : "—"}
         </span>
         <span className="flex items-center gap-1 text-[10px] font-semibold text-muted-foreground group-hover:text-primary-tint transition-colors">
           Open
@@ -407,10 +442,14 @@ function FormCardGrid({
 
 function FormCardList({
   form,
+  recordCount,
+  lastRecordMonth,
   missingMonths,
   onClick,
 }: {
   form: FormEntry;
+  recordCount: number;
+  lastRecordMonth?: string;
   missingMonths?: string[];
   onClick: () => void;
 }) {
@@ -437,7 +476,7 @@ function FormCardList({
         </div>
         <p className="text-[11px] text-muted-foreground/70 truncate">
           {form.isoClause} · {fieldCount} fields · {form.frequency}
-          {form.lastRecordDate && ` · Last: ${form.lastRecordDate}`}
+          {lastRecordMonth && ` · Last: ${monthLabel(lastRecordMonth)}`}
         </p>
       </div>
 
@@ -450,7 +489,7 @@ function FormCardList({
           </Badge>
         )}
         <Badge variant="outline" className="text-[9px] px-1.5 py-0 h-4 font-mono bg-muted/20 text-muted-foreground border-border/50">
-          {form.lastRecordCount ?? 0} rec
+          {recordCount} rec
         </Badge>
       </div>
 

@@ -1,8 +1,8 @@
 {
-  "generatedAt": "2026-10-22T02:54:31.600Z",
+  "generatedAt": "2026-10-22T11:54:02.204Z",
   "sources": {
-    "code": "192 source files under src/",
-    "migrations": "19 SQL files under supabase/migrations/",
+    "code": "194 source files under src/",
+    "migrations": "21 SQL files under supabase/migrations/",
     "snapshot": "audit/rpc-args.json (readAt 2026-09-28T17:25:17.921Z)"
   },
   "counts": {
