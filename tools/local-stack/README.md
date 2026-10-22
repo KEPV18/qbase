@@ -53,8 +53,10 @@ Two things `pg_dump` does not carry, both of which bit the real restore:
 The same applies to functions: `service_role` holds EXECUTE on all 54 public
 functions in the live project, because the default privileges granted it to
 each function at creation time. `seed/04_local_acl_parity.sql` restores that
-grant locally (it is the trusted backend role, and it is the only difference
-left between the two databases' function ACLs).
+grant locally (it is the trusted backend role, and it was the only
+difference left between the two databases' function ACLs). It is applied:
+the local database now reports 54/54 functions with `service_role` EXECUTE,
+0 with `anon` EXECUTE and 50 with `authenticated` EXECUTE.
 
 ## Bringing it up
 

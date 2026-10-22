@@ -36,8 +36,9 @@ const banner = (label, note) => {
     padding:10px 14px;border-radius:12px;background:rgba(20,20,24,.92);color:#fff;
     font:600 13px/1.45 -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
     box-shadow:0 8px 28px rgba(0,0,0,.35);letter-spacing:-.01em}
-  #qbase-stack-banner .b-t{font-size:13px}
-  #qbase-stack-banner .b-n{margin-top:4px;font-weight:400;font-size:12px;color:#c9c9d1;
+  #qbase-stack-banner .b-t{font-size:13px;color:#fff !important;opacity:1 !important;
+    font-weight:600 !important;text-shadow:0 1px 2px rgba(0,0,0,.5)}
+  #qbase-stack-banner .b-n{margin-top:4px;font-weight:400;font-size:12px;color:#b9b9c4 !important;
     font-family:ui-monospace,SFMono-Regular,Menlo,monospace}
 </style>
 <div id="qbase-stack-banner"><div class="b-t">${esc(label)}</div>${note ? `<div class="b-n">${esc(note)}</div>` : ''}</div>`;
