@@ -36,7 +36,10 @@ fi
 # 3. the static preview server for the local build
 if ! ss -ltn 2>/dev/null | grep -q "127.0.0.1:5211"; then
   nohup node "$TOOLS/server.mjs" --port 5211 \
-    --root "$REPO/dist-local" > /tmp/qbase-local/server-local.log 2>&1 &
+    --root "$REPO/dist-local" \
+    --label "LOCAL STACK — local database (127.0.0.1:5433/qbase_local)" \
+    --note "login: /tmp/qbase-local/LOCAL_LOGIN.txt" \
+    > /tmp/qbase-local/server-local.log 2>&1 &
   sleep 1
 fi
 

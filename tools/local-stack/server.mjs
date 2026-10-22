@@ -23,6 +23,32 @@ const arg = (name, dflt) => {
 };
 const PORT = Number(arg('port', '5210'));
 const ROOT = resolve(arg('root', '/tmp/qbase-local/dist'));
+const LABEL = arg('label', '');
+const NOTE = arg('note', '');
+
+// A banner so the two previews can never be confused: one talks to the live
+// project, the other to the local database — and each has its own login.
+const banner = (label, note) => {
+  if (!label && !note) return '';
+  const esc = (s) => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  return `<style id="qbase-stack-banner-style">
+  #qbase-stack-banner{position:fixed;top:10px;right:10px;z-index:2147483647;max-width:380px;
+    padding:10px 14px;border-radius:12px;background:rgba(20,20,24,.92);color:#fff;
+    font:600 13px/1.45 -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+    box-shadow:0 8px 28px rgba(0,0,0,.35);letter-spacing:-.01em}
+  #qbase-stack-banner .b-t{font-size:13px}
+  #qbase-stack-banner .b-n{margin-top:4px;font-weight:400;font-size:12px;color:#c9c9d1;
+    font-family:ui-monospace,SFMono-Regular,Menlo,monospace}
+</style>
+<div id="qbase-stack-banner"><div class="b-t">${esc(label)}</div>${note ? `<div class="b-n">${esc(note)}</div>` : ''}</div>`;
+};
+
+const injectBanner = (html) => {
+  const b = banner(LABEL, NOTE);
+  if (!b) return html;
+  if (html.includes('</head>')) return html.replace('</head>', `${b}\n</head>`);
+  return b + html;
+};
 
 const MIME = {
   '.html': 'text/html; charset=utf-8', '.js': 'text/javascript; charset=utf-8',
@@ -153,8 +179,12 @@ async function serveStatic(req, res, url) {
     target = join(ROOT, 'index.html'); // SPA fallback
   }
   try {
-    const data = await readFile(target);
+    let data = await readFile(target);
     const type = MIME[extname(target)] || 'application/octet-stream';
+    if (type.startsWith('text/html')) {
+      const html = injectBanner(data.toString('utf8'));
+      data = Buffer.from(html, 'utf8');
+    }
     const immutable = /\/assets\//.test(url.pathname);
     res.writeHead(200, {
       'Content-Type': type,
