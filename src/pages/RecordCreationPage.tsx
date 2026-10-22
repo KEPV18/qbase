@@ -15,11 +15,12 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import {
   FileText, Search, CheckCircle, XCircle, ArrowLeft, Loader2,
   ChevronRight, Layers, Building2, FolderKanban, CloudUpload, AlertTriangle,
+  Handshake, Settings, FileCheck,
 } from 'lucide-react';
 import { useQueryClient } from '@tanstack/react-query';
-import { FORM_SCHEMAS, getFormSchema, getFormsBySection } from '../data/formSchemas';
+import { FORM_SCHEMAS, getFormSchema } from '../data/formSchemas';
 import { todayDDMMYYYY } from '../schemas';
-import { MODULE_CONFIG, getModuleForSection } from '../config/modules';
+import { MODULE_CONFIG } from '../config/modules';
 import DynamicFormRenderer, { type RecordData } from '../components/forms/DynamicFormRenderer';
 import { SchemaDrivenRecordView } from '../components/forms/SchemaDrivenRecordView';
 import { getTemplateComponent, TemplateWrapper } from '@/components/templates';
@@ -41,13 +42,44 @@ import { Spinner } from '@/components/ui/LoadingSpinner';
 import { cn } from '@/lib/utils';
 
 // ============================================================================
-// Section config (maps section numbers to icons/colors from MODULE_CONFIG)
+// Section groups
+//
+// A form's own `sectionName` (from the unified schema) is the truth about
+// which section it belongs to.  Grouping by the section NUMBER alone merged
+// two distinct sections — Quality & Audit shares number 3 with Production &
+// Operations, Document Control & Records shares number 7 with Management &
+// Documentation — and the merged card was then labelled from MODULE_CONFIG,
+// whose section numbers are offset by one from the schema.  The result was a
+// card grid where every label described other forms and one name ("Management
+// & Documentation") appeared twice.  The group key is the schema's own name,
+// so a card's label always describes the forms inside it.
 // ============================================================================
 
-const SECTION_META: Record<number, { id: string; icon: typeof Layers }> = {};
+type SectionIcon = typeof Layers;
+
+/** Icons for the sections the module config names identically. */
+const MODULE_ICON_BY_NAME: Record<string, SectionIcon> = {};
 Object.values(MODULE_CONFIG).forEach(m => {
-  SECTION_META[m.section] = { id: m.id, icon: m.icon };
+  MODULE_ICON_BY_NAME[m.name] = m.icon;
 });
+
+/**
+ * The three sections the module config does not name exactly: two have no
+ * module at all, and one is spelled "Production & Operations" there against
+ * the schema's "Production & Operations".
+ */
+const SECTION_ICON_OVERRIDES: Record<string, SectionIcon> = {
+  'Sales & Customer Service': Handshake,
+  'Production & Operations': Settings,
+  'Document Control & Records': FileCheck,
+};
+
+const sectionIcon = (name: string): SectionIcon =>
+  SECTION_ICON_OVERRIDES[name] || MODULE_ICON_BY_NAME[name] || Layers;
+
+/** The group a form belongs to: its own section name, with a numeric fallback. */
+const sectionKeyOf = (form: { section: number; sectionName: string }): string =>
+  form.sectionName?.trim() || `Section ${form.section}`;
 
 const AUTOSAVE_DEBOUNCE_MS = 1200;
 
@@ -65,13 +97,22 @@ const RecordCreationPage: React.FC = () => {
   const [searchParams] = useSearchParams();
   const urlFormCode = searchParams.get('formCode');
   const urlSection = searchParams.get('section');
-  const urlSectionNum = urlSection ? parseInt(urlSection, 10) : null;
+  // The legacy `?section=N` link shape selects a section NUMBER; the cards
+  // select a section NAME.  Numbers are coarser than names (two sections
+  // share number 3, two share number 7), so a numeric link still selects
+  // every group carrying that number.
+  const urlSectionNum = urlSection !== null && /^\d+$/.test(urlSection.trim())
+    ? parseInt(urlSection, 10)
+    : null;
 
   const queryClient = useQueryClient();
   const submitDraft = useSubmitDraft();
 
   const [selectedCode, setSelectedCode] = useState<string>(urlFormCode || '');
-  const [activeSection, setActiveSection] = useState<number | null>(urlSectionNum);
+  const [activeSectionName, setActiveSectionName] = useState<string | null>(
+    urlSectionNum === null ? urlSection : null
+  );
+  const [activeSectionNumber, setActiveSectionNumber] = useState<number | null>(urlSectionNum);
   const [created, setCreated] = useState<{ code: string; serial: string; data: RecordData } | null>(null);
   const [search, setSearch] = useState('');
   // Single submit path — no gate step: select → form → success.
@@ -102,27 +143,23 @@ const RecordCreationPage: React.FC = () => {
 
   const schema = selectedCode ? getFormSchema(selectedCode) : null;
 
-  // Each entry carries the section number, its display name and its form count.
-  // This used to be `getFormSections()`, which returns bare section NUMBERS — so
-  // sec.number / sec.name / sec.count were all `undefined` at runtime: headings
-  // rendered blank, the count read "undefined forms available", and clicking a
-  // section called setActiveSection(undefined), which made the filter match no
-  // form at all. The name comes from the canonical module config.
+  // Each entry carries the section name, its section number and its form count.
+  // The name is the one the forms themselves declare, so the card's label
+  // describes the forms inside it.
   const sections = useMemo(() => {
-    const bySection = new Map<number, { number: number; name: string; count: number }>();
+    const byName = new Map<string, { name: string; number: number; count: number }>();
     for (const form of FORM_SCHEMAS) {
-      const existing = bySection.get(form.section);
+      const name = sectionKeyOf(form);
+      const existing = byName.get(name);
       if (existing) {
         existing.count += 1;
       } else {
-        bySection.set(form.section, {
-          number: form.section,
-          name: getModuleForSection(form.section)?.name || form.sectionName,
-          count: 1,
-        });
+        byName.set(name, { name, number: form.section, count: 1 });
       }
     }
-    return [...bySection.values()].sort((a, b) => a.number - b.number);
+    // Sort by section number; the sort is stable, so groups sharing a number
+    // keep the order the forms appear in the schema.
+    return [...byName.values()].sort((a, b) => a.number - b.number);
   }, []);
 
   const clearAutosaveTimer = useCallback((which: 'template' | 'renderer') => {
@@ -252,10 +289,24 @@ const RecordCreationPage: React.FC = () => {
     return () => window.removeEventListener('beforeunload', handler);
   }, [dirty]);
 
-  // Filter forms based on active section
+  // The active filter: the selected group name, or every group carrying the
+  // legacy section number.  Null means "no section selected".
+  const activeFilter = useMemo<{ names: string[]; label: string } | null>(() => {
+    if (activeSectionName) {
+      const known = sections.some(s => s.name === activeSectionName);
+      return known ? { names: [activeSectionName], label: activeSectionName } : null;
+    }
+    if (activeSectionNumber !== null) {
+      const names = sections.filter(s => s.number === activeSectionNumber).map(s => s.name);
+      return names.length ? { names, label: names.join(' / ') } : null;
+    }
+    return null;
+  }, [activeSectionName, activeSectionNumber, sections]);
+
+  // Filter forms based on the active section
   const filteredForms = useMemo(() => {
-    let forms = activeSection !== null
-      ? getFormsBySection(activeSection)
+    let forms = activeFilter
+      ? FORM_SCHEMAS.filter(f => activeFilter.names.includes(sectionKeyOf(f)))
       : FORM_SCHEMAS;
 
     if (search) {
@@ -266,18 +317,7 @@ const RecordCreationPage: React.FC = () => {
       );
     }
     return forms;
-  }, [activeSection, search]);
-
-  // Group forms by section when no section is active (for section picker view)
-  const formsBySection = useMemo(() => {
-    if (activeSection !== null) return null;
-    const map = new Map<number, typeof FORM_SCHEMAS>();
-    (search ? filteredForms : FORM_SCHEMAS).forEach(f => {
-      if (!map.has(f.section)) map.set(f.section, []);
-      map.get(f.section)!.push(f);
-    });
-    return map;
-  }, [activeSection, filteredForms, search]);
+  }, [activeFilter, search]);
 
   const handleFormSelect = (code: string) => {
     setSelectedCode(code);
@@ -295,11 +335,17 @@ const RecordCreationPage: React.FC = () => {
     setSearch('');
   };
 
-  const currentSectionName = useMemo(() => {
-    if (activeSection === null) return null;
-    const sec = sections.find(s => s.number === activeSection);
-    return sec?.name || null;
-  }, [activeSection, sections]);
+  const selectSection = (name: string) => {
+    setActiveSectionName(name);
+    setActiveSectionNumber(null);
+  };
+
+  const clearSection = () => {
+    setActiveSectionName(null);
+    setActiveSectionNumber(null);
+  };
+
+  const currentSectionName = activeFilter?.label ?? null;
 
   // ─────────────────────────────────────────────────────────────────────
   // Single submit path: both UI paths (DOCX template + schema renderer)
@@ -481,9 +527,9 @@ const RecordCreationPage: React.FC = () => {
       {/* Header */}
       <div className="flex items-center justify-between mb-6">
         <div className="flex items-center gap-3">
-          {activeSection !== null && step === 'select' && (
+          {activeFilter && step === 'select' && (
             <button
-              onClick={() => { setActiveSection(null); setSelectedCode(''); setSearch(''); }}
+              onClick={() => { clearSection(); setSelectedCode(''); setSearch(''); }}
               className="p-1.5 rounded-sm hover:bg-muted/50 text-muted-foreground hover:text-foreground transition-colors ds-hit-44"
             >
               <ArrowLeft className="w-4 h-4" />
@@ -701,23 +747,22 @@ const RecordCreationPage: React.FC = () => {
               type="text"
               value={search}
               onChange={e => setSearch(e.target.value)}
-              placeholder={activeSection ? "Search forms in this section..." : "Search all forms..."}
+              placeholder={activeFilter ? "Search forms in this section..." : "Search all forms..."}
               className="w-full h-11 pl-10 pr-4 rounded-sm border border-border bg-background text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary"
             />
           </div>
 
           {/* No section selected — show section cards */}
-          {activeSection === null && !search && (
+          {!activeFilter && !search && (
             <div className="space-y-3">
               <p className="text-sm text-muted-foreground mb-2">Select a section to see available forms, or search above.</p>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
                 {sections.map(sec => {
-                  const meta = SECTION_META[sec.number];
-                  const Icon = meta?.icon || Layers;
+                  const Icon = sectionIcon(sec.name);
                   return (
                     <button
-                      key={sec.number}
-                      onClick={() => setActiveSection(sec.number)}
+                      key={sec.name}
+                      onClick={() => selectSection(sec.name)}
                       className={cn(
                         "flex items-start gap-3 p-4 rounded-sm border border-border bg-card hover:border-primary/30 hover:bg-primary/[0.02] transition-all text-left group"
                       )}
@@ -742,13 +787,13 @@ const RecordCreationPage: React.FC = () => {
           )}
 
           {/* Section selected OR searching — show form list */}
-          {(activeSection !== null || search) && (
+          {(activeFilter || search) && (
             <div className="space-y-2">
               {/* Section chip (removable) */}
-              {activeSection !== null && (
+              {activeFilter && (
                 <div className="flex items-center gap-2 mb-3">
                   <button
-                    onClick={() => setActiveSection(null)}
+                    onClick={clearSection}
                     className="flex items-center gap-1.5 px-2.5 py-1 rounded-sm bg-primary/10 text-primary-tint text-xs font-medium hover:bg-primary/20 transition-colors"
                   >
                     {currentSectionName}
@@ -768,8 +813,7 @@ const RecordCreationPage: React.FC = () => {
               )}
 
               {filteredForms.map(f => {
-                const secMeta = SECTION_META[f.section];
-                const Icon = secMeta?.icon || Layers;
+                const Icon = sectionIcon(sectionKeyOf(f));
                 return (
                   <button
                     key={f.code}

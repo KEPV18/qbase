@@ -4,7 +4,7 @@
 // foreground pill; everything else stays grayscale.
 // ============================================================================
 
-import { useMemo } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate, useLocation, NavLink } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { useTenantIdentity } from "@/hooks/useTenantIdentity";
@@ -236,6 +236,34 @@ export function Sidebar({ mobileOpen, onClose, sidebarOpen, onToggle }: { mobile
     return location.pathname.startsWith(path);
   };
 
+  // ── Scroll-edge affordance ────────────────────────────────────────────
+  // The nav list is taller than the rail, so the last visible row used to be
+  // sliced flat against the FILTERS block below it and read as a broken
+  // layout rather than as a list that continues.  The fade is drawn only
+  // while there is more of the list below the fold, so the bottom row
+  // dissolves into the rail instead of being cut, and nothing is faded once
+  // the list is scrolled to its end.
+  const navRef = useRef<HTMLDivElement>(null);
+  const [navHasMore, setNavHasMore] = useState(false);
+
+  const syncNavOverflow = useCallback(() => {
+    const el = navRef.current;
+    if (!el) return;
+    setNavHasMore(el.scrollHeight - el.clientHeight - el.scrollTop > 2);
+  }, []);
+
+  useEffect(() => {
+    const el = navRef.current;
+    if (!el) return;
+    syncNavOverflow();
+    const observer = new ResizeObserver(syncNavOverflow);
+    observer.observe(el);
+    // The list changes height when the rail expands/collapses or when the
+    // notification badge appears, so watch the children too.
+    Array.from(el.children).forEach(child => observer.observe(child));
+    return () => observer.disconnect();
+  }, [syncNavOverflow, sidebarOpen]);
+
   return (
     <>
       {mobileOpen && (
@@ -287,96 +315,108 @@ export function Sidebar({ mobileOpen, onClose, sidebarOpen, onToggle }: { mobile
 
         {/* Navigation */}
         {/*
-          `min-h-0` lets the rail's scroll area shrink below its content
-          (a flex item's automatic minimum size is its content height
-          unless it is zeroed), and `py-2` gives the first and the last
-          item room: a scroll container clips at its padding box, so the
+          `min-h-0` on the wrapper lets the rail's scroll area shrink below
+          its content (a flex item's automatic minimum size is its content
+          height unless it is zeroed), and `py-2` gives the first and the
+          last item room: a scroll container clips at its padding box, so the
           2px of overhang a 44px target needs would otherwise be thrown
           away at either end of the list.
         */}
-        <div className={cn("flex-1 min-h-0 space-y-6 overflow-y-auto py-2", sidebarOpen ? "px-4" : "px-2")}>
-          <div className="space-y-1">
-            {sidebarOpen && (
-              <p className="px-3 mb-2 text-[11px] font-display font-semibold text-muted-foreground/70 uppercase tracking-wider">
-                {MAIN_NAV.title}
-              </p>
-            )}
-            {MAIN_NAV.items.map((item) => (
-              sidebarOpen ? (
-                <SidebarNavItem
-                  key={item.path}
-                  item={item}
-                  isActive={isActive(item.path)}
-                  onClick={() => handleNav(item.path)}
-                />
-              ) : (
-                <SidebarIconItem
-                  key={item.path}
-                  item={item}
-                  isActive={isActive(item.path)}
-                  onClick={() => handleNav(item.path)}
-                />
-              )
-            ))}
-          </div>
-
-          <div className="space-y-1">
-            {sidebarOpen && (
-              <p className="px-3 mb-2 text-[11px] font-display font-semibold text-muted-foreground/70 uppercase tracking-wider">
-                {TOOLS_NAV.title}
-              </p>
-            )}
-            {TOOLS_NAV.items.map((item) =>
-              sidebarOpen ? (
-                item.label === "Notifications" ? (
-                  <NotificationNavItem
-                    key={item.path}
-                    isActive={isActive(item.path)}
-                    onClick={() => handleNav(item.path)}
-                  />
-                ) : (
+        <div className="relative flex-1 min-h-0">
+          <div
+            ref={navRef}
+            onScroll={syncNavOverflow}
+            className={cn("h-full space-y-6 overflow-y-auto py-2", sidebarOpen ? "px-4" : "px-2")}
+          >
+            <div className="space-y-1">
+              {sidebarOpen && (
+                <p className="px-3 mb-2 text-[11px] font-display font-semibold text-muted-foreground/70 uppercase tracking-wider">
+                  {MAIN_NAV.title}
+                </p>
+              )}
+              {MAIN_NAV.items.map((item) => (
+                sidebarOpen ? (
                   <SidebarNavItem
                     key={item.path}
                     item={item}
                     isActive={isActive(item.path)}
                     onClick={() => handleNav(item.path)}
                   />
+                ) : (
+                  <SidebarIconItem
+                    key={item.path}
+                    item={item}
+                    isActive={isActive(item.path)}
+                    onClick={() => handleNav(item.path)}
+                  />
                 )
-              ) : (
-                <SidebarIconItem
-                  key={item.path}
-                  item={item}
-                  isActive={isActive(item.path)}
-                  onClick={() => handleNav(item.path)}
-                />
-              )
-            )}
-          </div>
+              ))}
+            </div>
 
-          <div className="space-y-1">
-            {sidebarOpen && (
-              <p className="px-3 mb-2 text-[11px] font-display font-semibold text-muted-foreground/70 uppercase tracking-wider">
-                {SETTINGS_NAV.title}
-              </p>
-            )}
-            {SETTINGS_NAV.items.map((item) => (
-              sidebarOpen ? (
-                <SidebarNavItem
-                  key={item.path}
-                  item={item}
-                  isActive={isActive(item.path)}
-                  onClick={() => handleNav(item.path)}
-                />
-              ) : (
-                <SidebarIconItem
-                  key={item.path}
-                  item={item}
-                  isActive={isActive(item.path)}
-                  onClick={() => handleNav(item.path)}
-                />
-              )
-            ))}
+            <div className="space-y-1">
+              {sidebarOpen && (
+                <p className="px-3 mb-2 text-[11px] font-display font-semibold text-muted-foreground/70 uppercase tracking-wider">
+                  {TOOLS_NAV.title}
+                </p>
+              )}
+              {TOOLS_NAV.items.map((item) =>
+                sidebarOpen ? (
+                  item.label === "Notifications" ? (
+                    <NotificationNavItem
+                      key={item.path}
+                      isActive={isActive(item.path)}
+                      onClick={() => handleNav(item.path)}
+                    />
+                  ) : (
+                    <SidebarNavItem
+                      key={item.path}
+                      item={item}
+                      isActive={isActive(item.path)}
+                      onClick={() => handleNav(item.path)}
+                    />
+                  )
+                ) : (
+                  <SidebarIconItem
+                    key={item.path}
+                    item={item}
+                    isActive={isActive(item.path)}
+                    onClick={() => handleNav(item.path)}
+                  />
+                )
+              )}
+            </div>
+
+            <div className="space-y-1">
+              {sidebarOpen && (
+                <p className="px-3 mb-2 text-[11px] font-display font-semibold text-muted-foreground/70 uppercase tracking-wider">
+                  {SETTINGS_NAV.title}
+                </p>
+              )}
+              {SETTINGS_NAV.items.map((item) => (
+                sidebarOpen ? (
+                  <SidebarNavItem
+                    key={item.path}
+                    item={item}
+                    isActive={isActive(item.path)}
+                    onClick={() => handleNav(item.path)}
+                  />
+                ) : (
+                  <SidebarIconItem
+                    key={item.path}
+                    item={item}
+                    isActive={isActive(item.path)}
+                    onClick={() => handleNav(item.path)}
+                  />
+                )
+              ))}
+            </div>
           </div>
+          {navHasMore && (
+            <div
+              aria-hidden="true"
+              className="pointer-events-none absolute inset-x-0 bottom-0 h-7 bg-gradient-to-t from-background to-transparent"
+            />
+          )}
         </div>
 
         {/* Filters */}
