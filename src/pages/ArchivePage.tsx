@@ -57,12 +57,12 @@ export default function ArchivePage() {
   if (isLoading) {
     return (
       <AppShell breadcrumbs={breadcrumbs}>
-        <div className="max-w-5xl mx-auto">
+        <div className="max-w-grid mx-auto">
           <div className="ds-skeleton h-10 w-36 mb-6" />
           <div className="ds-skeleton h-10 w-full mb-4" />
           <div className="space-y-3">
             {[...Array(6)].map((_, i) => (
-              <div key={i} className={`ds-skeleton h-16 rounded-sm stagger-${Math.min(i + 1, 10)}`} />
+              <div key={i} className="ds-skeleton h-16 rounded-lg" />
             ))}
           </div>
         </div>
@@ -73,7 +73,7 @@ export default function ArchivePage() {
   if (error) {
     return (
       <AppShell breadcrumbs={breadcrumbs}>
-        <div className="max-w-5xl mx-auto flex flex-col items-center justify-center py-20 ds-fade-enter">
+        <div className="max-w-grid mx-auto flex flex-col items-center justify-center py-20">
           <AlertTriangle className="w-12 h-12 text-destructive-tint mb-4" />
           <h2 className="text-xl text-foreground mb-2">Failed to Load Archive</h2>
           <p className="text-muted-foreground mb-4">{(error as Error).message}</p>
@@ -87,7 +87,7 @@ export default function ArchivePage() {
 
   return (
     <AppShell breadcrumbs={breadcrumbs}>
-      <div className="max-w-5xl mx-auto page-transition">
+      <div className="max-w-grid mx-auto">
         {/* Header */}
         <div className="flex items-center justify-between mb-6">
           <div>
@@ -122,7 +122,7 @@ export default function ArchivePage() {
 
         {/* List */}
         {paged.length === 0 ? (
-          <div className="flex flex-col items-center py-16 ds-fade-enter">
+          <div className="flex flex-col items-center py-16">
             <Archive className="w-12 h-12 text-muted-foreground/40 mb-4" />
             <h3 className="text-lg text-foreground mb-2">Archive Empty</h3>
             <p className="text-sm text-muted-foreground">

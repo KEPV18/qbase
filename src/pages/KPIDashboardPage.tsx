@@ -41,12 +41,12 @@ const RoleKPICard = ({ role, onClick }: { role: RoleKPIData; onClick: () => void
 
   return (
     <Card
-      className={cn(
-        "ds-card hover:shadow-lg transition-all cursor-pointer border-l-4 group",
-        isWeightValid
-          ? "border-l-success hover:border-l-success/80"
-          : "border-l-destructive hover:border-l-destructive/80"
-      )}
+      /* No coloured left bar.  The design system names "each item with
+         its own border + tint + colored left-bar" as the signature
+         anti-pattern, and the bar was redundant: the weight percentage
+         below is already tinted by validity and carries a check or an
+         alert icon next to it. */
+      className="ds-card hover:shadow-lg transition-all cursor-pointer group"
       onClick={onClick}
     >
       <CardHeader className="pb-2">
@@ -153,7 +153,7 @@ const KPIDetailView = ({ role }: { role: RoleKPIData }) => (
       </CardHeader>
       <CardContent>
         <div className="flex items-center gap-4">
-          <div className="text-3xl font-bold">{calculateRoleKPIScore(role).toFixed(1)}%</div>
+          <div className="text-3xl font-bold tabular-nums">{calculateRoleKPIScore(role).toFixed(1)}%</div>
           <div className="flex-1">
             <Progress
               value={calculateRoleKPIScore(role)}
@@ -196,7 +196,7 @@ export default function KPIDashboardPage() {
   return (
     <TooltipProvider>
       <AppShell breadcrumbs={[{ label: "Dashboard", path: "/" }, { label: "KPI Dashboard" }]}>
-        <div className="page-transition ds-fade-enter">
+        <div>
           <PageHeader
             icon={Target}
             title="KPI Dashboard"
@@ -264,7 +264,7 @@ export default function KPIDashboardPage() {
           </div>
 
           {viewMode === "grid" && (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 ds-stagger">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               {filteredRoles.map((role) => (
                 <Dialog key={role.roleKey}>
                   <DialogTrigger asChild>

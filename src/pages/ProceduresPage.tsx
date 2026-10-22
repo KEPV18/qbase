@@ -18,6 +18,7 @@ import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { useProceduresData } from "@/hooks/useProceduresData";
+import { useScrollEdge } from "@/hooks/useScrollEdge";
 import { useRecords } from "@/hooks/useRecordStorage";
 import { getRecordsForProcedure } from "@/lib/procedureRecordMapping";
 import { useNavigate } from "react-router-dom";
@@ -89,12 +90,13 @@ export default function ProceduresPage() {
   const [activeTab, setActiveTab] = useState("digital");
 
   // Digital Procedures State
-  const { data: digitalProcedures, updateProcedure, resetToDefault, isLoaded: digitalLoaded } = useProceduresData();
+  const { data: digitalProcedures, updateProcedure, resetToDefault, restoreData, isLoaded: digitalLoaded } = useProceduresData();
   const [searchQuery, setSearchQuery] = useState("");
   const [isEditMode, setIsEditMode] = useState(false);
   const [showScrollTop, setShowScrollTop] = useState(false);
   const [activeSectionId, setActiveSectionId] = useState("");
   const scrollContainerRef = useRef<HTMLDivElement>(null);
+  const scrolled = useScrollEdge(scrollContainerRef);
 
   // Drive State
   const [files, setFiles] = useState<DriveItem[]>([]);
@@ -189,7 +191,7 @@ export default function ProceduresPage() {
   return (
     <AppShell breadcrumbs={[{ label: "Dashboard", path: "/" }, { label: "Procedures" }]} className="!p-0 !max-w-none">
       {/* Sticky Top Bar */}
-      <div className="sticky top-0 z-40 border-b border-border/50 bg-background/95 backdrop-blur-xl px-4 md:px-8 py-3 flex items-center justify-between gap-3">
+      <div className={cn("sticky top-0 z-40 ds-sticky-bar bg-background/95 backdrop-blur-xl px-4 md:px-8 py-3 flex items-center justify-between gap-3", scrolled && "scrolled")}>
         <div className="flex items-center gap-3 min-w-0">
           <div className="p-2 rounded-lg bg-primary/10 border border-primary/15">
             <FileCode className="w-5 h-5 text-primary-tint" />
@@ -205,7 +207,7 @@ export default function ProceduresPage() {
             <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground" />
             <Input
               placeholder="Search..."
-              className="pl-8 h-8 w-40 text-xs bg-muted/30 border-border/40 rounded-lg"
+              className="pl-8 w-40 text-xs bg-muted/30 border-border/40 rounded-lg"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
             />
@@ -231,7 +233,24 @@ export default function ProceduresPage() {
           </Button>
           {isEditMode && (
             <Button variant="outline" size="sm" className="gap-1.5 h-8 text-xs text-destructive-tint hover:bg-destructive/10 rounded-lg"
-              onClick={() => { if (confirm("Reset all procedures to default?")) { resetToDefault(); toast.info("Procedures reset"); } }}
+              onClick={() => {
+                // A reset to the factory text is trivially reversible, so
+                // the design system's rule applies: undo beats a
+                // confirmation dialog.  Snapshot the current set, reset,
+                // and offer the snapshot back in the toast.
+                const snapshot = digitalProcedures;
+                resetToDefault();
+                toast("Procedures reset to default", {
+                  description: "Your edits were replaced with the factory text.",
+                  action: {
+                    label: "Undo",
+                    onClick: () => {
+                      restoreData(snapshot);
+                      toast.success("Reset undone");
+                    },
+                  },
+                });
+              }}
             >
               <RotateCcw className="w-3.5 h-3.5" /> Reset
             </Button>
@@ -254,14 +273,14 @@ export default function ProceduresPage() {
                     key={proc.id}
                     onClick={() => scrollToSection(proc.id)}
                     className={cn(
-                      "w-full flex items-center gap-2 px-2.5 py-1.5 text-[11px] rounded-md transition-all text-left",
+                      "w-full min-h-11 flex items-center gap-2 px-2.5 py-1.5 text-[11px] rounded-md transition-all text-left",
                       activeSectionId === proc.id
                         ? "bg-primary/10 text-primary-tint font-semibold"
                         : "text-muted-foreground hover:text-foreground hover:bg-muted/40"
                     )}
                   >
                     <span className={cn(
-                      "w-5 h-5 rounded flex items-center justify-center text-[9px] font-bold shrink-0",
+                      "w-5 h-5 rounded-md flex items-center justify-center text-[9px] font-bold shrink-0",
                       activeSectionId === proc.id ? "bg-primary text-primary-foreground" : "bg-muted/60 text-muted-foreground/50"
                     )}>
                       {idx + 1}
@@ -280,9 +299,9 @@ export default function ProceduresPage() {
 
             {/* Scrollable Document */}
             <div ref={scrollContainerRef} className="flex-1 overflow-y-auto scroll-smooth">
-              <div className="max-w-3xl mx-auto px-5 md:px-8 py-8 md:py-12 space-y-0">
+              <div className="max-w-read mx-auto py-8 md:py-12 space-y-0">
                 {/* Approval Banner */}
-                <div className="mb-8 p-5 rounded-xl border-2 border-primary/20 bg-gradient-to-br from-primary/[0.03] to-primary/[0.01]">
+                <div className="mb-8 p-5 rounded-xl border border-border bg-card">
                   <div className="flex items-center gap-2 mb-3">
                     <CheckCircle className="w-4 h-4 text-primary-tint" />
                     <span className="text-[10px] font-bold uppercase tracking-[0.15em] text-primary-tint/60">Document Approval</span>
@@ -312,7 +331,7 @@ export default function ProceduresPage() {
                     id={`proc-${proc.id}`}
                     className={cn(
                       "scroll-mt-20",
-                      procIdx < filteredProcedures.length - 1 && "pb-8 mb-8 border-b border-border/20"
+                      procIdx < filteredProcedures.length - 1 && "pb-section mb-section border-b border-border/20"
                     )}
                   >
                     {/* Title */}
@@ -343,7 +362,7 @@ export default function ProceduresPage() {
                         {isEditMode ? (
                           <Input value={proc.purpose} onChange={(e) => updateProcedure(proc.id, { purpose: e.target.value })} className="bg-background text-xs h-7 rounded-lg" />
                         ) : (
-                          <p className="text-xs text-foreground/70 leading-relaxed">{proc.purpose}</p>
+                          <p className="text-xs text-foreground/70 leading-[1.85]">{proc.purpose}</p>
                         )}
                       </div>
                       <div className={cn("p-4 rounded-xl border transition-all", isEditMode ? "border-primary/10 bg-primary/[0.02]" : "border-border/25 bg-card/60")}>
@@ -354,7 +373,7 @@ export default function ProceduresPage() {
                         {isEditMode ? (
                           <Input value={proc.scope} onChange={(e) => updateProcedure(proc.id, { scope: e.target.value })} className="bg-background text-xs h-7 rounded-lg" />
                         ) : (
-                          <p className="text-xs text-foreground/70 leading-relaxed">{proc.scope}</p>
+                          <p className="text-xs text-foreground/70 leading-[1.85]">{proc.scope}</p>
                         )}
                       </div>
                       <div className={cn("p-4 rounded-xl border transition-all", isEditMode ? "border-primary/10 bg-primary/[0.02]" : "border-border/25 bg-card/60")}>
@@ -365,7 +384,7 @@ export default function ProceduresPage() {
                         {isEditMode ? (
                           <Input value={proc.responsibilities} onChange={(e) => updateProcedure(proc.id, { responsibilities: e.target.value })} className="bg-background text-xs h-7 rounded-lg" />
                         ) : (
-                          <p className="text-xs text-foreground/70 leading-relaxed">{proc.responsibilities}</p>
+                          <p className="text-xs text-foreground/70 leading-[1.85]">{proc.responsibilities}</p>
                         )}
                       </div>
                     </div>
@@ -389,7 +408,9 @@ export default function ProceduresPage() {
                           className="min-h-[300px] text-sm leading-relaxed bg-background border-primary/10 rounded-lg"
                         />
                       ) : (
-                        <div className="text-sm text-foreground/75 whitespace-pre-wrap leading-relaxed">{proc.procedureText}</div>
+                        // Long body prose: the design system sets the floor
+                        // at 1.85 line-height for running text.
+                        <div className="text-sm text-foreground/75 whitespace-pre-wrap leading-[1.85]">{proc.procedureText}</div>
                       )}
                     </div>
 
@@ -406,7 +427,7 @@ export default function ProceduresPage() {
                             <select
                               value={proc.recordFrequency || "As needed"}
                               onChange={(e) => updateProcedure(proc.id, { recordFrequency: e.target.value })}
-                              className="h-6 text-[10px] bg-background border border-primary/20 rounded px-1.5 text-foreground"
+                              className="h-6 text-[10px] bg-background border border-primary/20 rounded-md px-1.5 text-foreground"
                             >
                               <option value="As needed">As needed</option>
                               <option value="Monthly">Monthly</option>
@@ -423,7 +444,7 @@ export default function ProceduresPage() {
                               type="date"
                               value={proc.approvalDate}
                               onChange={(e) => updateProcedure(proc.id, { approvalDate: e.target.value })}
-                              className="h-6 w-[130px] text-[10px] bg-background border border-primary/20 rounded px-1.5 text-foreground"
+                              className="h-6 w-[130px] text-[10px] bg-background border border-primary/20 rounded-md px-1.5 text-foreground"
                             />
                           </div>
                         ) : (
@@ -453,7 +474,7 @@ export default function ProceduresPage() {
                                 className="flex items-center gap-2 px-3 py-2 rounded-lg border border-border/30 bg-card/40 hover:bg-muted/20 hover:border-primary/30 transition-all cursor-pointer group"
                                 onClick={() => navigate(`/records?formCode=${encodeURIComponent(rec.code)}`)}
                               >
-                                <span className="text-[9px] font-mono font-bold px-1.5 py-0.5 rounded bg-muted text-muted-foreground shrink-0">
+                                <span className="text-[9px] font-mono font-bold px-1.5 py-0.5 rounded-sm bg-muted text-muted-foreground shrink-0">
                                   {rec.code}
                                 </span>
                                 <div className="flex-1 min-w-0">
@@ -478,7 +499,6 @@ export default function ProceduresPage() {
             </div>
           </>
         ) : (
-          /* ===== GOOGLE DRIVE ARCHIVE VIEW ===== */
           <div className="flex-1 flex flex-col p-4 md:p-5 overflow-hidden">
             {/* Breadcrumbs & Controls */}
             <div className="flex justify-between items-center gap-3 mb-3 flex-wrap">
@@ -507,10 +527,10 @@ export default function ProceduresPage() {
                   <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground" />
                   <Input placeholder="Search..." value={driveSearch} onChange={(e) => setDriveSearch(e.target.value)} className="pl-8 h-7 text-xs bg-muted/20 border-border/50 rounded-lg" />
                 </div>
-                <Button variant="ghost" size="icon" onClick={loadDriveFiles} className="h-7 w-7">
+                <Button variant="ghost" size="icon" onClick={loadDriveFiles} className="h-7 w-7 ds-hit-44">
                   <RefreshCw className={cn("w-3.5 h-3.5", loading && "animate-spin")} />
                 </Button>
-                <Button variant="ghost" size="icon" onClick={() => setViewMode(viewMode === "list" ? "grid" : "list")} className="h-7 w-7">
+                <Button variant="ghost" size="icon" onClick={() => setViewMode(viewMode === "list" ? "grid" : "list")} className="h-7 w-7 ds-hit-44">
                   {viewMode === "list" ? <Grid className="w-3.5 h-3.5" /> : <List className="w-3.5 h-3.5" />}
                 </Button>
               </div>
@@ -533,17 +553,17 @@ export default function ProceduresPage() {
                     <Badge variant="outline" className="text-[9px] h-5 font-mono">
                       {(selectedIndex ?? 0) + 1}/{nonFolderFiles.length}
                     </Badge>
-                    <Button variant="outline" size="icon" className="h-7 w-7 rounded-lg" onClick={() => setSelectedIndex(selectedIndex! > 0 ? selectedIndex! - 1 : 0)} disabled={selectedIndex === 0}>
+                    <Button variant="outline" size="icon" className="h-7 w-7 rounded-lg ds-hit-44" onClick={() => setSelectedIndex(selectedIndex! > 0 ? selectedIndex! - 1 : 0)} disabled={selectedIndex === 0}>
                       <ChevronLeft className="w-3.5 h-3.5" />
                     </Button>
-                    <Button variant="outline" size="icon" className="h-7 w-7 rounded-lg" onClick={() => setSelectedIndex(selectedIndex! < nonFolderFiles.length - 1 ? selectedIndex! + 1 : selectedIndex!)} disabled={selectedIndex === nonFolderFiles.length - 1}>
+                    <Button variant="outline" size="icon" className="h-7 w-7 rounded-lg ds-hit-44" onClick={() => setSelectedIndex(selectedIndex! < nonFolderFiles.length - 1 ? selectedIndex! + 1 : selectedIndex!)} disabled={selectedIndex === nonFolderFiles.length - 1}>
                       <ChevronRight className="w-3.5 h-3.5" />
                     </Button>
                     <div className="h-5 w-px bg-border/50 mx-0.5" />
-                    <Button variant="outline" size="icon" className="h-7 w-7 rounded-lg" onClick={() => setIsFullscreen(!isFullscreen)}>
+                    <Button variant="outline" size="icon" className="h-7 w-7 rounded-lg ds-hit-44" onClick={() => setIsFullscreen(!isFullscreen)}>
                       {isFullscreen ? <Minimize2 className="w-3.5 h-3.5" /> : <Maximize2 className="w-3.5 h-3.5" />}
                     </Button>
-                    <Button variant="outline" size="icon" className="h-7 w-7 rounded-lg" onClick={() => window.open(getEditUrl(selectedDriveFile), '_blank')}>
+                    <Button variant="outline" size="icon" className="h-7 w-7 rounded-lg ds-hit-44" onClick={() => window.open(getEditUrl(selectedDriveFile), '_blank')}>
                       <ExternalLink className="w-3.5 h-3.5" />
                     </Button>
                   </div>
@@ -614,7 +634,7 @@ export default function ProceduresPage() {
       {activeTab === "digital" && showScrollTop && (
         <button
           onClick={() => scrollContainerRef.current?.scrollTo({ top: 0, behavior: 'smooth' })}
-          className="fixed bottom-6 right-6 z-50 w-10 h-10 rounded-xl bg-primary text-primary-foreground shadow-lg shadow-primary/20 flex items-center justify-center hover:scale-110 transition-transform"
+          className="ds-press fixed bottom-6 right-6 z-50 w-11 h-11 rounded-full bg-primary text-primary-foreground shadow-primary flex items-center justify-center hover:scale-105 transition-transform"
         >
           <ArrowUp className="w-4 h-4" />
         </button>

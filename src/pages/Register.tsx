@@ -137,7 +137,7 @@ export default function Register() {
                 className={`pl-10 pr-10 h-11 rounded-sm bg-muted/30 border-border/40 focus:border-primary/50 focus:ring-primary/20 transition-all text-sm font-mono ${errors.password ? 'border-destructive' : ''}`}
               />
               <button type="button" onClick={() => setShowPassword(!showPassword)}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground/50 hover:text-foreground transition-colors">
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground/50 hover:text-foreground transition-colors ds-hit-44-anchored">
                 {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
               </button>
             </div>

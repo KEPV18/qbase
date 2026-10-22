@@ -183,7 +183,7 @@ export default function ProjectsPage() {
                   value={searchQuery}
                   onChange={e => setSearchQuery(e.target.value)}
                   placeholder="Search projects..."
-                  className="w-full pl-9 pr-3 py-2 text-sm bg-card border border-border rounded-lg text-foreground placeholder:text-ink-3 focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary/25"
+                  className="w-full h-11 pl-9 pr-3 text-sm bg-card border border-border rounded-lg text-foreground placeholder:text-ink-3 focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary/25"
                 />
               </div>
 
@@ -295,7 +295,7 @@ export default function ProjectsPage() {
                       <h3 className="text-xs font-semibold text-foreground uppercase tracking-wider mb-1.5">
                         Scope Summary
                       </h3>
-                      <p className="text-sm text-ink dark:text-ink-2 leading-relaxed">
+                      <p className="text-sm text-ink dark:text-ink-2 leading-[1.85]">
                         {selectedProject.description.slice(0, 300)}
                         {selectedProject.description.length > 300 ? '...' : ''}
                       </p>

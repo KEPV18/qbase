@@ -11,6 +11,11 @@ import type { Role } from "@/services/userService";
 import { useTenantIdentity, useUpdateTenantIdentity, useInvalidateTenantIdentity } from "@/hooks/useTenantIdentity";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { buttonVariants } from "@/components/ui/button-variants";
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -77,7 +82,7 @@ export default function AdminPanel() {
 
   return (
     <AppShell>
-      <div className="space-y-6 p-6 max-w-[1400px] mx-auto">
+      <div className="space-y-6">
         {/* Page Header */}
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 rounded-sm bg-destructive/10 flex items-center justify-center">
@@ -96,7 +101,7 @@ export default function AdminPanel() {
               key={tab.id}
               onClick={() => setActiveTab(tab.id)}
               className={cn(
-                "flex items-center gap-2 px-4 py-2 text-sm font-medium border-b-2 transition-all",
+                "flex min-h-11 items-center gap-2 px-4 py-2 text-sm font-medium border-b-2 transition-all",
                 activeTab === tab.id
                   ? "border-primary text-primary-tint"
                   : "border-transparent text-muted-foreground hover:text-foreground hover:border-border"
@@ -137,6 +142,17 @@ function AccountsTab() {
   const [savingRows, setSavingRows] = useState<Record<string, boolean>>({});
   const [expandedUser, setExpandedUser] = useState<string | null>(null);
   const [isRefreshing, setIsRefreshing] = useState(false);
+  /**
+   * The user pending deletion.  Removing an account is genuinely
+   * irreversible — the auth role is deleted and the profile deactivated —
+   * so it earns a confirmation.  The design system's rule: "reserve
+   * confirmations for genuinely destructive, irreversible actions".
+   *
+   * `pending` distinguishes rejecting a not-yet-approved registration
+   * from removing an active account; the copy has to name the real
+   * consequence, or the dialog is just a speed bump.
+   */
+  const [pendingRemoval, setPendingRemoval] = useState<{ id: string; name: string; email: string; pending: boolean } | null>(null);
 
   const isProtectedAdmin = (u: AppUser): boolean => {
     const isSelf = user?.id === u.id;
@@ -276,7 +292,9 @@ function AccountsTab() {
                 <Button size="sm" variant="outline" onClick={() => updateUser(u.id, { active: true })} className="h-7 text-xs">
                   <CheckCircle className="w-3 h-3 mr-1" /> Approve
                 </Button>
-                <Button size="sm" variant="destructive" onClick={() => removeUser(u.id).catch(err => toast.error("Remove failed", { description: err.message }))} className="h-7 text-xs">
+                <Button size="sm" variant="destructive" onClick={() =>
+                  setPendingRemoval({ id: u.id, name: u.name, email: u.email, pending: true })
+                } className="h-7 text-xs">
                   <XCircle className="w-3 h-3 mr-1" /> Reject
                 </Button>
               </div>
@@ -296,16 +314,16 @@ function AccountsTab() {
           <div className="flex gap-3 items-end flex-wrap">
             <div className="space-y-1 flex-1 min-w-[180px]">
               <Label className="text-xs text-muted-foreground">Name</Label>
-              <Input value={newUser.name} onChange={e => setNewUser(p => ({ ...p, name: e.target.value }))} placeholder="Full name" className="h-9" />
+              <Input value={newUser.name} onChange={e => setNewUser(p => ({ ...p, name: e.target.value }))} placeholder="Full name" />
             </div>
             <div className="space-y-1 flex-1 min-w-[200px]">
               <Label className="text-xs text-muted-foreground">Email</Label>
-              <Input value={newUser.email} onChange={e => setNewUser(p => ({ ...p, email: e.target.value }))} placeholder="email@company.com" className="h-9" />
+              <Input value={newUser.email} onChange={e => setNewUser(p => ({ ...p, email: e.target.value }))} placeholder="email@company.com" />
             </div>
             <div className="space-y-1 min-w-[120px]">
               <Label className="text-xs text-muted-foreground">Role</Label>
               <Select value={newUser.role} onValueChange={(v) => setNewUser(p => ({ ...p, role: v as AppUser["role"] }))}>
-                <SelectTrigger className="h-9"><SelectValue /></SelectTrigger>
+                <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
                   {Object.entries(ROLE_CONFIG).map(([role, cfg]) => (
                     <SelectItem key={role} value={role}><RoleIcon role={role} />{cfg.label}</SelectItem>
@@ -313,7 +331,7 @@ function AccountsTab() {
                 </SelectContent>
               </Select>
             </div>
-            <Button onClick={handleAdd} disabled={!newUser.name || !newUser.email} className="h-9">
+            <Button onClick={handleAdd} disabled={!newUser.name || !newUser.email}>
               <UserPlus className="w-4 h-4 mr-1" /> Add
             </Button>
           </div>
@@ -324,10 +342,10 @@ function AccountsTab() {
       <div className="flex gap-3 items-center flex-wrap">
         <div className="relative flex-1 max-w-xs">
           <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
-          <Input value={searchQuery} onChange={e => setSearchQuery(e.target.value)} placeholder="Search users..." className="h-9 pl-9" />
+          <Input value={searchQuery} onChange={e => setSearchQuery(e.target.value)} placeholder="Search users..." className="pl-9" />
         </div>
         <Select value={filterRole} onValueChange={setFilterRole}>
-          <SelectTrigger className="w-[130px] h-9"><SelectValue placeholder="Role" /></SelectTrigger>
+          <SelectTrigger className="w-[130px]"><SelectValue placeholder="Role" /></SelectTrigger>
           <SelectContent>
             <SelectItem value="all">All Roles</SelectItem>
             {Object.entries(ROLE_CONFIG).map(([role, cfg]) => (
@@ -336,14 +354,14 @@ function AccountsTab() {
           </SelectContent>
         </Select>
         <Select value={filterStatus} onValueChange={setFilterStatus}>
-          <SelectTrigger className="w-[130px] h-9"><SelectValue placeholder="Status" /></SelectTrigger>
+          <SelectTrigger className="w-[130px]"><SelectValue placeholder="Status" /></SelectTrigger>
           <SelectContent>
             <SelectItem value="all">All Status</SelectItem>
             <SelectItem value="active">Active</SelectItem>
             <SelectItem value="pending">Pending</SelectItem>
           </SelectContent>
         </Select>
-        <Button variant="outline" size="sm" onClick={handleRefresh} disabled={isRefreshing} className="h-9 ml-auto">
+        <Button variant="outline" size="sm" onClick={handleRefresh} disabled={isRefreshing} className="ml-auto">
           <RefreshCw className={cn("w-4 h-4 mr-1", isRefreshing && "animate-spin")} /> Refresh
         </Button>
       </div>
@@ -390,7 +408,7 @@ function AccountsTab() {
                       }}
                       disabled={!u.active}
                     >
-                      <SelectTrigger className="h-7 text-xs border-border bg-muted min-w-[140px]">
+                      <SelectTrigger className="h-9 text-xs border-border bg-muted min-w-[140px]">
                         <SelectValue placeholder="Department" />
                       </SelectTrigger>
                       <SelectContent>
@@ -407,7 +425,7 @@ function AccountsTab() {
                       onValueChange={(val) => updateUser(u.id, { role: val as Role })}
                       disabled={!u.active}
                     >
-                      <SelectTrigger className="h-7 text-xs border-border bg-muted min-w-[110px]">
+                      <SelectTrigger className="h-9 text-xs border-border bg-muted min-w-[110px]">
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
@@ -438,21 +456,38 @@ function AccountsTab() {
                     {u.lastLoginAt ? new Date(u.lastLoginAt).toLocaleDateString() : "—"}
                   </td>
                   <td className="px-4 py-2.5 text-right">
-                    <div className="flex gap-1 justify-end">
+                    <div className="flex gap-2 justify-end">
                       {!isProtectedAdmin(u) && (
                         <>
-                          <Button size="sm" variant="ghost" className="h-7 text-xs text-muted-foreground hover:text-foreground" onClick={() => {
-                            const pw = prompt(`Enter new password for ${u.name}:`);
-                            if (pw && pw.length >= 6) {
-                              setResettingPw(p => ({ ...p, [u.id]: true }));
-                              resetPassword(u.email).finally(() => setResettingPw(p => ({ ...p, [u.id]: false })));
+                          <Button size="sm" variant="ghost" className="text-xs text-muted-foreground hover:text-foreground" onClick={async () => {
+                            /* The old implementation opened a native `prompt()`
+                               asking for a new password and then THREW IT AWAY —
+                               `resetPassword(email)` only sends a recovery link.
+                               The admin believed they had set the password; nobody
+                               did.  This now does what it says: it sends the
+                               recovery link and tells the admin what happens
+                               next.  The user sets their own password on the
+                               Set-New-Password page, which is the only path
+                               Supabase's recovery flow actually supports. */
+                            setResettingPw(p => ({ ...p, [u.id]: true }));
+                            try {
+                              const res = await resetPassword(u.email);
+                              if (res.ok) {
+                                toast.success("Reset link sent", {
+                                  description: `${u.email} will receive a link to set a new password.`,
+                                });
+                              } else {
+                                toast.error("Reset failed", { description: res.message });
+                              }
+                            } finally {
+                              setResettingPw(p => ({ ...p, [u.id]: false }));
                             }
                           }} disabled={resettingPw[u.id]}>
                             {resettingPw[u.id] ? <Loader2 className="w-3 h-3 animate-spin" /> : <KeyRound className="w-3 h-3" />}
                           </Button>
-                          <Button size="sm" variant="ghost" className="h-7 text-xs text-destructive-tint hover:text-destructive" onClick={() => {
-                            if (confirm(`Remove ${u.name}? This cannot be undone.`)) removeUser(u.id).catch(err => toast.error("Remove failed", { description: err.message }));
-                          }}>
+                          <Button size="sm" variant="ghost" className="text-xs text-destructive-tint hover:text-destructive" onClick={() =>
+                            setPendingRemoval({ id: u.id, name: u.name, email: u.email, pending: false })
+                          }>
                             <Trash2 className="w-3 h-3" />
                           </Button>
                         </>
@@ -472,6 +507,49 @@ function AccountsTab() {
           </table>
         </div>
       </div>
+
+      {/* ── Removal confirmation ──
+          Removing an account deletes its auth role and deactivates its
+          profile.  That is not undoable, so it is the one action in this
+          panel that earns a confirmation.  The copy names the real
+          consequence rather than asking a generic "are you sure". */}
+      <AlertDialog
+        open={pendingRemoval !== null}
+        onOpenChange={(open) => { if (!open) setPendingRemoval(null); }}
+      >
+        <AlertDialogContent className="max-w-md">
+          <AlertDialogHeader>
+            <AlertDialogTitle className="text-lg">
+              {pendingRemoval?.pending ? "Reject this registration?" : "Remove this account?"}
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              {pendingRemoval?.pending
+                ? `${pendingRemoval.name} (${pendingRemoval.email}) will be rejected and the account will not be created.`
+                : `${pendingRemoval?.name} (${pendingRemoval?.email}) will lose their role and their profile will be deactivated. This cannot be undone.`}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              className={pendingRemoval?.pending ? buttonVariants({ variant: "destructive" }) : buttonVariants({ variant: "destructive" })}
+              onClick={() => {
+                if (!pendingRemoval) return;
+                removeUser(pendingRemoval.id)
+                  .then(() => {
+                    toast.success(pendingRemoval.pending ? "Registration rejected" : "Account removed");
+                    setPendingRemoval(null);
+                  })
+                  .catch(err => {
+                    toast.error("Remove failed", { description: err.message });
+                    setPendingRemoval(null);
+                  });
+              }}
+            >
+              {pendingRemoval?.pending ? "Reject registration" : "Remove account"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

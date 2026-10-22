@@ -11,6 +11,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { MANUAL_METADATA, type ManualSection } from "@/lib/ManualContent";
 import { useManualData } from "@/hooks/useManualData";
+import { useScrollEdge } from "@/hooks/useScrollEdge";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 
@@ -20,8 +21,9 @@ export default function ISOManualPage() {
   const [showScrollTop, setShowScrollTop] = useState(false);
   const [activeSectionId, setActiveSectionId] = useState("");
   const scrollContainerRef = useRef<HTMLDivElement>(null);
+  const scrolled = useScrollEdge(scrollContainerRef);
 
-  const { data, updateSection, updateSubsection, resetToDefault, isLoaded } = useManualData();
+  const { data, updateSection, updateSubsection, resetToDefault, restoreData, isLoaded } = useManualData();
 
   // Scroll-to-top visibility
   useEffect(() => {
@@ -69,7 +71,7 @@ export default function ISOManualPage() {
   return (
     <AppShell breadcrumbs={[{ label: "Dashboard", path: "/" }, { label: "ISO 9001 Manual" }]} className="!p-0 !max-w-none">
       {/* Sticky Top Bar */}
-      <div className="sticky top-0 z-40 border-b border-border/50 bg-background/95 backdrop-blur-xl px-4 md:px-8 py-3 flex items-center justify-between gap-3">
+      <div className={cn("sticky top-0 z-40 ds-sticky-bar bg-background/95 backdrop-blur-xl px-4 md:px-8 py-3 flex items-center justify-between gap-3", scrolled && "scrolled")}>
         <div className="flex items-center gap-3 min-w-0">
           <div className="p-2 rounded-lg bg-primary/10 border border-primary/15">
             <BookOpen className="w-5 h-5 text-primary-tint" />
@@ -92,7 +94,7 @@ export default function ISOManualPage() {
             <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground" />
             <Input
               placeholder="Search..."
-              className="pl-8 h-8 w-48 text-xs bg-muted/30 border-border/40 rounded-lg"
+              className="pl-8 h-11 w-48 text-xs bg-muted/30 border-border/40 rounded-lg"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
             />
@@ -108,7 +110,24 @@ export default function ISOManualPage() {
           </Button>
           {isEditMode && (
             <Button variant="outline" size="sm" className="gap-1.5 h-8 text-xs text-destructive-tint hover:bg-destructive/10 rounded-lg"
-              onClick={() => { if (confirm("Reset manual to original text?")) { resetToDefault(); toast.info("Manual reset"); } }}
+              onClick={() => {
+                // A reset to the factory text is trivially reversible, so
+                // the design system's rule applies: undo beats a
+                // confirmation dialog.  Snapshot the current document,
+                // reset, and offer the snapshot back in the toast.
+                const snapshot = data;
+                resetToDefault();
+                toast("Manual reset to original text", {
+                  description: "Your edits were replaced with the factory text.",
+                  action: {
+                    label: "Undo",
+                    onClick: () => {
+                      restoreData(snapshot);
+                      toast.success("Reset undone");
+                    },
+                  },
+                });
+              }}
             >
               <RotateCcw className="w-3.5 h-3.5" /> Reset
             </Button>
@@ -133,14 +152,14 @@ export default function ISOManualPage() {
                 key={section.id}
                 onClick={() => scrollToSection(section.id)}
                 className={cn(
-                  "w-full flex items-center gap-2 px-2.5 py-1.5 text-[11px] rounded-md transition-all text-left",
+                  "w-full min-h-11 flex items-center gap-2 px-2.5 py-1.5 text-[11px] rounded-md transition-all text-left",
                   activeSectionId === section.id
                     ? "bg-primary/10 text-primary-tint font-semibold"
                     : "text-muted-foreground hover:text-foreground hover:bg-muted/40"
                 )}
               >
                 <span className={cn(
-                  "w-5 h-5 rounded flex items-center justify-center text-[9px] font-bold shrink-0",
+                  "w-5 h-5 rounded-md flex items-center justify-center text-[9px] font-bold shrink-0",
                   activeSectionId === section.id ? "bg-primary text-primary-foreground" : "bg-muted/60 text-muted-foreground/50"
                 )}>
                   {idx + 1}
@@ -167,9 +186,9 @@ export default function ISOManualPage() {
 
         {/* Scrollable Document */}
         <div ref={scrollContainerRef} className="flex-1 overflow-y-auto scroll-smooth">
-          <div className="max-w-3xl mx-auto px-5 md:px-8 py-8 md:py-12 space-y-0">
+          <div className="max-w-read mx-auto py-8 md:py-12 space-y-0">
             {/* Approval Banner */}
-            <div className="mb-8 p-5 rounded-xl border-2 border-primary/20 bg-gradient-to-br from-primary/[0.03] to-primary/[0.01]">
+            <div className="mb-8 p-5 rounded-xl border border-border bg-card">
               <div className="flex items-center gap-2 mb-3">
                 <CheckCircle className="w-4 h-4 text-primary-tint" />
                 <span className="text-[10px] font-bold uppercase tracking-[0.15em] text-primary-tint/60">Document Approval</span>
@@ -207,7 +226,7 @@ export default function ISOManualPage() {
           </div>
 
           {/* Footer */}
-          <div className="max-w-3xl mx-auto px-5 md:px-8 pb-8 pt-6 border-t border-border/30 mt-8">
+          <div className="max-w-read mx-auto pb-8 pt-6 border-t border-border/30 mt-8">
             <div className="flex items-center justify-between text-[10px] text-muted-foreground">
               <div className="flex items-center gap-4">
                 <span className="font-mono">{MANUAL_METADATA.documentNo}</span>
@@ -224,7 +243,7 @@ export default function ISOManualPage() {
       {showScrollTop && (
         <button
           onClick={() => scrollContainerRef.current?.scrollTo({ top: 0, behavior: 'smooth' })}
-          className="fixed bottom-6 right-6 z-50 w-10 h-10 rounded-xl bg-primary text-primary-foreground shadow-lg shadow-primary/20 flex items-center justify-center hover:scale-110 transition-transform"
+          className="ds-press fixed bottom-6 right-6 z-50 w-11 h-11 rounded-full bg-primary text-primary-foreground shadow-primary flex items-center justify-center hover:scale-105 transition-transform"
         >
           <ArrowUp className="w-4 h-4" />
         </button>
@@ -250,7 +269,7 @@ function SectionBlock({
   isLast: boolean;
 }) {
   return (
-    <div id={`section-${section.id}`} className={cn("scroll-mt-20", !isLast && "pb-8 mb-8 border-b border-border/20")}>
+    <div id={`section-${section.id}`} className={cn("scroll-mt-20", !isLast && "pb-section mb-section border-b border-border/20")}>
       {/* Section Header */}
       <div className="mb-5 space-y-2">
         <div className="flex items-center gap-2 text-[10px] font-bold text-primary-tint/50 uppercase tracking-[0.2em]">
@@ -286,7 +305,7 @@ function SectionBlock({
             />
           </div>
         ) : (
-          <div className="text-sm leading-relaxed text-foreground/75 space-y-2">
+          <div className="text-sm leading-[1.85] text-foreground/75 space-y-2">
             {section.content.split('\n').map((line, i) => (
               <p key={i}>
                 {line.startsWith('- ') ? (
@@ -343,7 +362,11 @@ function SectionBlock({
                     className="min-h-[100px] text-sm bg-background border-primary/10 rounded-lg"
                   />
                 ) : (
-                  <div className="text-sm text-foreground/70 leading-relaxed whitespace-pre-wrap">{sub.content}</div>
+                  // Long body prose: the design system sets the floor at
+                  // 1.85 line-height for running text.  `leading-relaxed`
+                  // is 1.625, which is right for a UI label and too tight
+                  // for a paragraph of manual text.
+                  <div className="text-sm text-foreground/70 leading-[1.85] whitespace-pre-wrap">{sub.content}</div>
                 )}
               </div>
             </div>

@@ -62,7 +62,10 @@ export default function FormTemplatePreview() {
   const TemplateComponent: React.ComponentType<TemplateComponentProps> | null = getTemplateComponent(code) ?? null;
 
   return (
-    <AppShell breadcrumbs={breadcrumbs}>
+    /* The document tier: this page renders a facsimile of the source Word
+       form, whose tables run up to 18 columns wide.  The grid column
+       would crush every cell. */
+    <AppShell breadcrumbs={breadcrumbs} maxWidth="max-w-doc">
       <div className="w-full">
         {/* ── Top Navigation Bar ── */}
         <div className="px-4 py-3 flex items-center justify-between border-b border-border bg-background">
@@ -152,8 +155,8 @@ export default function FormTemplatePreview() {
         </div>
 
         {/* ── Form Content — full-width document page ── */}
-        <div className="w-full bg-muted/30 py-4 px-4 sm:px-6 lg:px-8">
-          <div className="max-w-[1400px] mx-auto">
+        <div className="w-full bg-muted/30 py-4">
+          <div className="max-w-doc mx-auto">
             {TemplateComponent ? (
               <TemplateComponent isTemplate={true} />
             ) : (() => {
@@ -174,7 +177,7 @@ export default function FormTemplatePreview() {
                 {/* Title bar — accent bg */}
                 <div className={cn("flex items-center justify-between px-6 py-2.5 border-b border-border", accent.bg, accent.bgDark)}>
                   <span className={cn("text-[14px] font-bold uppercase tracking-wide", accent.text, accent.textDark)}>{schema.name}</span>
-                  <span className={cn("text-[10px] font-mono px-2 py-0.5 rounded", accent.chip, accent.chipDark, accent.text, accent.textDark)}>QMS</span>
+                  <span className={cn("text-[10px] font-mono px-2 py-0.5 rounded-sm", accent.chip, accent.chipDark, accent.text, accent.textDark)}>QMS</span>
                 </div>
                 {/* Fields */}
                 <div className="px-6 py-6 space-y-4">

@@ -186,7 +186,7 @@ export default function NotificationsPage() {
                 key={tab.id}
                 onClick={() => setFilter(tab.id)}
                 className={cn(
-                  "flex items-center gap-1.5 px-3 py-2 text-sm font-medium transition-colors border-b-2 -mb-px",
+                  "flex min-h-11 items-center gap-1.5 px-3 py-2 text-sm font-medium transition-colors border-b-2 -mb-px",
                   active
                     ? "border-primary text-primary-tint"
                     : "border-transparent text-muted-foreground hover:text-foreground"
@@ -333,7 +333,7 @@ export default function NotificationsPage() {
                             )}
                             <button
                               onClick={() => notif.read ? markAsUnread(notif.id) : markAsRead(notif.id)}
-                              className="p-1.5 rounded-sm text-muted-foreground hover:text-foreground hover:bg-muted/50"
+                              className="p-1.5 rounded-sm text-muted-foreground hover:text-foreground hover:bg-muted/50 ds-hit-44"
                               title={notif.read ? "Mark as unread" : "Mark as read"}
                             >
                               {notif.read ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}

@@ -14,6 +14,7 @@ import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/com
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import {
@@ -44,7 +45,7 @@ export default function DatabaseManagementPage() {
 
   return (
     <AppShell>
-      <div className="space-y-6 p-6 max-w-[1200px] mx-auto">
+      <div className="space-y-6">
         {/* Page Header */}
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
@@ -415,7 +416,7 @@ function RestoreTab() {
                 </div>
               </div>
               {lastRestore.errors.length > 0 && (
-                <div className="mt-3 p-2 bg-background rounded border text-xs font-mono max-h-40 overflow-auto">
+                <div className="mt-3 p-2 bg-background rounded-md border text-xs font-mono max-h-40 overflow-auto">
                   {lastRestore.errors.map((e, i) => (
                     <div key={i} className="text-destructive-tint py-0.5">{e}</div>
                   ))}
@@ -564,20 +565,16 @@ function ImportTab() {
           {/* Options */}
           <div className="flex flex-wrap items-center gap-4">
             <label className="flex items-center gap-2 cursor-pointer">
-              <input
-                type="checkbox"
+              <Checkbox
                 checked={dryRun}
-                onChange={e => setDryRun(e.target.checked)}
-                className="rounded border-border"
+                onCheckedChange={(checked) => setDryRun(checked === true)}
               />
               <span className="text-sm">Dry run (validate only, don't insert)</span>
             </label>
             <label className="flex items-center gap-2 cursor-pointer">
-              <input
-                type="checkbox"
+              <Checkbox
                 checked={skipInvalid}
-                onChange={e => setSkipInvalid(e.target.checked)}
-                className="rounded border-border"
+                onCheckedChange={(checked) => setSkipInvalid(checked === true)}
               />
               <span className="text-sm">Skip invalid rows</span>
             </label>
@@ -626,7 +623,7 @@ function ImportTab() {
                 </div>
               </div>
               {result.errors.length > 0 && (
-                <div className="mt-3 p-2 bg-background rounded border text-xs font-mono max-h-40 overflow-auto">
+                <div className="mt-3 p-2 bg-background rounded-md border text-xs font-mono max-h-40 overflow-auto">
                   {result.errors.map((e, i) => (
                     <div key={i} className="text-destructive-tint py-0.5">
                       Row {e.row} ({e.serial}): {e.error}

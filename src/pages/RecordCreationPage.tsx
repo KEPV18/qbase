@@ -415,8 +415,8 @@ const RecordCreationPage: React.FC = () => {
         { label: "Dashboard", path: "/" },
         ...(currentSectionName ? [{ label: currentSectionName }] : []),
         { label: "Create Record" },
-      ]}>
-        <div className="max-w-4xl mx-auto page-transition">
+      ]} maxWidth="max-w-doc">
+        <div className="max-w-full mx-auto">
           {/* Success Header */}
           <div className="ds-card p-6 text-center border-success/30 mb-4">
             <div className="w-14 h-14 rounded-full bg-success/10 border border-success/20 flex items-center justify-center mx-auto mb-3">
@@ -466,20 +466,25 @@ const RecordCreationPage: React.FC = () => {
   }
 
   // ─── Main ──────────────────────────────────────────────────────────────
+  // The container tier follows the step.  `select` is a scannable index
+  // of section/form cards and belongs in the grid column; `form` renders
+  // the Word-origin facsimile, whose tables run up to 18 columns wide and
+  // need the document column.
+  const shellTier = step === 'form' && getTemplateComponent(selectedCode) ? "max-w-doc" : "max-w-grid";
   return (
     <AppShell breadcrumbs={[
       { label: "Dashboard", path: "/" },
       ...(currentSectionName ? [{ label: currentSectionName }] : []),
       { label: "Create Record" },
-    ]}>
-    <div className="max-w-6xl mx-auto page-transition">
+    ]} maxWidth={shellTier}>
+    <div className="max-w-full mx-auto">
       {/* Header */}
       <div className="flex items-center justify-between mb-6">
         <div className="flex items-center gap-3">
           {activeSection !== null && step === 'select' && (
             <button
               onClick={() => { setActiveSection(null); setSelectedCode(''); setSearch(''); }}
-              className="p-1.5 rounded-sm hover:bg-muted/50 text-muted-foreground hover:text-foreground transition-colors"
+              className="p-1.5 rounded-sm hover:bg-muted/50 text-muted-foreground hover:text-foreground transition-colors ds-hit-44"
             >
               <ArrowLeft className="w-4 h-4" />
             </button>
@@ -548,7 +553,7 @@ const RecordCreationPage: React.FC = () => {
           // DOCX-accurate template for form creation — content lives in page
           // state (debounced server-side autosave above).
           return (
-            <div className="max-w-4xl mx-auto">
+            <div className="max-w-full mx-auto">
               <div className="mb-4 flex items-center justify-between">
                 <div>
                   <h1 className="text-2xl font-bold text-foreground">Create {schema.name}</h1>
@@ -646,9 +651,10 @@ const RecordCreationPage: React.FC = () => {
           );
         }
         // Fallback: schema-driven form (renderer holds its own content and
-        // autosaves through handleRendererFieldChange).
+        // autosaves through handleRendererFieldChange).  This one is a
+        // single-column form, so it gets the reading column.
         return (
-          <div className="max-w-2xl mx-auto">
+          <div className="max-w-read mx-auto">
             <div className="mb-4 flex items-center justify-between">
               <div>
                 <h1 className="text-2xl font-bold text-foreground">Create {schema.name}</h1>
@@ -696,7 +702,7 @@ const RecordCreationPage: React.FC = () => {
               value={search}
               onChange={e => setSearch(e.target.value)}
               placeholder={activeSection ? "Search forms in this section..." : "Search all forms..."}
-              className="w-full pl-10 pr-4 py-2.5 rounded-sm border border-border bg-background text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary"
+              className="w-full h-11 pl-10 pr-4 rounded-sm border border-border bg-background text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary"
             />
           </div>
 

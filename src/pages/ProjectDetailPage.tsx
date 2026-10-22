@@ -151,7 +151,7 @@ export default function ProjectDetailPage() {
 
         <div className="border-t border-border pt-4">
           <h3 className="text-xs font-semibold text-foreground uppercase tracking-wider mb-2">Scope & Description</h3>
-          <p className="text-sm text-ink dark:text-ink-2 leading-relaxed">{project.description}</p>
+          <p className="text-sm text-ink dark:text-ink-2 leading-[1.85]">{project.description}</p>
         </div>
 
         <div className="grid grid-cols-2 gap-3 mt-4 pt-4 border-t border-border">

@@ -34,10 +34,25 @@ export function useProceduresData() {
     saveData(PROCEDURES_CONTENT);
   }, [saveData]);
 
+  /**
+   * Replace the whole procedure set with a snapshot.
+   *
+   * This exists so a reset can be UNDONE rather than confirmed.  The
+   * design system's rule is explicit: "easy undo beats confirmation
+   * dialogs; reserve confirmations for genuinely destructive,
+   * irreversible actions".  A reset to the factory text is trivially
+   * reversible — the caller snapshots `data` before resetting and hands
+   * it back here when the user takes the Undo action.
+   */
+  const restoreData = useCallback((snapshot: ProcedureSection[]) => {
+    saveData(snapshot);
+  }, [saveData]);
+
   return {
     data,
     isLoaded,
     updateProcedure,
-    resetToDefault
+    resetToDefault,
+    restoreData
   };
 }

@@ -53,9 +53,13 @@ export default function SettingsPage() {
   const [activeSection, setActiveSection] = useState<SectionId>("profile");
 
   return (
-    <div className="flex gap-8 w-full max-w-[1100px] mx-auto">
-      {/* Settings sidebar — narrow, no borders, warm bg */}
-      <nav className="w-[200px] shrink-0 sticky top-0 self-start">
+    <div className="flex flex-col lg:flex-row gap-4 lg:gap-8 w-full max-w-[1100px] mx-auto">
+      {/* Settings sidebar — narrow, no borders, warm bg.
+          On a phone the 200px column squeezed the content pane down to
+          ~110px (measured: the email INPUT collapsed to 26px wide), so
+          below `lg` the section list becomes a horizontally scrolling
+          strip and the content takes the full width. */}
+      <nav className="w-full lg:w-[200px] shrink-0 lg:sticky lg:top-0 self-start">
         <div className="pt-2">
           <div className="flex items-center gap-2 px-3 mb-4">
             <div className="w-7 h-7 rounded-lg bg-primary/10 flex items-center justify-center">
@@ -63,13 +67,13 @@ export default function SettingsPage() {
             </div>
             <h2 className="text-base font-display font-bold text-foreground dark:text-foreground">Settings</h2>
           </div>
-          <div className="space-y-0.5">
+          <div className="flex lg:block gap-1.5 lg:gap-0 lg:space-y-0.5 overflow-x-auto lg:overflow-visible pb-1 lg:pb-0">
             {SECTIONS.map((s) => (
               <button
                 key={s.id}
                 onClick={() => setActiveSection(s.id)}
                 className={cn(
-                  "w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200",
+                  "w-auto lg:w-full shrink-0 whitespace-nowrap min-h-11 flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200",
                   activeSection === s.id
                     ? "bg-foreground text-background"
                     : "text-ink-2 hover:text-foreground hover:bg-muted dark:hover:bg-muted/30"
@@ -239,7 +243,7 @@ function ProfileSection() {
           <Input
             value={user?.email || ""}
             readOnly
-            className="h-9 text-sm max-w-sm bg-muted dark:bg-muted/30 border-border dark:border-border"
+            className="text-sm max-w-sm bg-muted dark:bg-muted/30 border-border dark:border-border"
           />
           <Badge variant="outline" className="text-[10px] h-6 text-ink-3 border-border">
             Verified
@@ -306,7 +310,7 @@ function SecuritySection() {
               <button
                 type="button"
                 onClick={() => setShowOld(!showOld)}
-                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-ink-3 hover:text-foreground"
+                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-ink-3 hover:text-foreground ds-hit-44-anchored"
               >
                 {showOld ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
               </button>
@@ -325,7 +329,7 @@ function SecuritySection() {
               <button
                 type="button"
                 onClick={() => setShowNew(!showNew)}
-                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-ink-3 hover:text-foreground"
+                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-ink-3 hover:text-foreground ds-hit-44-anchored"
               >
                 {showNew ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
               </button>
@@ -582,7 +586,7 @@ function CompanySettingsCard() {
               className="flex-1 h-9 text-sm"
             />
             {logoUrl && (
-              <div className="w-9 h-9 rounded border border-border dark:border-border overflow-hidden bg-muted dark:bg-muted/30 shrink-0">
+              <div className="w-9 h-9 rounded-md border border-border dark:border-border overflow-hidden bg-muted dark:bg-muted/30 shrink-0">
                 <img
                   src={logoUrl}
                   alt="Preview"

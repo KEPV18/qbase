@@ -107,8 +107,8 @@ export default function FormsRegistryPage() {
 
   return (
     <AppShell>
-      <div className="min-h-screen bg-background animate-fade-in">
-        <div className="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8 py-6">
+      <div className="min-h-screen bg-background">
+        <div className="max-w-grid mx-auto py-6">
 
           {/* ── Header ── */}
           <div className="flex flex-col gap-1 mb-6">
@@ -141,7 +141,7 @@ export default function FormsRegistryPage() {
               {searchTerm && (
                 <button
                   onClick={() => setSearchTerm("")}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground ds-hit-44-anchored"
                 >
                   <X className="w-4 h-4" />
                 </button>
@@ -154,7 +154,7 @@ export default function FormsRegistryPage() {
               <button
                 onClick={() => setSectionFilter(null)}
                 className={cn(
-                  "px-3 py-1.5 rounded-lg text-[12px] font-semibold transition-all border",
+                  "inline-flex items-center justify-center min-h-11 px-3 py-1.5 rounded-lg text-[12px] font-semibold transition-all border",
                   sectionFilter === null
                     ? "bg-primary/15 text-primary-tint border-primary/30"
                     : "bg-muted/20 text-muted-foreground border-border/50 hover:bg-muted/40"
@@ -167,7 +167,7 @@ export default function FormsRegistryPage() {
                   key={sec.id}
                   onClick={() => setSectionFilter(sectionFilter === sec.id ? null : sec.id)}
                   className={cn(
-                    "px-3 py-1.5 rounded-lg text-[12px] font-semibold transition-all border",
+                    "inline-flex items-center justify-center min-h-11 px-3 py-1.5 rounded-lg text-[12px] font-semibold transition-all border",
                     sectionFilter === sec.id
                       ? getSectionColor(sec.id)
                       : "bg-muted/20 text-muted-foreground border-border/50 hover:bg-muted/40"
@@ -197,12 +197,18 @@ export default function FormsRegistryPage() {
                 </button>
               ))}
 
-              {/* View toggle */}
-              <div className="ml-auto flex items-center gap-1 bg-muted/20 border border-border/50 rounded-lg p-0.5">
+              {/* View toggle — a segmented control.  The two segments are
+                  siblings, so a centred 44px hit extension on each would
+                  overlap.  The track itself carries the target: it is
+                  44px tall and each segment fills it, which is how the
+                  design system's own segmented pill works. */}
+              <div className="ml-auto flex items-center gap-1 bg-muted/20 border border-border/50 rounded-lg p-0.5 h-11">
                 <button
                   onClick={() => setViewMode("grid")}
+                  aria-label="Grid view"
+                  aria-pressed={viewMode === "grid"}
                   className={cn(
-                    "p-1.5 rounded-md transition-colors",
+                    "h-11 w-11 rounded-md transition-colors flex items-center justify-center",
                     viewMode === "grid" ? "bg-primary/15 text-primary-tint" : "text-muted-foreground hover:text-foreground"
                   )}
                 >
@@ -210,8 +216,10 @@ export default function FormsRegistryPage() {
                 </button>
                 <button
                   onClick={() => setViewMode("list")}
+                  aria-label="List view"
+                  aria-pressed={viewMode === "list"}
                   className={cn(
-                    "p-1.5 rounded-md transition-colors",
+                    "h-11 w-11 rounded-md transition-colors flex items-center justify-center",
                     viewMode === "list" ? "bg-primary/15 text-primary-tint" : "text-muted-foreground hover:text-foreground"
                   )}
                 >

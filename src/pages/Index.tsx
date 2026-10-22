@@ -109,12 +109,12 @@ function DeptMetricCard({
       </div>
       <div className="flex items-center gap-4">
         <div>
-          <p className="text-lg font-bold text-foreground dark:text-foreground">{health.totalForms}</p>
+          <p className="text-lg font-bold tabular-nums text-foreground dark:text-foreground">{health.totalForms}</p>
           <p className="text-[10px] text-muted-foreground/70">Forms Available</p>
         </div>
         <div className="w-px h-8 bg-border dark:bg-border" />
         <div>
-          <p className="text-lg font-bold text-foreground dark:text-foreground">{health.totalSubmissions}</p>
+          <p className="text-lg font-bold tabular-nums text-foreground dark:text-foreground">{health.totalSubmissions}</p>
           <p className="text-[10px] text-muted-foreground/70">Records Filed</p>
         </div>
       </div>
@@ -497,7 +497,7 @@ export default function Index() {
                 if (val) next.set("project", val); else next.delete("project");
                 setSearchParams(next, { replace: true });
               }}
-              className="pl-9 pr-4 py-2.5 rounded-lg bg-background dark:bg-card border border-border dark:border-border text-sm text-foreground dark:text-foreground appearance-none cursor-pointer focus:outline-none focus:ring-2 focus:ring-foreground/10"
+              className="h-11 pl-9 pr-4 rounded-lg bg-background dark:bg-card border border-border dark:border-border text-sm text-foreground dark:text-foreground appearance-none cursor-pointer focus:outline-none focus:ring-2 focus:ring-foreground/10"
             >
               <option value="">All Projects</option>
               {PROJECTS.map(p => (
@@ -518,7 +518,7 @@ export default function Index() {
                 if (val) next.set("month", val); else next.delete("month");
                 setSearchParams(next, { replace: true });
               }}
-              className="pl-9 pr-4 py-2.5 rounded-lg bg-background dark:bg-card border border-border dark:border-border text-sm text-foreground dark:text-foreground appearance-none cursor-pointer focus:outline-none focus:ring-2 focus:ring-foreground/10"
+              className="h-11 pl-9 pr-4 rounded-lg bg-background dark:bg-card border border-border dark:border-border text-sm text-foreground dark:text-foreground appearance-none cursor-pointer focus:outline-none focus:ring-2 focus:ring-foreground/10"
             >
               <option value="">All Months</option>
               {availableMonths.map(m => (
@@ -562,7 +562,7 @@ export default function Index() {
                   onClick={() => handleDiscardDraft(String(d.id), String(d.serial))}
                   disabled={discardingSerial === d.serial}
                   title="Discard draft"
-                  className="p-1 rounded hover:bg-muted/50 text-muted-foreground hover:text-destructive-tint transition-colors disabled:opacity-50"
+                  className="p-1 rounded-full hover:bg-muted/50 text-muted-foreground hover:text-destructive-tint transition-colors disabled:opacity-50 ds-hit-44"
                 >
                   {discardingSerial === d.serial
                     ? <Loader2 className="w-3.5 h-3.5 animate-spin" />
@@ -610,7 +610,7 @@ export default function Index() {
                   placeholder="Search forms…"
                   value={formSearch}
                   onChange={(e) => setFormSearch(e.target.value)}
-                  className="w-full pl-8 pr-3 py-2 rounded-lg bg-background dark:bg-card border border-border dark:border-border text-sm text-foreground dark:text-foreground placeholder:text-muted-foreground/70 focus:outline-none focus:ring-2 focus:ring-foreground/10"
+                  className="w-full h-11 pl-8 pr-3 rounded-lg bg-background dark:bg-card border border-border dark:border-border text-sm text-foreground dark:text-foreground placeholder:text-muted-foreground/70 focus:outline-none focus:ring-2 focus:ring-foreground/10"
                 />
               </div>
             </div>
@@ -629,7 +629,7 @@ export default function Index() {
                         isSelected ? "bg-background dark:bg-card" : "hover:bg-background dark:hover:bg-card/50"
                       )}
                     >
-                      <div className="w-7 h-7 rounded flex items-center justify-center bg-background dark:bg-card border border-border dark:border-border shrink-0">
+                      <div className="w-7 h-7 rounded-full flex items-center justify-center bg-background dark:bg-card border border-border dark:border-border shrink-0">
                         <FileText className="w-3.5 h-3.5 text-muted-foreground/70" />
                       </div>
                       <div className="flex-1 min-w-0">

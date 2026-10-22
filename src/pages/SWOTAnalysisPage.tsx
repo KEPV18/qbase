@@ -650,7 +650,7 @@ export default function SWOTAnalysisPage(): JSX.Element {
                       onClick={() => setExpandedQuadrant(isExpanded ? null : key)}
                       aria-expanded={isExpanded}
                       aria-label={isExpanded ? `Collapse ${config.title}` : `Expand ${config.title}`}
-                      className="-mr-1 flex h-8 w-8 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-foreground/5 hover:text-foreground"
+                      className="-mr-1 flex h-11 w-11 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-foreground/5 hover:text-foreground ds-hit-44"
                     >
                       {isExpanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
                     </button>

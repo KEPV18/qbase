@@ -49,11 +49,26 @@ export function useManualData() {
     saveData(MANUAL_CONTENT);
   }, [saveData]);
 
+  /**
+   * Replace the whole document with a snapshot.
+   *
+   * This exists so a reset can be UNDONE rather than confirmed.  The
+   * design system's rule is explicit: "easy undo beats confirmation
+   * dialogs; reserve confirmations for genuinely destructive,
+   * irreversible actions".  A reset to the factory text is trivially
+   * reversible — the caller snapshots `data` before resetting and hands
+   * it back here when the user takes the Undo action.
+   */
+  const restoreData = useCallback((snapshot: ManualSection[]) => {
+    saveData(snapshot);
+  }, [saveData]);
+
   return {
     data,
     isLoaded,
     updateSection,
     updateSubsection,
-    resetToDefault
+    resetToDefault,
+    restoreData
   };
 }

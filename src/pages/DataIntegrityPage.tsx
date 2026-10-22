@@ -134,7 +134,7 @@ const DataIntegrityPage: React.FC = () => {
   if (isLoading) {
     return (
       <AppShell breadcrumbs={breadcrumbs}>
-      <div className="max-w-6xl mx-auto flex flex-col items-center justify-center py-20">
+      <div className="max-w-grid mx-auto flex flex-col items-center justify-center py-20">
         <StateScreen state="loading" title="Scanning data integrity…" />
       </div>
       </AppShell>
@@ -145,7 +145,7 @@ const DataIntegrityPage: React.FC = () => {
   if (error) {
     return (
       <AppShell breadcrumbs={breadcrumbs}>
-      <div className="max-w-6xl mx-auto flex flex-col items-center justify-center py-20 ds-fade-enter">
+      <div className="max-w-grid mx-auto flex flex-col items-center justify-center py-20">
         <XCircle className="w-12 h-12 text-destructive-tint mb-4" />
         <h2 className="text-xl text-foreground mb-2">Failed to Load Integrity Data</h2>
         <p className="text-muted-foreground mb-4">{(error as Error).message}</p>
@@ -159,7 +159,7 @@ const DataIntegrityPage: React.FC = () => {
 
   return (
     <AppShell breadcrumbs={breadcrumbs}>
-    <div className="max-w-6xl mx-auto page-transition">
+    <div className="max-w-grid mx-auto">
       {/* Header */}
       <div className="flex items-center justify-between mb-6">
         <div className="flex items-center gap-3">
@@ -368,7 +368,7 @@ const DataIntegrityPage: React.FC = () => {
 
       {/* No Issues */}
       {recordsWithIssues.length === 0 && serialGaps.length === 0 && (
-        <div className="flex flex-col items-center py-16 ds-fade-enter">
+        <div className="flex flex-col items-center py-16">
           <CheckCircle className="w-12 h-12 text-success-tint/50 mb-3" />
           <h3 className="text-lg text-foreground mb-2">All Clear</h3>
           <p className="text-sm text-muted-foreground">No integrity issues detected across {summary.total} records.</p>

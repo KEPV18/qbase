@@ -113,14 +113,14 @@ export default function KPIReportsPage() {
 
   return (
     <AppShell breadcrumbs={[{ label: "Dashboard", path: "/" }, { label: "KPI Dashboard", path: "/kpi" }, { label: "KPI Reports" }]}>
-      <div className="page-transition ds-fade-enter">
-        <div className="flex items-center justify-between mb-6 print:hidden">
+      <div>
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-6 print:hidden">
           <PageHeader
             icon={FileText}
             title="KPI Reports"
             description="ISO 9001:2015 Compliance Documentation"
           />
-          <div className="flex items-center gap-2 shrink-0">
+          <div className="flex flex-wrap items-center gap-2 sm:shrink-0">
             <Button variant="outline" size="sm" onClick={handleExportCSV}>
               <FileSpreadsheet className="w-4 h-4 mr-2" /> CSV
             </Button>

@@ -193,7 +193,7 @@ const RecordViewPage: React.FC = () => {
   if (isLoading) {
     return (
       <AppShell breadcrumbs={getBreadcrumbs()}>
-      <div className="max-w-4xl mx-auto flex flex-col items-center justify-center py-20">
+      <div className="max-w-grid mx-auto flex flex-col items-center justify-center py-20">
         <StateScreen state="loading" title={`Loading record ${decodedSerial}…`} />
       </div>
       </AppShell>
@@ -208,7 +208,7 @@ const RecordViewPage: React.FC = () => {
     if (!formCodePattern.test(decodedSerial)) {
       return (
         <AppShell breadcrumbs={getBreadcrumbs()}>
-        <div className="max-w-4xl mx-auto flex flex-col items-center justify-center py-20 ds-fade-enter">
+        <div className="max-w-grid mx-auto flex flex-col items-center justify-center py-20">
           <AlertTriangle className="w-12 h-12 text-destructive-tint mb-4" />
           <h2 className="text-xl text-foreground mb-2">Failed to Load Record</h2>
           <p className="text-muted-foreground mb-4">{(error as Error).message}</p>
@@ -228,7 +228,7 @@ const RecordViewPage: React.FC = () => {
     if (formCodePattern.test(decodedSerial)) {
       return (
         <AppShell breadcrumbs={getBreadcrumbs()}>
-        <div className="max-w-4xl mx-auto flex flex-col items-center justify-center py-20">
+        <div className="max-w-grid mx-auto flex flex-col items-center justify-center py-20">
           <StateScreen state="loading" title={`Redirecting to ${decodedSerial}…`} />
         </div>
         </AppShell>
@@ -237,7 +237,7 @@ const RecordViewPage: React.FC = () => {
     // Regular serial not found
     return (
       <AppShell breadcrumbs={getBreadcrumbs()}>
-      <div className="max-w-4xl mx-auto flex flex-col items-center justify-center py-20 ds-fade-enter">
+      <div className="max-w-grid mx-auto flex flex-col items-center justify-center py-20">
         <FileText className="w-12 h-12 text-muted-foreground/40 mb-4" />
         <h2 className="text-xl text-foreground mb-2">Record Not Found</h2>
         <p className="text-muted-foreground mb-4">No record with serial <code className="text-primary-tint font-mono">{decodedSerial}</code></p>
@@ -359,8 +359,8 @@ const RecordViewPage: React.FC = () => {
   // ─── Render ────────────────────────────────────────────────────────────
 
   return (
-    <AppShell breadcrumbs={getBreadcrumbs()} maxWidth="max-w-full">
-    <div className="max-w-full mx-auto page-transition px-4 py-6">
+    <AppShell breadcrumbs={getBreadcrumbs()} maxWidth="max-w-doc">
+    <div className="max-w-full mx-auto py-6">
       {/* Top bar */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-6">
         <div className="flex items-center gap-2">
@@ -372,7 +372,7 @@ const RecordViewPage: React.FC = () => {
               <button
                 onClick={() => recordNav.prevSerial && navigate(`/records/${encodeURIComponent(String(recordNav.prevSerial))}`)}
                 disabled={!recordNav.prevSerial}
-                className="p-1.5 rounded-md text-muted-foreground hover:text-foreground hover:bg-muted transition-colors disabled:opacity-30 disabled:pointer-events-none"
+                className="p-1.5 rounded-md text-muted-foreground hover:text-foreground hover:bg-muted transition-colors disabled:opacity-30 disabled:pointer-events-none ds-hit-44"
                 title="Previous record"
               >
                 <ChevronLeft className="w-4 h-4" />
@@ -423,7 +423,7 @@ const RecordViewPage: React.FC = () => {
               <button
                 onClick={() => recordNav.nextSerial && navigate(`/records/${encodeURIComponent(String(recordNav.nextSerial))}`)}
                 disabled={!recordNav.nextSerial}
-                className="p-1.5 rounded-md text-muted-foreground hover:text-foreground hover:bg-muted transition-colors disabled:opacity-30 disabled:pointer-events-none"
+                className="p-1.5 rounded-md text-muted-foreground hover:text-foreground hover:bg-muted transition-colors disabled:opacity-30 disabled:pointer-events-none ds-hit-44"
                 title="Next record"
               >
                 <ChevronRightIcon className="w-4 h-4" />
@@ -450,7 +450,7 @@ const RecordViewPage: React.FC = () => {
                 {exportMenuOpen && (
                   <>
                     <div className="fixed inset-0 z-40" onClick={() => setExportMenuOpen(false)} />
-                    <div className="absolute right-0 mt-2 w-60 bg-popover border border-border rounded-sm shadow-xl z-50 overflow-hidden ds-fade-enter">
+                    <div className="absolute right-0 mt-2 w-60 bg-popover border border-border rounded-sm shadow-xl z-50 overflow-hidden">
                       <div className="px-3 py-2 text-xs text-muted-foreground border-b border-border bg-secondary/50">
                         Export {originalRecord.serial as string}
                       </div>
@@ -678,8 +678,8 @@ const RecordViewPage: React.FC = () => {
       {/* ─── Content ──────────────────────────────────────────────────── */}
 
       {mode === 'view' ? (
-        <div className="w-full bg-muted/20 py-4 px-4 sm:px-6 lg:px-8">
-          <div className="max-w-[1400px] mx-auto">
+        <div className="w-full bg-muted/20 py-4">
+          <div className="max-w-doc mx-auto">
             {/* Print header */}
             <div className="print-only print-header">
               <h2 className="company-name">QBase — Quality Management System</h2>
@@ -721,7 +721,7 @@ const RecordViewPage: React.FC = () => {
                   {/* Title bar — accent bg */}
                   <div className={`flex items-center justify-between px-6 py-2.5 border-b border-border ${a.bg} ${a.bgDark}`}>
                     <span className={`text-[14px] font-bold uppercase tracking-wide ${a.text} ${a.textDark}`}>{(originalRecord.formName as string) || schema?.name || fc}</span>
-                    <span className={`text-[10px] font-mono px-2 py-0.5 rounded ${a.chip} ${a.chipDark} ${a.text} ${a.textDark}`}>QMS</span>
+                    <span className={`text-[10px] font-mono px-2 py-0.5 rounded-sm ${a.chip} ${a.chipDark} ${a.text} ${a.textDark}`}>QMS</span>
                   </div>
                   <div className="px-6 py-6 space-y-4">
                     {schema?.fields.map((field, i) => {
@@ -765,7 +765,7 @@ const RecordViewPage: React.FC = () => {
           </div>
         </div>
       ) : mode === 'history' ? (
-        <div className="ds-card p-6 page-transition">
+        <div className="ds-card p-6">
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-2">
               <History className="w-5 h-5 text-primary-tint" />
@@ -842,7 +842,7 @@ const RecordViewPage: React.FC = () => {
       ) : mode === 'intent' ? (
         /* ─── Edit Intent Check ─────────────────────────────────────── */
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50">
-          <div className="bg-card border border-warning/30 rounded-lg p-6 max-w-lg w-full mx-4 shadow-xl ds-fade-enter">
+          <div className="bg-card border border-warning/30 rounded-lg p-6 max-w-lg w-full mx-4 shadow-xl">
             <div className="flex items-center gap-3 mb-4">
               <div className="w-10 h-10 rounded-full bg-warning/10 border border-warning/20 flex items-center justify-center">
                 <Shield className="w-5 h-5 text-warning-tint" />
@@ -853,7 +853,7 @@ const RecordViewPage: React.FC = () => {
               </div>
             </div>
             <p className="text-sm text-muted-foreground mb-4">
-              You are modifying critical fields on <code className="text-primary-tint font-mono text-xs bg-primary/10 px-1.5 py-0.5 rounded">{originalRecord.serial as string}</code>.
+              You are modifying critical fields on <code className="text-primary-tint font-mono text-xs bg-primary/10 px-1.5 py-0.5 rounded-sm">{originalRecord.serial as string}</code>.
               Please provide a reason for this change.
             </p>
             <div className="mb-4">

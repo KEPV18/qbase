@@ -252,12 +252,12 @@ const RecordListPage: React.FC = () => {
   if (isLoading) {
     return (
       <AppShell breadcrumbs={breadcrumbs}>
-      <div className="max-w-6xl mx-auto">
+      <div className="max-w-grid mx-auto">
         <div className="ds-skeleton h-10 w-48 mb-6" />
         <div className="ds-skeleton h-10 w-full mb-4" />
         <div className="space-y-3">
           {[...Array(8)].map((_, i) => (
-            <div key={i} className={`ds-skeleton h-16 rounded-sm stagger-${Math.min(i + 1, 10)}`} />
+            <div key={i} className="ds-skeleton h-16 rounded-lg" />
           ))}
         </div>
       </div>
@@ -268,7 +268,7 @@ const RecordListPage: React.FC = () => {
   if (error) {
     return (
       <AppShell breadcrumbs={breadcrumbs}>
-      <div className="max-w-6xl mx-auto flex flex-col items-center justify-center py-20 ds-fade-enter">
+      <div className="max-w-grid mx-auto flex flex-col items-center justify-center py-20">
         <AlertTriangle className="w-12 h-12 text-destructive-tint mb-4" />
         <h2 className="text-xl text-foreground mb-2">Failed to Load Records</h2>
         <p className="text-muted-foreground mb-4">{(error as Error).message}</p>
@@ -283,7 +283,7 @@ const RecordListPage: React.FC = () => {
   // ─── Render ────────────────────────────────────────────────────────────
   return (
     <AppShell breadcrumbs={breadcrumbs}>
-    <div className="max-w-6xl mx-auto page-transition">
+    <div className="max-w-grid mx-auto">
       {/* Header */}
       <div className="flex items-center justify-between mb-6">
         <div>
@@ -312,7 +312,7 @@ const RecordListPage: React.FC = () => {
             {exportMenuOpen && (
               <>
                 <div className="fixed inset-0 z-40" onClick={() => setExportMenuOpen(false)} />
-                <div className="absolute right-0 mt-2 w-60 bg-popover border border-border rounded-sm shadow-xl z-50 overflow-hidden ds-fade-enter">
+                <div className="absolute right-0 mt-2 w-60 bg-popover border border-border rounded-sm shadow-xl z-50 overflow-hidden">
                   <div className="px-3 py-2 text-xs text-muted-foreground border-b border-border bg-secondary/50">
                     {selectedSerials.size > 0
                       ? `Export ${selectedSerials.size} selected record(s)`
@@ -344,7 +344,7 @@ const RecordListPage: React.FC = () => {
       </div>
 
       {/* Filters */}
-      <div className="flex flex-wrap gap-3 mb-6 ds-stagger">
+      <div className="flex flex-wrap gap-3 mb-6">
         <div className="relative flex-1 min-w-[220px]">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
           <input
@@ -468,7 +468,7 @@ const RecordListPage: React.FC = () => {
 
       {/* Record List — List View */}
       {viewMode === 'list' && (filteredRecords.length === 0 ? (
-        <div className="flex flex-col items-center py-16 ds-fade-enter">
+        <div className="flex flex-col items-center py-16">
           <FileText className="w-12 h-12 text-muted-foreground/40 mb-4" />
           <h3 className="text-lg text-foreground mb-2">No Records Found</h3>
           <p className="text-sm text-muted-foreground">
@@ -479,7 +479,7 @@ const RecordListPage: React.FC = () => {
         <>
           {/* Select All + Page info */}
           <div className="flex items-center gap-3 mb-2 px-4 py-2 bg-secondary/30 border border-border rounded-t-sm">
-            <button onClick={toggleSelectAll} className="text-muted-foreground hover:text-primary-tint transition-colors" title={selectedSerials.size === pagedRecords.length ? 'Deselect all' : 'Select all'}>
+            <button onClick={toggleSelectAll} className="text-muted-foreground hover:text-primary-tint transition-colors ds-hit-44" title={selectedSerials.size === pagedRecords.length ? 'Deselect all' : 'Select all'}>
               {selectedSerials.size === pagedRecords.length && pagedRecords.length > 0
                 ? <CheckSquare className="w-4 h-4" />
                 : <Square className="w-4 h-4" />}
@@ -549,7 +549,7 @@ const RecordListPage: React.FC = () => {
                   {/* Edit count */}
                   <div className="shrink-0 text-right">
                     {(record._editCount as number) > 0 && (
-                      <span className={`text-[11px] font-medium px-1.5 py-0.5 rounded ${
+                      <span className={`text-[11px] font-medium px-1.5 py-0.5 rounded-sm ${
                         risk === 'high' ? 'text-destructive-tint bg-destructive/10' : risk === 'medium' ? 'text-warning-tint bg-warning/10' : 'text-muted-foreground bg-muted'
                       }`}>
                         {(record._editCount as number)} edit{(record._editCount as number) !== 1 ? 's' : ''}

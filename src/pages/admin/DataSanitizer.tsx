@@ -237,7 +237,7 @@ export default function DataSanitizer() {
   // ── Render ───────────────────────────────────────────────────────────────
   return (
     <AppShell breadcrumbs={[{ label: "Admin", path: "/admin/accounts" }, { label: "Data Retrofitting" }]}>
-      <div className="space-y-6 animate-fade-in">
+      <div className="space-y-6">
 
         {/* ── Header ── */}
         <PageHeader
@@ -376,7 +376,7 @@ export default function DataSanitizer() {
                 {search && (
                   <button
                     onClick={() => setSearch("")}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground ds-hit-44-anchored"
                   >
                     <X className="w-3.5 h-3.5" />
                   </button>
@@ -426,7 +426,7 @@ export default function DataSanitizer() {
                           No records match your search.
                         </TableCell>
                       </TableRow>
-                    ) : filteredList.map((record, i) => {
+                    ) : filteredList.map((record) => {
                       const deptName = record.section_name || "Management & Documentation";
                       const rowStyle = deptBorderStyle(deptName);
                       const deptBadge = deptAccentStyle(deptName);
@@ -434,8 +434,8 @@ export default function DataSanitizer() {
                       return (
                       <TableRow
                         key={record.id}
-                        className="border-b border-border/30 hover:bg-muted/20 transition-colors animate-fade-in"
-                        style={{ ...rowStyle, animationDelay: `${i * 50}ms` }}
+                        className="border-b border-border/30 hover:bg-muted/20 transition-colors"
+                        style={rowStyle}
                       >
                         <TableCell className="font-mono text-xs font-semibold text-foreground py-3">
                           {record.serial}
