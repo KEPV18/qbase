@@ -231,6 +231,20 @@ describe('buildComplianceMap — the restored dataset', () => {
     expect(c.isOverdue).toBe(false);
   });
 
+  it('names a periodic form by its cadence, not by its documentation wording', () => {
+    // F/35's own documentation says "Monthly during dev"; the compliance
+    // sentence has to read as a cadence, because the radar renders it as
+    // "<label> form — N periods overdue".
+    expect(map.get('F/35')!.frequencyLabel).toBe('Monthly');
+    expect(map.get('F/10')!.frequencyLabel).toBe('Monthly');
+    expect(map.get('F/24')!.frequencyLabel).toBe('Quarterly');
+    expect(map.get('F/25')!.frequencyLabel).toBe('Semi-annual');
+    expect(map.get('F/40')!.frequencyLabel).toBe('Semi-annual');
+    expect(map.get('F/15')!.frequencyLabel).toBe('Annual');
+    expect(map.get('F/16')!.frequencyLabel).toBe('Annual');
+    expect(map.get('F/42')!.frequencyLabel).toBe('Annual');
+  });
+
   it('measures lateness from the oldest missed deadline', () => {
     // F/49 never filed: January was due 2026-02-05 → 259 days late.
     expect(map.get('F/49')!.overdueDays).toBe(259);

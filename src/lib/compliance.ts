@@ -78,7 +78,8 @@ export interface FormCompliance {
   formCode: string;
   formName: string;
   frequencyType: FrequencyType;
-  frequencyLabel: string;   // the schema's own wording, e.g. "On event", "Daily"
+  frequencyLabel: string;   // the cadence word for a periodic form ("Monthly"),
+                            // otherwise the schema's own wording ("On event")
   isPeriodic: boolean;
   lastRecordDate: string | null;
   nextDueDate: string | null;
@@ -104,6 +105,22 @@ export interface ComplianceForm {
   name: string;
   frequency: string;
 }
+
+/**
+ * The cadence word to show for a form that owes a periodic filing.
+ *
+ * The catalogue carries the wording each form's own documentation uses
+ * ("Monthly during dev" for F/35), which is right in the form register and
+ * wrong in a compliance sentence — the radar read "Monthly during dev form
+ * — 1 period overdue". A form that owes a filing shows its cadence; a form
+ * that owes none keeps the catalogue's own wording ("On event", "Daily").
+ */
+const PERIODIC_LABELS: Record<PeriodicFrequency, string> = {
+  monthly: 'Monthly',
+  quarterly: 'Quarterly',
+  'semi-annual': 'Semi-annual',
+  annual: 'Annual',
+};
 
 /**
  * Build the compliance snapshot for every form.
@@ -155,7 +172,7 @@ export function buildComplianceMap(
       formCode: form.code,
       formName: form.name,
       frequencyType,
-      frequencyLabel: form.frequency,
+      frequencyLabel: periodic ? PERIODIC_LABELS[periodic] : form.frequency,
       isPeriodic: periodic !== null,
       lastRecordDate,
       nextDueDate,
