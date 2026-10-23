@@ -36,10 +36,24 @@ npx vercel deploy --prod --yes 2>&1 | tail -8
 echo
 echo "── checking the deployed site"
 sleep 5
+REF=""
 for js in $(curl -s https://qbase-sable.vercel.app/ | grep -oE '/assets/[a-zA-Z0-9._-]+\.js' | sort -u); do
   ref=$(curl -s "https://qbase-sable.vercel.app$js" | grep -oE '[a-z0-9]{20}\.supabase\.co' | sort -u | head -1)
-  [ -n "$ref" ] && { echo "   the build points at $ref"; break; }
+  if [ -n "$ref" ]; then REF="$ref"; break; fi
 done
+if [ -n "$REF" ]; then
+  echo "   the build points at $REF"
+  if [ "$REF" != "iouuikteroixnsqazznc.supabase.co" ]; then
+    echo "   WARNING: that is not the live project.  A build made against"
+    echo "   another address will not reach the live data."
+  fi
+else
+  echo "   WARNING: no Supabase address found in the served bundle —"
+  echo "   the build does not carry an API address at all."
+fi
+
+TARGET=$(npx vercel inspect https://qbase-sable.vercel.app 2>&1 | grep -iE '^[[:space:]]*target' | head -1 | awk '{print $2}')
+echo "   alias target : ${TARGET:-unknown}"
 echo "   site HTTP $(curl -s -o /dev/null -w '%{http_code}' https://qbase-sable.vercel.app/)"
 
 echo

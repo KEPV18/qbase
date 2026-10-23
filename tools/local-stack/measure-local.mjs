@@ -19,7 +19,7 @@
 import { chromium } from '/home/kepv/qbase-remediation/node_modules/playwright/index.mjs';
 import { readFileSync, mkdirSync } from 'node:fs';
 
-const ORIGIN = 'http://127.0.0.1:5211';
+const ORIGIN = process.env.MEASURE_ORIGIN || 'http://127.0.0.1:5211';
 const CREDS = '/tmp/qbase-local/LOCAL_LOGIN.txt';
 mkdirSync('/tmp/shots', { recursive: true });
 
@@ -35,6 +35,20 @@ console.log(`signing in as the local "${row[2]}" account (email/password not pri
 
 const browser = await chromium.launch();
 const ctx = await browser.newContext({ viewport: { width: 1440, height: 1000 } });
+
+// A Vercel deployment is served over HTTPS and has to reach the API on
+// 127.0.0.1 — a PRIVATE NETWORK REQUEST.  Chrome blocks it before it is
+// sent unless the origin has the local-network-access permission, so the
+// measurement has to grant it (this is what the browser's own prompt
+// does when the owner clicks "Allow").
+if (!/^https?:\/\/(127\.0\.0\.1|localhost)/.test(ORIGIN)) {
+  try {
+    await ctx.grantPermissions(['local-network-access'], { origin: ORIGIN });
+  } catch (e) {
+    console.log('could not grant local-network-access:', String(e.message).slice(0, 160));
+  }
+}
+
 const page = await ctx.newPage();
 const errors = [];
 const hosts = new Set();

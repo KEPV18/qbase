@@ -34,6 +34,8 @@ SHIM_PY="/home/kepv/.local/share/pipx/venvs/qwenpaw/bin/python3"
 ORIGIN_FILE="$STATE/preview-origin"
 APPLIED_FILE="$STATE/preview-origin.applied"
 PREVIEW_PID_FILE="$STATE/proxy-preview.pid"
+# The production alias of this project — the address the owner types.
+PRODUCTION_ORIGIN="${PRODUCTION_ORIGIN:-https://qbase-sable.vercel.app}"
 
 mkdir -p "$LOGS" "$STATE"
 umask 077
@@ -111,6 +113,14 @@ start_proxy() {
 # once, at start, so a new deployment means a new proxy.  Only the pid this
 # script started is ever stopped, and only after checking that it is still
 # the preview proxy.
+#
+# TWO origins are allowed, not one: the newest deployment's own hostname,
+# and the production alias.  The alias is the address the owner actually
+# types, and a deployment that lands on it (the CLI's `--prod=false` is not
+# honoured by every version) has to be able to reach the local API too.
+# Both are named hosts of this one project — the list is not a wildcard
+# over all of vercel.app, because the point of the list is to keep the
+# local database out of reach of every other site on the internet.
 start_preview_proxy() {
   local origin=""
   [ -s "$ORIGIN_FILE" ] && origin=$(head -1 "$ORIGIN_FILE" | tr -d '[:space:]')
@@ -119,9 +129,14 @@ start_preview_proxy() {
     return 0
   fi
 
+  local allow="$origin"
+  if [ "$origin" != "$PRODUCTION_ORIGIN" ]; then
+    allow="$origin,$PRODUCTION_ORIGIN"
+  fi
+
   local applied=""
   [ -s "$APPLIED_FILE" ] && applied=$(head -1 "$APPLIED_FILE" | tr -d '[:space:]')
-  if port_up 54352 && [ "$applied" = "$origin" ]; then
+  if port_up 54352 && [ "$applied" = "$allow" ]; then
     return 0
   fi
 
@@ -140,12 +155,12 @@ start_preview_proxy() {
     fi
   fi
 
-  say "preview proxy: starting for $origin"
-  ALLOWED_ORIGIN="$origin" nohup python3 "$TOOLS/cors-proxy.py" \
+  say "preview proxy: starting for $allow"
+  ALLOWED_ORIGIN="$allow" nohup python3 "$TOOLS/cors-proxy.py" \
     --listen 54352 --upstream 127.0.0.1:54350 \
     >> "$LOGS/proxy-preview.log" 2>&1 &
   echo $! > "$PREVIEW_PID_FILE"
-  printf '%s\n' "$origin" > "$APPLIED_FILE"
+  printf '%s\n' "$allow" > "$APPLIED_FILE"
   for _ in $(seq 1 20); do port_up 54352 && { say "preview proxy: up"; return 0; }; sleep 1; done
   say "preview proxy: did not come up — see $LOGS/proxy-preview.log"
   return 1
