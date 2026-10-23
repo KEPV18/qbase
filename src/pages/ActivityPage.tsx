@@ -62,9 +62,9 @@ export default function ActivityPage() {
       {entries.length === 0 ? (
         <Card className="border-border/30">
           <CardContent className="p-8 text-center">
-            <Activity className="w-12 h-12 text-muted-foreground/30 mx-auto mb-3" />
+            <Activity className="w-12 h-12 text-ink-4 mx-auto mb-3" />
             <p className="text-sm text-muted-foreground">No activity recorded yet.</p>
-            <p className="text-xs text-muted-foreground/60 mt-1">Changes to records will appear here.</p>
+            <p className="text-xs text-ink-3 mt-1">Changes to records will appear here.</p>
           </CardContent>
         </Card>
       ) : (

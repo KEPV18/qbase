@@ -70,18 +70,18 @@ export function RiskHeatMap({ risks }: RiskHeatMapProps) {
                           className={cn(
                             "aspect-square rounded-sm border flex flex-col items-center justify-center relative transition-all hover:scale-105 cursor-default min-h-[40px]",
                             getCellBg(score),
-                            cellRisks.length > 0 ? getCellColor(score) : "bg-muted/20 border-border/30 text-muted-foreground/40"
+                            cellRisks.length > 0 ? getCellColor(score) : "bg-muted/20 border-border/30 text-ink-3"
                           )}
                         >
-                          <span className="text-[10px] font-bold">{score}</span>
+                          <span className="text-[10px] font-bold tabular-nums">{score}</span>
                           {cellRisks.length > 0 && (
-                            <span className="text-[8px] font-black">{cellRisks.length}</span>
+                            <span className="text-[8px] font-black tabular-nums">{cellRisks.length}</span>
                           )}
                         </div>
                       </TooltipTrigger>
                       {cellRisks.length > 0 && (
                         <TooltipContent side="top" className="max-w-[220px]">
-                          <p className="text-[10px] font-bold mb-1">L={l} × I={i} = {score}</p>
+                          <p className="text-[10px] font-bold mb-1 tabular-nums">L={l} × I={i} = {score}</p>
                           {cellRisks.map(r => (
                             <p key={r.risk_id} className="text-[10px] text-muted-foreground truncate">
                               {r.risk_id}: {r.risk_description}
@@ -99,7 +99,7 @@ export function RiskHeatMap({ risks }: RiskHeatMapProps) {
           {/* X-axis labels */}
           <div className="grid grid-cols-5 gap-1 mt-1">
             {IMPACT_LABELS.map((label, i) => (
-              <div key={i} className="text-center text-[7px] font-bold text-muted-foreground/60 uppercase truncate">
+              <div key={i} className="text-center text-[7px] font-bold text-ink-3 uppercase truncate">
                 {label}
               </div>
             ))}
@@ -110,7 +110,7 @@ export function RiskHeatMap({ risks }: RiskHeatMapProps) {
         {/* Y-axis labels */}
         <div className="flex flex-col-reverse justify-between py-1 pl-1">
           {LIKELIHOOD_LABELS.map((label, i) => (
-            <div key={i} className="text-[7px] font-bold text-muted-foreground/60 uppercase leading-tight" style={{ height: "20%" }}>
+            <div key={i} className="text-[7px] font-bold text-ink-3 uppercase leading-tight tabular-nums" style={{ height: "20%" }}>
               {(i + 1)}
             </div>
           ))}

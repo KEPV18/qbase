@@ -280,7 +280,7 @@ export default function FormsRegistryPage() {
           {/* ── Forms grouped by section ── */}
           {filteredForms.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-20 text-center">
-              <Filter className="w-10 h-10 text-muted-foreground/30 mb-3" />
+              <Filter className="w-10 h-10 text-ink-4 mb-3" />
               <p className="text-sm text-muted-foreground">No forms match your filters.</p>
               <button
                 onClick={() => {
@@ -418,7 +418,7 @@ function FormCardGrid({
       </div>
 
       {/* Notes */}
-      <p className="text-[11px] text-muted-foreground/70 mt-2 line-clamp-1">
+      <p className="text-[11px] text-muted-foreground mt-2 line-clamp-1">
         {form.notes}
       </p>
 
@@ -474,7 +474,7 @@ function FormCardList({
           </p>
           <span className={cn("w-1.5 h-1.5 rounded-full shrink-0", getImportanceDotColor(form.importance))} />
         </div>
-        <p className="text-[11px] text-muted-foreground/70 truncate">
+        <p className="text-[11px] text-muted-foreground truncate">
           {form.isoClause} · {fieldCount} fields · {form.frequency}
           {lastRecordMonth && ` · Last: ${monthLabel(lastRecordMonth)}`}
         </p>
@@ -494,7 +494,7 @@ function FormCardList({
       </div>
 
       {/* Arrow */}
-      <ChevronRight className="w-4 h-4 text-muted-foreground/40 group-hover:text-primary-tint shrink-0" />
+      <ChevronRight className="w-4 h-4 text-ink-4 group-hover:text-primary-tint shrink-0" />
     </button>
   );
 }

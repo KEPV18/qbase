@@ -316,7 +316,7 @@ export function F44Template({ data, isTemplate = true, editMode = false, onChang
                     return (
                       <li key={i} className="text-[11px] flex items-start gap-1.5 leading-[1.85]">
                         <span className="text-muted-foreground shrink-0">▸</span>
-                        <span className="text-foreground/90">{item}</span>
+                        <span className="text-foreground">{item}</span>
                       </li>
                     );
                   })}

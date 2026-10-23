@@ -93,7 +93,7 @@ const CollapsibleSection: React.FC<{
           {icon}
           <h3 className="text-sm font-semibold text-foreground">{title}</h3>
           {count !== undefined && (
-            <span className="px-2 py-0.5 text-xs bg-secondary text-secondary-foreground rounded-full font-medium">
+            <span className="px-2 py-0.5 text-xs bg-secondary text-secondary-foreground rounded-full font-medium tabular-nums">
               {count}
             </span>
           )}
@@ -349,7 +349,7 @@ const DataIntegrityPage: React.FC = () => {
                         {signal.details && (
                           <span className="text-muted-foreground ml-1">— {signal.details}</span>
                         )}
-                        <span className="text-muted-foreground/60 ml-1">({signal.ruleId})</span>
+                        <span className="text-ink-3 ml-1">({signal.ruleId})</span>
                       </div>
                     </div>
                     );

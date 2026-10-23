@@ -69,7 +69,7 @@ const INTEGRITY_ICON: Record<RuleSeverity, React.ReactNode> = {
      green checks is decoration — it spends the one colour the eye should
      be saving for the rows that are actually wrong.  The warning and
      critical icons keep their colour, because those ARE the signal. */
-  clean: <CheckCircle className="w-3.5 h-3.5 text-muted-foreground/60" />,
+  clean: <CheckCircle className="w-3.5 h-3.5 text-ink-4" />,
   warning: <AlertTriangle className="w-3.5 h-3.5 text-warning-tint" />,
   critical: <Shield className="w-3.5 h-3.5 text-destructive-tint" />,
 };
@@ -491,7 +491,7 @@ const RecordListPage: React.FC = () => {
       {/* Record List — List View */}
       {viewMode === 'list' && (filteredRecords.length === 0 ? (
         <div className="flex flex-col items-center py-16">
-          <FileText className="w-12 h-12 text-muted-foreground/40 mb-4" />
+          <FileText className="w-12 h-12 text-ink-4 mb-4" />
           <h3 className="text-lg text-foreground mb-2">No Records Found</h3>
           <p className="text-sm text-muted-foreground">
             {records?.length === 0 ? 'Create your first record to get started.' : 'Try adjusting your search or filter.'}
@@ -555,7 +555,7 @@ const RecordListPage: React.FC = () => {
 
                     {/* Serial + Type */}
                     <div className="w-28 shrink-0">
-                      <span className="font-mono text-sm font-semibold text-primary-tint group-hover:text-primary-tint/80 transition-colors">
+                      <span className="font-mono text-sm font-semibold text-primary-tint group-hover:text-primary-tint transition-colors">
                         {record.serial as string}
                       </span>
                       <p className="text-xs text-muted-foreground mt-0.5">{record.formCode as string}</p>
@@ -563,7 +563,7 @@ const RecordListPage: React.FC = () => {
 
                     {/* Name + Status */}
                     <div className="flex-1 min-w-0">
-                      <p className="text-sm text-foreground truncate group-hover:text-primary-tint/90 transition-colors">
+                      <p className="text-sm text-foreground truncate group-hover:text-primary-tint transition-colors">
                         {record.formName as string}
                       </p>
                       <div className="flex items-center gap-2 mt-1">
@@ -591,7 +591,7 @@ const RecordListPage: React.FC = () => {
                       )}
                     </div>
 
-                    <ChevronRightIcon className="w-4 h-4 text-muted-foreground/40 group-hover:text-primary-tint transition-colors shrink-0" />
+                    <ChevronRightIcon className="w-4 h-4 text-ink-4 group-hover:text-primary-tint transition-colors shrink-0" />
                   </PanelRow>
                 );
               })}
@@ -622,12 +622,12 @@ const RecordListPage: React.FC = () => {
                     }, [])
                     .map((p, i) =>
                       typeof p === 'string' ? (
-                        <span key={`e${i}`} className="px-2 text-muted-foreground/40">…</span>
+                        <span key={`e${i}`} className="px-2 text-ink-3">…</span>
                       ) : (
                         <button
                           key={p}
                           onClick={() => setPage(p)}
-                          className={`ds-press w-8 h-8 text-sm rounded-sm flex items-center justify-center ${
+                          className={`ds-press w-8 h-8 text-sm rounded-sm flex items-center justify-center tabular-nums ${
                             p === safePage
                               ? 'bg-primary text-primary-foreground font-semibold'
                               : 'bg-secondary border border-border text-secondary-foreground hover:bg-accent'

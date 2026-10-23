@@ -255,7 +255,7 @@ export default function TraceabilityPage() {
       ) : (
         <Card className="mb-6">
           <CardContent className="pt-6 text-center py-12">
-            <Search className="w-12 h-12 mx-auto mb-4 text-muted-foreground/40" />
+            <Search className="w-12 h-12 mx-auto mb-4 text-ink-4" />
             <p className="text-lg font-medium">No record selected</p>
             <p className="text-sm text-muted-foreground mt-2">
               Select a record from the dropdown above to view its traceability

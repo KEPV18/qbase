@@ -219,7 +219,7 @@ export default function Login() {
             <button
               type="button"
               onClick={nukeCache}
-              className="w-full flex items-center justify-center gap-1.5 py-2 text-[11px] text-muted-foreground/50 hover:text-muted-foreground transition-colors"
+              className="w-full flex items-center justify-center gap-1.5 py-2 text-[11px] text-ink-3 hover:text-muted-foreground transition-colors"
               title="Use this if the app feels stuck or shows old data"
             >
               <Trash2 className="w-3 h-3" /> Clear cache &amp; reload
@@ -227,7 +227,7 @@ export default function Login() {
           </CardContent>
         </Card>
 
-        <p className="text-center text-xs text-muted-foreground/60 mt-6">
+        <p className="text-center text-xs text-ink-3 mt-6">
           QBase v2.5 · ISO 9001 Quality Management
         </p>
       </div>

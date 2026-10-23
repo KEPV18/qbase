@@ -691,7 +691,7 @@ function BrandingTab() {
               {logoUrl ? (
                 <img src={logoUrl} alt="Logo preview" className="w-full h-full object-contain p-1" onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }} />
               ) : (
-                <Building2 className="w-6 h-6 text-muted-foreground/40" />
+                <Building2 className="w-6 h-6 text-ink-4" />
               )}
             </div>
           </div>

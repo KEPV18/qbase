@@ -144,7 +144,7 @@ export default function ISOManualPage() {
         {/* Floating TOC sidebar */}
         <div className="hidden lg:flex w-56 shrink-0 flex-col border-r border-border/30 bg-muted/5 overflow-y-auto">
           <div className="px-3 pt-4 pb-2">
-            <span className="text-[10px] font-bold text-muted-foreground/50 uppercase tracking-[0.15em]">Contents</span>
+            <span className="text-[10px] font-bold text-ink-3 uppercase tracking-[0.15em]">Contents</span>
           </div>
           <nav className="flex-1 px-2 pb-4 space-y-0.5">
             {data.map((section, idx) => (
@@ -159,8 +159,8 @@ export default function ISOManualPage() {
                 )}
               >
                 <span className={cn(
-                  "w-5 h-5 rounded-md flex items-center justify-center text-[9px] font-bold shrink-0",
-                  activeSectionId === section.id ? "bg-primary text-primary-foreground" : "bg-muted/60 text-muted-foreground/50"
+                  "w-5 h-5 rounded-md flex items-center justify-center text-[9px] font-bold shrink-0 tabular-nums",
+                  activeSectionId === section.id ? "bg-primary text-primary-foreground" : "bg-muted/60 text-ink-3"
                 )}>
                   {idx + 1}
                 </span>
@@ -191,23 +191,23 @@ export default function ISOManualPage() {
             <div className="mb-8 p-5 rounded-xl border border-border bg-card">
               <div className="flex items-center gap-2 mb-3">
                 <CheckCircle className="w-4 h-4 text-primary-tint" />
-                <span className="text-[10px] font-bold uppercase tracking-[0.15em] text-primary-tint/60">Document Approval</span>
+                <span className="text-[10px] font-bold uppercase tracking-[0.15em] text-primary-tint">Document Approval</span>
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-xs">
                 <div className="p-3 rounded-lg bg-background/80 border border-border/20">
-                  <span className="block text-[9px] font-bold uppercase tracking-[0.1em] text-muted-foreground/50 mb-1">Prepared By</span>
+                  <span className="block text-[9px] font-bold uppercase tracking-[0.1em] text-ink-3 mb-1">Prepared By</span>
                   <span className="text-foreground font-semibold">{MANUAL_METADATA.preparedBy}</span>
                 </div>
                 <div className="p-3 rounded-lg bg-background/80 border border-border/20">
-                  <span className="block text-[9px] font-bold uppercase tracking-[0.1em] text-muted-foreground/50 mb-1">Approved By (CEO)</span>
+                  <span className="block text-[9px] font-bold uppercase tracking-[0.1em] text-ink-3 mb-1">Approved By (CEO)</span>
                   <span className="text-foreground font-semibold">{MANUAL_METADATA.approvedBy}</span>
                 </div>
                 <div className="p-3 rounded-lg bg-background/80 border border-border/20">
-                  <span className="block text-[9px] font-bold uppercase tracking-[0.1em] text-muted-foreground/50 mb-1">Approval Date</span>
+                  <span className="block text-[9px] font-bold uppercase tracking-[0.1em] text-ink-3 mb-1">Approval Date</span>
                   <span className="text-foreground font-semibold">{MANUAL_METADATA.approvalDate}</span>
                 </div>
               </div>
-              <div className="mt-2 text-[10px] text-muted-foreground/50 text-center">
+              <div className="mt-2 text-[10px] text-ink-3 text-center">
                 Top Management — Ahmed Khaled &amp; Kareem Yehia — approved this document as the official QMS Manual
               </div>
             </div>
@@ -272,7 +272,7 @@ function SectionBlock({
     <div id={`section-${section.id}`} className={cn("scroll-mt-20", !isLast && "pb-section mb-section border-b border-border/20")}>
       {/* Section Header */}
       <div className="mb-5 space-y-2">
-        <div className="flex items-center gap-2 text-[10px] font-bold text-primary-tint/50 uppercase tracking-[0.2em]">
+        <div className="flex items-center gap-2 text-[10px] font-bold text-primary-tint uppercase tracking-[0.2em]">
           <div className="w-8 h-px bg-primary/20" />
           <span>Clause {sectionIdx + 1}</span>
         </div>
@@ -312,7 +312,7 @@ function SectionBlock({
             />
           </div>
         ) : (
-          <div className="text-sm leading-[1.85] text-foreground/75 space-y-2">
+          <div className="text-sm leading-[1.85] text-ink-2 space-y-2">
             {section.content.split('\n').map((line, i) => (
               <p key={i}>
                 {line.startsWith('- ') ? (
@@ -332,7 +332,7 @@ function SectionBlock({
         <div className="space-y-4">
           <div className="flex items-center gap-2 mb-1">
             <div className="w-1 h-1 rounded-full bg-primary/30" />
-            <span className="text-[10px] font-bold uppercase tracking-[0.12em] text-muted-foreground/40">Sub-Clauses</span>
+            <span className="text-[10px] font-bold uppercase tracking-[0.12em] text-ink-3">Sub-Clauses</span>
             <div className="flex-1 h-px bg-border/20" />
           </div>
           {section.subsections.map((sub, subIdx) => (
@@ -382,7 +382,7 @@ function SectionBlock({
                   // 1.85 line-height for running text.  `leading-relaxed`
                   // is 1.625, which is right for a UI label and too tight
                   // for a paragraph of manual text.
-                  <div className="text-sm text-foreground/70 leading-[1.85] whitespace-pre-wrap">{sub.content}</div>
+                  <div className="text-sm text-ink-2 leading-[1.85] whitespace-pre-wrap">{sub.content}</div>
                 )}
               </div>
             </div>

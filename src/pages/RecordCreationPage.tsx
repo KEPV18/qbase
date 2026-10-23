@@ -775,7 +775,7 @@ const RecordCreationPage: React.FC = () => {
                           {sec.count} form{sec.count !== 1 ? 's' : ''} available
                         </p>
                       </div>
-                      <ChevronRight className="w-4 h-4 text-muted-foreground/50 group-hover:text-primary-tint transition-colors mt-0.5" />
+                      <ChevronRight className="w-4 h-4 text-ink-4 group-hover:text-primary-tint transition-colors mt-0.5" />
                     </button>
                   );
                 })}
@@ -834,7 +834,7 @@ const RecordCreationPage: React.FC = () => {
                         <p className="text-xs text-muted-foreground mt-0.5">{f.frequency}</p>
                       )}
                     </div>
-                    <ChevronRight className="w-4 h-4 text-muted-foreground/50 group-hover:text-primary-tint transition-colors" />
+                    <ChevronRight className="w-4 h-4 text-ink-4 group-hover:text-primary-tint transition-colors" />
                   </button>
                 );
               })}

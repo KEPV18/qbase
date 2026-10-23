@@ -196,7 +196,7 @@ export default function NotificationsPage() {
                 {tab.label}
                 {count > 0 && tab.id !== 'all' && (
                   <span className={cn(
-                    "text-[10px] font-bold px-1.5 py-0.5 rounded-sm",
+                    "text-[10px] font-bold px-1.5 py-0.5 rounded-sm tabular-nums",
                     active ? "bg-primary/10 text-primary-tint" : "bg-muted text-muted-foreground"
                   )}>
                     {count}
@@ -253,7 +253,7 @@ export default function NotificationsPage() {
                   <h3 className="text-xs font-bold uppercase tracking-wider text-muted-foreground mb-2 flex items-center gap-2">
                     <Clock className="w-3 h-3" />
                     {group}
-                    <span className="text-muted-foreground/50">({items.length})</span>
+                    <span className="text-ink-3">({items.length})</span>
                   </h3>
                   <div className="bg-card border border-border rounded-sm overflow-hidden divide-y divide-border/50">
                     {items.map(notif => {
@@ -309,7 +309,7 @@ export default function NotificationsPage() {
                             </div>
                             <p className={cn(
                               "text-sm font-semibold",
-                              !notif.read ? "text-foreground" : "text-foreground/70"
+                              !notif.read ? "text-foreground" : "text-ink-2"
                             )}>
                               {notif.title}
                             </p>

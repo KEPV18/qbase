@@ -239,7 +239,7 @@ const RecordViewPage: React.FC = () => {
     return (
       <AppShell breadcrumbs={getBreadcrumbs()}>
       <div className="max-w-grid mx-auto flex flex-col items-center justify-center py-20">
-        <FileText className="w-12 h-12 text-muted-foreground/40 mb-4" />
+        <FileText className="w-12 h-12 text-ink-4 mb-4" />
         <h2 className="text-xl text-foreground mb-2">Record Not Found</h2>
         <p className="text-muted-foreground mb-4">No record with serial <code className="text-primary-tint font-mono">{decodedSerial}</code></p>
         <button onClick={() => navigate('/')} className="ds-press ds-focus-ring px-4 py-2 bg-primary text-primary-foreground rounded-full flex items-center gap-2">
@@ -794,9 +794,9 @@ const RecordViewPage: React.FC = () => {
             </div>
           ) : !auditEntries || auditEntries.length === 0 ? (
             <div className="text-center py-8 px-6">
-              <FileText className="w-8 h-8 text-muted-foreground/30 mx-auto mb-2" />
+              <FileText className="w-8 h-8 text-ink-4 mx-auto mb-2" />
               <p className="text-muted-foreground">No history entries found for this record.</p>
-              <p className="text-xs text-muted-foreground/60 mt-1">Audit logging was added in v0.7-alpha. Older edits may not appear.</p>
+              <p className="text-xs text-ink-3 mt-1">Audit logging was added in v0.7-alpha. Older edits may not appear.</p>
             </div>
           ) : (
             <PanelRows>
@@ -834,7 +834,7 @@ const RecordViewPage: React.FC = () => {
                           </span>
                           <div className="flex items-center gap-1 min-w-0">
                             <span className="text-destructive-tint/70 line-through truncate">{JSON.stringify(entry.previousValues[field] ?? '')}</span>
-                            <span className="text-muted-foreground/40">→</span>
+                            <span className="text-ink-3">→</span>
                             <span className="text-success-tint truncate">{JSON.stringify(entry.newValues[field] ?? '')}</span>
                           </div>
                         </div>

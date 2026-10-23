@@ -180,9 +180,9 @@ export function CommandPalette() {
               value={search}
               onValueChange={setSearch}
               placeholder="Search records, modules, actions…"
-              className="w-full bg-transparent py-3.5 text-sm text-foreground placeholder:text-muted-foreground/70 outline-none"
+              className="w-full bg-transparent py-3.5 text-sm text-foreground placeholder:text-muted-foreground outline-none"
             />
-            <kbd className="hidden lg:inline-flex items-center px-1.5 py-0.5 rounded-md bg-muted border border-border text-[10px] font-medium text-muted-foreground/70 shrink-0">
+            <kbd className="hidden lg:inline-flex items-center px-1.5 py-0.5 rounded-md bg-muted border border-border text-[10px] font-medium text-muted-foreground shrink-0">
               esc
             </kbd>
           </div>
@@ -193,7 +193,7 @@ export function CommandPalette() {
             </Command.Empty>
 
             {moduleItems.length > 0 && (
-              <Command.Group heading="Modules" className="[&_[cmdk-group-heading]]:px-3 [&_[cmdk-group-heading]]:py-1.5 [&_[cmdk-group-heading]]:text-[10px] [&_[cmdk-group-heading]]:font-semibold [&_[cmdk-group-heading]]:uppercase [&_[cmdk-group-heading]]:tracking-wider [&_[cmdk-group-heading]]:text-muted-foreground/70">
+              <Command.Group heading="Modules" className="[&_[cmdk-group-heading]]:px-3 [&_[cmdk-group-heading]]:py-1.5 [&_[cmdk-group-heading]]:text-[10px] [&_[cmdk-group-heading]]:font-semibold [&_[cmdk-group-heading]]:uppercase [&_[cmdk-group-heading]]:tracking-wider [&_[cmdk-group-heading]]:text-muted-foreground">
                 {moduleItems.map((m) => (
                   <Item key={m.path} label={m.label} hint={m.path} icon={MODULE_ICONS[m.path] ?? FileText} onSelect={() => go(m.path)} />
                 ))}
@@ -201,7 +201,7 @@ export function CommandPalette() {
             )}
 
             {actionItems.length > 0 && (
-              <Command.Group heading="Actions" className="[&_[cmdk-group-heading]]:px-3 [&_[cmdk-group-heading]]:py-1.5 [&_[cmdk-group-heading]]:text-[10px] [&_[cmdk-group-heading]]:font-semibold [&_[cmdk-group-heading]]:uppercase [&_[cmdk-group-heading]]:tracking-wider [&_[cmdk-group-heading]]:text-muted-foreground/70">
+              <Command.Group heading="Actions" className="[&_[cmdk-group-heading]]:px-3 [&_[cmdk-group-heading]]:py-1.5 [&_[cmdk-group-heading]]:text-[10px] [&_[cmdk-group-heading]]:font-semibold [&_[cmdk-group-heading]]:uppercase [&_[cmdk-group-heading]]:tracking-wider [&_[cmdk-group-heading]]:text-muted-foreground">
                 {actionItems.map((a) => (
                   <Item key={a.path} label={a.label} hint="action" icon={MODULE_ICONS[a.path] ?? ArrowRight} onSelect={() => go(a.path)} />
                 ))}
@@ -215,7 +215,7 @@ export function CommandPalette() {
             )}
 
             {showRecords && (
-              <Command.Group heading={q ? "Records" : "Recent records"} className="[&_[cmdk-group-heading]]:px-3 [&_[cmdk-group-heading]]:py-1.5 [&_[cmdk-group-heading]]:text-[10px] [&_[cmdk-group-heading]]:font-semibold [&_[cmdk-group-heading]]:uppercase [&_[cmdk-group-heading]]:tracking-wider [&_[cmdk-group-heading]]:text-muted-foreground/70">
+              <Command.Group heading={q ? "Records" : "Recent records"} className="[&_[cmdk-group-heading]]:px-3 [&_[cmdk-group-heading]]:py-1.5 [&_[cmdk-group-heading]]:text-[10px] [&_[cmdk-group-heading]]:font-semibold [&_[cmdk-group-heading]]:uppercase [&_[cmdk-group-heading]]:tracking-wider [&_[cmdk-group-heading]]:text-muted-foreground">
                 {recordHits.map((r) => {
                   const serial = String(r.serial ?? "");
                   return (
@@ -250,9 +250,9 @@ function Item({
       onSelect={onSelect}
       className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm cursor-pointer data-[selected=true]:bg-muted data-[selected=true]:text-foreground"
     >
-      <Icon className="w-4 h-4 text-muted-foreground/70 shrink-0" />
+      <Icon className="w-4 h-4 text-ink-4 shrink-0" />
       <span className="font-medium text-foreground truncate">{label}</span>
-      <span className="ml-auto text-xs text-muted-foreground/70 truncate">{hint}</span>
+      <span className="ml-auto text-xs text-muted-foreground truncate">{hint}</span>
     </Command.Item>
   );
 }

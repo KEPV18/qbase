@@ -188,7 +188,7 @@ export function F23Template({ data, isTemplate = true, editMode = false, onChang
       {/* Footer */}
       <div className="grid grid-cols-2 gap-4 text-xs pt-2 border-t">
         <div>
-          <span className="text-foreground/50">Maintained By: </span>
+          <span className="text-ink-3">Maintained By: </span>
           <span className="font-medium">{val(d, "maintained_by") || (ph ? "Ahmed Khaled" : "")}</span>
         </div>
       </div>

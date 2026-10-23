@@ -123,7 +123,7 @@ export default function ArchivePage() {
         {/* List */}
         {paged.length === 0 ? (
           <div className="flex flex-col items-center py-16">
-            <Archive className="w-12 h-12 text-muted-foreground/40 mb-4" />
+            <Archive className="w-12 h-12 text-ink-4 mb-4" />
             <h3 className="text-lg text-foreground mb-2">Archive Empty</h3>
             <p className="text-sm text-muted-foreground">
               {search ? 'No archived records match your search.' : 'No deleted records yet. Deleted records appear here for 30 days.'}
@@ -149,7 +149,7 @@ export default function ArchivePage() {
 
                   {/* Name */}
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm text-foreground truncate group-hover:text-primary-tint/90 transition-colors">
+                    <p className="text-sm text-foreground truncate group-hover:text-primary-tint transition-colors">
                       {record.formName as string}
                     </p>
                   </div>

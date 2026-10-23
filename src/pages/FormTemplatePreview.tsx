@@ -44,7 +44,7 @@ export default function FormTemplatePreview() {
       <AppShell breadcrumbs={[{ label: "Forms", path: "/forms" }, { label: "Not Found" }]}>
         <div className="flex justify-center py-16 px-4">
           <div className="bg-background p-12 max-w-md w-full text-center">
-            <AlertTriangle className="w-10 h-10 text-muted-foreground/40 mx-auto mb-3" />
+            <AlertTriangle className="w-10 h-10 text-ink-4 mx-auto mb-3" />
             <h2 className="text-lg font-medium text-foreground mb-1">Form Not Found</h2>
             <p className="text-sm text-muted-foreground mb-4">No form schema found for code "{code}"</p>
             <button onClick={() => navigate('/forms')} className="text-sm text-primary-tint hover:underline">Back to Forms Registry</button>
@@ -208,7 +208,7 @@ export default function FormTemplatePreview() {
                               <tbody>
                                 <tr>
                                   {columns.map(c => (
-                                    <td key={c.key} className="border border-border px-2 py-2 text-[11px] text-muted-foreground/50 italic">—</td>
+                                    <td key={c.key} className="border border-border px-2 py-2 text-[11px] text-ink-3 italic">—</td>
                                   ))}
                                 </tr>
                               </tbody>
@@ -233,7 +233,7 @@ export default function FormTemplatePreview() {
                         )}>
                           <span className={cn(
                             "text-[11px] italic",
-                            isDate ? "text-warning-tint/50" : "text-muted-foreground/50",
+                            isDate ? "text-warning-tint/50" : "text-ink-3",
                           )}>{field.type}</span>
                         </div>
                       </div>

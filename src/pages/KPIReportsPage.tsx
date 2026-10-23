@@ -254,7 +254,7 @@ export default function KPIReportsPage() {
                         <span className={cn("font-bold tabular-nums", isValid ? "text-foreground" : "text-destructive-tint")}>
                           {(totalWeight * 100).toFixed(0)}%
                         </span>
-                        {isValid ? <CheckCircle2 className="w-5 h-5 text-muted-foreground/60" /> : <AlertCircle className="w-5 h-5 text-destructive-tint" />}
+                        {isValid ? <CheckCircle2 className="w-5 h-5 text-ink-4" /> : <AlertCircle className="w-5 h-5 text-destructive-tint" />}
                       </div>
                     </div>
                   );
@@ -278,7 +278,7 @@ export default function KPIReportsPage() {
                     This report documents Individual Performance Management (IPM) KPIs as required for
                     Management Review inputs (Clause 9.3.2). All KPI weights should sum to 100% per role.
                   </p>
-                  <p className="text-xs text-muted-foreground/70 mt-2 tabular-nums">
+                  <p className="text-xs text-muted-foreground mt-2 tabular-nums">
                     Generated: {new Date().toLocaleString()}
                   </p>
                 </div>

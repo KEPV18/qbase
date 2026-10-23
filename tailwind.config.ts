@@ -53,13 +53,15 @@ export default {
         ring: "hsl(var(--ring))",
         background: "hsl(var(--background))",
         foreground: "hsl(var(--foreground))",
-        // Semantic text ramp — the 4-level grayscale hierarchy.
+        // Semantic text ramp — the grayscale hierarchy.
         // Primary text = foreground; body = ink; summary = ink-2/3; placeholder = ink-4.
+        // Every step that carries text clears WCAG AA (4.5:1) on the
+        // ground it lands on; ink-4 is the placeholder step only.
         ink: {
           DEFAULT: "hsl(var(--text-body))",  // #424245 — long-form body
-          2: "hsl(var(--text-2))",          // #6e6e73 — summary / meta
-          3: "hsl(var(--text-3))",          // #86868b — tertiary / captions
-          4: "hsl(var(--text-4))",          // #aeaeb2 — placeholder
+          2: "hsl(var(--text-2))",          // #5f5f63 — summary / meta
+          3: "hsl(var(--text-3))",          // #69696d — tertiary / captions
+          4: "hsl(var(--text-4))",          // #7d7d82 — placeholder
         },
         // Component greys
         track: "hsl(var(--track))",   // #e8e8ed — meter / toggle-off track

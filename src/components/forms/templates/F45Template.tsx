@@ -251,7 +251,7 @@ export function F45Template({ data, isTemplate = true, editMode = false, onChang
 
       {/* Disclaimer */}
       {val(d, "disclaimer") && (
-        <div className="text-[10px] italic text-foreground/60 border-l-2 border-foreground/30 pl-2 py-1 mt-2">
+        <div className="text-[10px] italic text-ink-2 border-l-2 border-foreground/30 pl-2 py-1 mt-2">
           {val(d, "disclaimer")}
         </div>
       )}
@@ -259,7 +259,7 @@ export function F45Template({ data, isTemplate = true, editMode = false, onChang
       {/* Footer */}
       <div className="grid grid-cols-2 gap-4 text-xs pt-2 border-t mt-2">
         <div>
-          <span className="text-foreground/50">Maintained By: </span>
+          <span className="text-ink-3">Maintained By: </span>
           <span className="font-medium">{val(d, "maintained_by") || (ph ? "Ahmed Khaled" : "")}</span>
         </div>
       </div>

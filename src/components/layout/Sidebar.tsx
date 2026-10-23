@@ -96,10 +96,20 @@ function SidebarNavItem({
           : "text-muted-foreground hover:text-foreground hover:bg-muted"
       )}
     >
-      <item.icon className={cn("w-[18px] h-[18px]", isActive ? "text-white dark:text-foreground" : "text-muted-foreground/70")} />
+      <item.icon className={cn("w-[18px] h-[18px]", isActive ? "text-white dark:text-foreground" : "text-muted-foreground")} />
       <span className="flex-1 text-left">{item.label}</span>
       {item.badge ? (
-        <span className="text-[10px] font-semibold bg-white/20 text-white px-1.5 py-0.5 rounded-full">
+        /* The count chip has to follow the item it sits in.  It used to
+           be `bg-white/20 text-white`, which only reads on the ACTIVE
+           item — a dark pill.  On every other item the chip was white
+           text on a white wash over a light row: 1.07:1, i.e. invisible
+           exactly where the number was supposed to be seen. */
+        <span className={cn(
+          "text-[10px] font-semibold tabular-nums px-1.5 py-0.5 rounded-full",
+          isActive
+            ? "bg-white/20 text-white dark:bg-foreground/15 dark:text-foreground"
+            : "bg-foreground/10 text-foreground",
+        )}>
           {item.badge > 9 ? "9+" : item.badge}
         </span>
       ) : null}
@@ -131,7 +141,7 @@ function SidebarIconItem({
           : "text-muted-foreground hover:text-foreground hover:bg-muted"
       )}
     >
-      <Icon className={cn("w-[18px] h-[18px]", isActive ? "text-white dark:text-foreground" : "text-muted-foreground/70")} />
+      <Icon className={cn("w-[18px] h-[18px]", isActive ? "text-white dark:text-foreground" : "text-muted-foreground")} />
     </NavLink>
   );
 }
@@ -332,7 +342,7 @@ export function Sidebar({ mobileOpen, onClose, sidebarOpen, onToggle }: { mobile
           )}
           <button
             onClick={onToggle}
-            className="hidden lg:flex p-1.5 rounded-lg text-muted-foreground/70 hover:text-foreground hover:bg-muted transition-colors shrink-0 ds-hit-44"
+            className="hidden lg:flex p-1.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted transition-colors shrink-0 ds-hit-44"
             title={sidebarOpen ? "Collapse sidebar" : "Expand sidebar"}
           >
             <X className="w-4 h-4" />
@@ -356,7 +366,7 @@ export function Sidebar({ mobileOpen, onClose, sidebarOpen, onToggle }: { mobile
           >
             <div className="space-y-1">
               {sidebarOpen && (
-                <p className="px-3 mb-2 text-[11px] font-display font-semibold text-muted-foreground/70 uppercase tracking-wider">
+                <p className="px-3 mb-2 text-[11px] font-display font-semibold text-muted-foreground uppercase tracking-wider">
                   {MAIN_NAV.title}
                 </p>
               )}
@@ -381,7 +391,7 @@ export function Sidebar({ mobileOpen, onClose, sidebarOpen, onToggle }: { mobile
 
             <div className="space-y-1">
               {sidebarOpen && (
-                <p className="px-3 mb-2 text-[11px] font-display font-semibold text-muted-foreground/70 uppercase tracking-wider">
+                <p className="px-3 mb-2 text-[11px] font-display font-semibold text-muted-foreground uppercase tracking-wider">
                   {TOOLS_NAV.title}
                 </p>
               )}
@@ -414,7 +424,7 @@ export function Sidebar({ mobileOpen, onClose, sidebarOpen, onToggle }: { mobile
 
             <div className="space-y-1">
               {sidebarOpen && (
-                <p className="px-3 mb-2 text-[11px] font-display font-semibold text-muted-foreground/70 uppercase tracking-wider">
+                <p className="px-3 mb-2 text-[11px] font-display font-semibold text-muted-foreground uppercase tracking-wider">
                   {SETTINGS_NAV.title}
                 </p>
               )}
@@ -448,7 +458,7 @@ export function Sidebar({ mobileOpen, onClose, sidebarOpen, onToggle }: { mobile
         {/* Filters */}
         {sidebarOpen && (
           <div className="px-4 pb-2 space-y-2 shrink-0">
-            <p className="px-3 mb-2 text-[11px] font-display font-semibold text-muted-foreground/70 uppercase tracking-wider">
+            <p className="px-3 mb-2 text-[11px] font-display font-semibold text-muted-foreground uppercase tracking-wider">
               FILTERS
             </p>
             <ProjectFilterDropdown />
@@ -470,7 +480,7 @@ export function Sidebar({ mobileOpen, onClose, sidebarOpen, onToggle }: { mobile
                 </div>
                 <button
                   onClick={logout}
-                  className="p-1.5 rounded-lg text-muted-foreground/70 hover:text-foreground hover:bg-muted transition-colors ds-hit-44"
+                  className="p-1.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted transition-colors ds-hit-44"
                   title="Logout"
                 >
                   <LogOut className="w-4 h-4" />

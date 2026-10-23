@@ -185,7 +185,7 @@ export default function AuditPage() {
             <div className="max-h-[60vh] overflow-y-auto">
               {records.length === 0 ? (
                 <div className="p-12 text-center">
-                  <FileX className="w-10 h-10 text-muted-foreground/20 mx-auto mb-3" />
+                  <FileX className="w-10 h-10 text-ink-4 mx-auto mb-3" />
                   <p className="text-sm text-muted-foreground">
                     {activeTab === 'never-filled' ? 'All forms have records!' :
                      activeTab === 'compliant' ? 'No compliant forms yet.' :

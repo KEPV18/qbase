@@ -37,7 +37,7 @@ export function Breadcrumbs({ items, className }: BreadcrumbsProps) {
     }
 
     return (
-        <nav className={cn("flex items-center space-x-2 text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground/60 mb-6", className)}>
+        <nav className={cn("flex items-center space-x-2 text-[10px] font-black uppercase tracking-[0.2em] text-ink-3 mb-6", className)}>
             {breadcrumbs.map((item, index) => (
                 <div key={index} className="flex items-center">
                     {index === 0 ? (
@@ -56,11 +56,11 @@ export function Breadcrumbs({ items, className }: BreadcrumbsProps) {
                             {item.label}
                         </Link>
                     ) : (
-                        <span className="text-foreground/80">{item.label}</span>
+                        <span className="text-ink-2">{item.label}</span>
                     )}
 
                     {index < breadcrumbs.length - 1 && (
-                        <ChevronRight className="w-3 h-3 mx-2 text-muted-foreground/30" />
+                        <ChevronRight className="w-3 h-3 mx-2 text-ink-4" />
                     )}
                 </div>
             ))}

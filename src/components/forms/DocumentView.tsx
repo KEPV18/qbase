@@ -81,11 +81,11 @@ export function DocHeader({ serial, formName, formCode, sectionName, projectScop
       </div>
       {/* Project Scope & Coverage Period badges */}
       <div className="flex items-center gap-2 mt-2">
-        <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full border border-foreground/10 bg-foreground/[0.05] text-[10px] font-semibold tracking-wider text-foreground/70">
+        <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full border border-foreground/10 bg-foreground/[0.05] text-[10px] font-semibold tracking-wider text-ink-2">
           <Clipboard className="w-3 h-3 shrink-0" aria-hidden="true" />
           {projectScope || 'Company-Wide'}
         </span>
-        <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full border border-foreground/10 bg-foreground/[0.05] text-[10px] font-semibold tracking-wider text-foreground/70">
+        <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full border border-foreground/10 bg-foreground/[0.05] text-[10px] font-semibold tracking-wider text-ink-2">
           <Calendar className="w-3 h-3 shrink-0" aria-hidden="true" />
           {coveragePeriod || 'Continuous / Open-Ended'}
         </span>

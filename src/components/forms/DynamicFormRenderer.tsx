@@ -526,7 +526,7 @@ const ValidationBanner: React.FC<{ errors: Record<string, string>; onDismiss: ()
       </div>
       <ul className="space-y-1 text-xs text-destructive-tint/80">
         {Object.entries(errors).map(([key, msg]) => (
-          <li key={key}><span className="font-mono text-foreground/70">{key}:</span> {msg}</li>
+          <li key={key}><span className="font-mono text-ink-2">{key}:</span> {msg}</li>
         ))}
       </ul>
     </div>

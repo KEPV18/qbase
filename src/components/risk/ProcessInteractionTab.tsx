@@ -62,7 +62,7 @@ export function ProcessInteractionTab() {
                 <div>
                     <h3 className="font-bold text-base font-display tracking-[-0.01em] text-foreground">Process Interaction Sheet</h3>
                     <p className="text-[10px] text-muted-foreground font-black uppercase tracking-[0.2em] mt-0.5">
-                        Live data from Supabase • {processes.length} processes
+                        Live data from Supabase • <span className="tabular-nums">{processes.length}</span> processes
                     </p>
                 </div>
                 <Button variant="outline" size="sm" className="gap-2" onClick={() => refetch()}>
@@ -101,9 +101,9 @@ export function ProcessInteractionTab() {
                                 <TableCell className="align-top text-xs font-medium">{proc.processOwner}</TableCell>
                                 <TableCell className="whitespace-pre-wrap text-[11px] align-top text-muted-foreground leading-[1.85]">{proc.inputs}</TableCell>
                                 <TableCell className="whitespace-pre-wrap text-[11px] align-top text-muted-foreground leading-[1.85]">{proc.mainActivities}</TableCell>
-                                <TableCell className="whitespace-pre-wrap text-[11px] align-top text-primary-tint/80 font-mono leading-[1.85]">{proc.outputs}</TableCell>
+                                <TableCell className="whitespace-pre-wrap text-[11px] align-top text-primary-tint font-mono leading-[1.85]">{proc.outputs}</TableCell>
                                 <TableCell className="whitespace-pre-wrap text-[11px] align-top text-muted-foreground leading-[1.85]">{proc.receiver}</TableCell>
-                                <TableCell className="whitespace-pre-wrap text-[11px] align-top font-bold text-foreground/70 leading-[1.85] italic">{proc.kpi}</TableCell>
+                                <TableCell className="whitespace-pre-wrap text-[11px] align-top font-bold text-ink-2 leading-[1.85] italic">{proc.kpi}</TableCell>
                                 <TableCell className="align-top p-2">
                                     <Button variant="ghost" className="ds-box-44 hover:text-primary-tint transition-colors" onClick={() => handleEditClick(proc)} title="Edit process">
                                         <Pencil className="w-3.5 h-3.5" />

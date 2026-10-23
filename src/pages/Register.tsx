@@ -115,9 +115,9 @@ export default function Register() {
         <CardContent className="space-y-3.5 px-7 pb-4" onKeyDown={handleKeyDown}>
           {/* Name */}
           <div className="space-y-1.5">
-            <Label htmlFor="name" className="text-[10px] font-mono font-bold uppercase tracking-widest text-muted-foreground/80">Full name</Label>
+            <Label htmlFor="name" className="text-[10px] font-mono font-bold uppercase tracking-widest text-muted-foreground">Full name</Label>
             <div className="relative group">
-              <User className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground/50 transition-colors group-focus-within:text-primary" />
+              <User className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-ink-4 transition-colors group-focus-within:text-primary" />
               <Input id="name" value={name} onChange={(e) => { setName(e.target.value); clearError('name'); }}
                 placeholder="John Doe"
                 className={`pl-10 h-11 rounded-sm bg-muted/30 border-border/40 focus:border-primary/50 focus:ring-primary/20 transition-all text-sm font-mono ${errors.name ? 'border-destructive' : ''}`}
@@ -128,9 +128,9 @@ export default function Register() {
 
           {/* Email */}
           <div className="space-y-1.5">
-            <Label htmlFor="email" className="text-[10px] font-mono font-bold uppercase tracking-widest text-muted-foreground/80">Email</Label>
+            <Label htmlFor="email" className="text-[10px] font-mono font-bold uppercase tracking-widest text-muted-foreground">Email</Label>
             <div className="relative group">
-              <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground/50 transition-colors group-focus-within:text-primary" />
+              <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-ink-4 transition-colors group-focus-within:text-primary" />
               <Input id="email" type="email" value={email} onChange={(e) => { setEmail(e.target.value); clearError('email'); }}
                 placeholder="you@company.com"
                 className={`pl-10 h-11 rounded-sm bg-muted/30 border-border/40 focus:border-primary/50 focus:ring-primary/20 transition-all text-sm font-mono ${errors.email ? 'border-destructive' : ''}`}
@@ -141,16 +141,16 @@ export default function Register() {
 
           {/* Password */}
           <div className="space-y-1.5">
-            <Label htmlFor="password" className="text-[10px] font-mono font-bold uppercase tracking-widest text-muted-foreground/80">Password</Label>
+            <Label htmlFor="password" className="text-[10px] font-mono font-bold uppercase tracking-widest text-muted-foreground">Password</Label>
             <div className="relative group">
-              <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground/50 transition-colors group-focus-within:text-primary" />
+              <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-ink-4 transition-colors group-focus-within:text-primary" />
               <Input id="password" type={showPassword ? "text" : "password"} value={password}
                 onChange={(e) => { setPassword(e.target.value); clearError('password'); }}
                 placeholder="••••••••"
                 className={`pl-10 pr-10 h-11 rounded-sm bg-muted/30 border-border/40 focus:border-primary/50 focus:ring-primary/20 transition-all text-sm font-mono ${errors.password ? 'border-destructive' : ''}`}
               />
               <button type="button" onClick={() => setShowPassword(!showPassword)}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground/50 hover:text-foreground transition-colors ds-hit-44-anchored">
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-ink-3 hover:text-foreground transition-colors ds-hit-44-anchored">
                 {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
               </button>
             </div>
@@ -159,7 +159,7 @@ export default function Register() {
             {strength && (
               <div className="space-y-1.5 px-0.5 pt-1">
                 <div className="flex items-center justify-between">
-                  <span className="text-[10px] font-mono font-semibold text-muted-foreground/70 uppercase tracking-wider">Strength</span>
+                  <span className="text-[10px] font-mono font-semibold text-muted-foreground uppercase tracking-wider">Strength</span>
                   <span className="text-[10px] font-mono font-bold text-muted-foreground">{strength.label}</span>
                 </div>
                 <Progress value={strength.score} className="h-1" indicatorClassName={strength.color} />
@@ -170,7 +170,7 @@ export default function Register() {
                     { met: /[0-9]/.test(password), text: "Number" },
                     { met: /[^A-Za-z0-9]/.test(password), text: "Special char" },
                   ].map((r, i) => (
-                    <span key={i} className={`text-[10px] flex items-center gap-1 font-mono ${r.met ? 'text-success-tint' : 'text-muted-foreground/40'}`}>
+                    <span key={i} className={`text-[10px] flex items-center gap-1 font-mono ${r.met ? 'text-success-tint' : 'text-ink-3'}`}>
                       <CheckCircle2 className="w-3 h-3" />
                       {r.text}
                     </span>
@@ -182,9 +182,9 @@ export default function Register() {
 
           {/* Confirm Password */}
           <div className="space-y-1.5">
-            <Label htmlFor="confirmPassword" className="text-[10px] font-mono font-bold uppercase tracking-widest text-muted-foreground/80">Confirm password</Label>
+            <Label htmlFor="confirmPassword" className="text-[10px] font-mono font-bold uppercase tracking-widest text-muted-foreground">Confirm password</Label>
             <div className="relative group">
-              <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground/50 transition-colors group-focus-within:text-primary" />
+              <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-ink-4 transition-colors group-focus-within:text-primary" />
               <Input id="confirmPassword" type="password" value={confirmPassword}
                 onChange={(e) => { setConfirmPassword(e.target.value); clearError('confirmPassword'); }}
                 placeholder="••••••••"
@@ -223,7 +223,7 @@ export default function Register() {
         </CardFooter>
       </Card>
 
-      <div className="absolute bottom-8 text-[9px] font-mono font-bold uppercase tracking-[0.4em] text-muted-foreground/30">
+      <div className="absolute bottom-8 text-[9px] font-mono font-bold uppercase tracking-[0.4em] text-ink-3">
         Vezloo QBase Platform v2.5.0
       </div>
     </div>

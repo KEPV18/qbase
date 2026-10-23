@@ -264,8 +264,8 @@ export default function ProceduresPage() {
             {/* TOC sidebar */}
             <div className="hidden lg:flex w-56 shrink-0 flex-col border-r border-border/30 bg-muted/5 overflow-y-auto">
               <div className="px-3 pt-4 pb-2 flex items-center justify-between">
-                <span className="text-[10px] font-bold text-muted-foreground/50 uppercase tracking-[0.15em]">Procedures</span>
-                <Badge variant="outline" className="h-4 px-1.5 text-[9px] bg-muted/40 border-border/40">{digitalProcedures.length}</Badge>
+                <span className="text-[10px] font-bold text-ink-3 uppercase tracking-[0.15em]">Procedures</span>
+                <Badge variant="outline" className="h-4 px-1.5 text-[9px] bg-muted/40 border-border/40 tabular-nums">{digitalProcedures.length}</Badge>
               </div>
               <nav className="flex-1 px-2 pb-4 space-y-0.5">
                 {digitalProcedures.map((proc, idx) => (
@@ -280,8 +280,8 @@ export default function ProceduresPage() {
                     )}
                   >
                     <span className={cn(
-                      "w-5 h-5 rounded-md flex items-center justify-center text-[9px] font-bold shrink-0",
-                      activeSectionId === proc.id ? "bg-primary text-primary-foreground" : "bg-muted/60 text-muted-foreground/50"
+                      "w-5 h-5 rounded-md flex items-center justify-center text-[9px] font-bold shrink-0 tabular-nums",
+                      activeSectionId === proc.id ? "bg-primary text-primary-foreground" : "bg-muted/60 text-ink-3"
                     )}>
                       {idx + 1}
                     </span>
@@ -292,7 +292,7 @@ export default function ProceduresPage() {
               <div className="p-3 border-t border-border/20 bg-muted/10 space-y-1.5 text-[10px]">
                 <div className="flex justify-between text-muted-foreground">
                   <span className="flex items-center gap-1"><FileText className="w-3 h-3" /> Total</span>
-                  <span className="font-semibold text-foreground text-[9px]">{digitalProcedures.length} SOPs</span>
+                  <span className="font-semibold text-foreground text-[9px] tabular-nums">{digitalProcedures.length} SOPs</span>
                 </div>
               </div>
             </div>
@@ -304,23 +304,23 @@ export default function ProceduresPage() {
                 <div className="mb-8 p-5 rounded-xl border border-border bg-card">
                   <div className="flex items-center gap-2 mb-3">
                     <CheckCircle className="w-4 h-4 text-primary-tint" />
-                    <span className="text-[10px] font-bold uppercase tracking-[0.15em] text-primary-tint/60">Document Approval</span>
+                    <span className="text-[10px] font-bold uppercase tracking-[0.15em] text-primary-tint">Document Approval</span>
                   </div>
                   <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-xs">
                     <div className="p-3 rounded-lg bg-background/80 border border-border/20">
-                      <span className="block text-[9px] font-bold uppercase tracking-[0.1em] text-muted-foreground/50 mb-1">Prepared By</span>
+                      <span className="block text-[9px] font-bold uppercase tracking-[0.1em] text-ink-3 mb-1">Prepared By</span>
                       <span className="text-foreground font-semibold">Ahmed Khaled (QMS Team Leader)</span>
                     </div>
                     <div className="p-3 rounded-lg bg-background/80 border border-border/20">
-                      <span className="block text-[9px] font-bold uppercase tracking-[0.1em] text-muted-foreground/50 mb-1">Approved By (CEO)</span>
+                      <span className="block text-[9px] font-bold uppercase tracking-[0.1em] text-ink-3 mb-1">Approved By (CEO)</span>
                       <span className="text-foreground font-semibold">Kareem Yehia (CEO)</span>
                     </div>
                     <div className="p-3 rounded-lg bg-background/80 border border-border/20">
-                      <span className="block text-[9px] font-bold uppercase tracking-[0.1em] text-muted-foreground/50 mb-1">Approval Date</span>
+                      <span className="block text-[9px] font-bold uppercase tracking-[0.1em] text-ink-3 mb-1">Approval Date</span>
                       <span className="text-foreground font-semibold">January 2026</span>
                     </div>
                   </div>
-                  <div className="mt-2 text-[10px] text-muted-foreground/50 text-center">
+                  <div className="mt-2 text-[10px] text-ink-3 text-center">
                     Top Management — Ahmed Khaled &amp; Kareem Yehia — approved this document as the official QMS Procedures
                   </div>
                 </div>
@@ -336,7 +336,7 @@ export default function ProceduresPage() {
                   >
                     {/* Title */}
                     <div className="mb-5 space-y-2">
-                      <div className="flex items-center gap-2 text-[10px] font-bold text-primary-tint/50 uppercase tracking-[0.2em]">
+                      <div className="flex items-center gap-2 text-[10px] font-bold text-primary-tint uppercase tracking-[0.2em]">
                         <div className="w-8 h-px bg-primary/20" />
                         <span>SOP {procIdx + 1}</span>
                       </div>
@@ -365,35 +365,35 @@ export default function ProceduresPage() {
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-5">
                       <div className={cn("p-4 rounded-xl border transition-all", isEditMode ? "border-primary/10 bg-primary/[0.02]" : "border-border/25 bg-card/60")}>
                         <div className="flex items-center gap-1.5 mb-2">
-                          <Info className="w-3 h-3 text-primary-tint/40" />
-                          <span className="text-[9px] font-bold uppercase tracking-[0.12em] text-muted-foreground/40">Purpose</span>
+                          <Info className="w-3 h-3 text-primary-tint" />
+                          <span className="text-[9px] font-bold uppercase tracking-[0.12em] text-ink-3">Purpose</span>
                         </div>
                         {isEditMode ? (
                           <Input value={proc.purpose} onChange={(e) => updateProcedure(proc.id, { purpose: e.target.value })} className="bg-background text-xs h-7 rounded-lg" />
                         ) : (
-                          <p className="text-xs text-foreground/70 leading-[1.85]">{proc.purpose}</p>
+                          <p className="text-xs text-ink-2 leading-[1.85]">{proc.purpose}</p>
                         )}
                       </div>
                       <div className={cn("p-4 rounded-xl border transition-all", isEditMode ? "border-primary/10 bg-primary/[0.02]" : "border-border/25 bg-card/60")}>
                         <div className="flex items-center gap-1.5 mb-2">
-                          <Layers className="w-3 h-3 text-primary-tint/40" />
-                          <span className="text-[9px] font-bold uppercase tracking-[0.12em] text-muted-foreground/40">Scope</span>
+                          <Layers className="w-3 h-3 text-primary-tint" />
+                          <span className="text-[9px] font-bold uppercase tracking-[0.12em] text-ink-3">Scope</span>
                         </div>
                         {isEditMode ? (
                           <Input value={proc.scope} onChange={(e) => updateProcedure(proc.id, { scope: e.target.value })} className="bg-background text-xs h-7 rounded-lg" />
                         ) : (
-                          <p className="text-xs text-foreground/70 leading-[1.85]">{proc.scope}</p>
+                          <p className="text-xs text-ink-2 leading-[1.85]">{proc.scope}</p>
                         )}
                       </div>
                       <div className={cn("p-4 rounded-xl border transition-all", isEditMode ? "border-primary/10 bg-primary/[0.02]" : "border-border/25 bg-card/60")}>
                         <div className="flex items-center gap-1.5 mb-2">
-                          <User className="w-3 h-3 text-primary-tint/40" />
-                          <span className="text-[9px] font-bold uppercase tracking-[0.12em] text-muted-foreground/40">Responsibilities</span>
+                          <User className="w-3 h-3 text-primary-tint" />
+                          <span className="text-[9px] font-bold uppercase tracking-[0.12em] text-ink-3">Responsibilities</span>
                         </div>
                         {isEditMode ? (
                           <Input value={proc.responsibilities} onChange={(e) => updateProcedure(proc.id, { responsibilities: e.target.value })} className="bg-background text-xs h-7 rounded-lg" />
                         ) : (
-                          <p className="text-xs text-foreground/70 leading-[1.85]">{proc.responsibilities}</p>
+                          <p className="text-xs text-ink-2 leading-[1.85]">{proc.responsibilities}</p>
                         )}
                       </div>
                     </div>
@@ -405,7 +405,7 @@ export default function ProceduresPage() {
                     )}>
                       <div className="flex items-center justify-between mb-3">
                         <div className="flex items-center gap-2">
-                          <Layers className="w-3.5 h-3.5 text-primary-tint/40" />
+                          <Layers className="w-3.5 h-3.5 text-primary-tint" />
                           <h3 className="text-sm font-bold">Step-by-Step Procedure</h3>
                         </div>
                         {isEditMode && <Badge variant="outline" className="bg-primary/5 text-primary-tint text-[9px]">Editing</Badge>}
@@ -419,12 +419,12 @@ export default function ProceduresPage() {
                       ) : (
                         // Long body prose: the design system sets the floor
                         // at 1.85 line-height for running text.
-                        <div className="text-sm text-foreground/75 whitespace-pre-wrap leading-[1.85]">{proc.procedureText}</div>
+                        <div className="text-sm text-ink-2 whitespace-pre-wrap leading-[1.85]">{proc.procedureText}</div>
                       )}
                     </div>
 
                     {/* Footer */}
-                    <div className="mt-4 flex items-center justify-between text-[10px] text-muted-foreground/50">
+                    <div className="mt-4 flex items-center justify-between text-[10px] text-ink-3">
                       <div className="flex items-center gap-3">
                         <span className="flex items-center gap-1"><History className="w-3 h-3" /> Rev: 01</span>
                         <span className="flex items-center gap-1"><FileText className="w-3 h-3" /> P-SOP-{proc.id.toUpperCase()}</span>
@@ -432,7 +432,7 @@ export default function ProceduresPage() {
                       <div className="flex items-center gap-2 flex-wrap justify-end">
                         {isEditMode && (
                           <div className="flex items-center gap-1.5">
-                            <Clock className="w-3 h-3 text-primary-tint/40" />
+                            <Clock className="w-3 h-3 text-primary-tint" />
                             <select
                               value={proc.recordFrequency || "As needed"}
                               onChange={(e) => updateProcedure(proc.id, { recordFrequency: e.target.value })}
@@ -448,7 +448,7 @@ export default function ProceduresPage() {
                         )}
                         {isEditMode ? (
                           <div className="flex items-center gap-1.5">
-                            <Calendar className="w-3 h-3 text-primary-tint/40" />
+                            <Calendar className="w-3 h-3 text-primary-tint" />
                             <input
                               type="date"
                               value={proc.approvalDate}
@@ -472,9 +472,9 @@ export default function ProceduresPage() {
                       return (
                         <div className="mt-5 pt-4 border-t border-border/30">
                           <div className="flex items-center gap-2 mb-3">
-                            <Layers className="w-3.5 h-3.5 text-primary-tint/40" />
-                            <span className="text-[11px] font-bold uppercase tracking-wider text-foreground/70">Related QMS Records</span>
-                            <Badge variant="outline" className="text-[9px] h-4 font-mono">{related.length}</Badge>
+                            <Layers className="w-3.5 h-3.5 text-primary-tint" />
+                            <span className="text-[11px] font-bold uppercase tracking-wider text-ink-2">Related QMS Records</span>
+                            <Badge variant="outline" className="text-[9px] h-4 font-mono tabular-nums">{related.length}</Badge>
                           </div>
                           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
                             {related.map((rec) => (
@@ -495,7 +495,7 @@ export default function ProceduresPage() {
                                       : ""}
                                   </p>
                                 </div>
-                                <FileText className="w-3 h-3 text-muted-foreground/30 group-hover:text-primary-tint transition-colors shrink-0" />
+                                <FileText className="w-3 h-3 text-ink-4 group-hover:text-primary-tint transition-colors shrink-0" />
                               </div>
                             ))}
                           </div>
@@ -559,7 +559,7 @@ export default function ProceduresPage() {
                     </div>
                   </div>
                   <div className="flex items-center gap-1.5">
-                    <Badge variant="outline" className="text-[9px] h-5 font-mono">
+                    <Badge variant="outline" className="text-[9px] h-5 font-mono tabular-nums">
                       {(selectedIndex ?? 0) + 1}/{nonFolderFiles.length}
                     </Badge>
                     <Button variant="outline" size="icon" className="h-7 w-7 rounded-lg ds-hit-44" onClick={() => setSelectedIndex(selectedIndex! > 0 ? selectedIndex! - 1 : 0)} disabled={selectedIndex === 0}>

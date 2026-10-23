@@ -20,7 +20,7 @@ interface StateScreenProps {
 
 const stateConfig: Record<StateType, { icon: typeof Loader2; iconClass: string; titleDefault: string }> = {
   loading: { icon: Loader2, iconClass: "animate-spin text-muted-foreground", titleDefault: "Loading..." },
-  empty: { icon: Inbox, iconClass: "text-muted-foreground/40", titleDefault: "No data yet" },
+  empty: { icon: Inbox, iconClass: "text-ink-3", titleDefault: "No data yet" },
   error: { icon: AlertTriangle, iconClass: "text-destructive-tint", titleDefault: "Something went wrong" },
   success: { icon: CheckCircle, iconClass: "text-success-tint", titleDefault: "All good" },
   critical: { icon: AlertTriangle, iconClass: "text-destructive-tint", titleDefault: "Action required" },

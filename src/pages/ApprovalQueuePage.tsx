@@ -254,7 +254,12 @@ export default function ApprovalQueuePage() {
           >
             <tab.icon size={14} />
             {tab.label}
-            <span className="px-1.5 py-0.5 text-[10px] font-semibold rounded-full bg-muted-foreground/20 text-muted-foreground">
+            {/* A count is not a status.  The chip was a wash of the
+                secondary ink with the secondary ink on top, which put
+                10px text at 4.25:1 against its own chip.  A neutral
+                chip — ink on a faint ink wash — reads at 14:1 and says
+                the same thing: "this many are in this tab". */}
+            <span className="px-1.5 py-0.5 text-[10px] font-semibold tabular-nums rounded-full bg-foreground/[0.06] text-foreground">
               {tab.count}
             </span>
           </button>

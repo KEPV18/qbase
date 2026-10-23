@@ -110,7 +110,12 @@
     --secondary: 240 6% 93.33%;     /* #ededef */
     --secondary-foreground: 240 3% 11.76%;
     --muted: 240 7% 94.51%;         /* #f0f0f2 */
-    --muted-foreground: 240 2% 44.12%; /* #6e6e73 */
+    /* The secondary ink.  It was #6e6e73, which is 5.07:1 on a white
+       card but only 4.46:1 on a muted row (#f0f0f2) and 4.34:1 on a
+       secondary surface (#ededef) — so "secondary text" was quietly
+       failing AA on two of the three grounds it actually lands on.
+       #5f5f63 clears every one of them. */
+    --muted-foreground: 240 2% 38%;   /* #5f5f63 — 6.36:1 on white */
     --accent: var(--brand-accent, 214 84% 95.1%);        /* #e8f1fd — accent wash */
     --accent-foreground: var(--brand-tint, 210 100% 40%); /* #0066cc — 4.89:1 on the wash */
 
@@ -166,11 +171,18 @@
     --track: 240 12% 91.96%;        /* #e8e8ed — meter / toggle-off track */
     --faint: 240 6% 83.33%;         /* #d2d2d7 — index numbers, arrows */
 
-    /* ── Text ramp (for callers that need the full grayscale scale) ── */
-    --text-body: 240 2% 26.47%;     /* #424245 */
-    --text-2: 240 2% 44.12%;        /* #6e6e73 */
-    --text-3: 240 2% 53.53%;        /* #86868b */
-    --text-4: 240 3% 69.02%;        /* #aeaeb2 */
+    /* ── Text ramp (for callers that need the full grayscale scale) ──
+       Every step that carries TEXT clears WCAG AA (4.5:1) on every
+       ground it can land on: the white card, the page ground, the
+       muted row and the secondary surface.  The old ramp sat at
+       #86868b (3.6:1) and #aeaeb2 (2.2:1), so the 150 call sites that
+       dimmed their text with an opacity modifier were painting
+       captions nobody could read.  Hierarchy comes from weight and
+       size — the ramp only has to stay legible. */
+    --text-body: 240 2% 26.47%;     /* #424245 — 9.7:1 on white */
+    --text-2: 240 2% 38%;           /* #5f5f63 — 6.4:1 on white */
+    --text-3: 240 2% 42%;           /* #69696d — 5.5:1 on white */
+    --text-4: 240 2% 50%;           /* #7d7d82 — 4.1:1, placeholders */
     --heat: 25 100% 50%;            /* #ff6b00 — heat / "hottest" */
     --live: 135 64% 50.39%;         /* #30d158 — live / online */
     /* ── Layout ──
@@ -279,10 +291,14 @@
     --track: 240 2% 23.14%;
     --faint: 240 2% 23.14%;
 
-    --text-body: 240 3% 78%;
-    --text-2: 240 3% 64.12%;
-    --text-3: 240 2% 56.67%;
-    --text-4: 240 2% 45%;
+    /* The dark ramp is measured against the DARKEST ground a caption
+       can land on in this mode — the secondary surface (#2c2c2e), not
+       the card — because on dark grounds the LIGHT text is what has to
+       clear the ratio. */
+    --text-body: 240 3% 78%;        /* #d1d1d4 — 9.9:1 on the card */
+    --text-2: 240 3% 64.12%;       /* #a1a1a6 — 6.6:1 on the card */
+    --text-3: 240 3% 60%;           /* #96969c — 4.7:1 on #2c2c2e */
+    --text-4: 240 2% 52%;           /* #818188 — 3.6:1, placeholders */
     --heat: 25 100% 50%;
     --live: 135 64% 50.39%;
 
@@ -327,9 +343,16 @@
   h2 { letter-spacing: -0.02em; }
   h3, h4, h5, h6 { letter-spacing: -0.01em; }
 
-  p, span, div {
-    @apply text-foreground;
-  }
+  /* There was a `p, span, div { color: foreground }` rule here, and it
+     was quietly breaking inheritance for the whole app: a rule on an
+     ELEMENT always beats an inherited value, so every `<span>` and
+     `<div>` painted itself primary-ink even when its parent said
+     `text-white`.  That is why the ACTIVE sidebar item — a dark pill
+     with white text — showed its label in #1d1d1f on #1d1d1f, and
+     why any container that set a colour for its children had to repeat
+     it on every leaf.  `body` already carries the default ink, and
+     everything else now inherits from its parent, which is what the
+     colour utilities on a parent are FOR. */
 
   .text-muted {
     @apply text-muted-foreground;
@@ -871,7 +894,7 @@
     --input: 240 4% 62%;
     --muted-foreground: 240 3% 34%;
     --text-2: 240 3% 34%;
-    --text-3: 240 2% 42%;
+    --text-3: 240 3% 34%;
   }
 
   .dark {

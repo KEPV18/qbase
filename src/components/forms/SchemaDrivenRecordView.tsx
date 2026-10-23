@@ -232,7 +232,7 @@ export const SchemaDrivenRecordView: React.FC<SchemaDrivenRecordViewProps> = ({
               <span className="text-xs font-bold tracking-wider text-muted-foreground uppercase">
                 {meta.sectionName}
               </span>
-              <span className="text-muted-foreground/30">•</span>
+              <span className="text-ink-3">•</span>
               <span className="text-sm font-medium text-foreground">{meta.formCode} — {meta.formName}</span>
             </div>
             <span className={`inline-flex items-center px-2.5 py-0.5 rounded-sm text-xs font-medium border ${statusStyle[meta.status] || statusStyle.draft}`}>
@@ -262,7 +262,7 @@ export const SchemaDrivenRecordView: React.FC<SchemaDrivenRecordViewProps> = ({
           if (field.type === 'heading') {
             return compact ? null : (
               <div key={`heading-${index}`} className="mt-4 mb-2 first:mt-0">
-                <h3 className="text-sm font-semibold text-foreground/80 uppercase tracking-wider pb-1 border-b border-border">
+                <h3 className="text-sm font-semibold text-ink-2 uppercase tracking-wider pb-1 border-b border-border">
                   {field.label}
                 </h3>
               </div>

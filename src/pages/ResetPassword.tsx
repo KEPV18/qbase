@@ -183,7 +183,7 @@ export default function ResetPassword() {
           <p className="text-sm text-muted-foreground mt-1">Quality Management System</p>
         </div>
         {children}
-        <p className="text-center text-xs text-muted-foreground/60 mt-6">
+        <p className="text-center text-xs text-ink-3 mt-6">
           QBase v2.5 · ISO 9001 Quality Management
         </p>
       </div>

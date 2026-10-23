@@ -526,7 +526,7 @@ const QUADRANT_CONFIG: Record<Quadrant, {
 const RISK_CHIP_CLASS: Record<SWOTItem['riskLevel'], string> = {
   High: 'border-destructive/20 bg-destructive/10 text-destructive-tint',
   Medium: 'border-warning/20 bg-warning/10 text-warning-tint',
-  Low: 'border-foreground/10 bg-foreground/5 text-foreground/70',
+  Low: 'border-foreground/10 bg-foreground/5 text-ink-2',
 };
 
 const ALL_ITEMS: Record<Quadrant, SWOTItem[]> = {
@@ -683,7 +683,7 @@ export default function SWOTAnalysisPage(): JSX.Element {
                             {item.text}
                           </span>
                           <span className="mt-1.5 flex flex-wrap items-center gap-1.5">
-                            <span className="rounded-full border border-foreground/10 bg-foreground/5 px-2 py-[1px] text-[11px] font-medium text-foreground/70">
+                            <span className="rounded-full border border-foreground/10 bg-foreground/5 px-2 py-[1px] text-[11px] font-medium text-ink-2">
                               {item.category}
                             </span>
                             <span
@@ -725,12 +725,12 @@ export default function SWOTAnalysisPage(): JSX.Element {
                               {item.text}
                             </span>
                             {item.actionPlan && (
-                              <span className="mt-1 flex items-start gap-1.5 text-[12.5px] leading-[1.6] text-foreground/70">
+                              <span className="mt-1 flex items-start gap-1.5 text-[12.5px] leading-[1.6] text-ink-2">
                                 <Zap className="mt-[2px] h-3 w-3 flex-shrink-0 text-primary-tint" aria-hidden />
                                 {item.actionPlan}
                               </span>
                             )}
-                            <span className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-[12px] text-foreground/70">
+                            <span className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-[12px] text-ink-2">
                               {item.responsible && (
                                 <span className="inline-flex items-center gap-1">
                                   <UserRound className="h-3 w-3 text-ink-3" aria-hidden />
@@ -800,11 +800,11 @@ export default function SWOTAnalysisPage(): JSX.Element {
                       <h4 className="text-[14px] font-semibold text-foreground">{strategy.name}</h4>
                       <dl className="mt-2 grid grid-cols-1 gap-1.5 text-[13px]">
                         <div className="flex gap-2">
-                          <dt className="w-[86px] flex-shrink-0 text-foreground/70">Strength</dt>
+                          <dt className="w-[86px] flex-shrink-0 text-ink-2">Strength</dt>
                           <dd className="min-w-0 flex-1 text-foreground">{strategy.strength}</dd>
                         </div>
                         <div className="flex gap-2">
-                          <dt className="w-[86px] flex-shrink-0 text-foreground/70">Opportunity</dt>
+                          <dt className="w-[86px] flex-shrink-0 text-ink-2">Opportunity</dt>
                           <dd className="min-w-0 flex-1 text-foreground">{strategy.opportunity}</dd>
                         </div>
                       </dl>
@@ -836,11 +836,11 @@ export default function SWOTAnalysisPage(): JSX.Element {
                       <h4 className="text-[14px] font-semibold text-foreground">{strategy.name}</h4>
                       <dl className="mt-2 grid grid-cols-1 gap-1.5 text-[13px]">
                         <div className="flex gap-2">
-                          <dt className="w-[86px] flex-shrink-0 text-foreground/70">Weakness</dt>
+                          <dt className="w-[86px] flex-shrink-0 text-ink-2">Weakness</dt>
                           <dd className="min-w-0 flex-1 text-foreground">{strategy.weakness}</dd>
                         </div>
                         <div className="flex gap-2">
-                          <dt className="w-[86px] flex-shrink-0 text-foreground/70">Threat</dt>
+                          <dt className="w-[86px] flex-shrink-0 text-ink-2">Threat</dt>
                           <dd className="min-w-0 flex-1 text-foreground">{strategy.threat}</dd>
                         </div>
                       </dl>
@@ -909,7 +909,7 @@ export default function SWOTAnalysisPage(): JSX.Element {
               <Eye className="h-[18px] w-[18px] text-muted-foreground" aria-hidden />
               {selectedItem?.id} — {selectedItem?.category}
             </DialogTitle>
-            <DialogDescription className="text-[13.5px] leading-[1.7] text-foreground/70">
+            <DialogDescription className="text-[13.5px] leading-[1.7] text-ink-2">
               {selectedItem?.text}
             </DialogDescription>
           </DialogHeader>
@@ -937,7 +937,7 @@ export default function SWOTAnalysisPage(): JSX.Element {
                       i < arr.length - 1 && 'border-b border-border'
                     )}
                   >
-                    <dt className="text-[12.5px] text-foreground/70">{row.label}</dt>
+                    <dt className="text-[12.5px] text-ink-2">{row.label}</dt>
                     <dd className="text-[13.5px] font-medium text-foreground">{row.value}</dd>
                   </div>
                 ))}
@@ -960,7 +960,7 @@ export default function SWOTAnalysisPage(): JSX.Element {
                 <dl className="overflow-hidden rounded-lg border border-border">
                   {selectedItem.isoClause && (
                     <div className="flex items-baseline justify-between gap-4 border-b border-border px-4 py-2.5">
-                      <dt className="text-[12.5px] text-foreground/70">ISO 9001:2015 clause</dt>
+                      <dt className="text-[12.5px] text-ink-2">ISO 9001:2015 clause</dt>
                       <dd className="font-mono text-[12.5px] tabular-nums text-foreground">
                         {selectedItem.isoClause}
                       </dd>
@@ -973,12 +973,12 @@ export default function SWOTAnalysisPage(): JSX.Element {
                         selectedItem.isoClause && 'border-t border-border'
                       )}
                     >
-                      <dt className="text-[12.5px] text-foreground/70">Linked context issues</dt>
+                      <dt className="text-[12.5px] text-ink-2">Linked context issues</dt>
                       <dd className="flex flex-wrap justify-end gap-1.5">
                         {selectedItem.linkedTo.map(link => (
                           <span
                             key={link}
-                            className="rounded-full border border-foreground/10 bg-foreground/5 px-2 py-[1px] font-mono text-[11px] text-foreground/80"
+                            className="rounded-full border border-foreground/10 bg-foreground/5 px-2 py-[1px] font-mono text-[11px] text-ink-2"
                           >
                             {link}
                           </span>

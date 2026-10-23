@@ -140,14 +140,14 @@ export function TopNav() {
             <img src={brandLogo} alt="" className="w-4 h-4 object-contain invert" />
           </div>
           <div>
-            <p className="text-[11px] font-display font-semibold text-muted-foreground/70 uppercase tracking-wider">Active Page</p>
+            <p className="text-[11px] font-display font-semibold text-muted-foreground uppercase tracking-wider">Active Page</p>
             <p className="text-sm font-semibold text-foreground">{pageLabel}</p>
           </div>
         </div>
 
         {/* Center — Global Search */}
         <div className="hidden md:block relative flex-1 mx-8 min-w-0" ref={searchRef}>
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground/70" />
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-ink-4" />
           <input
             type="text"
             placeholder="Search records…"
@@ -155,7 +155,7 @@ export function TopNav() {
             onChange={(e) => setSearchTerm(e.target.value)}
             onFocus={() => { if (results.length > 0) setShowSearchDropdown(true); }}
             onKeyDown={(e) => { if (e.key === 'Escape') setShowSearchDropdown(false); }}
-            className="w-full h-11 pl-9 pr-10 rounded-lg bg-background border border-border text-sm text-foreground dark:text-foreground dark:bg-card dark:border-border placeholder:text-muted-foreground/70 focus:outline-none focus:ring-2 focus:ring-foreground/10 focus:border-foreground/20 transition-all"
+            className="w-full h-11 pl-9 pr-10 rounded-lg bg-background border border-border text-sm text-foreground dark:text-foreground dark:bg-card dark:border-border placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-foreground/10 focus:border-foreground/20 transition-all"
           />
             {/*
               The ⌘K chip paints at 33x21px, so its 44px target comes
@@ -175,7 +175,7 @@ export function TopNav() {
               onClick={() => openCommandPalette()}
               title="Open command palette (⌘K)"
               aria-label="Open command palette"
-              className="absolute right-3 top-1/2 -translate-y-1/2 hidden lg:inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-md bg-muted dark:bg-muted border border-border dark:border-border text-[10px] font-medium text-muted-foreground/70 hover:text-foreground transition-colors cursor-pointer ds-hit-44-anchored"
+              className="absolute right-3 top-1/2 -translate-y-1/2 hidden lg:inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-md bg-muted dark:bg-muted border border-border dark:border-border text-[10px] font-medium text-muted-foreground hover:text-foreground transition-colors cursor-pointer ds-hit-44-anchored"
             >
             ⌘ K
           </button>
@@ -187,7 +187,7 @@ export function TopNav() {
                   onClick={() => { navigate(`/records/${encodeURIComponent(r.serial)}`); setShowSearchDropdown(false); setSearchTerm(''); }}
                   className="w-full min-h-11 text-left px-4 py-2.5 hover:bg-background dark:hover:bg-muted flex items-center gap-3 transition-colors"
                 >
-                  <FileText className="w-4 h-4 text-muted-foreground/70 shrink-0" />
+                  <FileText className="w-4 h-4 text-ink-4 shrink-0" />
                   <div className="min-w-0 flex-1">
                     <p className="text-sm font-medium text-foreground dark:text-ink-3 truncate">{r.serial}</p>
                     <p className="text-xs text-muted-foreground">{r.formName}</p>
@@ -214,14 +214,14 @@ export function TopNav() {
         <div className="flex items-center gap-3">
           <button
             onClick={() => setTheme(resolvedTheme === 'dark' ? 'light' : 'dark')}
-            className="p-2 rounded-lg text-muted-foreground/70 hover:text-foreground hover:bg-background dark:hover:bg-card transition-colors ds-hit-44"
+            className="p-2 rounded-lg text-muted-foreground hover:text-foreground hover:bg-background dark:hover:bg-card transition-colors ds-hit-44"
             title="Toggle theme"
           >
             {resolvedTheme === 'dark' ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
           </button>
           <button
             onClick={() => navigate('/notifications')}
-            className="p-2 rounded-lg text-muted-foreground/70 hover:text-foreground hover:bg-background dark:hover:bg-card transition-colors relative ds-hit-44"
+            className="p-2 rounded-lg text-muted-foreground hover:text-foreground hover:bg-background dark:hover:bg-card transition-colors relative ds-hit-44"
             title="Notifications"
           >
             <Bell className="w-4 h-4" />

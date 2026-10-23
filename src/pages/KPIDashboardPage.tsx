@@ -85,7 +85,7 @@ const RoleKPICard = ({ role, onClick }: { role: RoleKPIData; onClick: () => void
                 {(totalWeight * 100).toFixed(0)}%
               </span>
               {isWeightValid
-                ? <CheckCircle2 className="w-4 h-4 text-muted-foreground/60" />
+                ? <CheckCircle2 className="w-4 h-4 text-ink-4" />
                 : <AlertCircle className="w-4 h-4 text-destructive-tint" />}
             </div>
           </div>
@@ -372,7 +372,7 @@ export default function KPIDashboardPage() {
           {filteredRoles.length === 0 && (
             <Card className="ds-card">
               <CardContent className="flex flex-col items-center justify-center py-12">
-                <Search className="w-12 h-12 text-muted-foreground/40 mb-4" />
+                <Search className="w-12 h-12 text-ink-4 mb-4" />
                 <p className="text-lg font-medium">No roles found</p>
                 <p className="text-sm text-muted-foreground">Try adjusting your search or filter criteria.</p>
               </CardContent>
@@ -400,7 +400,7 @@ export default function KPIDashboardPage() {
                     Per ISO 9001:2015 Clause 9.3.2, Management Review inputs include organizational performance data.
                     Each role&apos;s KPI weights must sum to 100%. Valid weights are indicated with green borders.
                   </p>
-                  <p className="text-xs text-muted-foreground/70 mt-2 tabular-nums">
+                  <p className="text-xs text-muted-foreground mt-2 tabular-nums">
                     Generated: {new Date().toISOString().split("T")[0]}
                   </p>
                 </div>

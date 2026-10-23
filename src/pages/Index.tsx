@@ -132,12 +132,12 @@ function DeptMetricCard({
       <div className="flex items-center gap-2">
         <div className="min-w-0">
           <p className="text-lg font-bold tabular-nums text-foreground leading-none">{health.totalForms}</p>
-          <p className="text-[10px] text-muted-foreground/70 mt-1">Forms</p>
+          <p className="text-[10px] text-muted-foreground mt-1">Forms</p>
         </div>
         <div className="w-px h-8 bg-border" />
         <div className="min-w-0">
           <p className="text-lg font-bold tabular-nums text-foreground leading-none">{health.totalSubmissions}</p>
-          <p className="text-[10px] text-muted-foreground/70 mt-1">Filed</p>
+          <p className="text-[10px] text-muted-foreground mt-1">Filed</p>
         </div>
       </div>
       <div className="mt-2">
@@ -154,7 +154,7 @@ function ComplianceBadge({ compliance }: { compliance: FormCompliance }) {
   // Forms without a fixed cadence ("On event", "Daily", "Per project") owe no
   // deadline — say what they are instead of showing a countdown to nothing.
   if (!isPeriodic) {
-    return <span className="text-[10px] text-muted-foreground/70 font-medium">{frequencyLabel}</span>;
+    return <span className="text-[10px] text-muted-foreground font-medium">{frequencyLabel}</span>;
   }
   if (daysSinceLast === null) {
     return <span className="text-[10px] text-warning-tint font-medium">Never filed</span>;
@@ -292,7 +292,7 @@ function DashboardStatsCard({ stats, isLoading, error }: {
     >
       <div className="flex items-center justify-between mb-2">
         <span className="text-sm font-semibold text-foreground">Quality Pulse</span>
-        <span className="text-[10px] text-muted-foreground/70">
+        <span className="text-[10px] text-muted-foreground">
           <span className="tabular-nums">{stats.recordsLast30d}</span> filed in the last 30 days
         </span>
       </div>
@@ -648,13 +648,13 @@ export default function Index() {
                 <span className="text-[11px] text-muted-foreground tabular-nums">{filteredForms.length}</span>
               </div>
               <div className="relative">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground/70" />
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-ink-4" />
                 <input
                   type="text"
                   placeholder="Search forms…"
                   value={formSearch}
                   onChange={(e) => setFormSearch(e.target.value)}
-                  className="w-full h-11 pl-8 pr-3 rounded-lg bg-background dark:bg-card border border-border dark:border-border text-sm text-foreground dark:text-foreground placeholder:text-muted-foreground/70 focus:outline-none focus:ring-2 focus:ring-foreground/10"
+                  className="w-full h-11 pl-8 pr-3 rounded-lg bg-background dark:bg-card border border-border dark:border-border text-sm text-foreground dark:text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-foreground/10"
                 />
               </div>
             </div>
@@ -674,21 +674,21 @@ export default function Index() {
                       )}
                     >
                       <div className="w-7 h-7 rounded-full flex items-center justify-center bg-background dark:bg-card border border-border dark:border-border shrink-0">
-                        <FileText className="w-3.5 h-3.5 text-muted-foreground/70" />
+                        <FileText className="w-3.5 h-3.5 text-ink-4" />
                       </div>
                       <div className="flex-1 min-w-0">
                         <p className="text-sm font-medium text-foreground dark:text-foreground truncate">{schema.name}</p>
                         <div className="flex items-center gap-2 mt-0.5">
-                          <p className="text-[10px] font-mono text-muted-foreground/70">{schema.code}</p>
+                          <p className="text-[10px] font-mono text-muted-foreground">{schema.code}</p>
                           {compliance && (<ComplianceBadge compliance={compliance} />)}
                         </div>
-                        <p className="text-[10px] text-muted-foreground/70 mt-0.5">
+                        <p className="text-[10px] text-muted-foreground mt-0.5">
                           Last record: {getLastFiledText(compliance?.lastRecordDate || null)}
                         </p>
                       </div>
                       <div className="flex items-center gap-2 shrink-0">
                         {recordCount > 0 && (
-                          <span className="text-[10px] font-mono text-muted-foreground/70">{recordCount}</span>
+                          <span className="text-[10px] font-mono text-muted-foreground">{recordCount}</span>
                         )}
                         <ChevronRight className="w-3.5 h-3.5 text-ink-3 dark:text-ink-2" />
                       </div>
@@ -751,11 +751,11 @@ export default function Index() {
                         <p className="text-sm font-medium text-foreground dark:text-foreground truncate">
                           {(record as RecordData).form_data?.client_name as string || (record as RecordData).form_data?.project_name as string || record.formName}
                         </p>
-                        <p className="text-[10px] text-muted-foreground/70 mt-0.5">{record.formCode}</p>
+                        <p className="text-[10px] text-muted-foreground mt-0.5">{record.formCode}</p>
                       </div>
                       <div className="flex items-center gap-3 shrink-0">
                         <StatusText status={String(record._approvalStatus || "Approved")} />
-                        <span className="text-[10px] text-muted-foreground/70">
+                        <span className="text-[10px] text-muted-foreground">
                           {new Date(String(record._createdAt || record.createdAt || new Date().toISOString())).toLocaleDateString("en-GB", { day: "2-digit", month: "short" })}
                         </span>
                       </div>
