@@ -53,21 +53,28 @@ export function ProcessInteractionTab() {
     }
 
     return (
-        <div className="space-y-6">
-            <div className="flex justify-between items-center p-6 rounded-sm bg-muted/20 border-border/50 relative overflow-hidden">
-                <div className="absolute top-0 right-0 w-32 h-32 bg-primary/5 rounded-bl-full blur-2xl" />
-                <div className="relative z-10">
-                    <h3 className="font-bold text-xl font-display text-foreground">Process Interaction Sheet</h3>
-                    <p className="text-[10px] text-muted-foreground font-black uppercase tracking-[0.2em] opacity-60">
+        <div>
+            {/* The band is the panel's header.  It used to carry its own
+                `rounded-sm` frame, a `bg-muted/20` fill, and a blurred
+                blue blob in the corner — decoration doing the work a
+                title and a hairline should do. */}
+            <div className="flex justify-between items-center gap-3 px-5 py-4 border-b border-border">
+                <div>
+                    <h3 className="font-bold text-base font-display tracking-[-0.01em] text-foreground">Process Interaction Sheet</h3>
+                    <p className="text-[10px] text-muted-foreground font-black uppercase tracking-[0.2em] mt-0.5">
                         Live data from Supabase • {processes.length} processes
                     </p>
                 </div>
-                <Button variant="outline" size="sm" className="gap-2 relative z-10" onClick={() => refetch()}>
+                <Button variant="outline" size="sm" className="gap-2" onClick={() => refetch()}>
                     <RefreshCw className="w-4 h-4" /> Refresh
                 </Button>
             </div>
 
-            <div className="rounded-sm border border-border/50 bg-card overflow-hidden shadow-xl">
+            {/* Table — the panel surface.  The old `rounded-sm border
+                border-border/50 bg-card` frame was a second border drawn
+                inside the tab's panel, so the surface read as a card
+                nested in a card. */}
+            <div>
                 <Table>
                     <TableHeader>
                         <TableRow className="bg-muted/30 border-b border-border/50">

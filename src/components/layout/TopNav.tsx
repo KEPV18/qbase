@@ -130,7 +130,9 @@ export function TopNav() {
           `bg-background/80 backdrop-blur-xl` blurred nothing, because
           there was no layer beneath it to refract; the skill reserves
           `backdrop-filter` for surfaces that genuinely overlap content
-          (the sticky page headers, the sidebar, the mobile tab bar). */}
+          (the sticky page headers, the mobile sidebar drawer, the mobile
+          tab bar).  The desktop sidebar is solid for the same reason: it
+          sits beside the content, not over it. */}
       <div className="bg-card border border-border rounded-xl px-5 py-3 flex items-center justify-between grow shrink-0">
         {/* Left — Active Page */}
         <div className="flex items-center gap-3">
@@ -155,12 +157,25 @@ export function TopNav() {
             onKeyDown={(e) => { if (e.key === 'Escape') setShowSearchDropdown(false); }}
             className="w-full h-11 pl-9 pr-10 rounded-lg bg-background border border-border text-sm text-foreground dark:text-foreground dark:bg-card dark:border-border placeholder:text-muted-foreground/70 focus:outline-none focus:ring-2 focus:ring-foreground/10 focus:border-foreground/20 transition-all"
           />
+            {/*
+              The ⌘K chip paints at 33x21px, so its 44px target comes
+              from the shared `::before` extension, and that extension has
+              to be centred on the chip.  The chip is absolutely
+              positioned, so it takes `ds-hit-44-anchored` — the shape
+              the design system documents for a control that is already
+              absolute or fixed (`src/index.css`), and the class every
+              other absolutely positioned control in the app already
+              carries (Login, Register, ResetPassword, Settings,
+              FormsRegistryPage, DataSanitizer).  The centred shape
+              measures a 45x44 hit band on the built page, and a click
+              10px above the painted chip opens the command palette.
+            */}
             <button
               type="button"
               onClick={() => openCommandPalette()}
               title="Open command palette (⌘K)"
               aria-label="Open command palette"
-              className="absolute right-3 top-1/2 -translate-y-1/2 hidden lg:inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-md bg-muted dark:bg-muted border border-border dark:border-border text-[10px] font-medium text-muted-foreground/70 hover:text-foreground transition-colors cursor-pointer ds-hit-44"
+              className="absolute right-3 top-1/2 -translate-y-1/2 hidden lg:inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-md bg-muted dark:bg-muted border border-border dark:border-border text-[10px] font-medium text-muted-foreground/70 hover:text-foreground transition-colors cursor-pointer ds-hit-44-anchored"
             >
             ⌘ K
           </button>

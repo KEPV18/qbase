@@ -213,9 +213,12 @@ export function RiskRegisterTab() {
     }
 
     return (
-        <div className="space-y-4">
-            {/* Toolbar */}
-            <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 p-4">
+        <div>
+            {/* Toolbar — the panel's header band, separated from the table
+                by one hairline.  It used to sit in a `space-y-4` stack
+                with the table in a SEPARATE bordered card below it, so the
+                register read as a toolbar floating outside a second card. */}
+            <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 px-5 py-3.5 border-b border-border">
                 <div className="relative flex-1 w-full">
                     <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground" />
                     <Input
@@ -255,8 +258,11 @@ export function RiskRegisterTab() {
                 </div>
             </div>
 
-            {/* Table */}
-            <div className="rounded-sm border border-border/50 bg-card overflow-hidden">
+            {/* Table — the panel surface.  The old `rounded-sm border
+                border-border/50 bg-card` frame was a second border drawn
+                inside the tab's panel, so the surface read as a card
+                nested in a card. */}
+            <div>
                 <Table>
                     <TableHeader>
                         <TableRow className="bg-muted/30 border-b border-border/50">

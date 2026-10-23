@@ -18,6 +18,7 @@ import { PageHeader } from "@/components/ui/PageHeader";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { PanelCell, PanelCells, PanelFigure, UnifiedPanel } from "@/components/ui/UnifiedPanel";
 import { cn } from "@/lib/utils";
 import { useAuditPage, type AuditTab } from "./audit/useAuditPage";
 import { FORM_SCHEMAS } from "@/data/formSchemas";
@@ -118,15 +119,23 @@ export default function AuditPage() {
           </Card>
         )}
 
-        {/* Stats */}
-        <div className="grid grid-cols-2 md:grid-cols-6 gap-3">
-          <StatBadge icon={FileText} label="Total Records" value={stats.totalRecords} tone="info" />
-          <StatBadge icon={Clock} label="Pending" value={stats.pending} tone="warning" />
-          <StatBadge icon={CheckCircle} label="Compliant" value={stats.compliant} tone="success" />
-          <StatBadge icon={AlertTriangle} label="Issues" value={stats.issues} tone="danger" />
-          <StatBadge icon={CalendarClock} label="Overdue" value={stats.overdue} tone="warning" />
-          <StatBadge icon={FileX} label="Never Filled" value={stats.neverFilled} tone="warning" />
-        </div>
+        {/* Stats — ONE panel of hairline-separated cells.
+            These were six separately-bordered `Card`s in a grid, and each
+            one tinted its ICON, so a row of six sibling figures read as
+            six little coloured chips rather than six facts.  The rule
+            `StatsRow` already follows: the semantic colour goes on the
+            NUMBER, the icon stays grayscale, and the surface stays white.
+            The status dot beside the label keeps it scannable. */}
+        <UnifiedPanel>
+          <PanelCells columns={6}>
+            <PanelCell><PanelFigure icon={FileText} label="Total Records" value={stats.totalRecords} /></PanelCell>
+            <PanelCell><PanelFigure icon={Clock} label="Pending" value={stats.pending} tone="warning" dot /></PanelCell>
+            <PanelCell><PanelFigure icon={CheckCircle} label="Compliant" value={stats.compliant} tone="success" dot /></PanelCell>
+            <PanelCell><PanelFigure icon={AlertTriangle} label="Issues" value={stats.issues} tone="destructive" dot /></PanelCell>
+            <PanelCell><PanelFigure icon={CalendarClock} label="Overdue" value={stats.overdue} tone="warning" dot /></PanelCell>
+            <PanelCell><PanelFigure icon={FileX} label="Never Filled" value={stats.neverFilled} tone="warning" dot /></PanelCell>
+          </PanelCells>
+        </UnifiedPanel>
 
         {/* Compliance bar */}
         <Card className="border-border/30">
@@ -136,7 +145,7 @@ export default function AuditPage() {
               <span className="text-2xl font-bold tabular-nums text-success-tint">{complianceRate}%</span>
             </div>
             <div className="w-full bg-muted/30 rounded-full h-2 overflow-hidden">
-              <div className="bg-success h-2 rounded-full transition-all duration-700" style={{ width: `${complianceRate}%` }} />
+              <div className="bg-success h-2 rounded-full transition-all duration-200 ease-out-quart" style={{ width: `${complianceRate}%` }} />
             </div>
             <p className="text-[10px] text-muted-foreground mt-2">
               {stats.filledForms} of {stats.totalForms} forms have records
@@ -251,27 +260,8 @@ export default function AuditPage() {
  * the same semantic state had to be spelled differently on every page, and
  * `purple` did not exist at all.  The four states below are the four the
  * design system actually has, and each resolves to a token.
+ *
+ * The map itself now lives in `UnifiedPanel.PanelFigure`, so the four
+ * states have exactly one spelling in the whole app: `default`,
+ * `success`, `warning`, `destructive`, `info`.
  */
-type StatTone = 'neutral' | 'info' | 'success' | 'warning' | 'danger';
-
-const STAT_TONE_CLASS: Record<StatTone, string> = {
-  neutral: 'text-muted-foreground',
-  info: 'text-primary-tint',
-  success: 'text-success-tint',
-  warning: 'text-warning-tint',
-  danger: 'text-destructive-tint',
-};
-
-function StatBadge({ icon: Icon, label, value, tone = 'neutral' }: { icon: React.ElementType; label: string; value: number; tone?: StatTone }) {
-  return (
-    <Card className="border-border/30">
-      <CardContent className="p-3 flex items-center gap-2">
-        <Icon className={cn("w-4 h-4", STAT_TONE_CLASS[tone])} />
-        <div>
-          <p className="text-lg font-bold tabular-nums">{value}</p>
-          <p className="text-[9px] text-muted-foreground uppercase">{label}</p>
-        </div>
-      </CardContent>
-    </Card>
-  );
-}

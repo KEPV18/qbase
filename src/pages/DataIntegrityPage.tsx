@@ -28,6 +28,7 @@ import {
 import { isoToDisplay } from '../schemas';
 import { AppShell } from '@/components/layout/AppShell';
 import { StateScreen } from '@/components/ui/StateScreen';
+import { PanelCell, PanelCells, PanelFigure, UnifiedPanel } from '@/components/ui/UnifiedPanel';
 import { cn } from '@/lib/utils';
 
 // ============================================================================
@@ -176,25 +177,31 @@ const DataIntegrityPage: React.FC = () => {
         </button>
       </div>
 
-      {/* Summary Cards */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-        <div className="ds-card p-4">
-          <p className="text-xs text-muted-foreground mb-1">Total Records</p>
-          <p className="text-2xl font-bold text-foreground">{summary.total}</p>
-        </div>
-        <div className="ds-success-card p-4">
-          <p className="text-xs text-success-tint/70 mb-1">Clean</p>
-          <p className="text-2xl font-bold text-success-tint">{summary.clean}</p>
-        </div>
-        <div className="ds-warning-card p-4">
-          <p className="text-xs text-warning-tint/70 mb-1">Warnings</p>
-          <p className="text-2xl font-bold text-warning-tint">{summary.warning}</p>
-        </div>
-        <div className="ds-critical-card p-4">
-          <p className="text-xs text-destructive-tint/70 mb-1">Critical</p>
-          <p className="text-2xl font-bold text-destructive-tint">{summary.critical}</p>
-        </div>
-      </div>
+      {/* Summary — ONE panel of hairline-separated cells.
+          These were four separately-bordered AND separately-tinted cards
+          (`ds-card` / `ds-success-card` / `ds-warning-card` /
+          `ds-critical-card`), so a row of four sibling figures read as a
+          heat map: four tiles of four different colours fighting for the
+          one accent the design system allows.  The rule `StatsRow` already
+          follows is the one that applies — the SEMANTIC COLOUR goes on the
+          NUMBER, and the cell stays white.  The small dot beside the label
+          keeps the status scannable without painting the surface. */}
+      <UnifiedPanel className="mb-6">
+        <PanelCells columns={4}>
+          <PanelCell>
+            <PanelFigure label="Total Records" value={summary.total} />
+          </PanelCell>
+          <PanelCell>
+            <PanelFigure label="Clean" value={summary.clean} tone="success" dot />
+          </PanelCell>
+          <PanelCell>
+            <PanelFigure label="Warnings" value={summary.warning} tone="warning" dot />
+          </PanelCell>
+          <PanelCell>
+            <PanelFigure label="Critical" value={summary.critical} tone="destructive" dot />
+          </PanelCell>
+        </PanelCells>
+      </UnifiedPanel>
 
       {/* Integrity Bar */}
       {summary.total > 0 && (

@@ -132,13 +132,59 @@ const PROBE = `(() => {
   }
   out.headings = heads;
 
-  // interactive target heights
+  // Interactive target heights — the EFFECTIVE hit area, not the painted
+  // box.
+  //
+  // The stylesheet gives every control a 44x44 hit area through a
+  // transparent ::before that extends past the painted box, so a button
+  // that PAINTS 28x28 is still a 44x44 target.  Measuring the element's
+  // own rect therefore reported nine "failures" on the dashboard that were
+  // all really 44px targets — the number was a lie, and an audit that
+  // cries wolf is an audit nobody reads.
+  //
+  // So the pseudo-element's box is unioned into the element's box, and a
+  // pseudo-element that is not hit-testable (pointer-events: none) is
+  // ignored, because it cannot receive the tap.
   const small = [];
   const inter = document.querySelectorAll('button, a[href], input, select, textarea, [role="button"]');
   for (const el of inter) {
     const r = el.getBoundingClientRect();
     if (r.width === 0 || r.height === 0) continue;
-    if (r.height < 44) small.push({ tag: el.tagName.toLowerCase(), text: (el.textContent || '').trim().slice(0, 30), h: Math.round(r.height), w: Math.round(r.width) });
+
+    let top = r.top, bottom = r.bottom, left = r.left, right = r.right;
+    for (const pseudo of ['::before', '::after']) {
+      const ps = getComputedStyle(el, pseudo);
+      if (!ps || ps.content === 'none' || ps.content === 'normal') continue;
+      if (ps.pointerEvents === 'none') continue;
+      if (ps.position !== 'absolute' && ps.position !== 'fixed') continue;
+      // The extension is painted by the pseudo-element, so its box is
+      // whatever the rules say it is: max(100%, 44px) centred on the
+      // element, or the explicit inset the utility set.
+      const pw = ps.width === 'auto' ? r.width : parseFloat(ps.width);
+      const ph = ps.height === 'auto' ? r.height : parseFloat(ps.height);
+      if (!Number.isFinite(pw) || !Number.isFinite(ph)) continue;
+      let pTop, pLeft;
+      if (ps.top && ps.top !== 'auto') pTop = r.top + parseFloat(ps.top);
+      else if (ps.bottom && ps.bottom !== 'auto') pTop = r.bottom - parseFloat(ps.bottom) - ph;
+      else pTop = r.top + r.height / 2 - ph / 2;
+      if (ps.left && ps.left !== 'auto') pLeft = r.left + parseFloat(ps.left);
+      else if (ps.right && ps.right !== 'auto') pLeft = r.right - parseFloat(ps.right) - pw;
+      else pLeft = r.left + r.width / 2 - pw / 2;
+      top = Math.min(top, pTop);
+      left = Math.min(left, pLeft);
+      bottom = Math.max(bottom, pTop + ph);
+      right = Math.max(right, pLeft + pw);
+    }
+
+    const h = bottom - top, w = right - left;
+    if (h < 44 || w < 44) {
+      small.push({
+        tag: el.tagName.toLowerCase(),
+        text: (el.textContent || '').trim().slice(0, 30),
+        h: Math.round(h), w: Math.round(w),
+        painted: Math.round(r.width) + 'x' + Math.round(r.height),
+      });
+    }
   }
   out.smallTargets = small.slice(0, 40);
   out.smallTargetCount = small.length;

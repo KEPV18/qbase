@@ -30,6 +30,7 @@ import { toast } from 'sonner';
 import { AppShell } from '@/components/layout/AppShell';
 import { deptBorderStyle, deptAccentStyle } from '@/lib/departmentTheme';
 import { StateScreen } from '@/components/ui/StateScreen';
+import { PanelHeader, PanelRow, PanelRows, UnifiedPanel } from '@/components/ui/UnifiedPanel';
 import { Spinner } from '@/components/ui/LoadingSpinner';
 
 // ============================================================================
@@ -765,37 +766,43 @@ const RecordViewPage: React.FC = () => {
           </div>
         </div>
       ) : mode === 'history' ? (
-        <div className="ds-card p-6">
-          <div className="flex items-center justify-between mb-4">
-            <div className="flex items-center gap-2">
-              <History className="w-5 h-5 text-primary-tint" />
-              <h3 className="text-lg font-semibold text-foreground">Change History</h3>
-              <span className="text-xs text-muted-foreground ml-2 font-mono">{decodedSerial}</span>
-            </div>
-            <button onClick={() => setMode('view')} className="ds-press ds-focus-ring px-3 py-1.5 text-sm bg-secondary border border-border rounded-sm text-secondary-foreground hover:bg-accent transition-colors">
-              Back to Record
-            </button>
-          </div>
+        /* The history is ONE panel with hairline-separated entries.  It used
+           to be a `space-y-3` stack in which every entry was its own
+           tinted, bordered card — a create entry was green and an update
+           entry was blue, so the list read as a pile of coloured tiles
+           instead of a list of edits.  The action's semantic colour now
+           lives on the ICON and the word, and the surface stays white. */
+        <UnifiedPanel>
+          <PanelHeader
+            title={
+              <span className="flex items-center gap-2">
+                <History className="w-4 h-4 text-primary-tint" />
+                Change History
+              </span>
+            }
+            meta={decodedSerial}
+            actions={
+              <button onClick={() => setMode('view')} className="ds-press ds-focus-ring px-3 py-1.5 text-sm bg-secondary border border-border rounded-sm text-secondary-foreground hover:bg-accent transition-colors">
+                Back to Record
+              </button>
+            }
+          />
 
           {auditLoading ? (
             <div className="py-8 flex justify-center text-muted-foreground">
               <Spinner size="md" label="Loading history..." />
             </div>
           ) : !auditEntries || auditEntries.length === 0 ? (
-            <div className="text-center py-8">
+            <div className="text-center py-8 px-6">
               <FileText className="w-8 h-8 text-muted-foreground/30 mx-auto mb-2" />
               <p className="text-muted-foreground">No history entries found for this record.</p>
               <p className="text-xs text-muted-foreground/60 mt-1">Audit logging was added in v0.7-alpha. Older edits may not appear.</p>
             </div>
           ) : (
-            <div className="space-y-3">
+            <PanelRows>
               {auditEntries.map((entry, idx) => (
-                <div key={entry.id} className={`border rounded-xl p-4 ${
-                  entry.action === 'create'
-                    ? 'bg-success/5 border-success/20'
-                    : 'bg-primary/5 border-primary/20'
-                }`}>
-                  <div className="flex items-center justify-between mb-2">
+                <PanelRow key={entry.id} className="flex-col items-stretch gap-2">
+                  <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
                       {entry.action === 'create'
                         ? <CheckCircle className="w-4 h-4 text-success-tint" />
@@ -834,11 +841,11 @@ const RecordViewPage: React.FC = () => {
                       ))}
                     </div>
                   )}
-                </div>
+                </PanelRow>
               ))}
-            </div>
+            </PanelRows>
           )}
-        </div>
+        </UnifiedPanel>
       ) : mode === 'intent' ? (
         /* ─── Edit Intent Check ─────────────────────────────────────── */
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50">

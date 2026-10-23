@@ -11,6 +11,7 @@ const CAPAEvidenceDashboard = lazy(() => import("@/components/traceability/CAPAE
 
 import { Shield, AlertTriangle, Activity, ChevronRight, Clock, CheckCircle, FileCheck2 } from "lucide-react";
 import { StatsRow } from "@/components/ui/StatsRow";
+import { UnifiedPanel } from "@/components/ui/UnifiedPanel";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { useRiskData } from "@/hooks/useRiskData";
 import { useCAPAData } from "@/hooks/useCAPAData";
@@ -53,23 +54,31 @@ export default function RiskManagementPage() {
                     { icon: AlertTriangle, value: risks.length, label: "Total Risks", variant: "default" },
                     { icon: AlertTriangle, value: risks.filter(r => r.status === "Open").length, label: "Open Risks", variant: "destructive" },
                     { icon: AlertTriangle, value: risks.filter(r => r.risk_score >= 12).length, label: "High/Critical", variant: "warning" },
-                    { icon: Shield, value: capas.filter(c => c.status === "Open" || c.status === "In Progress").length, label: "Active CAPAs", variant: "info" },
+                    { icon: Shield, value: capas.filter(c => c.status === "Open" || c.status === "In Progress").length, label: "Active CAPAs" },
                     { icon: Clock, value: capas.filter(c => c.status !== "Closed" && c.target_completion_date && new Date(c.target_completion_date) < new Date()).length, label: "Overdue CAPAs", variant: "warning" },
-                    { icon: CheckCircle, value: risks.filter(r => r.status === "Controlled" || r.status === "Closed").length, label: "Controlled", variant: "success" },
+                    // "Controlled" is the NORMAL state of a risk — greyscale.
+                    // The colour in this row is spent on the three counts
+                    // that are actually a problem: open, high, overdue.
+                    { icon: CheckCircle, value: risks.filter(r => r.status === "Controlled" || r.status === "Closed").length, label: "Controlled" },
                 ]} />
 
-                {/* Heat Map - only on risk tab */}
+                {/* Heat Map - only on risk tab.
+                    ONE panel with the disclosure as its header: the summary
+                    used to be a hard `rounded-sm` card of its own with the
+                    map floating below it outside the frame. */}
                 {activeTab === "risk" && risks.length > 0 && (
-                    <details open className="group">
-                        <summary className="flex items-center gap-2 cursor-pointer bg-card rounded-sm border border-border p-4 hover:bg-muted/30 transition-colors list-none">
-                            <ChevronRight className="w-4 h-4 text-muted-foreground group-open:rotate-90 transition-transform" />
-                            <span className="text-sm font-bold text-foreground">Risk Heat Map</span>
-                            <span className="text-[9px] text-muted-foreground font-mono ml-auto">Click to toggle</span>
-                        </summary>
-                        <div className="mt-2">
-                            <Suspense fallback={<div className="h-48 bg-muted/20 animate-pulse rounded-sm" />}><RiskHeatMap risks={risks} /></Suspense>
-                        </div>
-                    </details>
+                    <UnifiedPanel>
+                        <details open className="group">
+                            <summary className="flex items-center gap-2 cursor-pointer px-5 py-3.5 hover:bg-foreground/[0.03] transition-colors list-none">
+                                <ChevronRight className="w-4 h-4 text-muted-foreground group-open:rotate-90 transition-transform" />
+                                <span className="text-sm font-bold text-foreground">Risk Heat Map</span>
+                                <span className="text-[9px] text-muted-foreground font-mono ml-auto">Click to toggle</span>
+                            </summary>
+                            <div className="border-t border-border p-4">
+                                <Suspense fallback={<div className="h-48 bg-muted/20 animate-pulse rounded-sm" />}><RiskHeatMap risks={risks} /></Suspense>
+                            </div>
+                        </details>
+                    </UnifiedPanel>
                 )}
 
                 {/* Tabs */}
@@ -95,22 +104,25 @@ export default function RiskManagementPage() {
                         </TabsTrigger>
                     </TabsList>
 
+                    {/* Each tab body is ONE panel — the register's own table
+                        frame was a second border inside a second border, so
+                        the surface read as a card nested in a card. */}
                     <TabsContent value="risk" className="mt-4">
-                        <div className="bg-card rounded-sm border border-border overflow-hidden">
+                        <UnifiedPanel className="overflow-hidden">
                             <Suspense fallback={<div className="h-48 bg-muted/20 animate-pulse rounded-sm" />}><RiskRegisterTab /></Suspense>
-                        </div>
+                        </UnifiedPanel>
                     </TabsContent>
 
                     <TabsContent value="capa" className="mt-4">
-                        <div className="bg-card rounded-sm border border-border overflow-hidden">
+                        <UnifiedPanel className="overflow-hidden">
                             <Suspense fallback={<div className="h-48 bg-muted/20 animate-pulse rounded-sm" />}><CapaRegisterTab /></Suspense>
-                        </div>
+                        </UnifiedPanel>
                     </TabsContent>
 
                     <TabsContent value="process" className="mt-4">
-                        <div className="bg-card rounded-sm border border-border overflow-hidden">
+                        <UnifiedPanel className="overflow-hidden">
                             <Suspense fallback={<div className="h-48 bg-muted/20 animate-pulse rounded-sm" />}><ProcessInteractionTab /></Suspense>
-                        </div>
+                        </UnifiedPanel>
                     </TabsContent>
 
                     <TabsContent value="capa-evidence" className="mt-4">

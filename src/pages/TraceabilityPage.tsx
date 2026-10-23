@@ -228,7 +228,7 @@ export default function TraceabilityPage() {
           <Card>
             <CardContent className="pt-6">
               <p className="text-sm text-muted-foreground">Linked Records</p>
-              <p className="text-2xl font-bold">{relationshipCount}</p>
+              <p className="text-2xl font-bold tabular-nums">{relationshipCount}</p>
             </CardContent>
           </Card>
 
@@ -242,7 +242,7 @@ export default function TraceabilityPage() {
             <CardContent className="pt-6">
               <p className="text-sm text-muted-foreground">Link Health</p>
               <div className="flex items-center gap-2">
-                <p className="text-2xl font-bold">
+                <p className="text-2xl font-bold tabular-nums">
                   {hasBrokenLinks ? brokenLinks.length : <CheckCircle2 className="w-5 h-5 text-success-tint" aria-label="All links valid" />}
                 </p>
                 <p className="text-sm text-muted-foreground">

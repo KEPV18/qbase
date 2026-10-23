@@ -287,7 +287,14 @@ function SectionBlock({
             {section.title}
           </h2>
         )}
-        <div className="h-1 w-12 bg-gradient-to-r from-primary to-primary/20 rounded-full" />
+        {/* The accent mark under a clause title.  It was a
+            `from-primary to-primary/20` gradient, i.e. a fade on a plain
+            content rule: the design system allows a gradient on a hero,
+            a CTA or a signature surface, not on a divider, and a
+            gradient that fades out carries no information a reader can
+            act on.  It is now one solid accent step at the same size
+            (4px tall, 48px wide). */}
+        <div className="h-1 w-12 bg-primary rounded-full" />
       </div>
 
       {/* Section Content */}
@@ -336,9 +343,18 @@ function SectionBlock({
                 isEditMode ? "ring-1 ring-primary/15 border-primary/10" : "border-border/25 hover:border-border/40"
               )}
             >
+              {/* The accent edge along the top of a sub-clause card.  In
+                  read mode it was a three-stop gradient
+                  (`primary/15 → primary/5 → transparent`) that faded into
+                  the card: a gradient wash on a plain content surface,
+                  which the design system rejects.  It is now one solid
+                  single-hue rule at the same 2px height — the accent's
+                  own 15% step, the most saturated stop of the fade it
+                  replaces, so the edge still reads as an accent and not
+                  as a saturated bar. */}
               <div className={cn(
                 "h-0.5",
-                isEditMode ? "bg-primary" : "bg-gradient-to-r from-primary/15 via-primary/5 to-transparent"
+                isEditMode ? "bg-primary" : "bg-primary/15"
               )} />
               <div className="p-4 md:p-5">
                 <div className="flex items-center gap-2 mb-3">

@@ -349,7 +349,16 @@ export default function ProceduresPage() {
                       ) : (
                         <h2 className="text-xl md:text-2xl font-extrabold tracking-tight text-foreground">{proc.title}</h2>
                       )}
-                      <div className="h-1 w-12 bg-gradient-to-r from-primary to-primary/20 rounded-full" />
+                      {/* The accent mark under an SOP title.  It was a
+                          `from-primary to-primary/20` gradient, i.e. a
+                          fade on a plain content rule: the design system
+                          allows a gradient on a hero, a CTA or a
+                          signature surface, not on a divider, and a
+                          gradient that fades out carries no information
+                          a reader can act on.  It is now one solid
+                          accent step at the same size (4px tall, 48px
+                          wide). */}
+                      <div className="h-1 w-12 bg-primary rounded-full" />
                     </div>
 
                     {/* Purpose & Scope & Responsibilities */}

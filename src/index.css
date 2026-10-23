@@ -66,10 +66,11 @@
          white/70  5.94:1   white/80  7.24:1
          white/90  8.71:1   white/100 10.36:1
          chip (white/20 ground, white/100 text) 5.93:1
-       The previous pair (#184486 → #2727b9) was LIGHTER than the
-       seventeen accent ramps beside it and fell to 4.52:1 at white/70;
-       this pair is the blue 900/950 step the other slots use, so all
-       eighteen forms now read at the same depth. ── */
+       The previous pair (#184486 → #2727b9) was LIGHTER and fell to
+       4.52:1 at white/70.  This pair clears AA at every tier.  It is
+       also the ONLY masthead ramp: the eighteen-hue per-form ramp was
+       removed, because a form is identified by its code and section,
+       never by a hue of its own. ── */
     --masthead-from: 224.4 64.3% 32.94%;   /* #1e3a8a */
     --masthead-to: 226.2 57% 20.98%;       /* #172554 */
 
@@ -91,17 +92,27 @@
     --popover: 0 0% 100%;
     --popover-foreground: 240 3% 11.76%;
 
-    /* ── Brand — Apple blue ── */
-    --primary: 210 100% 44.51%;     /* #0071e3 */
-    --primary-foreground: 0 0% 100%;
+    /* ── Brand — Apple blue ──
+       The tenant's own colour, when there is one, arrives as the
+       `--brand-*` set (see `src/config/brandColors.ts`) and these tokens
+       read it.  Each `var()` carries the blue as its fallback, so a
+       QBase with no tenant configured keeps the design system's own
+       palette — the brand overrides are additive, never a replacement.
+
+       The family moves together on purpose: the fill, the text on it, the
+       focus ring, the hover step and the wash are all the tenant's hue.
+       Overriding only the fill is what left the app showing a green
+       button beside blue links — two accents in one view. */
+    --primary: var(--brand-fill, 210 100% 44.51%);          /* #0071e3 */
+    --primary-foreground: var(--brand-fill-fg, 0 0% 100%);
 
     /* ── Neutrals ── */
     --secondary: 240 6% 93.33%;     /* #ededef */
     --secondary-foreground: 240 3% 11.76%;
     --muted: 240 7% 94.51%;         /* #f0f0f2 */
     --muted-foreground: 240 2% 44.12%; /* #6e6e73 */
-    --accent: 214 84% 95.1%;        /* #e8f1fd — accent wash */
-    --accent-foreground: 210 100% 40%; /* #0066cc — 4.89:1 on the wash */
+    --accent: var(--brand-accent, 214 84% 95.1%);        /* #e8f1fd — accent wash */
+    --accent-foreground: var(--brand-tint, 210 100% 40%); /* #0066cc — 4.89:1 on the wash */
 
     /* ── Semantic ──
        Each family has four roles, and their pairing is a contract:
@@ -139,17 +150,17 @@
     --warning-solid: 26 90% 37.06%;        /* #b45309 — white on it 5.02:1 */
     --warning-tint: 26 90% 30.81%;         /* #954508 — on a /25 tint 4.54:1 */
     --warning-hover: 26 90% 30.81%;        /* #954508 — white on it 6.70:1 */
-    --info: 210 100% 44.51%;
-    --info-foreground: 0 0% 100%;
-    --info-tint: 210 100% 35.01%;          /* #0059b3 — on a /10 tint 5.82:1 */
-    --primary-solid: 210 100% 44.51%;     /* #0071e3 — white on it 4.70:1 */
-    --primary-tint: 210 100% 35.01%;      /* #0059b3 — on a /25 tint 4.56:1 */
-    --primary-hover: 210 100% 40%;        /* #0066cc — white on it 5.57:1 */
+    --info: var(--brand-fill, 210 100% 44.51%);
+    --info-foreground: var(--brand-fill-fg, 0 0% 100%);
+    --info-tint: var(--brand-tint, 210 100% 35.01%);  /* #0059b3 — on a /10 tint 5.82:1 */
+    --primary-solid: var(--brand-fill, 210 100% 44.51%); /* #0071e3 — white on it 4.70:1 */
+    --primary-tint: var(--brand-tint, 210 100% 35.01%);  /* #0059b3 — on a /25 tint 4.56:1 */
+    --primary-hover: var(--brand-hover, 210 100% 40%);  /* #0066cc — white on it 5.57:1 */
 
     /* ── Interactive — hairline, not a hard rule ── */
     --border: 240 6% 89.61%;        /* #e3e3e6 */
     --input: 240 6% 89.61%;
-    --ring: 210 100% 44.51%;
+    --ring: var(--brand-fill, 210 100% 44.51%);
 
     /* ── Component greys ── */
     --track: 240 12% 91.96%;        /* #e8e8ed — meter / toggle-off track */
@@ -193,8 +204,8 @@
     --popover: 240 3% 14.51%;
     --popover-foreground: 240 11% 96.47%;
 
-    --primary: 210 100% 51.96%;     /* #0a84ff */
-    --primary-foreground: 240 3% 7.25%;  /* #121213 — 5.13:1 on the fill */
+    --primary: var(--brand-fill, 210 100% 51.96%);  /* #0a84ff */
+    --primary-foreground: var(--brand-fill-fg, 240 3% 7.25%);  /* #121213 — 5.13:1 on the fill */
 
     --secondary: 240 2% 17.65%;     /* #2c2c2e */
     --secondary-foreground: 240 11% 96.47%;
@@ -210,8 +221,8 @@
        relationship the light mode has: a quiet blue-tinted wash that
        LIFTS off the surface it sits on (1.20:1 over the card) and
        carries its own foreground. */
-    --accent: 211 30% 23%;          /* #293a4c — blue-tinted wash */
-    --accent-foreground: 210 100% 68.46%; /* #5eafff — 5.02:1 on the wash */
+    --accent: var(--brand-accent-dark, 211 30% 23%);  /* #293a4c — blue-tinted wash */
+    --accent-foreground: var(--brand-tint-dark, 210 100% 68.46%); /* #5eafff — 5.02:1 on the wash */
 
     --destructive: 3 100% 61.37%;   /* #ff453a */
     --destructive-foreground: 240 3% 7.25%;
@@ -222,8 +233,8 @@
     --warning: 36 100% 51.96%;      /* #ff9f0a */
     --warning-foreground: 240 3% 7.25%;
 
-    --info: 210 100% 51.96%;
-    --info-foreground: 240 3% 7.25%;
+    --info: var(--brand-fill, 210 100% 51.96%);
+    --info-foreground: var(--brand-fill-fg, 240 3% 7.25%);
 
     /* ── Filled variants are PINNED across modes ──
        A saturated surface carrying white text must keep ≥ 4.5:1 in
@@ -233,7 +244,7 @@
     --destructive-solid: 354 100% 42.16%;  /* #d70016 */
     --success-solid: 141 62% 29.61%;       /* #1d7a3d */
     --warning-solid: 26 90% 37.06%;        /* #b45309 */
-    --primary-solid: 210 100% 44.51%;     /* #0071e3 */
+    --primary-solid: var(--brand-fill, 210 100% 44.51%);  /* #0071e3 */
 
     /* ── Hover step ──
        The hover state used to be `bg-x/90`, which LIGHENS the fill
@@ -245,7 +256,7 @@
          success     light 6.66:1   dark 9.97:1
          warning     light 6.70:1   dark 10.50:1
          destructive light 7.42:1   dark 6.72:1 */
-    --primary-hover: 211 100% 61.96%;      /* #3d9bff */
+    --primary-hover: var(--brand-hover, 211 100% 61.96%);  /* #3d9bff */
     --success-hover: 140 68% 52.75%;       /* #35d86b */
     --warning-hover: 36 100% 62.55%;       /* #ffb340 */
     --destructive-hover: 3 100% 69.41%;    /* #ff6b63 */
@@ -258,12 +269,12 @@
     --destructive-tint: 3 100% 75.62%;     /* #ff838f — on a /25 tint 4.50:1 */
     --success-tint: 135 64% 50.39%;        /* #32cf69 — on a /25 tint 4.97:1 */
     --warning-tint: 36 100% 60.71%;        /* #f58f41 — on a /25 tint 4.50:1 */
-    --primary-tint: 210 100% 68.46%;       /* #5eafff — on a /25 tint 4.52:1 */
-    --info-tint: 210 100% 68.46%;          /* #5eafff — on a /10 tint 6.16:1 */
+    --primary-tint: var(--brand-tint-dark, 210 100% 68.46%);  /* #5eafff — on a /25 tint 4.52:1 */
+    --info-tint: var(--brand-tint-dark, 210 100% 68.46%);  /* #5eafff — on a /10 tint 6.16:1 */
 
     --border: 240 2% 23.14%;        /* #3a3a3c */
     --input: 240 2% 23.14%;
-    --ring: 210 100% 51.96%;
+    --ring: var(--brand-fill, 210 100% 51.96%);
 
     --track: 240 2% 23.14%;
     --faint: 240 2% 23.14%;
@@ -447,12 +458,18 @@
     box-shadow: 0 1px 12px rgb(0 0 0 / 0.04);
   }
 
-  /* Glass element sitting on a colored ground (needs something to refract) */
+  /* Glass element sitting on a colored ground (needs something to refract).
+     The chip is the same frost as the nav, only finer: 8px of blur
+     instead of 20px, because a small element has less background to
+     absorb.  The saturation step is not optional — without it the
+     backdrop is desaturated and the chip reads as a flat wash instead
+     of glass, and the design system's recipe is `saturate(180%)` on
+     every frosted surface. */
   .glass-chip {
     background: rgb(255 255 255 / 0.16);
     border: 1px solid rgb(255 255 255 / 0.22);
-    backdrop-filter: blur(8px);
-    -webkit-backdrop-filter: blur(8px);
+    backdrop-filter: saturate(180%) blur(8px);
+    -webkit-backdrop-filter: saturate(180%) blur(8px);
   }
 
   /* ── Status Pills — micro-saturated, one hue per state ──
@@ -577,6 +594,21 @@
     @apply outline-none ring-2 ring-primary/50 ring-offset-2;
     box-shadow: 0 0 0 3px hsl(var(--primary) / 0.08);
   }
+
+  /* ── Home-indicator inset for the mobile tab bar ──
+     The mobile bottom nav is pinned to the bottom of the viewport, so
+     on an iPhone the home indicator overlaps the last row of tabs.
+     `env(safe-area-inset-bottom)` reports the height of that bar and
+     the padding lifts the content clear of it.
+
+     The fallback is 0px because the inset is 0 everywhere else — a
+     desktop browser, a tablet without a home bar, or a browser that
+     does not implement the env() variables at all.  With 0px the rule
+     still applies and simply adds no padding, instead of the whole
+     declaration being dropped as invalid. */
+  .safe-area-bottom {
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
 }
 
 /* ══════════════════════════════════════════════════
@@ -591,7 +623,16 @@
      must not carry an opacity-fade entrance: "a re-render can stick it
      at 0".  AppShell mounted every route inside `.page-transition`, so
      the whole app was exposed to that trap.  Their keyframes are gone
-     too — dead motion code is still dead code. */
+     too — dead motion code is still dead code.
+
+     `animate-fade-up` no longer exists and is NOT coming back.  Two
+     call sites still ask for it — `src/pages/Login.tsx` and
+     `src/pages/ResetPassword.tsx` — so the class name resolves to
+     nothing and both entrances are dead: the elements render at their
+     final state with no motion at all.  That is the intended outcome
+     (the keyframes were removed on purpose), and the two usages are
+     being deleted in the components themselves; nothing here needs to
+     define them. */
 
   /* ── Live / online pulsing dot ── */
   .live-dot {
@@ -622,7 +663,16 @@
   }
 
   /* ── Accent line — a 2px accent rule along the top of a surface.
-     The one place a colour may act as a structural edge. ── */
+     The one place a colour may act as a structural edge.
+
+     It was a blue→purple gradient, which is the design system's
+     SIGNATURE gradient — and that gradient is sanctioned only on a
+     hero, a CTA, or placeholder art.  This rule is a plain divider
+     on a plain content card (the two call sites are the registration
+     card and the auth-callback card), and a multi-hue wash on plain
+     content is one of the things the colour rules forbid.  So the
+     gradient is gone and the line is a single solid accent: one hue,
+     one accent competing in the view, no second colour invented. ── */
   .accent-line-top {
     position: relative;
   }
@@ -633,11 +683,7 @@
     inset-inline: 0;
     top: 0;
     height: 2px;
-    background: linear-gradient(
-      90deg,
-      hsl(var(--primary)),
-      hsl(var(--accent-support))
-    );
+    background: hsl(var(--primary));
     border-radius: inherit;
   }
 
@@ -714,6 +760,25 @@
   to { opacity: 1; transform: translateY(0); }
 }
 
+/* ── `.animate-fade-in` — STILL DEFINED, BUT ON ITS WAY OUT ──
+   The design system's motion rule is that async-rendered content must
+   not carry an opacity-fade entrance: "a re-render can stick it at 0",
+   and a fade that plays over a skeleton reads as a glitch rather than
+   as motion.
+
+   The class is used in three places:
+     src/pages/NotFound.tsx    — the 404 panel
+     src/pages/Register.tsx    — the brand mark, and the card
+   Both routes are `lazy()`-loaded behind a `<Suspense>` boundary
+   (`src/App.tsx`), so both surfaces arrive by an async swap: the
+   loader is replaced by the content, and the fade plays over exactly
+   that handover.  That is the "fade over a skeleton" case the motion
+   rule rejects, so the usages are being removed in the components
+   themselves — this stylesheet is only the record of that decision.
+
+   The class stays defined here for now: the components that use it
+   are owned elsewhere, and removing the definition before the usages
+   are gone would leave them silently unstyled. */
 .animate-fade-in {
   animation: fade-in 0.2s var(--ease-out-quart) both;
 }
@@ -735,13 +800,59 @@
   }
 }
 
-/* Reduced transparency — glass loses its blur, keeps its contrast. */
+/* Reduced transparency — glass loses its blur, keeps its contrast.
+
+   `hsl(var(--card))`, NOT `var(--card)`: `--card` is an HSL TRIPLE
+   (0 0% 100% light, 240 3% 11.37% dark), so the bare triple is not a
+   colour at all — the declaration is invalid at computed-value time and
+   the surface computes to `rgba(0, 0, 0, 0)`, i.e. fully transparent.
+   That is the exact opposite of what this query is for: the user asked
+   for LESS transparency and the glass became MORE transparent than the
+   default.  Reading the token the way every other consumer reads it
+   (`tailwind.config.ts` → `card: "hsl(var(--card))"`) makes it opaque. */
 @media (prefers-reduced-transparency: reduce) {
   .glass,
   .glass-chip {
     backdrop-filter: none !important;
     -webkit-backdrop-filter: none !important;
-    background: var(--card) !important;
+    background: hsl(var(--card)) !important;
+  }
+}
+
+/* ── No backdrop-filter support ──
+   The frost IS a blur: with `backdrop-filter` unsupported the element
+   keeps its translucent background and simply stops frosting, so the
+   page shows through it unblurred and the text on top loses its
+   contrast.  This is the same failure the reduced-transparency query
+   above fixes, reached by a different route — a browser that cannot
+   do the blur at all (older Firefox, older Edge, some embedded
+   webviews) rather than a user who asked for less transparency.
+
+   So the filter goes, and the surface goes OPAQUE.  It has to become a
+   solid surface, not a transparent one: dropping the blur alone would
+   leave a see-through panel that the content behind it runs through.
+   `--card` is the app's own surface token, so the fallback panel still
+   matches the palette in both light and dark mode; the chip is white
+   at 90% because it sits on a colored ground, where a card-white
+   would break the ground it is placed on.
+
+   `!important` because these rules are unlayered and the glass rules
+   they override live in the components layer, where Tailwind
+   utilities would otherwise win the cascade. */
+@supports not (backdrop-filter: blur(1px)) {
+  .glass,
+  .glass-chip,
+  .ds-sticky-bar {
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+  }
+
+  .glass {
+    background: hsl(var(--card)) !important;
+  }
+
+  .glass-chip {
+    background: rgb(255 255 255 / 0.9) !important;
   }
 }
 
@@ -772,10 +883,14 @@
   }
 
   /* Glass becomes solid — a translucent panel over a busy page is the
-     opposite of what "more contrast" asks for. */
+     opposite of what "more contrast" asks for.  `hsl(var(--card))`, not
+     the bare triple: `--card` is an HSL triple, and the bare form is an
+     invalid colour that computes to fully transparent — which would
+     leave the glass MORE transparent than the default, the opposite of
+     what this query is for. */
   .glass,
   .glass-chip {
-    background: var(--card) !important;
+    background: hsl(var(--card)) !important;
     backdrop-filter: none !important;
     -webkit-backdrop-filter: none !important;
     border-color: var(--border) !important;

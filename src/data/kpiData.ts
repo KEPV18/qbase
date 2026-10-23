@@ -90,36 +90,31 @@ export const calculateKPIAchievement = (kpi: KPI): number => {
 };
 
 /**
- * KPI category → chip classes.
+ * KPI categories are LABELS, not statuses — and they are deliberately
+ * uncoloured.
  *
- * These were raw Tailwind palette hexes painted as a filled badge with
- * `#fff` text.  Measured against the design system's own surfaces, three
- * of the seven failed WCAG AA on the fill:
+ * A per-category palette used to live here: seven categories mapped onto
+ * five hues (success / primary / warning / destructive / muted), which put
+ * green, blue, red, orange, cyan and teal chips on a single role card.
+ * Two of the raw fills also failed WCAG AA against their own text:
  *
  *   emerald-500 #10b981  2.54:1  FAIL
  *   amber-500   #f59e0b  2.15:1  FAIL
  *   cyan-500    #06b6d4  2.43:1  FAIL
  *
- * The other four were AA-large-only, i.e. failing for 12px badge text.
+ * But the accessibility failure was the smaller problem.  The design
+ * system gives colour MEANING — accent, heat, status — and a categorical
+ * tag has no status to report, so every hue was decoration.  A reader
+ * cannot tell "Data Quality & Accuracy" from "Project Delivery" by
+ * colour; only the words do that.
  *
- * A KPI category is not a status — it is a categorical label, and the
- * design system allows one accent per view.  Colour is therefore reserved
- * for the axis that IS a status: the achievement badge (default / secondary
- * / destructive).  The category chip itself is a neutral surface, and a
- * small dot carries the identity in the legend.
+ * So a category renders as the system's own neutral tag
+ * (`<Badge variant="secondary" />`), and colour on the KPI surfaces is
+ * reserved for the axes that ARE statuses: the weight validity and the
+ * achievement score.  There is deliberately no category palette to
+ * reinstate — if a category ever needs to stand out, it has become a
+ * status, and it should say so in the data model.
  */
-export const getCategoryChip = (category: string): { dot: string; chip: string } => {
-  const chips: Record<string, { dot: string; chip: string }> = {
-    'Data Quality & Accuracy': { dot: "bg-success", chip: "bg-success/10 dark:bg-success/15 text-success-tint" },
-    'Team Management': { dot: "bg-primary", chip: "bg-primary/10 dark:bg-primary/15 text-primary-tint" },
-    'Project Delivery': { dot: "bg-warning", chip: "bg-warning/10 dark:bg-warning/15 text-warning-tint" },
-    'Quality Management': { dot: "bg-destructive", chip: "bg-destructive/10 dark:bg-destructive/15 text-destructive-tint" },
-    'Training & Development': { dot: "bg-ink-3", chip: "bg-muted text-ink-2 dark:text-ink-2" },
-    'Client Satisfaction': { dot: "bg-primary", chip: "bg-primary/10 dark:bg-primary/15 text-primary-tint" },
-    'Strategic Objectives': { dot: "bg-ink-3", chip: "bg-muted text-ink-2 dark:text-ink-2" },
-  };
-  return chips[category] || { dot: "bg-ink-3", chip: "bg-muted text-ink-2 dark:text-ink-2" };
-};
 
 // Helper to map projects to team leaders
 export const getTeamLeaderForProject = (projectName: string): RoleKPIData | undefined => {

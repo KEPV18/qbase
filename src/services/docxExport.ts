@@ -26,6 +26,16 @@ const SLATE_700 = '334155';
 const SLATE_900 = '0F172A';
 const WHITE = 'FFFFFF';
 
+// The face every run in the export names.  It was "Outfit", a webfont
+// the app itself no longer loads — the brand face is the Apple system
+// stack (see `tailwind.config.ts`) — and a `.docx` carries no font
+// binaries, so Word was asked for a face that was neither installed nor
+// embedded and substituted a fallback of its own.  Calibri ships with
+// Word on Windows AND on Mac, so the reader gets the face the export
+// names, and being a humanist sans it still reads close to the
+// SF/PingFang look of the app it came from.
+const EXPORT_FONT = 'Calibri';
+
 const BORDER_STYLE: ITableBordersOptions = {
   top: { style: BorderStyle.SINGLE, size: 1, color: SLATE_300 },
   bottom: { style: BorderStyle.SINGLE, size: 1, color: SLATE_300 },
@@ -59,7 +69,7 @@ function getSectionHeading(text: string): Paragraph {
     heading: HeadingLevel.HEADING_2,
     spacing: { before: 300, after: 100 },
     children: [
-      new TextRun({ text, bold: true, color: INDIGO, size: 26, font: 'Outfit' }),
+      new TextRun({ text, bold: true, color: INDIGO, size: 26, font: EXPORT_FONT }),
     ],
   });
 }
@@ -69,7 +79,7 @@ function getFormHeading(schema: FormSchema): Paragraph {
     heading: HeadingLevel.HEADING_1,
     spacing: { after: 200 },
     children: [
-      new TextRun({ text: `${schema.code} — ${schema.name}`, bold: true, size: 36, font: 'Outfit', color: SLATE_900 }),
+      new TextRun({ text: `${schema.code} — ${schema.name}`, bold: true, size: 36, font: EXPORT_FONT, color: SLATE_900 }),
     ],
   });
 }
@@ -100,12 +110,12 @@ function buildMetadataTable(record: Record<string, unknown>): Table {
             width: { size: 30, type: WidthType.PERCENTAGE },
             borders: BORDER_STYLE,
             shading: { fill: SLATE_100 },
-            children: [new Paragraph({ children: [new TextRun({ text: String(label), bold: true, size: 20, font: 'Outfit', color: SLATE_700 })] })],
+            children: [new Paragraph({ children: [new TextRun({ text: String(label), bold: true, size: 20, font: EXPORT_FONT, color: SLATE_700 })] })],
           }),
           new TableCell({
             width: { size: 70, type: WidthType.PERCENTAGE },
             borders: BORDER_STYLE,
-            children: [new Paragraph({ children: [new TextRun({ text: formatFieldValue(value), size: 20, font: 'Outfit', color: SLATE_900 })] })],
+            children: [new Paragraph({ children: [new TextRun({ text: formatFieldValue(value), size: 20, font: EXPORT_FONT, color: SLATE_900 })] })],
           }),
         ],
       })
@@ -133,7 +143,7 @@ function buildFieldsTable(schema: FormSchema, record: Record<string, unknown>): 
         paragraphs.push(
           new Paragraph({
             spacing: { before: 150 },
-            children: [new TextRun({ text: currentSection, bold: true, size: 22, font: 'Outfit', color: SLATE_700 })],
+            children: [new TextRun({ text: currentSection, bold: true, size: 22, font: EXPORT_FONT, color: SLATE_700 })],
           })
         );
         paragraphs.push(new Table({ rows: [...rows], width: { size: 100, type: WidthType.PERCENTAGE } }));
@@ -153,12 +163,12 @@ function buildFieldsTable(schema: FormSchema, record: Record<string, unknown>): 
             width: { size: 35, type: WidthType.PERCENTAGE },
             borders: BORDER_STYLE,
             shading: { fill: SLATE_100 },
-            children: [new Paragraph({ children: [new TextRun({ text: field.label, bold: true, size: 20, font: 'Outfit', color: SLATE_700 })] })],
+            children: [new Paragraph({ children: [new TextRun({ text: field.label, bold: true, size: 20, font: EXPORT_FONT, color: SLATE_700 })] })],
           }),
           new TableCell({
             width: { size: 65, type: WidthType.PERCENTAGE },
             borders: BORDER_STYLE,
-            children: [new Paragraph({ children: [new TextRun({ text: displayValue, size: 20, font: 'Outfit', color: SLATE_900 })] })],
+            children: [new Paragraph({ children: [new TextRun({ text: displayValue, size: 20, font: EXPORT_FONT, color: SLATE_900 })] })],
           }),
         ],
       })
@@ -171,7 +181,7 @@ function buildFieldsTable(schema: FormSchema, record: Record<string, unknown>): 
       paragraphs.push(
         new Paragraph({
           spacing: { before: 150 },
-          children: [new TextRun({ text: currentSection, bold: true, size: 22, font: 'Outfit', color: SLATE_700 })],
+          children: [new TextRun({ text: currentSection, bold: true, size: 22, font: EXPORT_FONT, color: SLATE_700 })],
         })
       );
     }
@@ -198,7 +208,7 @@ function buildSubTables(schema: FormSchema, record: Record<string, unknown>): (P
     paragraphs.push(
       new Paragraph({
         spacing: { before: 200 },
-        children: [new TextRun({ text: field.label, bold: true, size: 22, font: 'Outfit', color: INDIGO })],
+        children: [new TextRun({ text: field.label, bold: true, size: 22, font: EXPORT_FONT, color: INDIGO })],
       })
     );
 
@@ -207,7 +217,7 @@ function buildSubTables(schema: FormSchema, record: Record<string, unknown>): (P
       new TableCell({
         borders: BORDER_STYLE,
         shading: { fill: INDIGO },
-        children: [new Paragraph({ children: [new TextRun({ text: col.label, bold: true, size: 18, font: 'Outfit', color: WHITE })] })],
+        children: [new Paragraph({ children: [new TextRun({ text: col.label, bold: true, size: 18, font: EXPORT_FONT, color: WHITE })] })],
       })
     );
 
@@ -216,7 +226,7 @@ function buildSubTables(schema: FormSchema, record: Record<string, unknown>): (P
         children: field.columns!.map(col =>
           new TableCell({
             borders: BORDER_STYLE,
-            children: [new Paragraph({ children: [new TextRun({ text: formatFieldForTable(row[col.key]), size: 18, font: 'Outfit', color: SLATE_900 })] })],
+            children: [new Paragraph({ children: [new TextRun({ text: formatFieldForTable(row[col.key]), size: 18, font: EXPORT_FONT, color: SLATE_900 })] })],
           })
         ),
       })
@@ -245,7 +255,7 @@ function buildFooter(record: Record<string, unknown>): Paragraph[] {
       spacing: { before: 100 },
       border: { top: { style: BorderStyle.SINGLE, size: 1, color: SLATE_300 } },
       children: [
-        new TextRun({ text: `Generated by QBase — ${serial} — Exported ${exported}`, size: 16, color: SLATE_500, font: 'Outfit', italics: true }),
+        new TextRun({ text: `Generated by QBase — ${serial} — Exported ${exported}`, size: 16, color: SLATE_500, font: EXPORT_FONT, italics: true }),
       ],
     }),
   ];
@@ -271,7 +281,7 @@ export async function exportRecordToDocx(record: Record<string, unknown>): Promi
   // Description
   children.push(new Paragraph({
     spacing: { after: 200 },
-    children: [new TextRun({ text: schema.description, italics: true, size: 20, color: SLATE_500, font: 'Outfit' })],
+    children: [new TextRun({ text: schema.description, italics: true, size: 20, color: SLATE_500, font: EXPORT_FONT })],
   }));
 
   // Section: Record Information
@@ -328,7 +338,7 @@ export async function exportRecordsToDocx(records: Record<string, unknown>[]): P
     children.push(getFormHeading(schema));
     children.push(new Paragraph({
       spacing: { after: 200 },
-      children: [new TextRun({ text: schema.description, italics: true, size: 20, color: SLATE_500, font: 'Outfit' })],
+      children: [new TextRun({ text: schema.description, italics: true, size: 20, color: SLATE_500, font: EXPORT_FONT })],
     }));
 
     children.push(getSectionHeading('Record Information'));

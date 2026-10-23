@@ -75,7 +75,22 @@ function SidebarNavItem({
       onClick={onClick}
       aria-current={isActive ? "page" : undefined}
       className={cn(
-        "w-full flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-medium transition-all duration-200",
+        // A nav row is 44px tall, not 40px.  `text-sm` sets a 20px line
+        // box and `py-3` adds 12px above and 12px below, so the row is
+        // 20 + 12 + 12 = 44px exactly.  The 40px row it replaces reached
+        // 44px only through the shared `::before` extension, which paints
+        // 2px of overhang above and below the row: worth nothing once the
+        // row is clipped by the nav's scroll viewport (the last four rows
+        // sit below the fold at a 950px window), and worth less where a
+        // later sibling paints over the band.  A row that is 44px tall on
+        // its own IS the target, with no paint order left to contest.
+        //
+        // The list grows by 4px per row — 16 rows, so 830px of content
+        // becomes 894px.  The rail's nav area already scrolls (see the
+        // `lg:h-screen` note on the `<aside>`), so the extra 64px is
+        // absorbed by that scroll viewport; the filters and the profile
+        // card below it are `shrink-0` and keep their space.
+        "w-full flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-all duration-200",
         isActive
           ? "bg-foreground text-white dark:bg-muted dark:text-foreground"
           : "text-muted-foreground hover:text-foreground hover:bg-muted"
@@ -272,7 +287,18 @@ export function Sidebar({ mobileOpen, onClose, sidebarOpen, onToggle }: { mobile
 
       <aside
         className={cn(
-          "fixed lg:static inset-y-0 left-0 z-50 bg-background/80 backdrop-blur-xl border-r border-border",
+          // Glass only where the rail actually overlaps something.  Below
+          // `lg` the rail is a `fixed` drawer: it covers the page and its
+          // own `bg-black/20` scrim, so the translucency and the blur read
+          // as depth.  From `lg` up the rail is `static` — in normal flow,
+          // overlapping nothing — so the blur had no layer to refract and
+          // the 80% background just let the page show through the rail
+          // for no reason.  The desktop rail is therefore a solid surface
+          // with the filter removed outright: `lg:backdrop-filter-none`
+          // rather than `lg:backdrop-blur-0`, which would leave a
+          // `backdrop-filter` in place on a surface that must not have
+          // one.  Same reasoning as the TopNav bar beside it.
+          "fixed lg:static inset-y-0 left-0 z-50 bg-background/80 backdrop-blur-xl lg:backdrop-filter-none lg:bg-background border-r border-border",
           "flex flex-col transition-all duration-300 ease-spring",
           // `lg:h-screen` keeps the rail exactly one viewport tall.  The
           // rail's content (16 nav items + the filters + the profile card)

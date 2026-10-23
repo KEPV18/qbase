@@ -87,12 +87,25 @@ export default function Register() {
         </div>
       </div>
 
-      <Card className="w-full max-w-[420px] shadow-xl border-support/10 rounded-sm overflow-hidden animate-fade-in bg-card accent-line-top">
+      <Card className="w-full max-w-[420px] shadow-xl border-primary/10 rounded-sm overflow-hidden animate-fade-in bg-card accent-line-top">
         <CardHeader className="text-center pt-10 pb-4">
           <div className="mb-5 relative mx-auto w-14 h-14">
-            <div className="absolute inset-0 bg-support/15 rounded-sm blur-xl animate-glow-pulse" />
-            <div className="relative w-14 h-14 bg-gradient-to-br from-support/20 to-primary/10 rounded-sm flex items-center justify-center border border-support/25">
-              <UserPlus className="w-6 h-6 text-support" />
+            {/* The icon badge, its halo and its ground were three
+                different hues: an indigo halo, an indigo→blue gradient
+                ground and an indigo glyph, on a card whose only other
+                accent is the blue `accent-line-top`.  That is the
+                "more than one accent in a view" case the design system
+                rejects, and the gradient was on a plain content badge
+                rather than on a hero, a CTA or a signature surface.  The
+                badge is now ONE hue: the accent's own 10% ground, its
+                20% hairline, the 15% halo behind it, and the glyph in
+                `primary-tint` — the token reserved for text sitting on a
+                tint of its own family.  The card's `accent-line-top` is
+                the accent's own solid hue too, so the whole view speaks
+                with one voice. */}
+            <div className="absolute inset-0 bg-primary/15 rounded-sm blur-xl animate-glow-pulse" />
+            <div className="relative w-14 h-14 bg-primary/10 rounded-sm flex items-center justify-center border border-primary/20">
+              <UserPlus className="w-6 h-6 text-primary-tint" />
             </div>
           </div>
           <CardTitle className="text-2xl font-bold tracking-tight">Create account</CardTitle>

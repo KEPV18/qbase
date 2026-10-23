@@ -125,7 +125,9 @@ export default function Login() {
       <div className="absolute top-0 right-0 w-[600px] h-[600px] bg-primary/5 rounded-full blur-[120px] -translate-y-1/2 translate-x-1/3 pointer-events-none" />
       <div className="absolute bottom-0 left-0 w-[400px] h-[400px] bg-primary/5 rounded-full blur-[100px] translate-y-1/3 -translate-x-1/4 pointer-events-none" />
 
-      <div className="w-full max-w-md relative z-10 animate-fade-up">
+      {/* `animate-fade-up` was removed from the stylesheet — the class no
+          longer exists, so it was never animating anything. */}
+      <div className="w-full max-w-md relative z-10">
         {/* Logo & Brand */}
         <div className="text-center mb-8">
           <div className="inline-flex items-center justify-center w-14 h-14 rounded-xl bg-primary/10 border border-primary/20 mb-4">

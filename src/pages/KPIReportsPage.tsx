@@ -6,12 +6,13 @@ import {
 } from "lucide-react";
 import {
   KPI_DATA, getAllCategories, getKPIStatistics,
-  getCategoryChip, calculateRoleKPIScore,
+  calculateRoleKPIScore,
   type RoleKPIData,
 } from "@/data/kpiData";
 import { AppShell } from "@/components/layout/AppShell";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { StatsRow } from "@/components/ui/StatsRow";
+import { PanelRow, PanelRows, UnifiedPanel } from "@/components/ui/UnifiedPanel";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -179,7 +180,7 @@ export default function KPIReportsPage() {
           <StatsRow
             className="mb-6"
             stats={[
-              { icon: FileText, value: filteredRoles.length, label: "Total Roles", variant: "info" },
+              { icon: FileText, value: filteredRoles.length, label: "Total Roles" },
               { icon: FileText, value: reportStats.totalKPIs, label: "Total KPIs" },
               { icon: CheckCircle2, value: `${reportStats.validWeightRoles}/${filteredRoles.length}`, label: "Valid Weights", variant: "success" },
               { icon: AlertCircle, value: `${reportStats.overallCompliance}%`, label: "Compliance Rate", variant: reportStats.overallCompliance >= 80 ? "success" : "warning" },
@@ -210,7 +211,7 @@ export default function KPIReportsPage() {
                             {idx === 0 && <TableCell rowSpan={role.kpis.length} className="font-medium align-top">{role.title}</TableCell>}
                             {idx === 0 && <TableCell rowSpan={role.kpis.length} className="align-top text-muted-foreground">{role.department}</TableCell>}
                             <TableCell>
-                              <Badge variant="secondary" className={cn("text-xs border-transparent", getCategoryChip(kpi.category).chip)}>
+                              <Badge variant="secondary">
                                 {kpi.category}
                               </Badge>
                             </TableCell>
@@ -247,10 +248,13 @@ export default function KPIReportsPage() {
                         <p className="text-xs text-muted-foreground">{role.department}</p>
                       </div>
                       <div className="flex items-center gap-2">
-                        <span className={cn("font-bold", isValid ? "text-success-tint" : "text-destructive-tint")}>
+                        {/* A valid weight is the NORMAL state — greyscale.
+                            The colour is spent on the role whose weights do
+                            not add up, which is the one that needs it. */}
+                        <span className={cn("font-bold tabular-nums", isValid ? "text-foreground" : "text-destructive-tint")}>
                           {(totalWeight * 100).toFixed(0)}%
                         </span>
-                        {isValid ? <CheckCircle2 className="w-5 h-5 text-success-tint" /> : <AlertCircle className="w-5 h-5 text-destructive-tint" />}
+                        {isValid ? <CheckCircle2 className="w-5 h-5 text-muted-foreground/60" /> : <AlertCircle className="w-5 h-5 text-destructive-tint" />}
                       </div>
                     </div>
                   );
@@ -259,23 +263,28 @@ export default function KPIReportsPage() {
             </CardContent>
           </Card>
 
-          <Card className="mt-6 bg-warning/10 dark:bg-warning/15 border-warning/30 dark:border-warning/40">
-            <CardContent className="pt-6">
-              <div className="flex items-start gap-3">
-                <Info className="w-5 h-5 text-warning-tint dark:text-warning-tint mt-0.5 shrink-0" />
-                <div>
-                  <h4 className="font-medium text-warning-tint">ISO 9001:2015 Compliance Note</h4>
-                  <p className="text-sm text-warning-tint dark:text-warning-tint mt-1">
+          {/* The compliance note is INFORMATION, not a warning: it used to
+              be an amber card, which meant the export's own footer was the
+              loudest thing on the page.  It is now a neutral panel with the
+              system's info tint on the icon — the same treatment the KPI
+              dashboard gives the identical note. */}
+          <UnifiedPanel className="mt-6">
+            <PanelRows>
+              <PanelRow className="items-start">
+                <Info className="w-5 h-5 mt-0.5 shrink-0 text-info-tint" aria-hidden="true" />
+                <div className="min-w-0">
+                  <h4 className="text-sm font-semibold tracking-[-0.01em] text-foreground">ISO 9001:2015 Compliance Note</h4>
+                  <p className="text-sm text-muted-foreground mt-1 leading-relaxed">
                     This report documents Individual Performance Management (IPM) KPIs as required for
                     Management Review inputs (Clause 9.3.2). All KPI weights should sum to 100% per role.
                   </p>
-                  <p className="text-xs text-warning-tint mt-2">
+                  <p className="text-xs text-muted-foreground/70 mt-2 tabular-nums">
                     Generated: {new Date().toLocaleString()}
                   </p>
                 </div>
-              </div>
-            </CardContent>
-          </Card>
+              </PanelRow>
+            </PanelRows>
+          </UnifiedPanel>
         </div>
       </div>
     </AppShell>

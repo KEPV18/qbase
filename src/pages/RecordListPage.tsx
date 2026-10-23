@@ -23,6 +23,7 @@ import { exportRecordsToDocx } from '../services/docxExport';
 import { exportRecordsToJson, exportRecordsToCsv } from '../services/fileExport';
 import { toast } from 'sonner';
 import { AppShell } from '@/components/layout/AppShell';
+import { PanelHeader, PanelRow, PanelRows, UnifiedPanel } from '@/components/ui/UnifiedPanel';
 import {
   getMonthsFromRecords, monthLabel, monthShortLabel,
   getRecordMonth, getAllBusinessMonths,
@@ -34,17 +35,29 @@ import {
 
 const PAGE_SIZE = 12;
 
+/**
+ * The status tag in the record list.
+ *
+ * A column of coloured chips is the "colour as decoration" anti-pattern:
+ * nine hues down one column, one per workflow state, and not one of those
+ * states is an alarm.  So every normal state shares the system's neutral
+ * tag — the same neutral the KPI categories use — and the colour is left
+ * for the single state that means something is stuck.
+ */
+const NEUTRAL_STATUS =
+  'bg-ink/5 text-muted-foreground border-ink/10 dark:bg-ink/10 dark:border-ink/15 dark:text-ink-3';
+
 const STATUS_STYLES: Record<string, string> = {
-  'Open': 'bg-destructive/15 text-destructive-tint border-destructive/25',
-  'In Progress': 'bg-warning/15 text-warning-tint border-warning/25',
-  'Closed': 'bg-success/15 text-success-tint border-success/25',
-  'Verified': 'bg-primary/15 text-primary-tint border-primary/25',
-  'Active': 'bg-success/15 text-success-tint border-success/25',
-  'Completed': 'bg-success/15 text-success-tint border-success/25',
+  'Open': NEUTRAL_STATUS,
+  'In Progress': NEUTRAL_STATUS,
+  'Closed': NEUTRAL_STATUS,
+  'Verified': NEUTRAL_STATUS,
+  'Active': NEUTRAL_STATUS,
+  'Completed': NEUTRAL_STATUS,
   'On Hold': 'bg-warning/15 text-warning-tint border-warning/25',
-  'Achieved': 'bg-success/15 text-success-tint border-success/25',
-  'On Track': 'bg-primary/15 text-primary-tint border-primary/25',
-  'Planned': 'bg-ink/15 text-ink-3 border-ink/25',
+  'Achieved': NEUTRAL_STATUS,
+  'On Track': NEUTRAL_STATUS,
+  'Planned': NEUTRAL_STATUS,
 };
 
 // ============================================================================
@@ -52,7 +65,11 @@ const STATUS_STYLES: Record<string, string> = {
 // ============================================================================
 
 const INTEGRITY_ICON: Record<RuleSeverity, React.ReactNode> = {
-  clean: <CheckCircle className="w-3.5 h-3.5 text-success-tint" />,
+  /* "Clean" is the NORMAL state, so its icon is greyscale: a column of
+     green checks is decoration — it spends the one colour the eye should
+     be saving for the rows that are actually wrong.  The warning and
+     critical icons keep their colour, because those ARE the signal. */
+  clean: <CheckCircle className="w-3.5 h-3.5 text-muted-foreground/60" />,
   warning: <AlertTriangle className="w-3.5 h-3.5 text-warning-tint" />,
   critical: <Shield className="w-3.5 h-3.5 text-destructive-tint" />,
 };
@@ -482,91 +499,104 @@ const RecordListPage: React.FC = () => {
         </div>
       ) : (
         <>
-          {/* Select All + Page info */}
-          <div className="flex items-center gap-3 mb-2 px-4 py-2 bg-secondary/30 border border-border rounded-t-sm">
-            <button onClick={toggleSelectAll} className="text-muted-foreground hover:text-primary-tint transition-colors ds-hit-44" title={selectedSerials.size === pagedRecords.length ? 'Deselect all' : 'Select all'}>
-              {selectedSerials.size === pagedRecords.length && pagedRecords.length > 0
-                ? <CheckSquare className="w-4 h-4" />
-                : <Square className="w-4 h-4" />}
-            </button>
-            <span className="text-xs text-muted-foreground">
-              Page {safePage} of {totalPages} · {pagedRecords.length} of {filteredRecords.length} records
-            </span>
-          </div>
+          {/* The record list is ONE panel with hairline-separated rows.
+              It used to be a `space-y-1` stack in which every record was
+              its own `bg-card border border-border` card — the design
+              system's first rule ("unified surface > fragmented cards")
+              says sibling items belong on one surface divided by
+              hairlines.  The select-all bar is the panel's header, so it
+              is separated from the rows by one hairline too.
 
-          <div className="space-y-1">
-            {pagedRecords.map((record, idx) => {
-              const risk = getEditRiskLevel(record);
-              const sev = integrityCache.get(record.serial as string) || 'clean';
-              const isSelected = selectedSerials.has(record.serial as string);
-              const status = (record.status as string) || '';
-
-              return (
+              The selected row keeps the accent tint: a selection IS the
+              one thing the accent colour is for.  The `animationDelay`
+              stagger was a no-op — the entrance keyframes it was written
+              for are gone from the stylesheet — so it is gone too. */}
+          <UnifiedPanel>
+            <PanelHeader
+              meta={`Page ${safePage} of ${totalPages} · ${pagedRecords.length} of ${filteredRecords.length} records`}
+              actions={
                 <button
-                  key={record.serial as string}
-                  onClick={() => navigate(`/records/${encodeURIComponent(record.serial as string)}`)}
-                  className={`w-full flex items-center gap-4 p-3 rounded-sm transition-all text-left group ds-press ${
-                    isSelected
-                      ? 'ds-card border-primary/40 bg-primary/5'
-                      : 'bg-card border border-border hover:border-foreground/20'
-                  }`}
-                  style={{ animationDelay: `${idx * 30}ms` }}
+                  onClick={toggleSelectAll}
+                  className="text-muted-foreground hover:text-primary-tint transition-colors ds-hit-44"
+                  title={selectedSerials.size === pagedRecords.length ? 'Deselect all' : 'Select all'}
                 >
-                  {/* Checkbox */}
-                  <div className="shrink-0" onClick={e => { e.stopPropagation(); toggleSelect(record.serial as string); }}>
-                    {isSelected
-                      ? <CheckSquare className="w-4 h-4 text-primary-tint cursor-pointer" />
-                      : <Square className="w-4 h-4 text-muted-foreground hover:text-primary-tint cursor-pointer transition-colors" />}
-                  </div>
+                  {selectedSerials.size === pagedRecords.length && pagedRecords.length > 0
+                    ? <CheckSquare className="w-4 h-4" />
+                    : <Square className="w-4 h-4" />}
+                </button>
+              }
+            />
+            <PanelRows>
+              {pagedRecords.map((record) => {
+                const risk = getEditRiskLevel(record);
+                const sev = integrityCache.get(record.serial as string) || 'clean';
+                const isSelected = selectedSerials.has(record.serial as string);
+                const status = (record.status as string) || '';
 
-                  {/* Integrity indicator */}
-                  <div className="shrink-0" title={sev === 'clean' ? 'No issues' : sev === 'warning' ? 'Has warnings' : 'Has critical issues'}>
-                    {INTEGRITY_ICON[sev]}
-                  </div>
+                return (
+                  <PanelRow
+                    key={record.serial as string}
+                    as="button"
+                    type="button"
+                    onClick={() => navigate(`/records/${encodeURIComponent(record.serial as string)}`)}
+                    className={`group ds-press ${isSelected ? 'bg-primary/5' : ''}`}
+                  >
+                    {/* Checkbox */}
+                    <div className="shrink-0" onClick={e => { e.stopPropagation(); toggleSelect(record.serial as string); }}>
+                      {isSelected
+                        ? <CheckSquare className="w-4 h-4 text-primary-tint cursor-pointer" />
+                        : <Square className="w-4 h-4 text-muted-foreground hover:text-primary-tint cursor-pointer transition-colors" />}
+                    </div>
 
-                  {/* Serial + Type */}
-                  <div className="w-28 shrink-0">
-                    <span className="font-mono text-sm font-semibold text-primary-tint group-hover:text-primary-tint/80 transition-colors">
-                      {record.serial as string}
-                    </span>
-                    <p className="text-xs text-muted-foreground mt-0.5">{record.formCode as string}</p>
-                  </div>
+                    {/* Integrity indicator */}
+                    <div className="shrink-0" title={sev === 'clean' ? 'No issues' : sev === 'warning' ? 'Has warnings' : 'Has critical issues'}>
+                      {INTEGRITY_ICON[sev]}
+                    </div>
 
-                  {/* Name + Status */}
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm text-foreground truncate group-hover:text-primary-tint/90 transition-colors">
-                      {record.formName as string}
-                    </p>
-                    <div className="flex items-center gap-2 mt-1">
-                      {status && (
-                        <span className={`px-2 py-0.5 text-[11px] font-medium rounded-full border ${STATUS_STYLES[status] || 'bg-muted text-muted-foreground border-border'}`}>
-                          {status}
-                        </span>
-                      )}
-                      {record.date && (
-                        <span className="text-xs text-muted-foreground font-mono">
-                          {isoToDisplay(record.date as string)}
+                    {/* Serial + Type */}
+                    <div className="w-28 shrink-0">
+                      <span className="font-mono text-sm font-semibold text-primary-tint group-hover:text-primary-tint/80 transition-colors">
+                        {record.serial as string}
+                      </span>
+                      <p className="text-xs text-muted-foreground mt-0.5">{record.formCode as string}</p>
+                    </div>
+
+                    {/* Name + Status */}
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm text-foreground truncate group-hover:text-primary-tint/90 transition-colors">
+                        {record.formName as string}
+                      </p>
+                      <div className="flex items-center gap-2 mt-1">
+                        {status && (
+                          <span className={`px-2 py-0.5 text-[11px] font-medium rounded-full border ${STATUS_STYLES[status] || 'bg-muted text-muted-foreground border-border'}`}>
+                            {status}
+                          </span>
+                        )}
+                        {record.date && (
+                          <span className="text-xs text-muted-foreground font-mono">
+                            {isoToDisplay(record.date as string)}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Edit count */}
+                    <div className="shrink-0 text-right">
+                      {(record._editCount as number) > 0 && (
+                        <span className={`text-[11px] font-medium px-1.5 py-0.5 rounded-sm ${
+                          risk === 'high' ? 'text-destructive-tint bg-destructive/10' : risk === 'medium' ? 'text-warning-tint bg-warning/10' : 'text-muted-foreground bg-muted'
+                        }`}>
+                          {(record._editCount as number)} edit{(record._editCount as number) !== 1 ? 's' : ''}
                         </span>
                       )}
                     </div>
-                  </div>
 
-                  {/* Edit count */}
-                  <div className="shrink-0 text-right">
-                    {(record._editCount as number) > 0 && (
-                      <span className={`text-[11px] font-medium px-1.5 py-0.5 rounded-sm ${
-                        risk === 'high' ? 'text-destructive-tint bg-destructive/10' : risk === 'medium' ? 'text-warning-tint bg-warning/10' : 'text-muted-foreground bg-muted'
-                      }`}>
-                        {(record._editCount as number)} edit{(record._editCount as number) !== 1 ? 's' : ''}
-                      </span>
-                    )}
-                  </div>
-
-                  <ChevronRightIcon className="w-4 h-4 text-muted-foreground/40 group-hover:text-primary-tint transition-colors shrink-0" />
-                </button>
-              );
-            })}
-          </div>
+                    <ChevronRightIcon className="w-4 h-4 text-muted-foreground/40 group-hover:text-primary-tint transition-colors shrink-0" />
+                  </PanelRow>
+                );
+              })}
+            </PanelRows>
+          </UnifiedPanel>
 
           {/* Pagination */}
           {totalPages > 1 && (

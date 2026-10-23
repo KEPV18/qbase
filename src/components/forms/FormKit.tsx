@@ -3,7 +3,8 @@
 // Single source of truth for ALL 35 form templates.
 // Enforces consistent VEZLOO header, form title bar, content area, and footer.
 // Theme-aware: uses CSS variables that adapt to light/dark mode.
-// Each form gets a unique accent color for visual variety and readability.
+// One accent for the whole record — the masthead ramp.  A form is
+// identified by its code, never by a hue of its own.
 // ============================================================================
 
 import React from "react";
@@ -38,9 +39,11 @@ export function val(data: Record<string, unknown> | undefined, key: string): str
 //
 // So the colour is moved, not multiplied: the BODY of a document is one
 // grayscale ink ramp, and the MASTHEAD — the one band that already says
-// "this is form F/11" — carries the form's own accent.  A form is still
-// recognisable at a glance, and the record still reads as paper:
-//   · masthead  — the form's deep accent ramp.  The document's ONE
+// "this is form F/11" — carries the document's single accent gradient.
+// A form is still recognisable at a glance — by the code chip, the
+// section name and the serial the band already prints — and the record
+// still reads as paper:
+//   · masthead  — the document's deep accent ramp.  The record's ONE
 //                 coloured surface; it carries the brand mark and the
 //                 form code, and nothing else in the record competes
 //                 with it.
@@ -52,24 +55,41 @@ export function val(data: Record<string, unknown> | undefined, key: string): str
 //   text-foreground on card       16.83:1  light / 15.63:1  dark
 //   text-ink-2      on card        5.07:1  light /  6.61:1  dark
 //   text-ink-2      on bg-muted/40 4.82:1  light /  6.40:1  dark
-//   white on a masthead ramp      5.24:1 (white/70, the lightest tier
-//                                 on the lightest of the eighteen) …
-//                                 8.73:1 (white/100 on that same ramp)
+//   white on the masthead ramp    5.94:1 (white/70, the lightest tier)
+//                                  7.24:1 (white/80)
+//                                  8.71:1 (white/90)
+//                                 10.36:1 (white/100)
 // ════════════════════════════════════════════════════════════════════════
 
 /* ── THE ACCENT ───────────────────────────────────────────────────────────
    A form carries ONE colour, and it is the masthead.  The body of the
    document stays in the document ink ramp, so a record reads as paper
-   and the accent reads as the form's identity: F/08 blue, F/11 amber,
-   F/22 red, and so on.  36 forms cycle 18 slots, so two adjacent form
-   numbers never share a hue and a form is recognisable at a glance.
+   and the accent reads as the record's identity.
 
-   The ramp is DEEP on purpose.  The masthead carries white text at 70%,
-   80% and 100% opacity over the band, and a mid-tone ramp (blue-600)
-   drops that secondary text to 2.9:1 — under AA.  At the 900/950 steps
-   every accent clears AA at every tier: across the eighteen slots the
-   worst case is 5.24:1 (white at 70% on lime-900), and the far stop
-   carries white/100 at 13.4:1 – 20.2:1. */
+   The accent used to be an EIGHTEEN-hue CATEGORICAL palette: each form
+   was assigned one of eighteen raw Tailwind hues (slate, emerald, amber,
+   …) and the masthead was painted with that hue's own 900/950 ramp.  That
+   is the pattern the design system rejects outright.  A categorical
+   palette is decoration, not wayfinding: it gave 36 records 18 arbitrary
+   hues, so the colour of a document said nothing a reader could act on,
+   and it put as many as eighteen competing colours on a page that
+   allows exactly one accent.  Hue is not how a QMS record is identified
+   — the form CODE is, and the band already prints it.
+
+   The ramp is now ONE tokenised pair for every form:
+   `--masthead-from` (#1e3a8a) → `--masthead-to` (#172554).  It is DEEP
+   on purpose.  The masthead carries white text at 70%, 80% and 100%
+   opacity over the band plus a white/20 chip ground, and the UI accent
+   (#0071e3) only reaches 4.70:1 with pure white — under AA at every
+   alpha — so the masthead uses a deeper pair of the same two hues.
+   Measured across the ramp (21 stops), every tier clears AA:
+     white/70  5.94:1   white/80  7.24:1
+     white/90  8.71:1   white/100 10.36:1
+     chip (white/20 ground, white/100 text) 5.93:1
+
+   The eighteen slot NAMES survive as a stable identifier — every form
+   is still assigned a slot, and the slot list is part of this module's
+   tested contract — but a slot no longer selects a hue. */
 export type FormAccent =
   | "blue" | "emerald" | "violet" | "amber" | "rose" | "cyan"
   | "indigo" | "orange" | "teal" | "pink" | "purple" | "lime"
@@ -124,49 +144,43 @@ const DOC_INK = {
 } satisfies Omit<FormAccentTokens, "gradient" | "gradientDark">;
 
 /**
- * The masthead ramp of each accent — the one surface in a document that
- * is allowed to be coloured.  Every slot is the SAME two steps of its
- * own hue (the 900 and 950 shades), so all eighteen forms read at one
- * depth.  Blue is the design system's own ramp and is spelled through
- * the `--masthead-from` / `--masthead-to` tokens; the other seventeen
- * name their hue's steps directly.
+ * The masthead ramp — the one surface in a document that is allowed to
+ * be coloured.  There is ONE ramp for every form, spelled through the
+ * `--masthead-from` / `--masthead-to` tokens, so all 36 records read at
+ * the same depth and no record carries a hue of its own.
  */
-const MASTHEAD_RAMPS: Record<FormAccent, { gradient: string; gradientDark: string }> = {
-  blue: { gradient: "from-masthead-from to-masthead-to", gradientDark: "dark:from-masthead-from dark:to-masthead-to" },
-  emerald: { gradient: "from-emerald-900 to-emerald-950", gradientDark: "dark:from-emerald-900 dark:to-emerald-950" },
-  violet: { gradient: "from-violet-900 to-violet-950", gradientDark: "dark:from-violet-900 dark:to-violet-950" },
-  amber: { gradient: "from-amber-900 to-amber-950", gradientDark: "dark:from-amber-900 dark:to-amber-950" },
-  rose: { gradient: "from-rose-900 to-rose-950", gradientDark: "dark:from-rose-900 dark:to-rose-950" },
-  cyan: { gradient: "from-cyan-900 to-cyan-950", gradientDark: "dark:from-cyan-900 dark:to-cyan-950" },
-  indigo: { gradient: "from-indigo-900 to-indigo-950", gradientDark: "dark:from-indigo-900 dark:to-indigo-950" },
-  orange: { gradient: "from-orange-900 to-orange-950", gradientDark: "dark:from-orange-900 dark:to-orange-950" },
-  teal: { gradient: "from-teal-900 to-teal-950", gradientDark: "dark:from-teal-900 dark:to-teal-950" },
-  pink: { gradient: "from-pink-900 to-pink-950", gradientDark: "dark:from-pink-900 dark:to-pink-950" },
-  purple: { gradient: "from-purple-900 to-purple-950", gradientDark: "dark:from-purple-900 dark:to-purple-950" },
-  lime: { gradient: "from-lime-900 to-lime-950", gradientDark: "dark:from-lime-900 dark:to-lime-950" },
-  sky: { gradient: "from-sky-900 to-sky-950", gradientDark: "dark:from-sky-900 dark:to-sky-950" },
-  fuchsia: { gradient: "from-fuchsia-900 to-fuchsia-950", gradientDark: "dark:from-fuchsia-900 dark:to-fuchsia-950" },
-  red: { gradient: "from-red-900 to-red-950", gradientDark: "dark:from-red-900 dark:to-red-950" },
-  green: { gradient: "from-green-900 to-green-950", gradientDark: "dark:from-green-900 dark:to-green-950" },
-  slate: { gradient: "from-slate-900 to-slate-950", gradientDark: "dark:from-slate-900 dark:to-slate-950" },
-  stone: { gradient: "from-stone-900 to-stone-950", gradientDark: "dark:from-stone-900 dark:to-stone-950" },
-};
+const MASTHEAD_RAMP = {
+  gradient: "from-masthead-from to-masthead-to",
+  gradientDark: "dark:from-masthead-from dark:to-masthead-to",
+} as const;
+
+/**
+ * The eighteen accent slots, in the order they have always been cycled
+ * in.  A slot is an identifier, not a colour: the ramp above is the same
+ * for all eighteen, so the list only has to keep the assignment table
+ * below exhaustive.
+ */
+const ACCENT_SLOTS: FormAccent[] = [
+  "blue", "emerald", "violet", "amber", "rose", "cyan",
+  "indigo", "orange", "teal", "pink", "purple", "lime",
+  "sky", "fuchsia", "red", "green", "slate", "stone",
+];
 
 const ACCENT_MAP: Record<FormAccent, FormAccentTokens> = Object.fromEntries(
-  (Object.keys(MASTHEAD_RAMPS) as FormAccent[]).map((slot) => [
+  ACCENT_SLOTS.map((slot) => [
     slot,
-    { ...DOC_INK, ...MASTHEAD_RAMPS[slot] },
+    { ...DOC_INK, ...MASTHEAD_RAMP },
   ]),
 ) as Record<FormAccent, FormAccentTokens>;
 
 /**
- * Which accent a form carries.
+ * Which accent slot a form carries.
  *
- * 36 forms, 18 accent slots — the codes are assigned in sequence and the
- * palette cycles, so adjacent form numbers never share a hue.  Every
- * registered code is mapped explicitly: a missing entry would fall back
- * to blue and make two forms look identical, which is exactly what
- * happened to F/46 and F/49 before the table was completed.
+ * 36 forms, 18 slots — the codes are assigned in sequence and the slots
+ * cycle, so adjacent form numbers never share a slot.  Every registered
+ * code is mapped explicitly: a missing entry would fall back to blue and
+ * put two forms in the same slot, which is exactly what happened to
+ * F/46 and F/49 before the table was completed.
  */
 const FORM_ACCENTS: Record<string, FormAccent> = {
   "F/08": "blue", "F/09": "emerald", "F/10": "violet",

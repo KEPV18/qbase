@@ -24,7 +24,8 @@ import {
   computeDeptHealth, type FormCompliance, type DeptHealth,
 } from "@/lib/compliance";
 import type { Period } from "@/lib/compliancePeriods";
-import { deptBorderStyle, deptAccentStyle } from "@/lib/departmentTheme";
+import { getDeptTheme } from "@/lib/departmentTheme";
+import { PanelCell, PanelCells, PanelHeader, PanelRow, PanelRows, UnifiedPanel } from "@/components/ui/UnifiedPanel";
 import {
   getMonthsFromRecords, monthLabel, monthShortLabel,
   getRecordMonth,
@@ -46,8 +47,14 @@ const DEPT_ORDER = [
 ];
 
 function StatusText({ status }: { status: string }) {
+  /* Only the state that needs attention carries colour.
+     The dashboard paints one of these per record row, and "Approved" is the
+     NORMAL state — seventeen green pills down a column is decoration, not
+     information, and the word already says what it is.  The amber is left
+     for the row that is actually waiting on someone.  (Same rule as the
+     SLA Health Pill below: greyscale for OK, colour for the exception.) */
   const colors: Record<string, string> = {
-    Approved: "bg-success/5 text-success-tint dark:bg-success/10",
+    Approved: "bg-ink/5 text-muted-foreground dark:bg-ink/10 dark:text-ink-3",
     Pending_Approval: "bg-warning/5 text-warning-tint dark:bg-warning/10",
     Draft: "bg-ink/5 text-muted-foreground dark:bg-ink/10 dark:text-ink-3",
   };
@@ -56,30 +63,34 @@ function StatusText({ status }: { status: string }) {
 }
 
 /* ─── SLA Health Pill ─────────────────────────────────────────────── */
-function HealthPill({ health, dept }: { health: DeptHealth; dept: string }) {
-  const accent = deptAccentStyle(dept);
+function HealthPill({ health }: { health: DeptHealth }) {
   if (health.status === 'healthy') {
+    /* The OK state is deliberately GRAYSCALE.  Colour is reserved for the
+       states that need attention, so the eye goes straight to the amber and
+       the red.  (The old code reached this by accident: it spread the
+       department theme's inline `color` over `text-success-tint`, and an
+       inline colour always wins — so the green was never painted.) */
     return (
-      <span className="inline-flex items-center gap-1 text-xs font-medium text-success-tint" style={{ ...accent, backgroundColor: undefined, border: 'none', padding: 0 }}>
+      <span className="inline-flex items-center gap-1 text-[10px] font-medium text-muted-foreground whitespace-nowrap">
         <CheckCircle className="w-3 h-3" /> Up to date
       </span>
     );
   }
   if (health.status === 'warning') {
     return (
-      <span className="inline-flex items-center gap-1 text-xs font-medium text-warning-tint">
+      <span className="inline-flex items-center gap-1 text-[10px] font-medium text-warning-tint whitespace-nowrap">
         <AlertTriangle className="w-3 h-3" /> {health.overdueCount} Overdue
       </span>
     );
   }
   return (
-    <span className="inline-flex items-center gap-1 text-xs font-medium text-destructive-tint">
+    <span className="inline-flex items-center gap-1 text-[10px] font-medium text-destructive-tint whitespace-nowrap">
       <ShieldAlert className="w-3 h-3" /> {health.overdueCount} Overdue
     </span>
   );
 }
 
-/* ─── Department Metric Card ──────────────────────────────────────── */
+/* ─── Department Metric Cell ──────────────────────────────────────── */
 function DeptMetricCard({
   dept,
   health,
@@ -91,34 +102,48 @@ function DeptMetricCard({
   isActive: boolean;
   onClick: () => void;
 }) {
-  const borderStyle = deptBorderStyle(dept);
+  /* The cell shows the department's SHORT label ("Sales", "R&D",
+     "Management") with the full name on hover.  Seven of these sit across
+     a 1080px grid, which leaves ~150px a cell — "Management &
+     Documentation" needs three lines there and used to push the whole row
+     30px past its container and clip the row's right-hand cells.  The
+     short labels already existed in `departmentTheme` for exactly this
+     reason; nothing had used them.
+
+     The cell is THREE lines, not two: the label, then the two figures,
+     then the status.  The status used to sit BESIDE the label, and at
+     seven across there was no room for both — the label truncated to
+     "Oper…" and the status wrapped onto two lines.  The status is the
+     one thing that must never be clipped, so it gets its own line. */
+  const shortLabel = getDeptTheme(dept).label;
   return (
-    <button
+    <PanelCell
+      as="button"
+      type="button"
       onClick={onClick}
-      style={borderStyle}
+      aria-pressed={isActive}
+      title={dept}
       className={cn(
-        "text-left rounded-xl border p-4 transition-all w-full",
-        isActive
-          ? "bg-card border-foreground/20 shadow-sm"
-          : "bg-card border-border dark:border-border hover:border-foreground/20"
+        "min-w-0 text-left transition-colors hover:bg-foreground/[0.03]",
+        isActive && "bg-foreground/[0.05] shadow-[inset_0_0_0_1px_hsl(var(--foreground)/0.18)]"
       )}
     >
-      <div className="flex items-center justify-between mb-2">
-        <p className="text-sm font-semibold text-foreground dark:text-foreground">{dept}</p>
-        <HealthPill health={health} dept={dept} />
-      </div>
-      <div className="flex items-center gap-4">
-        <div>
-          <p className="text-lg font-bold tabular-nums text-foreground dark:text-foreground">{health.totalForms}</p>
-          <p className="text-[10px] text-muted-foreground/70">Forms Available</p>
+      <p className="text-[13px] font-semibold text-foreground leading-tight truncate mb-2">{shortLabel}</p>
+      <div className="flex items-center gap-2">
+        <div className="min-w-0">
+          <p className="text-lg font-bold tabular-nums text-foreground leading-none">{health.totalForms}</p>
+          <p className="text-[10px] text-muted-foreground/70 mt-1">Forms</p>
         </div>
-        <div className="w-px h-8 bg-border dark:bg-border" />
-        <div>
-          <p className="text-lg font-bold tabular-nums text-foreground dark:text-foreground">{health.totalSubmissions}</p>
-          <p className="text-[10px] text-muted-foreground/70">Records Filed</p>
+        <div className="w-px h-8 bg-border" />
+        <div className="min-w-0">
+          <p className="text-lg font-bold tabular-nums text-foreground leading-none">{health.totalSubmissions}</p>
+          <p className="text-[10px] text-muted-foreground/70 mt-1">Filed</p>
         </div>
       </div>
-    </button>
+      <div className="mt-2">
+        <HealthPill health={health} />
+      </div>
+    </PanelCell>
   );
 }
 
@@ -166,50 +191,61 @@ function ComplianceRadarCard({
 }) {
   if (gaps.length === 0) {
     return (
-      <div className="px-4 py-3 bg-success/10 border border-success/20 rounded-xl">
-        <div className="flex items-center gap-2">
-          <CheckCircle className="w-4 h-4 text-success-tint" />
-          <span className="text-sm font-semibold text-success-tint">
+      <UnifiedPanel>
+        <div className="px-5 py-4 flex items-center gap-2">
+          <CheckCircle className="w-4 h-4 text-success-tint shrink-0" />
+          <span className="text-sm font-semibold text-foreground">
             All Recurring Forms Are Up to Date
           </span>
         </div>
-        <p className="text-xs text-success-tint/70 ml-6 mt-1">
-          No compliance gaps detected across monthly, quarterly, semi-annual, or annual forms.
-        </p>
-      </div>
+        <div className="px-5 pb-4 -mt-2">
+          <p className="text-xs text-muted-foreground ml-6">
+            No compliance gaps detected across monthly, quarterly, semi-annual, or annual forms.
+          </p>
+        </div>
+      </UnifiedPanel>
     );
   }
 
+  /* The radar used to be a full `bg-warning/10` block in which every one
+     of its rows was amber text on an amber ground — forty-odd chromatic
+     text nodes on one screen, which is the "colour as decoration" the
+     design system rejects.  It is ONE white panel now: the heat colour
+     stays on the icon and on the form code (the identifier), and the
+     description is ordinary ink. */
   return (
-    <div className="px-4 py-3 bg-warning/10 border border-warning/20 rounded-xl">
-      <div className="flex items-center gap-2 mb-3">
-        <Radar className="w-4 h-4 text-warning-tint" />
-        <span className="text-sm font-semibold text-warning-tint">
-          Compliance Radar — {gaps.length} Form{gaps.length > 1 ? 's' : ''} With Gaps
-        </span>
-      </div>
-      <div className="space-y-2">
+    <UnifiedPanel>
+      <PanelHeader
+        title={
+          <span className="flex items-center gap-2">
+            <Radar className="w-4 h-4 text-warning-tint" />
+            Compliance Radar
+          </span>
+        }
+        meta={`${gaps.length} form${gaps.length > 1 ? 's' : ''} with gaps`}
+      />
+      <PanelRows>
         {gaps.map(gap => {
           const shown = gap.periods.slice(0, 3);
           const rest = gap.periods.length - shown.length;
           return (
-            <div key={gap.code} className="flex items-start gap-3 ml-2">
+            <PanelRow key={gap.code} className="items-start">
               <AlertTriangle className="w-3.5 h-3.5 text-warning-tint mt-0.5 shrink-0" />
-              <div>
-                <p className="text-xs font-medium text-warning-tint">
-                  {gap.code} · {gap.name} — {gap.recordCount === 0 ? 'never filed' : 'missing for'}{' '}
+              <div className="min-w-0">
+                <p className="text-xs font-medium text-foreground">
+                  <span className="font-semibold text-warning-tint">{gap.code}</span> · {gap.name} — {gap.recordCount === 0 ? 'never filed' : 'missing for'}{' '}
                   {shown.map(p => p.label).join(', ')}
                   {rest > 0 ? ` +${rest} more` : ''}
                 </p>
-                <p className="text-[10px] text-warning-tint/70 mt-0.5">
+                <p className="text-[10px] text-muted-foreground mt-0.5">
                   {gap.frequency} form — {gap.periods.length} period{gap.periods.length > 1 ? 's' : ''} overdue ({gap.overdueDays} days)
                 </p>
               </div>
-            </div>
+            </PanelRow>
           );
         })}
-      </div>
-    </div>
+      </PanelRows>
+    </UnifiedPanel>
   );
 }
 
@@ -225,7 +261,7 @@ function DashboardStatsCard({ stats, isLoading, error }: {
 }) {
   if (isLoading) {
     return (
-      <div className="px-4 py-3 bg-card border rounded-xl animate-pulse" aria-busy="true">
+      <div className="ds-panel px-5 py-4 animate-pulse" aria-busy="true">
         <p className="text-sm font-semibold text-muted-foreground">Loading statistics…</p>
       </div>
     );
@@ -251,47 +287,57 @@ function DashboardStatsCard({ stats, isLoading, error }: {
 
   return (
     <div
-      className="px-4 py-3 bg-card border rounded-xl"
+      className="ds-panel px-5 py-4"
       title="Live KPIs from public.dashboard_stats() (migration 20260929_04): records_total / records_by_status / records_last_30d / capa_total / capa_closed / capa_open / capa_closure_rate / capa_overdue / pending_review_aging — counts computed from records and capas tables."
     >
       <div className="flex items-center justify-between mb-2">
         <span className="text-sm font-semibold text-foreground">Quality Pulse</span>
         <span className="text-[10px] text-muted-foreground/70">
-          {stats.recordsLast30d} filed in the last 30 days
+          <span className="tabular-nums">{stats.recordsLast30d}</span> filed in the last 30 days
         </span>
       </div>
       <div className="flex flex-wrap items-center gap-x-5 gap-y-1 text-xs">
         <span className="text-muted-foreground">
-          Records: <strong className="text-foreground">{stats.recordsTotal}</strong>
-          <span className="ml-1.5 text-success-tint">{by.approved} approved</span>
-          <span className="ml-1.5 text-warning-tint">{by.pending_review} pending</span>
-          <span className="ml-1.5 text-muted-foreground">{by.draft} draft</span>
-          <span className="ml-1.5 text-muted-foreground">{by.rejected} rejected</span>
+          Records: <strong className="text-foreground tabular-nums">{stats.recordsTotal}</strong>
+          {/* Only a count that means something is coloured.  A green
+              "311 approved" paints the NORMAL state as a signal, and an
+              amber "0 pending" is a warning about nothing — both are
+              decoration pretending to be information.  So: grey by
+              default, amber once something is actually waiting, red once
+              something has been turned down. */}
+          <span className="ml-1.5 text-muted-foreground tabular-nums">{by.approved} approved</span>
+          <span className={cn("ml-1.5 tabular-nums", by.pending_review > 0 ? "text-warning-tint" : "text-muted-foreground")}>
+            {by.pending_review} pending
+          </span>
+          <span className="ml-1.5 text-muted-foreground tabular-nums">{by.draft} draft</span>
+          <span className={cn("ml-1.5 tabular-nums", by.rejected > 0 ? "text-destructive-tint" : "text-muted-foreground")}>
+            {by.rejected} rejected
+          </span>
         </span>
         <span className="w-px h-4 bg-border" />
         {capaEmpty ? (
           <span className="text-muted-foreground">No CAPA data</span>
         ) : (
           <span className="text-muted-foreground">
-            CAPA closure: <strong className="text-foreground">{stats.capaClosureRate}%</strong>
-            <span className="ml-1.5 text-muted-foreground">({stats.capaClosed}/{stats.capaTotal} closed)</span>
+            CAPA closure: <strong className="text-foreground tabular-nums">{stats.capaClosureRate}%</strong>
+            <span className="ml-1.5 text-muted-foreground tabular-nums">({stats.capaClosed}/{stats.capaTotal} closed)</span>
           </span>
         )}
         {stats.capaOverdue > 0 && (
           <span className="inline-flex items-center gap-1 text-destructive-tint">
-            <ShieldAlert className="w-3 h-3" /> {stats.capaOverdue} CAPA overdue
+            <ShieldAlert className="w-3 h-3" /> <span className="tabular-nums">{stats.capaOverdue}</span> CAPA overdue
           </span>
         )}
         {stats.pendingReviewAging.over_30d > 0 ? (
           <span className="inline-flex items-center gap-1 text-destructive-tint">
-            <Clock className="w-3 h-3" /> {stats.pendingReviewAging.over_30d} reviews waiting &gt;30d
+            <Clock className="w-3 h-3" /> <span className="tabular-nums">{stats.pendingReviewAging.over_30d}</span> reviews waiting &gt;30d
           </span>
         ) : stats.pendingReviewAging.from_7_to_30d > 0 ? (
           <span className="inline-flex items-center gap-1 text-warning-tint">
-            <Clock className="w-3 h-3" /> {stats.pendingReviewAging.from_7_to_30d} reviews waiting 7–30d
+            <Clock className="w-3 h-3" /> <span className="tabular-nums">{stats.pendingReviewAging.from_7_to_30d}</span> reviews waiting 7–30d
           </span>
         ) : (
-          <span className="text-muted-foreground">Reviews current ({stats.pendingReviewAging.under_7d} &lt;7d)</span>
+          <span className="text-muted-foreground">Reviews current (<span className="tabular-nums">{stats.pendingReviewAging.under_7d}</span> &lt;7d)</span>
         )}
       </div>
     </div>
@@ -465,8 +511,8 @@ export default function Index() {
         <div>
           <h1 className="text-xl font-display font-bold text-foreground dark:text-foreground">Hey, {firstName}!</h1>
           <p className="text-sm text-muted-foreground mt-1">
-            {totalRecords} records · {approvedCount} approved · {deptHealthMap.size} departments
-            {globalOverdue > 0 && <span className="text-destructive-tint ml-1">· {globalOverdue} overdue forms</span>}
+            <span className="tabular-nums">{totalRecords}</span> records · <span className="tabular-nums">{approvedCount}</span> approved · <span className="tabular-nums">{deptHealthMap.size}</span> departments
+            {globalOverdue > 0 && <span className="text-destructive-tint ml-1">· <span className="tabular-nums">{globalOverdue}</span> overdue forms</span>}
           </p>
         </div>
         <div className="flex items-center gap-2 flex-wrap justify-end">
@@ -524,7 +570,7 @@ export default function Index() {
 
       {/* Continue drafts (Prime §D4) — abandoned unsent drafts resurface here */}
       {myDrafts.length > 0 && (
-        <div className="bg-card border border-border rounded-xl p-4">
+        <div className="ds-panel p-5">
           <div className="flex items-center justify-between mb-2">
             <h2 className="text-sm font-display font-bold text-foreground dark:text-foreground">Continue drafts</h2>
             <span className="text-[11px] text-muted-foreground">{myDrafts.length} unsent</span>
@@ -566,28 +612,40 @@ export default function Index() {
       {/* QUALITY PULSE — org KPIs via the ONE dashboard_stats RPC (Prime §D6) */}
       {!activeMonth && !activeProject && <DashboardStatsCard stats={stats} isLoading={statsLoading} error={statsError} />}
 
-      {/* Department Metric Cards (Executive Row) */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-7 gap-3">
-        {DEPT_ORDER.map((dept) => (
-          <DeptMetricCard
-            key={dept}
-            dept={dept}
-            health={deptHealthMap.get(dept) || { totalForms: 0, totalSubmissions: 0, overdueCount: 0, cyclicalForms: 0, healthyCyclical: 0, status: 'healthy' }}
-            isActive={activeDept === dept}
-            onClick={() => handleDeptClick(dept)}
-          />
-        ))}
-      </div>
+      {/* Department Metric Cells (Executive Row) — ONE panel of seven
+          hairline-separated cells.  They used to be seven separate bordered
+          cards in a `gap-3` grid, which is exactly the fragmentation the
+          design system's first rule rejects: sibling items belong on one
+          surface divided by hairlines.  It also fixes the row's overflow —
+          the cells now carry `min-w-0` and the short department labels, so
+          the grid can no longer be pushed past its container. */}
+      <UnifiedPanel>
+        <PanelCells columns={7}>
+          {DEPT_ORDER.map((dept) => (
+            <DeptMetricCard
+              key={dept}
+              dept={dept}
+              health={deptHealthMap.get(dept) || { totalForms: 0, totalSubmissions: 0, overdueCount: 0, cyclicalForms: 0, healthyCyclical: 0, status: 'healthy' }}
+              isActive={activeDept === dept}
+              onClick={() => handleDeptClick(dept)}
+            />
+          ))}
+        </PanelCells>
+      </UnifiedPanel>
 
       {/* Workspace */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-5">
         {/* Left — Forms with Compliance Telemetry */}
         <div className="lg:col-span-4">
-          <div className="bg-card border-border rounded-xl">
+          {/* `ds-panel`, not `bg-card border-border rounded-xl`: that
+              spelling set only the border COLOUR with no border WIDTH and
+              an ad-hoc 12px radius, so the panel drew no border at all and
+              did not match the token's radius tier. */}
+          <div className="ds-panel overflow-hidden">
             <div className="px-5 pt-5 pb-3 border-b border-border dark:border-border/50">
               <div className="flex items-center justify-between mb-3">
                 <h2 className="text-sm font-display font-bold text-foreground dark:text-foreground">Forms</h2>
-                <span className="text-[11px] text-muted-foreground">{filteredForms.length}</span>
+                <span className="text-[11px] text-muted-foreground tabular-nums">{filteredForms.length}</span>
               </div>
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground/70" />
@@ -644,7 +702,7 @@ export default function Index() {
 
         {/* Right — Records */}
         <div className="lg:col-span-8">
-          <div className="bg-card border-border rounded-xl">
+          <div className="ds-panel overflow-hidden">
             <div className="px-5 pt-5 pb-3 border-b border-border dark:border-border/50 flex items-center justify-between">
               <div>
                 <h2 className="text-sm font-display font-bold text-foreground dark:text-foreground">
@@ -652,7 +710,7 @@ export default function Index() {
                     ? `Records — ${CANONICAL_FORMS.find(f => f.code === selectedForm)?.name || selectedForm}`
                     : `${activeDept} Records`}
                 </h2>
-                <p className="text-[11px] text-muted-foreground mt-0.5">{displayedRecords.length} entries</p>
+                <p className="text-[11px] text-muted-foreground mt-0.5"><span className="tabular-nums">{displayedRecords.length}</span> entries</p>
               </div>
               {selectedForm && (
                 <button onClick={() => setSelectedForm(null)} className="text-xs font-medium text-muted-foreground hover:text-foreground">Clear</button>

@@ -7,12 +7,13 @@ import {
 } from "lucide-react";
 import {
   KPI_DATA, getAllCategories, getAllRoleTitles, getKPIStatistics,
-  getCategoryChip, calculateRoleKPIScore,
+  calculateRoleKPIScore,
   type RoleKPIData, type KPI,
 } from "@/data/kpiData";
 import { AppShell } from "@/components/layout/AppShell";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { StatsRow } from "@/components/ui/StatsRow";
+import { PanelCell, PanelCells, PanelRow, PanelRows, UnifiedPanel } from "@/components/ui/UnifiedPanel";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -57,7 +58,12 @@ const RoleKPICard = ({ role, onClick }: { role: RoleKPIData; onClick: () => void
             </CardTitle>
             <p className="text-sm text-muted-foreground">{role.department}</p>
           </div>
-          <Badge variant={isWeightValid ? "default" : "destructive"}>
+          {/* A count is not a status.  The filled primary badge put a
+              bright accent pill on every one of the nine cards in the
+              grid — nine accents, none of them meaning anything.  The
+              tag is neutral; the weight check below is the thing that
+              can actually be a problem, and it says so in colour. */}
+          <Badge variant={isWeightValid ? "secondary" : "destructive"}>
             {role.kpis.length} KPIs
           </Badge>
         </div>
@@ -71,17 +77,23 @@ const RoleKPICard = ({ role, onClick }: { role: RoleKPIData; onClick: () => void
           <div className="flex items-center justify-between">
             <span className="text-sm text-muted-foreground">Weight Total:</span>
             <div className="flex items-center gap-2">
-              <span className={cn("font-medium", isWeightValid ? "text-success-tint" : "text-destructive-tint")}>
+              {/* A VALID weight is the normal state, so it is greyscale:
+                  the eye should land on the one card whose weights do not
+                  add up, not on eight green ticks.  (Same rule as the SLA
+                  Health Pill on the dashboard.) */}
+              <span className={cn("font-medium tabular-nums", isWeightValid ? "text-foreground" : "text-destructive-tint")}>
                 {(totalWeight * 100).toFixed(0)}%
               </span>
               {isWeightValid
-                ? <CheckCircle2 className="w-4 h-4 text-success-tint" />
+                ? <CheckCircle2 className="w-4 h-4 text-muted-foreground/60" />
                 : <AlertCircle className="w-4 h-4 text-destructive-tint" />}
             </div>
           </div>
           <div className="flex flex-wrap gap-1.5 pt-2">
             {[...new Set(role.kpis.map((k) => k.category))].slice(0, 3).map((cat) => (
-              <Badge key={cat} variant="secondary" className={cn("text-xs border-transparent", getCategoryChip(cat).chip)}>
+              /* A category is a label, not a status: the neutral tag, and
+                 the words do the work. */
+              <Badge key={cat} variant="secondary">
                 {cat}
               </Badge>
             ))}
@@ -99,15 +111,30 @@ const RoleKPICard = ({ role, onClick }: { role: RoleKPIData; onClick: () => void
 
 const KPIDetailView = ({ role }: { role: RoleKPIData }) => (
   <div className="space-y-6">
-    <div className="bg-muted/50 p-4 rounded-lg border">
-      <h3 className="text-2xl font-bold">{role.title}</h3>
-      <div className="flex flex-wrap gap-4 mt-2 text-sm text-muted-foreground">
-        <span><strong className="text-foreground">Department:</strong> {role.department}</span>
-        <span><strong className="text-foreground">Manager:</strong> {role.manager}</span>
-        <span><strong className="text-foreground">Level:</strong> {role.jobLevel}</span>
-        <span><strong className="text-foreground">Status:</strong> {role.employmentStatus}</span>
-      </div>
-    </div>
+    {/* The dialog's own title already reads "KPI Details — <role title>",
+        so the old `h3` here repeated it verbatim.  What is left is the
+        metadata, and that is four facts: one panel, hairline mesh, no
+        tinted card and no second title. */}
+    <UnifiedPanel>
+      <PanelCells columns={4}>
+        <PanelCell>
+          <p className="text-xs text-muted-foreground">Department</p>
+          <p className="mt-1 text-sm font-semibold text-foreground">{role.department}</p>
+        </PanelCell>
+        <PanelCell>
+          <p className="text-xs text-muted-foreground">Manager</p>
+          <p className="mt-1 text-sm font-semibold text-foreground">{role.manager}</p>
+        </PanelCell>
+        <PanelCell>
+          <p className="text-xs text-muted-foreground">Level</p>
+          <p className="mt-1 text-sm font-semibold text-foreground">{role.jobLevel}</p>
+        </PanelCell>
+        <PanelCell>
+          <p className="text-xs text-muted-foreground">Status</p>
+          <p className="mt-1 text-sm font-semibold text-foreground">{role.employmentStatus}</p>
+        </PanelCell>
+      </PanelCells>
+    </UnifiedPanel>
 
     <div className="overflow-x-auto rounded-lg border">
       <Table>
@@ -126,7 +153,7 @@ const KPIDetailView = ({ role }: { role: RoleKPIData }) => (
             <TableRow key={kpi.id}>
               <TableCell className="font-medium">{kpi.objective}</TableCell>
               <TableCell>
-                <Badge variant="secondary" className={cn("border-transparent", getCategoryChip(kpi.category).chip)}>
+                <Badge variant="secondary">
                   {kpi.category}
                 </Badge>
               </TableCell>
@@ -206,7 +233,7 @@ export default function KPIDashboardPage() {
           <StatsRow
             className="mt-5 mb-6"
             stats={[
-              { icon: Briefcase, value: statistics.totalRoles, label: "Total Roles", variant: "info" },
+              { icon: Briefcase, value: statistics.totalRoles, label: "Total Roles" },
               { icon: Target, value: statistics.totalKPIs, label: "Total KPIs" },
               { icon: PieChart, value: statistics.categories, label: "Categories", variant: "default" },
               { icon: CheckCircle2, value: `${statistics.rolesWithValidWeights}/${statistics.totalRoles}`, label: "Valid Weights", variant: "success" },
@@ -307,14 +334,14 @@ export default function KPIDashboardPage() {
                           <TableCell className="text-muted-foreground">{role.manager}</TableCell>
                           <TableCell className="text-center">{role.kpis.length}</TableCell>
                           <TableCell className="text-center">
-                            <span className={isValid ? "text-success-tint" : "text-destructive-tint"}>
+                            <span className={cn("tabular-nums", isValid ? "text-foreground" : "text-destructive-tint")}>
                               {(totalWeight * 100).toFixed(0)}%
                             </span>
                           </TableCell>
                           <TableCell>
                             <div className="flex flex-wrap gap-1">
                               {[...new Set(role.kpis.map((k) => k.category))].slice(0, 2).map((cat) => (
-                                <Badge key={cat} variant="secondary" className={cn("text-xs border-transparent", getCategoryChip(cat).chip)}>
+                                <Badge key={cat} variant="secondary">
                                   {cat}
                                 </Badge>
                               ))}
@@ -352,43 +379,34 @@ export default function KPIDashboardPage() {
             </Card>
           )}
 
-          <Card className="mt-6 ds-card">
-            <CardHeader>
-              <CardTitle className="text-sm font-medium">Category Legend</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="flex flex-wrap gap-2">
-                {categories.map((cat) => {
-                  const { dot, chip } = getCategoryChip(cat);
-                  return (
-                    <Badge key={cat} variant="secondary" className={cn("gap-1.5 border-transparent", chip)}>
-                      <span className={cn("w-1.5 h-1.5 rounded-full shrink-0", dot)} aria-hidden="true" />
-                      {cat}
-                    </Badge>
-                  );
-                })}
-              </div>
-            </CardContent>
-          </Card>
+          {/* The "Category Legend" card used to live here.  It existed for
+              one reason: to map each category's HUE to its name, because the
+              chips themselves were coloured.  With the chips neutral the
+              legend would list seven names that every chip already spells
+              out — and the category filter above already offers the same
+              seven.  It was noise with a legend's shape, so it is gone. */}
 
-          <Card className="mt-6 bg-warning/10 dark:bg-warning/20 border-warning/25 dark:border-warning/40">
-            <CardContent className="pt-6">
-              <div className="flex items-start gap-3">
-                <Info className="w-5 h-5 text-warning-tint mt-0.5 shrink-0" />
-                <div>
-                  <h4 className="font-medium text-warning-tint">ISO 9001:2015 Compliance Note</h4>
-                  <p className="text-sm text-warning-tint mt-1">
+          <UnifiedPanel className="mt-6">
+            <PanelRows>
+              <PanelRow className="items-start">
+                {/* An informational note is not a warning: the icon is the
+                    only thing that carries colour, and it carries the
+                    system's info tint, not the heat orange. */}
+                <Info className="w-5 h-5 mt-0.5 shrink-0 text-info-tint" aria-hidden="true" />
+                <div className="min-w-0">
+                  <h4 className="text-sm font-semibold tracking-[-0.01em] text-foreground">ISO 9001:2015 Compliance Note</h4>
+                  <p className="text-sm text-muted-foreground mt-1 leading-relaxed">
                     This KPI Dashboard provides Individual Performance Management (IPM) data for all operational roles.
                     Per ISO 9001:2015 Clause 9.3.2, Management Review inputs include organizational performance data.
                     Each role&apos;s KPI weights must sum to 100%. Valid weights are indicated with green borders.
                   </p>
-                  <p className="text-xs text-warning-tint mt-2">
+                  <p className="text-xs text-muted-foreground/70 mt-2 tabular-nums">
                     Generated: {new Date().toISOString().split("T")[0]}
                   </p>
                 </div>
-              </div>
-            </CardContent>
-          </Card>
+              </PanelRow>
+            </PanelRows>
+          </UnifiedPanel>
         </div>
       </AppShell>
     </TooltipProvider>

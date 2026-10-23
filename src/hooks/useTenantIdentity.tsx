@@ -11,7 +11,24 @@ import { supabase } from '@/integrations/supabase/client';
 import { restGet } from '@/services/userService';
 import { emitEvent, Events } from '@/services/eventBus';
 import { safeEmit } from '@/lib/safeEmit';
-import { hexToHsl } from '@/lib/utils';
+import { brandTokens } from '@/config/brandColors';
+
+/**
+ * The custom properties the tenant's accent family is written into.
+ *
+ * The stylesheet reads them with a fallback, so when no tenant colour is
+ * configured the tokens fall back to the design system's own blue — the
+ * brand overrides are additive, never a replacement for the palette.
+ */
+const BRAND_VARIABLES = [
+  '--brand-fill',
+  '--brand-fill-fg',
+  '--brand-tint',
+  '--brand-tint-dark',
+  '--brand-hover',
+  '--brand-accent',
+  '--brand-accent-dark',
+] as const;
 
 // ============================================================================
 // Types
@@ -120,14 +137,31 @@ export function TenantIdentityProvider({ children }: { children: React.ReactNode
 
   const identity = useMemo(() => data || DEFAULT_IDENTITY, [data]);
 
-  // Apply theme_color as HSL CSS custom properties for --primary/--ring
+  // Apply theme_color as the app's accent family.
+  //
+  // The tenant's colour is written into `--brand-*` variables, and the
+  // stylesheet maps the accent tokens onto them.  The family is derived
+  // rather than copied, because a colour copied straight into `--primary`
+  // left two defects behind: the fill kept a white label it could not
+  // carry (the live tenant's green measured 2.33:1), and the accent TEXT
+  // stayed the hardcoded blue, so the app showed a green button and blue
+  // links — two accents in one view.  See `src/config/brandColors.ts`.
   useEffect(() => {
-    const tc = identity.themeColor;
-    if (tc) {
-      const hsl = hexToHsl(tc);
-      document.documentElement.style.setProperty('--primary', hsl);
-      document.documentElement.style.setProperty('--ring', hsl);
+    const root = document.documentElement;
+    const tokens = identity.themeColor ? brandTokens(identity.themeColor) : null;
+    if (!tokens) {
+      // No tenant colour (or one that carries no accent identity): drop
+      // every override so the stylesheet's own tokens come back.
+      BRAND_VARIABLES.forEach((name) => root.style.removeProperty(name));
+      return;
     }
+    root.style.setProperty('--brand-fill', tokens.fill);
+    root.style.setProperty('--brand-fill-fg', tokens.fillForeground);
+    root.style.setProperty('--brand-tint', tokens.tint);
+    root.style.setProperty('--brand-tint-dark', tokens.tintDark);
+    root.style.setProperty('--brand-hover', tokens.hover);
+    root.style.setProperty('--brand-accent', tokens.accent);
+    root.style.setProperty('--brand-accent-dark', tokens.accentDark);
   }, [identity.themeColor]);
 
   return (
