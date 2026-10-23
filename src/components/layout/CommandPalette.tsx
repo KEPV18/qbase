@@ -19,7 +19,7 @@ import { Command } from "cmdk";
 import {
   FileText, ClipboardList, FolderKanban, Gauge, Target, ScrollText,
   ShieldCheck, Bell, BookOpen, Settings, PlusCircle, Database,
-  SunMoon, Workflow, Search, ArrowRight,
+  SunMoon, Workflow, Search, ArrowRight, Radar,
 } from "lucide-react";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { useRecords } from "@/hooks/useRecordStorage";
@@ -42,6 +42,7 @@ interface PaletteItem {
 const MODULE_ROUTES: PaletteItem[] = [
   { label: "Dashboard", path: "/" },
   { label: "Forms Registry", path: "/forms" },
+  { label: "Compliance Report", path: "/compliance", keywords: "overdue missing filings gap radar" },
   { label: "Procedures", path: "/procedures" },
   { label: "Projects", path: "/projects" },
   { label: "KPI Dashboard", path: "/kpi" },
@@ -68,6 +69,7 @@ const ACTION_ITEMS: PaletteItem[] = [
 const MODULE_ICONS: Record<string, React.ElementType> = {
   "/": FileText,
   "/forms": ClipboardList,
+  "/compliance": Radar,
   "/procedures": BookOpen,
   "/projects": FolderKanban,
   "/kpi": Gauge,

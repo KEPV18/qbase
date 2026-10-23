@@ -14,6 +14,7 @@ import { DashboardLayout } from "./components/layout/DashboardLayout";
 // Lazy loaded routes — only Supabase-connected pages
 const Index = lazy(() => import("./pages/Index"));
 const AuditPage = lazy(() => import("./pages/AuditPage"));
+const ComplianceReportPage = lazy(() => import("./pages/ComplianceReportPage"));
 const RiskManagementPage = lazy(() => import("./pages/RiskManagementPage"));
 const ApprovalQueuePage = lazy(() => import("./pages/ApprovalQueuePage"));
 const DatabaseManagementPage = lazy(() => import("./pages/DatabaseManagementPage"));
@@ -107,6 +108,10 @@ const App = () => {
                       <Route path="/procedures" element={<PageBoundary><ProceduresPage /></PageBoundary>} />
                       <Route path="/iso-manual" element={<PageBoundary><ISOManualPage /></PageBoundary>} />
                       <Route path="/forms" element={<PageBoundary><FormsRegistryPage /></PageBoundary>} />
+                      {/* The detailed compliance report — the big page behind the
+                          Compliance Radar on the dashboard.  It reads the same
+                          engine, so its numbers cannot disagree with the radar's. */}
+                      <Route path="/compliance" element={<PageBoundary><ComplianceReportPage /></PageBoundary>} />
                       <Route path="/form/*" element={<PageBoundary><FormTemplatePreview /></PageBoundary>} />
                       <Route path="/notifications" element={<PageBoundary><NotificationsPage /></PageBoundary>} />
                       <Route path="/kpi" element={<PageBoundary><KPIDashboardPage /></PageBoundary>} />

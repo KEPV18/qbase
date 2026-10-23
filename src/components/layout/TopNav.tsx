@@ -21,6 +21,7 @@ interface SearchResult {
 const PAGE_LABELS: Record<string, string> = {
   "/": "Dashboard",
   "/forms": "Forms Registry",
+  "/compliance": "Compliance Report",
   "/audit": "Analytics",
   "/activity": "Audit Trail",
   "/approvals": "Approval Queue",

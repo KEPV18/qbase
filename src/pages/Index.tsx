@@ -190,8 +190,14 @@ interface ComplianceGap {
 
 function ComplianceRadarCard({
   gaps,
+  onOpenForm,
+  onOpenReport,
 }: {
   gaps: ComplianceGap[];
+  /** Open the detailed report for ONE form — the big page behind this card. */
+  onOpenForm: (code: string) => void;
+  /** Open the detailed report for every form with a gap. */
+  onOpenReport: () => void;
 }) {
   if (gaps.length === 0) {
     return (
@@ -227,6 +233,18 @@ function ComplianceRadarCard({
           </span>
         }
         meta={`${gaps.length} form${gaps.length > 1 ? 's' : ''} with gaps`}
+        actions={
+          /* The card answers "which forms are behind?".  Pressing one of
+             them — or this link — opens the DETAILED report, where the
+             form's whole year is broken down period by period. */
+          <button
+            type="button"
+            onClick={onOpenReport}
+            className="text-[11px] font-semibold text-primary-tint transition-colors hover:underline"
+          >
+            Full report
+          </button>
+        }
       />
       <PanelRows>
         {gaps.map(gap => {
@@ -236,9 +254,15 @@ function ComplianceRadarCard({
           const shown = gap.periods.slice(0, 6);
           const rest = gap.periods.length - shown.length;
           return (
-            <PanelRow key={gap.code} className="items-start">
+            <PanelRow
+              key={gap.code}
+              as="button"
+              type="button"
+              onClick={() => onOpenForm(gap.code)}
+              className="items-start"
+            >
               <AlertTriangle className="w-3.5 h-3.5 text-warning-tint mt-0.5 shrink-0" />
-              <div className="min-w-0">
+              <div className="min-w-0 flex-1">
                 <p className="text-xs font-medium text-foreground">
                   <span className="font-semibold text-warning-tint">{gap.code}</span> · {gap.name} —{' '}
                   {gap.recordCount === 0 ? (
@@ -257,6 +281,7 @@ function ComplianceRadarCard({
                   {gap.frequency} form — {gap.countLabel} overdue ({gap.overdueDays} days)
                 </p>
               </div>
+              <ChevronRight className="w-4 h-4 text-muted-foreground mt-0.5 shrink-0" />
             </PanelRow>
           );
         })}
@@ -624,8 +649,15 @@ export default function Index() {
         </div>
       )}
 
-      {/* COMPLIANCE RADAR — Prominent Gap Alert Card */}
-      {!activeMonth && !activeProject && <ComplianceRadarCard gaps={complianceGaps} />}
+      {/* COMPLIANCE RADAR — Prominent Gap Alert Card.  Pressing a form
+          opens the detailed report for it; "Full report" opens the lot. */}
+      {!activeMonth && !activeProject && (
+        <ComplianceRadarCard
+          gaps={complianceGaps}
+          onOpenForm={code => navigate(`/compliance?form=${encodeURIComponent(code)}`)}
+          onOpenReport={() => navigate("/compliance")}
+        />
+      )}
 
       {/* QUALITY PULSE — org KPIs via the ONE dashboard_stats RPC (Prime §D6) */}
       {!activeMonth && !activeProject && <DashboardStatsCard stats={stats} isLoading={statsLoading} error={statsError} />}

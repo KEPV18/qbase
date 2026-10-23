@@ -12,10 +12,12 @@ import {
   formatPeriodCount,
   getMissingPeriods,
   getNextDueDate,
+  getPeriodStates,
   periodUnit,
   toPeriodicFrequency,
   type PeriodicFrequency,
   type Period,
+  type PeriodStateRow,
 } from './compliancePeriods';
 
 export type FrequencyType =
@@ -96,6 +98,15 @@ export interface FormCompliance {
   periodUnit: string;
   /** The missed count in the cadence's own unit: '5 months', '1 quarter'. */
   missingCountLabel: string;
+  /**
+   * EVERY period of the current year with its state — filed, missed, still
+   * open, or not yet begun.  This is the whole-year coverage table the
+   * detailed report draws; the `missing` rows in it are exactly
+   * `missingPeriods`, so the table can never contradict the count.
+   */
+  periodStates: PeriodStateRow[];
+  /** How many of this year's periods are filed. */
+  coveredCount: number;
 }
 
 /** A filing, reduced to what the engine needs. */
@@ -165,6 +176,7 @@ export function buildComplianceMap(
     const lastRecordDate = entry?.latest || null;
 
     const missingPeriods = periodic ? getMissingPeriods(months, periodic, asOf) : [];
+    const periodStates = periodic ? getPeriodStates(months, periodic, asOf) : [];
     const nextPeriod = periodic ? getNextDueDate(months, periodic, asOf) : null;
     const nextDueDate = nextPeriod?.dueDate ?? null;
     const daysUntilDue = nextDueDate ? daysBetween(asOf.toISOString(), nextDueDate) : null;
@@ -191,6 +203,8 @@ export function buildComplianceMap(
       missingCount: missingPeriods.length,
       periodUnit: periodic ? periodUnit(periodic) : '',
       missingCountLabel: periodic ? formatPeriodCount(periodic, missingPeriods.length) : '',
+      periodStates,
+      coveredCount: periodStates.filter(s => s.state === 'covered').length,
     });
   }
 
@@ -215,15 +229,23 @@ export function getUrgencyText(compliance: FormCompliance): string {
 
 /**
  * Human-readable "last filed" text.
+ *
+ * `asOf` is a parameter so a report can be rendered against a fixed
+ * reference moment (and tested against one) without the text drifting
+ * from the rest of the snapshot.
  */
-export function getLastFiledText(lastDate: string | null): string {
+export function getLastFiledText(lastDate: string | null, asOf: Date = new Date()): string {
   if (!lastDate) return 'Never filed';
-  const days = daysBetween(lastDate);
-  if (days === 0) return 'Today';
+  const days = daysBetween(lastDate, asOf.toISOString());
+  if (days <= 0) return 'Today';
   if (days === 1) return 'Yesterday';
   if (days < 30) return `${days} days ago`;
-  if (days < 365) return `${Math.floor(days / 30)} months ago`;
-  return `${Math.floor(days / 365)} years ago`;
+  if (days < 365) {
+    const months = Math.floor(days / 30);
+    return `${months} month${months === 1 ? '' : 's'} ago`;
+  }
+  const years = Math.floor(days / 365);
+  return `${years} year${years === 1 ? '' : 's'} ago`;
 }
 
 /**

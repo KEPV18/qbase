@@ -193,6 +193,64 @@ export function getMissingPeriods(
   );
 }
 
+/**
+ * The state of ONE period of a year, for the coverage table.
+ *
+ * `covered`  — a record covers it.
+ * `missing`  — the deadline has passed and nothing covers it: a GAP.
+ * `open`     — the period has begun and is still inside its grace window.
+ * `upcoming` — the period has not begun yet.
+ */
+export type PeriodState = 'covered' | 'missing' | 'open' | 'upcoming';
+
+export interface PeriodStateRow {
+  period: Period;
+  state: PeriodState;
+  /**
+   * Days between the period's deadline and `asOf` — 0 unless it is missing.
+   *
+   * Measured from the deadline at local midnight, exactly the way the
+   * compliance snapshot measures a form's lateness, so the per-period
+   * figure and the form's own "N days overdue" can never disagree by a day.
+   */
+  daysLate: number;
+}
+
+function daysLateAs(period: Period, asOf: Date): number {
+  const due = new Date(`${period.dueDate}T00:00:00`).getTime();
+  return Math.floor((asOf.getTime() - due) / (1000 * 60 * 60 * 24));
+}
+
+/**
+ * Every period of the current year, each with its state.
+ *
+ * This is the row-by-row version of the gap list: it says what a form DID
+ * file, what it MISSED and what is not yet due, so a report can show the
+ * whole year instead of only the holes.  The set of `missing` rows here is
+ * exactly `getMissingPeriods()` — the same engine, read twice.
+ */
+export function getPeriodStates(
+  coveredMonths: Iterable<string>,
+  freq: PeriodicFrequency,
+  asOf: Date = new Date(),
+): PeriodStateRow[] {
+  const covered = new Set(coveredMonths);
+  const current = monthKey(asOf);
+  return getPeriodsForYear(freq, asOf.getFullYear()).map(period => {
+    if (isPeriodCovered(period, covered)) {
+      return { period, state: 'covered', daysLate: 0 };
+    }
+    if (isPeriodDue(period, asOf)) {
+      return { period, state: 'missing', daysLate: daysLateAs(period, asOf) };
+    }
+    return {
+      period,
+      state: period.startMonth <= current ? 'open' : 'upcoming',
+      daysLate: 0,
+    };
+  });
+}
+
 /** The next deadline for a form, whether it is already late or still ahead. */
 export function getNextDueDate(
   coveredMonths: Iterable<string>,

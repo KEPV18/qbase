@@ -41,6 +41,7 @@ const ROUTES = [
   ['procedures', '/procedures'],
   ['iso-manual', '/iso-manual'],
   ['forms', '/forms'],
+  ['compliance', '/compliance'],
   ['notifications', '/notifications'],
   ['kpi', '/kpi'],
   ['kpi-reports', '/kpi/reports'],

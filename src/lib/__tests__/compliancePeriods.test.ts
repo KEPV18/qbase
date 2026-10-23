@@ -22,6 +22,7 @@ import {
   getPeriodsForYear,
   getMissingPeriods,
   getNextDueDate,
+  getPeriodStates,
   isPeriodDue,
   formatPeriodCount,
   periodUnit,
@@ -262,6 +263,58 @@ describe('buildComplianceMap — the restored dataset', () => {
   it('gives every up-to-date periodic form a next deadline', () => {
     for (const code of ['F/24', 'F/25', 'F/40', 'F/15', 'F/16', 'F/42']) {
       expect(map.get(code)!.nextDueDate, `${code} should have a next due date`).toBeTruthy();
+    }
+  });
+});
+
+describe('getPeriodStates — the whole year, period by period', () => {
+  it('marks the never-filed form: every closed period missing, the rest open', () => {
+    const states = getPeriodStates([], 'monthly', AS_OF);
+    const stateOf = (key: string) => states.find(s => s.period.key === key)!.state;
+    // January through September closed and were not filed.
+    expect(stateOf('2026-01')).toBe('missing');
+    expect(stateOf('2026-09')).toBe('missing');
+    // October closes on the 31st and is due on 5 November — still open.
+    expect(stateOf('2026-10')).toBe('open');
+    // November and December have not begun.
+    expect(stateOf('2026-11')).toBe('upcoming');
+    expect(stateOf('2026-12')).toBe('upcoming');
+  });
+
+  it('marks a filed period as covered', () => {
+    const states = getPeriodStates(['2026-01', '2026-07', '2026-08'], 'monthly', AS_OF);
+    const stateOf = (key: string) => states.find(s => s.period.key === key)!.state;
+    expect(stateOf('2026-01')).toBe('covered');
+    expect(stateOf('2026-07')).toBe('covered');
+    expect(stateOf('2026-08')).toBe('covered');
+    expect(stateOf('2026-02')).toBe('missing');
+  });
+
+  it('agrees with getMissingPeriods — the same gaps, read twice', () => {
+    for (const covered of [[], ['2026-01'], ['2026-01', '2026-07', '2026-08']]) {
+      const missing = getMissingPeriods(covered, 'monthly', AS_OF).map(p => p.key);
+      const fromStates = getPeriodStates(covered, 'monthly', AS_OF)
+        .filter(s => s.state === 'missing')
+        .map(s => s.period.key);
+      expect(fromStates).toEqual(missing);
+    }
+  });
+
+  it('measures the lateness of each missing period the way the form measures its own', () => {
+    const states = getPeriodStates([], 'monthly', AS_OF);
+    const january = states.find(s => s.period.key === '2026-01')!;
+    const september = states.find(s => s.period.key === '2026-09')!;
+    // January was due 2026-02-05 → 259 days late; September was due
+    // 2026-10-05 → 17 days late.  Both match the form's own overdueDays.
+    expect(january.daysLate).toBe(259);
+    expect(september.daysLate).toBe(17);
+    expect(january.daysLate).toBe(map.get('F/49')!.overdueDays);
+  });
+
+  it('gives a period that is not missing no lateness at all', () => {
+    const states = getPeriodStates(['2026-01'], 'monthly', AS_OF);
+    for (const s of states) {
+      if (s.state !== 'missing') expect(s.daysLate).toBe(0);
     }
   });
 });
