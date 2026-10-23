@@ -83,6 +83,7 @@ src/
 │   ├── RecordListPage.tsx      # Record list
 │   ├── RecordCreationPage.tsx  # Create record
 │   ├── AuditPage.tsx           # Audit panel (5 tabs)
+│   ├── ComplianceReportPage.tsx # Detailed compliance report (per-form filing gaps)
 │   ├── ArchivePage.tsx         # Archive
 │   ├── RiskManagementPage.tsx  # Risk management (3 tabs)
 │   ├── ActivityPage.tsx        # Recent activity
@@ -179,6 +180,8 @@ src/
 │   ├── processInteractionService.ts # Process interaction service
 │   ├── statusService.ts         # Record status management
 │   ├── compliance.ts            # Compliance scoring
+│   ├── compliancePeriods.ts     # The period engine (cadence, due dates, gaps)
+│   ├── complianceReport.ts      # The detailed per-form report built on the engine
 │   ├── temporalUtils.ts         # Coverage-period / date resolution
 │   ├── traceability.ts          # Traceability graph builder
 │   ├── departmentTheme.ts       # Per-department accent themes
@@ -210,6 +213,7 @@ src/
 | `/form/*` | FormTemplatePreview | Template preview |
 | `/form-code/:serial` | FormCodeRedirect | Redirects a form code to the canonical record route |
 | `/audit` | AuditPage | Audit panel (5 tabs + automated check) |
+| `/compliance` | ComplianceReportPage | Detailed compliance report — every recurring form with a filing gap, period by period (`?form=F/10` scrolls to that form) |
 | `/projects` | ProjectsPage | Project overview |
 | `/project/:projectName` | ProjectDetailPage | Single project detail |
 | `/archive` | ArchivePage | Archive |
