@@ -37,11 +37,41 @@ const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL?.trim() || "";
 const SUPABASE_ANON_KEY = (import.meta.env.VITE_SUPABASE_ANON_KEY?.trim()
   || import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY?.trim() || "");
 
+/**
+ * The localStorage key the Supabase client writes the session under.
+ *
+ * `@supabase/supabase-js` builds it as
+ *   `sb-${new URL(url).hostname.split(".")[0]}-auth-token`
+ * — from the parsed HOSTNAME.  This helper used to rebuild the key by
+ * string surgery instead: strip a literal `"https://"`, then take the
+ * text before the first `"."`.  For the production URL
+ * (`https://abc.supabase.co`) that happens to produce the same string,
+ * so the bug stayed invisible — but the local stack's URL is
+ * `http://127.0.0.1:54351`, where the scheme is not stripped and the
+ * key came out as `sb-http://127-auth-token`, a key nothing ever
+ * writes.  Every profile / role / department read then failed with
+ * `no_session_token`, the app fell into its "no profile" branch, and
+ * every signed-in local account was downgraded to `role: "user"` with
+ * the email prefix as its display name — which is why an `admin`
+ * account bounced off `/admin/accounts` back to the dashboard.
+ *
+ * Derive the key the way the client that wrote it derives it.
+ */
+function supabaseAuthStorageKey(): string {
+  try {
+    const host = new URL(SUPABASE_URL).hostname;
+    return `sb-${host.split(".")[0]}-auth-token`;
+  } catch {
+    // A relative or malformed URL — fall back to the old shape, but
+    // strip either scheme so the fallback is at least the http case.
+    const bare = SUPABASE_URL.replace(/^https?:\/\//, "");
+    return `sb-${bare.split(".")[0]}-auth-token`;
+  }
+}
+
 function getStoredAccessToken(): string | null {
   try {
-    // The supabase project ref is part of the localStorage key: sb-<project-ref>-auth-token
-    const key = `sb-${SUPABASE_URL.replace("https://", "").split(".")[0]}-auth-token`;
-    const raw = localStorage.getItem(key);
+    const raw = localStorage.getItem(supabaseAuthStorageKey());
     if (!raw) return null;
     const parsed = JSON.parse(raw);
     return parsed?.access_token || null;
