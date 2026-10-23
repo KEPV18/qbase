@@ -23,7 +23,8 @@
 set -u
 REPO="/home/kepv/qbase-remediation"
 TOOLS="$REPO/tools/local-stack"
-mkdir -p /tmp/qbase-local
+STATE="/home/kepv/.local/qbase-local"
+mkdir -p /tmp/qbase-local "$STATE"
 
 ORIGIN="${1:-}"
 if [ -z "$ORIGIN" ]; then
@@ -41,12 +42,17 @@ bash "$TOOLS/start-local.sh" > /tmp/qbase-local/start-local.out 2>&1
 
 # 2. the proxy the PREVIEW talks to.  It is a second one, on its own port,
 #    so the origin-scoped allow-list never touches the SPA's proxy.
+#    The origin is also written to the state file, so the supervisor
+#    (supervise-local.sh) knows which origin it is allowed to serve and
+#    can replace the proxy when a new deployment changes it.
+printf '%s\n' "$ORIGIN" > "$STATE/preview-origin"
 if ss -ltn 2>/dev/null | grep -q "127.0.0.1:54352"; then
   echo "54352 is already up — restart it to change the allowed origin"
 else
   ALLOWED_ORIGIN="$ORIGIN" nohup python3 "$TOOLS/cors-proxy.py" \
     --listen 54352 --upstream 127.0.0.1:54350 \
     > /tmp/qbase-local/proxy-preview.log 2>&1 &
+  echo $! > "$STATE/proxy-preview.pid"
   sleep 1
 fi
 
