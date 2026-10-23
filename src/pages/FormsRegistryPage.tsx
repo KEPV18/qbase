@@ -63,7 +63,7 @@ export default function FormsRegistryPage() {
   // The same period coverage engine the dashboard and the audit page use, so
   // the registry cannot disagree with them about the same records.
   const missingMonthsMap = useMemo(() => {
-    const map = new Map<string, string[]>();
+    const map = new Map<string, { labels: string[]; countLabel: string }>();
     if (!records) return map;
     const compliance = buildComplianceMap(
       (records as RecordData[]).map(r => ({
@@ -74,7 +74,9 @@ export default function FormsRegistryPage() {
       CANONICAL_FORMS.map(f => ({ code: f.code, name: f.name, frequency: f.frequency })),
     );
     compliance.forEach((c, code) => {
-      if (c.missingCount > 0) map.set(code, c.missingPeriods.map(p => p.label));
+      if (c.missingCount > 0) {
+        map.set(code, { labels: c.missingPeriods.map(p => p.label), countLabel: c.missingCountLabel });
+      }
     });
     return map;
   }, [records]);
@@ -322,7 +324,7 @@ export default function FormsRegistryPage() {
                           form={form}
                           recordCount={recordStats.counts.get(form.code) ?? 0}
                           lastRecordMonth={recordStats.lastMonth.get(form.code)}
-                          missingMonths={missingMonthsMap.get(form.code)}
+                          missing={missingMonthsMap.get(form.code)}
                           onClick={() => navigate(`/form/${form.code}`)}
                         />
                       ))}
@@ -335,7 +337,7 @@ export default function FormsRegistryPage() {
                           form={form}
                           recordCount={recordStats.counts.get(form.code) ?? 0}
                           lastRecordMonth={recordStats.lastMonth.get(form.code)}
-                          missingMonths={missingMonthsMap.get(form.code)}
+                          missing={missingMonthsMap.get(form.code)}
                           onClick={() => navigate(`/form/${form.code}`)}
                         />
                       ))}
@@ -359,13 +361,13 @@ function FormCardGrid({
   form,
   recordCount,
   lastRecordMonth,
-  missingMonths,
+  missing,
   onClick,
 }: {
   form: FormEntry;
   recordCount: number;
   lastRecordMonth?: string;
-  missingMonths?: string[];
+  missing?: { labels: string[]; countLabel: string };
   onClick: () => void;
 }) {
   const schema = getFormSchema(form.code);
@@ -409,10 +411,14 @@ function FormCardGrid({
             {recordCount}
           </Badge>
         )}
-        {missingMonths && missingMonths.length > 0 && (
-          <Badge variant="outline" className="text-[9px] px-1.5 py-0 h-4 font-mono bg-warning/10 text-warning-tint border-warning/20">
+        {missing && missing.labels.length > 0 && (
+          <Badge
+            variant="outline"
+            className="text-[9px] px-1.5 py-0 h-4 font-mono bg-warning/10 text-warning-tint border-warning/20"
+            title={missing.labels.join(', ')}
+          >
             <AlertTriangle className="w-2.5 h-2.5 mr-0.5" />
-            {missingMonths.length} missing
+            {missing.countLabel} missing
           </Badge>
         )}
       </div>
@@ -444,13 +450,13 @@ function FormCardList({
   form,
   recordCount,
   lastRecordMonth,
-  missingMonths,
+  missing,
   onClick,
 }: {
   form: FormEntry;
   recordCount: number;
   lastRecordMonth?: string;
-  missingMonths?: string[];
+  missing?: { labels: string[]; countLabel: string };
   onClick: () => void;
 }) {
   const schema = getFormSchema(form.code);
@@ -482,10 +488,14 @@ function FormCardList({
 
       {/* Badges */}
       <div className="hidden sm:flex items-center gap-1.5 shrink-0">
-        {missingMonths && missingMonths.length > 0 && (
-          <Badge variant="outline" className="text-[9px] px-1.5 py-0 h-4 font-mono bg-warning/10 text-warning-tint border-warning/20">
+        {missing && missing.labels.length > 0 && (
+          <Badge
+            variant="outline"
+            className="text-[9px] px-1.5 py-0 h-4 font-mono bg-warning/10 text-warning-tint border-warning/20"
+            title={missing.labels.join(', ')}
+          >
             <AlertTriangle className="w-2.5 h-2.5 mr-0.5" />
-            {missingMonths.length} missing
+            {missing.countLabel} missing
           </Badge>
         )}
         <Badge variant="outline" className="text-[9px] px-1.5 py-0 h-4 font-mono bg-muted/20 text-muted-foreground border-border/50">

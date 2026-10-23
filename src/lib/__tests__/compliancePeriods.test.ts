@@ -23,6 +23,8 @@ import {
   getMissingPeriods,
   getNextDueDate,
   isPeriodDue,
+  formatPeriodCount,
+  periodUnit,
   PERIOD_GRACE_DAYS,
 } from '../compliancePeriods';
 import { parseFrequency, buildComplianceMap, computeDeptHealth } from '../compliance';
@@ -275,5 +277,55 @@ describe('computeDeptHealth', () => {
     expect(health.overdueCount).toBe(5);
     expect(health.healthyCyclical).toBe(6);
     expect(health.status).toBe('critical');
+  });
+});
+
+// ============================================================================
+// The missed count in the cadence's OWN unit
+//
+// "5 periods overdue" made the reader do the arithmetic: five months, five
+// quarters or five years?  A monthly form that has gone five months
+// unfilled owes five MONTHS, and that is what every surface now says.
+// ============================================================================
+describe('the missed count in its own unit', () => {
+  it('names one missed period', () => {
+    expect(periodUnit('monthly')).toBe('month');
+    expect(periodUnit('quarterly')).toBe('quarter');
+    expect(periodUnit('semi-annual')).toBe('half-year');
+    expect(periodUnit('annual')).toBe('year');
+  });
+
+  it('counts in that unit, singular and plural', () => {
+    expect(formatPeriodCount('monthly', 1)).toBe('1 month');
+    expect(formatPeriodCount('monthly', 5)).toBe('5 months');
+    expect(formatPeriodCount('quarterly', 2)).toBe('2 quarters');
+    expect(formatPeriodCount('quarterly', 1)).toBe('1 quarter');
+    expect(formatPeriodCount('semi-annual', 3)).toBe('3 half-years');
+    expect(formatPeriodCount('annual', 1)).toBe('1 year');
+    expect(formatPeriodCount('annual', 4)).toBe('4 years');
+  });
+
+  it('carries the unit on every overdue form in the restored dataset', () => {
+    // F/10 — monthly, Feb–Jun and Sep are missing: six months.
+    expect(map.get('F/10')!.missingCountLabel).toBe('6 months');
+    expect(map.get('F/10')!.periodUnit).toBe('month');
+    // F/48 — monthly, Aug and Sep are missing: two months.
+    expect(map.get('F/48')!.missingCountLabel).toBe('2 months');
+    // F/49 — monthly, never filed: nine months.
+    expect(map.get('F/49')!.missingCountLabel).toBe('9 months');
+  });
+
+  it('has no unit for a form that owes no fixed cadence', () => {
+    // F/18 is daily — it is never late, so it has no unit to report.
+    expect(map.get('F/18')!.missingCountLabel).toBe('');
+    expect(map.get('F/18')!.periodUnit).toBe('');
+  });
+
+  it('agrees with the count it reports', () => {
+    for (const [code, c] of map) {
+      if (!c.isPeriodic) continue;
+      const n = Number(c.missingCountLabel.split(' ')[0]);
+      expect(n, `${code} count`).toBe(c.missingCount);
+    }
   });
 });

@@ -16,6 +16,33 @@
 
 export type PeriodicFrequency = 'monthly' | 'quarterly' | 'semi-annual' | 'annual';
 
+/**
+ * What ONE missed period is called, in the cadence's own unit.
+ *
+ * The dashboard used to say "5 periods overdue" for every cadence, which
+ * asks the reader to do the arithmetic: is that five months, five
+ * quarters, or five years? A monthly form that has gone five months
+ * unfilled owes five MONTHS — so that is what it says.
+ */
+export const PERIOD_UNITS: Record<PeriodicFrequency, { one: string; many: string }> = {
+  monthly: { one: 'month', many: 'months' },
+  quarterly: { one: 'quarter', many: 'quarters' },
+  'semi-annual': { one: 'half-year', many: 'half-years' },
+  annual: { one: 'year', many: 'years' },
+};
+
+/** The unit word for one missed period of this cadence. */
+export function periodUnit(freq: PeriodicFrequency): string {
+  return PERIOD_UNITS[freq].one;
+}
+
+/** '5 months', '1 quarter' — the count in the cadence's own unit. */
+export function formatPeriodCount(freq: PeriodicFrequency, count: number): string {
+  const unit = PERIOD_UNITS[freq];
+  return `${count} ${count === 1 ? unit.one : unit.many}`;
+}
+
+
 export interface Period {
   key: string;         // '2026-08' | '2026-Q3' | '2026-H2' | '2026'
   label: string;       // 'Aug 2026' | 'Q3 2026' | 'H2 2026' | '2026'

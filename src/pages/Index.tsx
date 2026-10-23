@@ -163,7 +163,7 @@ function ComplianceBadge({ compliance }: { compliance: FormCompliance }) {
     return (
       <span className="inline-flex items-center gap-1 text-[10px] text-destructive-tint font-medium">
         <ShieldAlert className="w-3 h-3" /> Overdue by {overdueDays}d
-        {missingCount > 1 ? ` · ${missingCount} periods` : ''}
+        {missingCount > 1 ? ` · ${compliance.missingCountLabel}` : ''}
       </span>
     );
   }
@@ -182,6 +182,10 @@ interface ComplianceGap {
   periods: Period[];
   overdueDays: number;
   recordCount: number;
+  /** 'month' | 'quarter' | 'half-year' | 'year' — the cadence's own unit. */
+  unit: string;
+  /** '5 months' — the missed count in that unit. */
+  countLabel: string;
 }
 
 function ComplianceRadarCard({
@@ -226,19 +230,31 @@ function ComplianceRadarCard({
       />
       <PanelRows>
         {gaps.map(gap => {
-          const shown = gap.periods.slice(0, 3);
+          // Every missed period is named, not just the first three: the
+          // question this card answers is "how far behind is this form?",
+          // and the answer is a LIST of the months it skipped.
+          const shown = gap.periods.slice(0, 6);
           const rest = gap.periods.length - shown.length;
           return (
             <PanelRow key={gap.code} className="items-start">
               <AlertTriangle className="w-3.5 h-3.5 text-warning-tint mt-0.5 shrink-0" />
               <div className="min-w-0">
                 <p className="text-xs font-medium text-foreground">
-                  <span className="font-semibold text-warning-tint">{gap.code}</span> · {gap.name} — {gap.recordCount === 0 ? 'never filed' : 'missing for'}{' '}
-                  {shown.map(p => p.label).join(', ')}
-                  {rest > 0 ? ` +${rest} more` : ''}
+                  <span className="font-semibold text-warning-tint">{gap.code}</span> · {gap.name} —{' '}
+                  {gap.recordCount === 0 ? (
+                    <>never filed — {gap.countLabel} owed</>
+                  ) : (
+                    <>
+                      missing <span className="font-semibold">{gap.countLabel}</span>
+                      {shown.length > 0 && (
+                        <>: {shown.map(p => p.label).join(', ')}</>
+                      )}
+                      {rest > 0 ? ` +${rest} more` : ''}
+                    </>
+                  )}
                 </p>
                 <p className="text-[10px] text-muted-foreground mt-0.5">
-                  {gap.frequency} form — {gap.periods.length} period{gap.periods.length > 1 ? 's' : ''} overdue ({gap.overdueDays} days)
+                  {gap.frequency} form — {gap.countLabel} overdue ({gap.overdueDays} days)
                 </p>
               </div>
             </PanelRow>
@@ -423,6 +439,8 @@ export default function Index() {
         periods: c.missingPeriods,
         overdueDays: c.overdueDays,
         recordCount: c.recordCount,
+        unit: c.periodUnit,
+        countLabel: c.missingCountLabel,
       });
     });
     return gaps.sort((a, b) => b.overdueDays - a.overdueDays);

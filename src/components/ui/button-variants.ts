@@ -10,7 +10,18 @@ export const buttonVariants = cva(
         // on #1980e6 at 3.98:1 — below AA. The `-hover` step moves the
         // fill away from the text instead (darker in light, brighter in
         // dark), so the pair stays above 4.5:1 in both modes.
-        default: "bg-primary text-primary-foreground hover:bg-primary-hover shadow-primary hover:shadow-lg glow-primary",
+        //
+        // `glow-primary` used to be on this variant — a 3s infinite
+        // "breathing" halo.  It was on EVERY default button in the app
+        // (40 call sites), and it was measured on the login page: the
+        // Sign in button's computed shadow changed six times in six
+        // seconds, which the owner read as the button "lighting up and
+        // going off" over and over.  The halo is now the STATIC tinted
+        // shadow (`shadow-primary`) that the design system already
+        // defines for a filled accent surface, and the breathing class
+        // survives in the stylesheet as an explicit opt-in for a hero
+        // CTA — never as a default.
+        default: "bg-primary text-primary-foreground hover:bg-primary-hover shadow-primary hover:shadow-lg",
         destructive: "bg-destructive text-destructive-foreground hover:bg-destructive-hover shadow-destructive hover:shadow-lg",
         outline: "border-2 border-primary/30 bg-transparent hover:bg-primary/10 hover:border-primary text-primary-tint",
         secondary: "bg-secondary text-secondary-foreground hover:bg-secondary/80",

@@ -717,8 +717,26 @@
     box-shadow: var(--shadow-lg);
   }
 
+  /* ── The accent CTA keeps its hue when it lifts.  The generic hover
+     step is a NEUTRAL grey halo, which under a blue button reads as a
+     different surface rather than the same one, raised.  A filled
+     accent surface carries its own tinted lift instead — the same
+     hue as its fill, one step deeper. ── */
+  .shadow-primary:hover {
+    box-shadow:
+      0 2px 6px 0 hsl(var(--primary-solid) / 0.26),
+      0 14px 34px 0 hsl(var(--primary-solid) / 0.3);
+  }
+
   /* ── Accent glow — a tinted breathing halo for the single colored CTA.
-     Two-layer, hue-matched, and disabled under reduced motion. ── */
+     Two-layer, hue-matched, and disabled under reduced motion.
+
+     OPT-IN, NOT A DEFAULT.  This class was on the `default` button
+     variant, so every primary button in the app breathed — and on the
+     login page the Sign in button's shadow was measured changing six
+     times in six seconds, which the owner read as the button "lighting
+     up and going off".  The default variant now uses the STATIC tinted
+     `shadow-primary`; keep this for a deliberate hero CTA only. ── */
   .glow-primary {
     animation: glow-breathe 3s var(--ease-out-quart) infinite;
   }

@@ -9,8 +9,10 @@
 // ============================================================================
 
 import {
+  formatPeriodCount,
   getMissingPeriods,
   getNextDueDate,
+  periodUnit,
   toPeriodicFrequency,
   type PeriodicFrequency,
   type Period,
@@ -90,6 +92,10 @@ export interface FormCompliance {
   recordCount: number;
   missingPeriods: Period[]; // the periods that were due and were not filed
   missingCount: number;
+  /** What one missed period of this cadence is called ('month', 'quarter'…). */
+  periodUnit: string;
+  /** The missed count in the cadence's own unit: '5 months', '1 quarter'. */
+  missingCountLabel: string;
 }
 
 /** A filing, reduced to what the engine needs. */
@@ -183,6 +189,8 @@ export function buildComplianceMap(
       recordCount: entry?.count ?? 0,
       missingPeriods,
       missingCount: missingPeriods.length,
+      periodUnit: periodic ? periodUnit(periodic) : '',
+      missingCountLabel: periodic ? formatPeriodCount(periodic, missingPeriods.length) : '',
     });
   }
 
