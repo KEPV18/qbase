@@ -14,7 +14,11 @@
 import { chromium } from '/home/kepv/qbase-remediation/node_modules/playwright/index.mjs';
 import { readFileSync, writeFileSync, mkdirSync } from 'node:fs';
 
-const ORIGIN = 'http://127.0.0.1:5210';
+// The origin to sweep.  It defaults to the local SPA, and it can be
+// pointed at a VERCEL PREVIEW instead — the preview serves the same
+// build, and a preview is the artefact the owner actually opens, so it
+// is the one worth measuring.
+const ORIGIN = process.env.SWEEP_ORIGIN || 'http://127.0.0.1:5210';
 const CREDS = '/tmp/qbase-local/LOCAL_LOGIN.txt';
 const DARK = process.argv.includes('--dark');
 const MOBILE = process.argv.includes('--mobile');
@@ -25,6 +29,10 @@ const VIEWPORT = MOBILE ? { width: 390, height: 844 } : { width: 1440, height: 9
 const PROBE_SRC = '/home/kepv/qbase-remediation/tools/local-stack/design-probe.js';
 mkdirSync(SHOTS, { recursive: true });
 
+// The route table, taken from the app's own router (src/App.tsx) rather
+// than from a list that can drift away from it.  Every route the router
+// declares has to appear here: a page that is never measured is a page
+// nobody knows anything about.
 const ROUTES = [
   ['dashboard', '/'],
   ['audit', '/audit'],
@@ -45,6 +53,8 @@ const ROUTES = [
   ['approvals', '/admin/approvals'],
   ['admin-accounts', '/admin/accounts'],
   ['admin-database', '/admin/database'],
+  ['admin-data-sanitizer', '/admin/data-sanitizer'],
+  ['create', '/create'],
   ['settings', '/settings'],
 ];
 
@@ -65,6 +75,18 @@ const ctx = await browser.newContext({
   viewport: VIEWPORT,
   ...(MOBILE ? { isMobile: true, hasTouch: true, deviceScaleFactor: 2 } : {}),
 });
+// A preview is a PUBLIC origin asking the local API on 127.0.0.1, so
+// Chrome needs a site permission for it (Local Network Access).  In a
+// normal browser the user grants that in a one-time prompt; here it is
+// granted up front.  Without it every API call is blocked before it is
+// sent and the sweep measures an empty page.
+if (!/^https?:\/\/127\.0\.0\.1/.test(ORIGIN) && !/^https?:\/\/localhost/.test(ORIGIN)) {
+  try {
+    await ctx.grantPermissions(['local-network-access'], { origin: ORIGIN });
+  } catch (e) {
+    console.log('could not grant local-network-access:', e.message.slice(0, 160));
+  }
+}
 const page = await ctx.newPage();
 
 await page.goto(`${ORIGIN}/login`, { waitUntil: 'domcontentloaded', timeout: 30000 });
@@ -99,9 +121,67 @@ const fromFile = fileIdx >= 0
       .filter((l) => l && !l.startsWith('#'))
   : [];
 const list = fromFile.length ? fromFile : wanted;
+
+/**
+ * The parametrised routes need a REAL id, and a hardcoded one goes stale
+ * the moment the data changes — the sweep would then measure a "not found"
+ * page and report it as if it were the page.
+ *
+ * The ids are discovered, and the discovery is READ-ONLY: two GETs against
+ * the API for a project name and a record serial, and the text of the
+ * forms registry for a form code.  Nothing is clicked, because a click on
+ * a row is a click on a control that can change data, and this sweep
+ * promises not to change any.
+ */
+const API = process.env.SWEEP_API_URL || 'http://127.0.0.1:54351';
+const ANON = (readFileSync('/home/kepv/qbase-remediation/.env.local', 'utf8')
+  .match(/^VITE_SUPABASE_ANON_KEY=(.*)$/m) || [])[1]?.trim();
+
+const apiValue = async (table, column) => {
+  if (!ANON) return null;
+  try {
+    const r = await fetch(`${API}/rest/v1/${table}?select=${column}&limit=1`, {
+      headers: { apikey: ANON },
+    });
+    const j = await r.json();
+    return Array.isArray(j) && j[0] ? j[0][column] : null;
+  } catch {
+    return null;
+  }
+};
+
+const discover = async () => {
+  const found = [];
+
+  const projectName = await apiValue('projects', 'name');
+  if (projectName) found.push(['project-detail', `/project/${encodeURIComponent(projectName)}`]);
+
+  const serial = await apiValue('records', 'serial');
+  if (serial) {
+    found.push(['record-view', `/records/${encodeURIComponent(serial)}`]);
+    found.push(['traceability-record', `/traceability/${encodeURIComponent(serial)}`]);
+  }
+
+  // A form code is a constant of the app ("F/08"), and the registry page
+  // is where the reader sees it, so it is read off that page.
+  try {
+    await page.goto(ORIGIN + '/forms', { waitUntil: 'domcontentloaded', timeout: 30000 });
+    await page.waitForTimeout(2200);
+    const code = await page.evaluate(() => {
+      const m = (document.body.innerText || '').match(/\bF\/\d{2}\b/);
+      return m ? m[0] : null;
+    });
+    if (code) found.push(['form-preview', `/form/${encodeURIComponent(code)}`]);
+  } catch (e) {
+    console.log('discovery failed for form-preview', String(e).split('\n')[0].slice(0, 110));
+  }
+
+  return found;
+};
+
 const routes = list.length
   ? list.map((r) => [r.replace(/[^\w-]/g, '_') || 'route', r])
-  : ROUTES;
+  : [...ROUTES, ...(await discover())];
 
 /**
  * Horizontal overflow: a phone-width page that scrolls sideways is a
