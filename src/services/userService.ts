@@ -5,6 +5,7 @@
 import { log } from "@/services/logger";
 
 import { supabase } from "@/integrations/supabase/client";
+import { ANON_KEY, resolveApiBase, supabaseAuthStorageKey } from "@/integrations/supabase/apiBase";
 import type { Tables } from "@/integrations/supabase/types";
 
 export type ProfileRow = Tables<'profiles'>;
@@ -33,42 +34,23 @@ export interface AppUser {
 // We read the session token from localStorage and call the REST API directly.
 // ============================================================================
 
-const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL?.trim() || "";
-const SUPABASE_ANON_KEY = (import.meta.env.VITE_SUPABASE_ANON_KEY?.trim()
-  || import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY?.trim() || "");
+// The API address and the anon key are resolved at CALL time, not at
+// build time — see `apiBase.ts`.  A module-level constant froze the
+// address into the bundle, which meant a server that moved or a
+// project that was paused could only be fixed by a new build.
+const SUPABASE_ANON_KEY = ANON_KEY;
 
 /**
- * The localStorage key the Supabase client writes the session under.
+ * The session token, read from the key the Supabase client actually
+ * wrote it under.
  *
- * `@supabase/supabase-js` builds it as
- *   `sb-${new URL(url).hostname.split(".")[0]}-auth-token`
- * — from the parsed HOSTNAME.  This helper used to rebuild the key by
- * string surgery instead: strip a literal `"https://"`, then take the
- * text before the first `"."`.  For the production URL
- * (`https://abc.supabase.co`) that happens to produce the same string,
- * so the bug stayed invisible — but the local stack's URL is
- * `http://127.0.0.1:54351`, where the scheme is not stripped and the
- * key came out as `sb-http://127-auth-token`, a key nothing ever
- * writes.  Every profile / role / department read then failed with
- * `no_session_token`, the app fell into its "no profile" branch, and
- * every signed-in local account was downgraded to `role: "user"` with
- * the email prefix as its display name — which is why an `admin`
- * account bounced off `/admin/accounts` back to the dashboard.
- *
- * Derive the key the way the client that wrote it derives it.
+ * The key is derived by `supabaseAuthStorageKey()` in `apiBase.ts` —
+ * from the HOSTNAME of the address in force, exactly the way
+ * `@supabase/supabase-js` derives it.  Deriving it any other way gave
+ * a key nothing ever writes, and every profile / role / department
+ * read then failed with `no_session_token`; the full account of that
+ * is in the comment on the helper itself.
  */
-function supabaseAuthStorageKey(): string {
-  try {
-    const host = new URL(SUPABASE_URL).hostname;
-    return `sb-${host.split(".")[0]}-auth-token`;
-  } catch {
-    // A relative or malformed URL — fall back to the old shape, but
-    // strip either scheme so the fallback is at least the http case.
-    const bare = SUPABASE_URL.replace(/^https?:\/\//, "");
-    return `sb-${bare.split(".")[0]}-auth-token`;
-  }
-}
-
 function getStoredAccessToken(): string | null {
   try {
     const raw = localStorage.getItem(supabaseAuthStorageKey());
@@ -87,7 +69,7 @@ export async function restGet<T>(path: string, opts?: { allowAnon?: boolean }): 
     // Use session token if available, otherwise fall back to anon key (for
     // anon-readable tables like tenant_settings)
     const bearer = token || SUPABASE_ANON_KEY;
-    const res = await fetch(`${SUPABASE_URL}${path}`, {
+    const res = await fetch(`${resolveApiBase()}${path}`, {
       headers: {
         apikey: SUPABASE_ANON_KEY,
         Authorization: `Bearer ${bearer}`,
@@ -131,7 +113,7 @@ export async function restRpc<T>(
       headers["Content-Type"] = "application/json";
       options.body = JSON.stringify(params);
     }
-    const res = await fetch(`${SUPABASE_URL}/rest/v1/rpc/${fnName}`, options);
+    const res = await fetch(`${resolveApiBase()}/rest/v1/rpc/${fnName}`, options);
     if (!res.ok) {
       const txt = await res.text().catch(() => "");
       return { data: null, error: `HTTP ${res.status}: ${txt.substring(0, 200)}` };

@@ -5,6 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/useAuth";
+import { ApiTargetPanel } from "@/components/auth/ApiTargetPanel";
 import { toast } from "sonner";
 import { Spinner } from "@/components/ui/LoadingSpinner";
 import { Lock, Mail, Loader2, Eye, EyeOff, ArrowRight, Trash2, Check } from "lucide-react";
@@ -214,6 +215,10 @@ export default function Login() {
                 <>Sign in <ArrowRight className="w-4 h-4 ml-2" /></>
               )}
             </Button>
+
+            {/* Which server this build is talking to — and the one
+                control that can move it without a new build. */}
+            <ApiTargetPanel />
 
             {/* Clear cache button */}
             <button

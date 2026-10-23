@@ -1,8 +1,12 @@
 import { createClient } from "@supabase/supabase-js"
+import { ANON_KEY, resolveApiBase } from "@/integrations/supabase/apiBase"
 
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL?.trim()
-const supabaseKey = (import.meta.env.VITE_SUPABASE_ANON_KEY?.trim()
-  || import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY?.trim())
+// The address is resolved when the app RUNS, not when it was built — see
+// `apiBase.ts`.  The client is created once, on load, so it picks up
+// whatever the operator's override says at that moment; changing the
+// override reloads the page, which re-runs this.
+const supabaseUrl = resolveApiBase()
+const supabaseKey = ANON_KEY
 
 if (!supabaseUrl || !supabaseKey) {
   throw new Error(

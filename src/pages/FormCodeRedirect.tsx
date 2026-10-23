@@ -5,6 +5,7 @@ import { FORM_SCHEMAS } from '@/data/formSchemas';
 import { AppShell } from '@/components/layout/AppShell';
 import { StateScreen } from '@/components/ui/StateScreen';
 import { supabase } from '@/integrations/supabase/client';
+import { ANON_KEY, resolveApiBase } from '@/integrations/supabase/apiBase';
 
 export default function FormCodeRedirect() {
   const { serial } = useParams<{ serial: string }>();
@@ -40,12 +41,12 @@ export default function FormCodeRedirect() {
         }
 
         const headers: Record<string, string> = {
-          'apikey': import.meta.env.VITE_SUPABASE_ANON_KEY?.trim() || '',
+          'apikey': ANON_KEY,
           'Authorization': `Bearer ${session.access_token}`,
         };
 
         const res = await fetch(
-          `${import.meta.env.VITE_SUPABASE_URL?.trim()}/rest/v1/records?select=serial&form_code=eq.${encodeURIComponent(decodedSerial)}&deleted_at=is.null&order=serial&limit=1`,
+          `${resolveApiBase()}/rest/v1/records?select=serial&form_code=eq.${encodeURIComponent(decodedSerial)}&deleted_at=is.null&order=serial&limit=1`,
           { headers }
         );
 
