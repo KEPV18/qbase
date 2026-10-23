@@ -317,6 +317,49 @@
     scroll-behavior: smooth;
     scrollbar-gutter: stable;
     font-optical-sizing: auto;
+
+    /* ── Figures ──
+       Apple sets PROPORTIONAL figures by default and reserves tabular
+       figures for the places where the reader compares down a column.
+       This is a quality-management system: there is no running prose
+       with a number in it.  Every numeral here is a datum — a date, a
+       count, a serial, a percentage, a measurement, a risk score — and
+       nearly all of them sit in a column that somebody scans, which is
+       exactly the case Apple sanctions tabular figures for.
+
+       The rule used to be applied by hand, as a `tabular-nums` class
+       on 64 elements.  That covered the figures that stand alone and
+       could never reach a numeral buried inside a run of text — a date
+       beside its label, a count inside a badge, a form code next to a
+       form name — and those are the ones that misalign, because a
+       proportional "1" is narrower than a "0" and a column of them
+       wobbles.  Stating the policy once, at the root, covers all of
+       them and states the policy in the one place a reader looks for
+       it.
+
+       A component that genuinely wants proportional figures — a number
+       inside a sentence — opts back out with `font-variant-numeric:
+       proportional-nums`. */
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* Chrome's UA stylesheet gives every form control `font:
+     -webkit-small-control`.  The `font` shorthand resets every
+     font-variant-* longhand to its initial value, so a button or a
+     select inside a column of figures loses the tabular figures the
+     root sets — and the KPI tiles, the pagination counters, the table
+     row actions and the filter selects are all form controls.
+
+     Tailwind's preflight restores the other font longhands (family,
+     size, weight, line-height, letter-spacing) but not this one, so
+     the policy is restored here: a control inherits the figures of
+     the row it sits in, exactly like the text around it. */
+  button,
+  input,
+  optgroup,
+  select,
+  textarea {
+    font-variant-numeric: inherit;
   }
 
   *,
@@ -360,11 +403,6 @@
 
   code, pre, .font-mono {
     font-family: var(--font-mono);
-  }
-
-  /* Numbers read as data, not as prose. */
-  table, .tabular-nums, [class*="font-mono"] {
-    font-variant-numeric: tabular-nums;
   }
 
   ::selection {

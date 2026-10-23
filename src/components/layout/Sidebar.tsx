@@ -105,7 +105,7 @@ function SidebarNavItem({
            text on a white wash over a light row: 1.07:1, i.e. invisible
            exactly where the number was supposed to be seen. */
         <span className={cn(
-          "text-[10px] font-semibold tabular-nums px-1.5 py-0.5 rounded-full",
+          "text-[10px] font-semibold px-1.5 py-0.5 rounded-full",
           isActive
             ? "bg-white/20 text-white dark:bg-foreground/15 dark:text-foreground"
             : "bg-foreground/10 text-foreground",

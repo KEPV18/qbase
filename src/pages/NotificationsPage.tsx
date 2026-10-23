@@ -196,7 +196,7 @@ export default function NotificationsPage() {
                 {tab.label}
                 {count > 0 && tab.id !== 'all' && (
                   <span className={cn(
-                    "text-[10px] font-bold px-1.5 py-0.5 rounded-sm tabular-nums",
+                    "text-[10px] font-bold px-1.5 py-0.5 rounded-sm",
                     active ? "bg-primary/10 text-primary-tint" : "bg-muted text-muted-foreground"
                   )}>
                     {count}

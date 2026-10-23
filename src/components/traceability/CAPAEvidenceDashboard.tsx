@@ -299,7 +299,7 @@ const AddEvidenceModal: React.FC<{
           <div>
             <label className="text-sm font-medium text-foreground">Evidence Type</label>
             <select
-              className="w-full mt-1 rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground"
+              className="w-full mt-1 min-h-11 rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground"
               value={type}
               onChange={(e) => setType(e.target.value as EvidenceType)}
             >
@@ -526,19 +526,19 @@ const CAPAEvidenceDashboard: React.FC = () => {
         {/* Stats */}
         <div className="grid grid-cols-4 gap-4 mt-6">
           <div className="bg-muted rounded-lg p-4">
-            <div className="text-2xl font-bold tabular-nums text-foreground">{stats.total}</div>
+            <div className="text-2xl font-bold text-foreground">{stats.total}</div>
             <div className="text-sm text-muted-foreground">Total CAPAs</div>
           </div>
           <div className="bg-warning/10 dark:bg-warning/20 rounded-lg p-4">
-            <div className="text-2xl font-bold tabular-nums text-warning-tint">{stats.pendingVerification}</div>
+            <div className="text-2xl font-bold text-warning-tint">{stats.pendingVerification}</div>
             <div className="text-sm text-warning-tint">Pending Verification</div>
           </div>
           <div className="bg-success/10 dark:bg-success/20 rounded-lg p-4">
-            <div className="text-2xl font-bold tabular-nums text-success-tint">{stats.readyToClose}</div>
+            <div className="text-2xl font-bold text-success-tint">{stats.readyToClose}</div>
             <div className="text-sm text-success-tint">Ready to Close</div>
           </div>
           <div className="bg-primary/10 rounded-lg p-4">
-            <div className="text-2xl font-bold tabular-nums text-primary-tint">{stats.closed}</div>
+            <div className="text-2xl font-bold text-primary-tint">{stats.closed}</div>
             <div className="text-sm text-primary-tint">Closed</div>
           </div>
         </div>

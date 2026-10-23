@@ -131,12 +131,12 @@ function DeptMetricCard({
       <p className="text-[13px] font-semibold text-foreground leading-tight truncate mb-2">{shortLabel}</p>
       <div className="flex items-center gap-2">
         <div className="min-w-0">
-          <p className="text-lg font-bold tabular-nums text-foreground leading-none">{health.totalForms}</p>
+          <p className="text-lg font-bold text-foreground leading-none">{health.totalForms}</p>
           <p className="text-[10px] text-muted-foreground mt-1">Forms</p>
         </div>
         <div className="w-px h-8 bg-border" />
         <div className="min-w-0">
-          <p className="text-lg font-bold tabular-nums text-foreground leading-none">{health.totalSubmissions}</p>
+          <p className="text-lg font-bold text-foreground leading-none">{health.totalSubmissions}</p>
           <p className="text-[10px] text-muted-foreground mt-1">Filed</p>
         </div>
       </div>
@@ -293,24 +293,24 @@ function DashboardStatsCard({ stats, isLoading, error }: {
       <div className="flex items-center justify-between mb-2">
         <span className="text-sm font-semibold text-foreground">Quality Pulse</span>
         <span className="text-[10px] text-muted-foreground">
-          <span className="tabular-nums">{stats.recordsLast30d}</span> filed in the last 30 days
+          <span>{stats.recordsLast30d}</span> filed in the last 30 days
         </span>
       </div>
       <div className="flex flex-wrap items-center gap-x-5 gap-y-1 text-xs">
         <span className="text-muted-foreground">
-          Records: <strong className="text-foreground tabular-nums">{stats.recordsTotal}</strong>
+          Records: <strong className="text-foreground">{stats.recordsTotal}</strong>
           {/* Only a count that means something is coloured.  A green
               "311 approved" paints the NORMAL state as a signal, and an
               amber "0 pending" is a warning about nothing — both are
               decoration pretending to be information.  So: grey by
               default, amber once something is actually waiting, red once
               something has been turned down. */}
-          <span className="ml-1.5 text-muted-foreground tabular-nums">{by.approved} approved</span>
-          <span className={cn("ml-1.5 tabular-nums", by.pending_review > 0 ? "text-warning-tint" : "text-muted-foreground")}>
+          <span className="ml-1.5 text-muted-foreground">{by.approved} approved</span>
+          <span className={cn("ml-1.5", by.pending_review > 0 ? "text-warning-tint" : "text-muted-foreground")}>
             {by.pending_review} pending
           </span>
-          <span className="ml-1.5 text-muted-foreground tabular-nums">{by.draft} draft</span>
-          <span className={cn("ml-1.5 tabular-nums", by.rejected > 0 ? "text-destructive-tint" : "text-muted-foreground")}>
+          <span className="ml-1.5 text-muted-foreground">{by.draft} draft</span>
+          <span className={cn("ml-1.5", by.rejected > 0 ? "text-destructive-tint" : "text-muted-foreground")}>
             {by.rejected} rejected
           </span>
         </span>
@@ -319,25 +319,25 @@ function DashboardStatsCard({ stats, isLoading, error }: {
           <span className="text-muted-foreground">No CAPA data</span>
         ) : (
           <span className="text-muted-foreground">
-            CAPA closure: <strong className="text-foreground tabular-nums">{stats.capaClosureRate}%</strong>
-            <span className="ml-1.5 text-muted-foreground tabular-nums">({stats.capaClosed}/{stats.capaTotal} closed)</span>
+            CAPA closure: <strong className="text-foreground">{stats.capaClosureRate}%</strong>
+            <span className="ml-1.5 text-muted-foreground">({stats.capaClosed}/{stats.capaTotal} closed)</span>
           </span>
         )}
         {stats.capaOverdue > 0 && (
           <span className="inline-flex items-center gap-1 text-destructive-tint">
-            <ShieldAlert className="w-3 h-3" /> <span className="tabular-nums">{stats.capaOverdue}</span> CAPA overdue
+            <ShieldAlert className="w-3 h-3" /> <span>{stats.capaOverdue}</span> CAPA overdue
           </span>
         )}
         {stats.pendingReviewAging.over_30d > 0 ? (
           <span className="inline-flex items-center gap-1 text-destructive-tint">
-            <Clock className="w-3 h-3" /> <span className="tabular-nums">{stats.pendingReviewAging.over_30d}</span> reviews waiting &gt;30d
+            <Clock className="w-3 h-3" /> <span>{stats.pendingReviewAging.over_30d}</span> reviews waiting &gt;30d
           </span>
         ) : stats.pendingReviewAging.from_7_to_30d > 0 ? (
           <span className="inline-flex items-center gap-1 text-warning-tint">
-            <Clock className="w-3 h-3" /> <span className="tabular-nums">{stats.pendingReviewAging.from_7_to_30d}</span> reviews waiting 7–30d
+            <Clock className="w-3 h-3" /> <span>{stats.pendingReviewAging.from_7_to_30d}</span> reviews waiting 7–30d
           </span>
         ) : (
-          <span className="text-muted-foreground">Reviews current (<span className="tabular-nums">{stats.pendingReviewAging.under_7d}</span> &lt;7d)</span>
+          <span className="text-muted-foreground">Reviews current (<span>{stats.pendingReviewAging.under_7d}</span> &lt;7d)</span>
         )}
       </div>
     </div>
@@ -511,8 +511,8 @@ export default function Index() {
         <div>
           <h1 className="text-xl font-display font-bold text-foreground dark:text-foreground">Hey, {firstName}!</h1>
           <p className="text-sm text-muted-foreground mt-1">
-            <span className="tabular-nums">{totalRecords}</span> records · <span className="tabular-nums">{approvedCount}</span> approved · <span className="tabular-nums">{deptHealthMap.size}</span> departments
-            {globalOverdue > 0 && <span className="text-destructive-tint ml-1">· <span className="tabular-nums">{globalOverdue}</span> overdue forms</span>}
+            <span>{totalRecords}</span> records · <span>{approvedCount}</span> approved · <span>{deptHealthMap.size}</span> departments
+            {globalOverdue > 0 && <span className="text-destructive-tint ml-1">· <span>{globalOverdue}</span> overdue forms</span>}
           </p>
         </div>
         <div className="flex items-center gap-2 flex-wrap justify-end">
@@ -645,7 +645,7 @@ export default function Index() {
             <div className="px-5 pt-5 pb-3 border-b border-border dark:border-border/50">
               <div className="flex items-center justify-between mb-3">
                 <h2 className="text-sm font-display font-bold text-foreground dark:text-foreground">Forms</h2>
-                <span className="text-[11px] text-muted-foreground tabular-nums">{filteredForms.length}</span>
+                <span className="text-[11px] text-muted-foreground">{filteredForms.length}</span>
               </div>
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-ink-4" />
@@ -710,7 +710,7 @@ export default function Index() {
                     ? `Records — ${CANONICAL_FORMS.find(f => f.code === selectedForm)?.name || selectedForm}`
                     : `${activeDept} Records`}
                 </h2>
-                <p className="text-[11px] text-muted-foreground mt-0.5"><span className="tabular-nums">{displayedRecords.length}</span> entries</p>
+                <p className="text-[11px] text-muted-foreground mt-0.5"><span>{displayedRecords.length}</span> entries</p>
               </div>
               {selectedForm && (
                 <button onClick={() => setSelectedForm(null)} className="text-xs font-medium text-muted-foreground hover:text-foreground">Clear</button>

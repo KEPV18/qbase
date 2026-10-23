@@ -259,7 +259,7 @@ export default function ApprovalQueuePage() {
                 10px text at 4.25:1 against its own chip.  A neutral
                 chip — ink on a faint ink wash — reads at 14:1 and says
                 the same thing: "this many are in this tab". */}
-            <span className="px-1.5 py-0.5 text-[10px] font-semibold tabular-nums rounded-full bg-foreground/[0.06] text-foreground">
+            <span className="px-1.5 py-0.5 text-[10px] font-semibold rounded-full bg-foreground/[0.06] text-foreground">
               {tab.count}
             </span>
           </button>
@@ -273,7 +273,7 @@ export default function ApprovalQueuePage() {
           <select
             value={limit}
             onChange={(e) => setLimit(Number(e.target.value))}
-            className="px-2 py-1 border rounded-md text-sm bg-background w-24"
+            className="h-11 w-24 rounded-lg border border-input bg-background px-3 py-2 text-sm text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
           >
             <option value={5}>5</option>
             <option value={10}>10</option>
@@ -299,7 +299,7 @@ export default function ApprovalQueuePage() {
           <select
             value={filterDept}
             onChange={(e) => setFilterDept(e.target.value)}
-            className="px-3 py-2 border rounded-md text-sm bg-background"
+            className="h-11 rounded-lg border border-input bg-background px-3 py-2 text-sm text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
           >
             <option value="all">All Departments</option>
             {departments.map(d => <option key={d} value={d}>{d}</option>)}
@@ -361,7 +361,7 @@ function StatCard({ label, value, icon: Icon, tone = 'info' }: { label: string; 
         <Icon className="w-4 h-4" />
       </div>
       <div>
-        <p className="text-lg font-bold tabular-nums">{value}</p>
+        <p className="text-lg font-bold">{value}</p>
         <p className="text-[10px] uppercase tracking-wider text-muted-foreground">{label}</p>
       </div>
     </div>

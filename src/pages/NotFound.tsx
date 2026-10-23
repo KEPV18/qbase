@@ -8,7 +8,13 @@ const NotFound = () => {
     <div className="flex min-h-screen items-center justify-center bg-background relative overflow-hidden grid-bg">
       <div className="absolute inset-0 pointer-events-none aurora-bg opacity-40" />
       <div className="relative text-center animate-fade-in">
-        <p className="text-[120px] md:text-[180px] font-mono font-black text-primary-tint/15 leading-none tracking-tighter text-glow-cyan">
+        {/* The numeral is a watermark, not a label.  It says nothing the
+            heading below it does not already say, so it is hidden from
+            assistive technology: a screen reader should read "Page not
+            found" once, not "four hundred and four, page not found".
+            WCAG 1.4.3 exempts pure decoration, and this is it — the
+            heading is the message, the numeral is the shape of it. */}
+        <p aria-hidden="true" className="text-[120px] md:text-[180px] font-mono font-black text-primary-tint/15 leading-none tracking-tighter text-glow-cyan">
           404
         </p>
         <div className="-mt-8 space-y-4">

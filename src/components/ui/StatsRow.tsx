@@ -67,7 +67,7 @@ export function StatsRow({ stats, columns, className }: StatsRowProps) {
             <>
               <Icon className="h-[18px] w-[18px] shrink-0 text-ink-3" aria-hidden="true" />
               <div className="min-w-0">
-                <p className={cn("text-[22px] font-bold leading-none tracking-[-0.01em] tabular-nums", variantStyles[variant])}>
+                <p className={cn("text-[22px] font-bold leading-none tracking-[-0.01em]", variantStyles[variant])}>
                   {stat.value}
                 </p>
                 <p className="mt-1 text-[12px] font-medium leading-[1.4] text-muted-foreground">{stat.label}</p>

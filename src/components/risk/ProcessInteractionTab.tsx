@@ -62,7 +62,7 @@ export function ProcessInteractionTab() {
                 <div>
                     <h3 className="font-bold text-base font-display tracking-[-0.01em] text-foreground">Process Interaction Sheet</h3>
                     <p className="text-[10px] text-muted-foreground font-black uppercase tracking-[0.2em] mt-0.5">
-                        Live data from Supabase • <span className="tabular-nums">{processes.length}</span> processes
+                        Live data from Supabase • <span>{processes.length}</span> processes
                     </p>
                 </div>
                 <Button variant="outline" size="sm" className="gap-2" onClick={() => refetch()}>

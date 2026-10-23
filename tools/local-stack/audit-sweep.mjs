@@ -17,7 +17,11 @@ import { readFileSync, writeFileSync, mkdirSync } from 'node:fs';
 const ORIGIN = 'http://127.0.0.1:5210';
 const CREDS = '/tmp/qbase-local/LOCAL_LOGIN.txt';
 const DARK = process.argv.includes('--dark');
-const SHOTS = DARK ? '/tmp/shots/sweep-dark' : '/tmp/shots/sweep';
+const MOBILE = process.argv.includes('--mobile');
+const SHOTS = MOBILE
+  ? (DARK ? '/tmp/shots/sweep-mobile-dark' : '/tmp/shots/sweep-mobile')
+  : (DARK ? '/tmp/shots/sweep-dark' : '/tmp/shots/sweep');
+const VIEWPORT = MOBILE ? { width: 390, height: 844 } : { width: 1440, height: 950 };
 const PROBE_SRC = '/home/kepv/qbase-remediation/tools/local-stack/design-probe.js';
 mkdirSync(SHOTS, { recursive: true });
 
@@ -57,7 +61,10 @@ const row = rows[rows.length - 1];
 const PROBE = readFileSync(PROBE_SRC, 'utf8');
 
 const browser = await chromium.launch();
-const ctx = await browser.newContext({ viewport: { width: 1440, height: 950 } });
+const ctx = await browser.newContext({
+  viewport: VIEWPORT,
+  ...(MOBILE ? { isMobile: true, hasTouch: true, deviceScaleFactor: 2 } : {}),
+});
 const page = await ctx.newPage();
 
 await page.goto(`${ORIGIN}/login`, { waitUntil: 'domcontentloaded', timeout: 30000 });
@@ -81,9 +88,52 @@ if (DARK) {
 }
 
 const wanted = process.argv.slice(2).filter((r) => !r.startsWith('--'));
-const routes = wanted.length
-  ? wanted.map((r) => [r.replace(/[^\w-]/g, '_') || 'route', r])
+// A routes file (one path per line) keeps a long list of parametrised
+// routes out of the shell, where quoting and word-splitting differ per
+// shell and quietly turn into one broken URL.
+const fileIdx = process.argv.indexOf('--routes-file');
+const fromFile = fileIdx >= 0
+  ? readFileSync(process.argv[fileIdx + 1], 'utf8')
+      .split('\n')
+      .map((l) => l.trim())
+      .filter((l) => l && !l.startsWith('#'))
+  : [];
+const list = fromFile.length ? fromFile : wanted;
+const routes = list.length
+  ? list.map((r) => [r.replace(/[^\w-]/g, '_') || 'route', r])
   : ROUTES;
+
+/**
+ * Horizontal overflow: a phone-width page that scrolls sideways is a
+ * layout bug, not a style choice.  Reports the elements whose right
+ * edge sticks out past the viewport, and the widest offender.
+ */
+const OVERFLOW = () => {
+  const vw = document.documentElement.clientWidth;
+  const offenders = [];
+  for (const el of document.querySelectorAll('body *')) {
+    const r = el.getBoundingClientRect();
+    if (r.width === 0 || r.height === 0) continue;
+    if (r.right > vw + 1 || r.left < -1) {
+      const cs = getComputedStyle(el);
+      if (cs.position === 'fixed' || cs.visibility === 'hidden' || cs.opacity === '0') continue;
+      offenders.push({
+        tag: el.tagName.toLowerCase(),
+        cls: (el.className && typeof el.className === 'string' ? el.className : '').slice(0, 60),
+        left: Math.round(r.left),
+        right: Math.round(r.right),
+      });
+    }
+  }
+  return {
+    viewportWidth: vw,
+    scrollWidth: document.documentElement.scrollWidth,
+    bodyScrollWidth: document.body.scrollWidth,
+    overflows: document.documentElement.scrollWidth > vw + 1,
+    offenders: offenders.slice(0, 8),
+    offenderCount: offenders.length,
+  };
+};
 
 const report = {};
 for (const [name, path] of routes) {
@@ -92,7 +142,8 @@ for (const [name, path] of routes) {
     await page.waitForTimeout(2600);
     await page.screenshot({ path: `${SHOTS}/${name}.png`, fullPage: false });
     const probe = await page.evaluate(PROBE);
-    report[name] = probe;
+    const flow = await page.evaluate(OVERFLOW);
+    report[name] = { ...probe, overflow: flow };
     console.log('---', name, '->', page.url());
     console.log('    ground', probe.groundHex, '| text', probe.textChecked, 'checked',
       '| low-contrast', probe.lowContrastCount,
@@ -100,7 +151,12 @@ for (const [name, path] of routes) {
       '| surfaces', probe.surfaceTotal,
       '| glass', probe.glass.length,
       '| small', probe.smallTargetCount, '/', probe.interactiveCount,
-      '| tabular', probe.numbersTabular + '/' + probe.numbers);
+      '| tabular', probe.numbersTabular + '/' + probe.numbers,
+      '| untabular', probe.untabularCount,
+      '| hscroll', flow.overflows ? `YES (${flow.scrollWidth}>${flow.viewportWidth}, ${flow.offenderCount} el)` : 'no');
+    for (const u of probe.untabular || []) console.log('       untabular', JSON.stringify(u.t), '|', u.cls);
+    for (const l of probe.lowContrast || []) console.log('       LOW', l.ratio + ':1 (need ' + l.need + ')', JSON.stringify(l.text), l.fg, 'on', l.bg, '|', l.cls);
+    for (const s of probe.smallTargets || []) console.log('       SMALL', s.tag, s.painted, '->', s.h + 'x' + s.w, JSON.stringify(s.text));
   } catch (e) {
     console.log('skip', name, String(e).split('\n')[0].slice(0, 140));
   }

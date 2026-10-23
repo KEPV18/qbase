@@ -159,7 +159,7 @@ export default function ISOManualPage() {
                 )}
               >
                 <span className={cn(
-                  "w-5 h-5 rounded-md flex items-center justify-center text-[9px] font-bold shrink-0 tabular-nums",
+                  "w-5 h-5 rounded-md flex items-center justify-center text-[9px] font-bold shrink-0",
                   activeSectionId === section.id ? "bg-primary text-primary-foreground" : "bg-muted/60 text-ink-3"
                 )}>
                   {idx + 1}

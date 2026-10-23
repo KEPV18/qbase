@@ -51,7 +51,7 @@ const FieldValue: React.FC<{
       return <span className="text-foreground break-words">{String(val)}</span>;
 
     case 'number':
-      return <span className="text-foreground font-mono tabular-nums">{String(val)}</span>;
+      return <span className="text-foreground font-mono">{String(val)}</span>;
 
     case 'date': {
       // Convert ISO to display format if needed
@@ -351,7 +351,7 @@ const MetaCell: React.FC<{
 }> = ({ label, value, mono }) => (
   <div className="px-4 py-2.5 bg-card">
     <div className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">{label}</div>
-    <div className={`text-sm text-foreground mt-0.5 ${mono ? 'font-mono tabular-nums' : ''}`}>{value || '—'}</div>
+    <div className={`text-sm text-foreground mt-0.5 ${mono ? 'font-mono ' : ''}`}>{value || '—'}</div>
   </div>
 );
 

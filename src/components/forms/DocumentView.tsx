@@ -76,7 +76,7 @@ export function DocHeader({ serial, formName, formCode, sectionName, projectScop
       </h1>
       <div className="flex items-center gap-3 text-sm text-muted-foreground">
         <span className="font-mono text-[13px]">{serial}</span>
-        <span className="text-border">·</span>
+        <span>·</span>
         <span className="text-[13px]">{formCode}</span>
       </div>
       {/* Project Scope & Coverage Period badges */}
@@ -174,7 +174,7 @@ export function DocTable({ columns, rows }: DocTableProps) {
                 <td key={col.key} className="px-4 py-2.5 text-foreground">
                   {row[col.key] !== undefined && row[col.key] !== null && row[col.key] !== ""
                     ? String(row[col.key])
-                    : <span className="text-border">—</span>}
+                    : <span className="text-muted-foreground">—</span>}
                 </td>
               ))}
             </tr>

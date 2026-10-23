@@ -329,14 +329,14 @@ function TraceStats({ chain }: { chain: TraceChain }) {
       <Card>
         <CardContent className="pt-6">
           <p className="text-sm text-ink-2">Total Records</p>
-          <p className="text-2xl font-bold tabular-nums">{chain.stats.totalRecords}</p>
+          <p className="text-2xl font-bold">{chain.stats.totalRecords}</p>
         </CardContent>
       </Card>
 
       <Card>
         <CardContent className="pt-6">
           <p className="text-sm text-ink-2">Trace Depth</p>
-          <p className="text-2xl font-bold tabular-nums">{chain.stats.maxDepth}</p>
+          <p className="text-2xl font-bold">{chain.stats.maxDepth}</p>
           <p className="text-xs text-ink-3">levels</p>
         </CardContent>
       </Card>
@@ -344,7 +344,7 @@ function TraceStats({ chain }: { chain: TraceChain }) {
       <Card>
         <CardContent className="pt-6">
           <p className="text-sm text-ink-2">ISO Clauses</p>
-          <p className="text-2xl font-bold tabular-nums">{coverage.clauses.length}</p>
+          <p className="text-2xl font-bold">{coverage.clauses.length}</p>
           <p className="text-xs text-ink-3">
             {coverage.gaps.length > 0 && `${coverage.gaps.length} gaps`}
           </p>
@@ -356,7 +356,7 @@ function TraceStats({ chain }: { chain: TraceChain }) {
           <p className="text-sm text-ink-2">Broken Links</p>
           <p
             className={cn(
-              "text-2xl font-bold tabular-nums",
+              "text-2xl font-bold",
               chain.gaps.length > 0 ? "text-warning-tint" : "text-success-tint"
             )}
           >

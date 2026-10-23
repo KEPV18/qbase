@@ -388,7 +388,7 @@ const RecordViewPage: React.FC = () => {
                     const target = recordNav.sameFormList[idx];
                     if (target) navigate(`/records/${encodeURIComponent(String(target.serial))}`);
                   }}
-                  className="bg-background border border-border text-foreground text-xs font-medium rounded-md px-2.5 py-1.5 shadow-sm hover:border-foreground/40 focus:outline-none focus:ring-2 focus:ring-primary cursor-pointer max-w-[280px] truncate"
+                  className="h-11 bg-background border border-border text-foreground text-xs font-medium rounded-md px-2.5 shadow-sm hover:border-foreground/40 focus:outline-none focus:ring-2 focus:ring-primary cursor-pointer max-w-[280px] truncate"
                   title="Jump to any record in this form"
                 >
                   <option value={recordNav.currentIndex} className="font-semibold">

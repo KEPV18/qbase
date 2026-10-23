@@ -93,7 +93,7 @@ const CollapsibleSection: React.FC<{
           {icon}
           <h3 className="text-sm font-semibold text-foreground">{title}</h3>
           {count !== undefined && (
-            <span className="px-2 py-0.5 text-xs bg-secondary text-secondary-foreground rounded-full font-medium tabular-nums">
+            <span className="px-2 py-0.5 text-xs bg-secondary text-secondary-foreground rounded-full font-medium">
               {count}
             </span>
           )}

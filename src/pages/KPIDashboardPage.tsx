@@ -81,7 +81,7 @@ const RoleKPICard = ({ role, onClick }: { role: RoleKPIData; onClick: () => void
                   the eye should land on the one card whose weights do not
                   add up, not on eight green ticks.  (Same rule as the SLA
                   Health Pill on the dashboard.) */}
-              <span className={cn("font-medium tabular-nums", isWeightValid ? "text-foreground" : "text-destructive-tint")}>
+              <span className={cn("font-medium", isWeightValid ? "text-foreground" : "text-destructive-tint")}>
                 {(totalWeight * 100).toFixed(0)}%
               </span>
               {isWeightValid
@@ -180,7 +180,7 @@ const KPIDetailView = ({ role }: { role: RoleKPIData }) => (
       </CardHeader>
       <CardContent>
         <div className="flex items-center gap-4">
-          <div className="text-3xl font-bold tabular-nums">{calculateRoleKPIScore(role).toFixed(1)}%</div>
+          <div className="text-3xl font-bold">{calculateRoleKPIScore(role).toFixed(1)}%</div>
           <div className="flex-1">
             <Progress
               value={calculateRoleKPIScore(role)}
@@ -334,7 +334,7 @@ export default function KPIDashboardPage() {
                           <TableCell className="text-muted-foreground">{role.manager}</TableCell>
                           <TableCell className="text-center">{role.kpis.length}</TableCell>
                           <TableCell className="text-center">
-                            <span className={cn("tabular-nums", isValid ? "text-foreground" : "text-destructive-tint")}>
+                            <span className={cn(isValid ? "text-foreground" : "text-destructive-tint")}>
                               {(totalWeight * 100).toFixed(0)}%
                             </span>
                           </TableCell>
@@ -400,7 +400,7 @@ export default function KPIDashboardPage() {
                     Per ISO 9001:2015 Clause 9.3.2, Management Review inputs include organizational performance data.
                     Each role&apos;s KPI weights must sum to 100%. Valid weights are indicated with green borders.
                   </p>
-                  <p className="text-xs text-muted-foreground mt-2 tabular-nums">
+                  <p className="text-xs text-muted-foreground mt-2">
                     Generated: {new Date().toISOString().split("T")[0]}
                   </p>
                 </div>

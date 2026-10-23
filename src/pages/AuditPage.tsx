@@ -142,7 +142,7 @@ export default function AuditPage() {
           <CardContent className="p-5">
             <div className="flex items-center justify-between mb-3">
               <span className="text-sm font-semibold">Form Population Rate</span>
-              <span className="text-2xl font-bold tabular-nums text-success-tint">{complianceRate}%</span>
+              <span className="text-2xl font-bold text-success-tint">{complianceRate}%</span>
             </div>
             <div className="w-full bg-muted/30 rounded-full h-2 overflow-hidden">
               <div className="bg-success h-2 rounded-full transition-all duration-200 ease-out-quart" style={{ width: `${complianceRate}%` }} />

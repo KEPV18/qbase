@@ -677,7 +677,7 @@ const RecordCreationPage: React.FC = () => {
                     <select
                       value={selectedProjectId}
                       onChange={e => setSelectedProjectId(e.target.value)}
-                      className="w-full px-3 py-2 text-sm bg-card border border-border rounded-lg text-foreground focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary/25"
+                      className="w-full min-h-11 px-3 py-2 text-sm bg-card border border-border rounded-lg text-foreground focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary/25"
                     >
                       <option value="">— Select a project —</option>
                       {PROJECTS.map(p => (

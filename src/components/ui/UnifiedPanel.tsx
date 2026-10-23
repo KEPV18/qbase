@@ -226,7 +226,7 @@ export function PanelFigure({ label, value, tone = "default", dot = false, icon:
         ) : null}
         {label}
       </p>
-      <p className={cn("mt-1 text-2xl font-bold leading-none tracking-[-0.02em] tabular-nums", figureTones[tone])}>
+      <p className={cn("mt-1 text-2xl font-bold leading-none tracking-[-0.02em]", figureTones[tone])}>
         {value}
       </p>
     </div>

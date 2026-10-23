@@ -265,7 +265,7 @@ export default function ProceduresPage() {
             <div className="hidden lg:flex w-56 shrink-0 flex-col border-r border-border/30 bg-muted/5 overflow-y-auto">
               <div className="px-3 pt-4 pb-2 flex items-center justify-between">
                 <span className="text-[10px] font-bold text-ink-3 uppercase tracking-[0.15em]">Procedures</span>
-                <Badge variant="outline" className="h-4 px-1.5 text-[9px] bg-muted/40 border-border/40 tabular-nums">{digitalProcedures.length}</Badge>
+                <Badge variant="outline" className="h-4 px-1.5 text-[9px] bg-muted/40 border-border/40">{digitalProcedures.length}</Badge>
               </div>
               <nav className="flex-1 px-2 pb-4 space-y-0.5">
                 {digitalProcedures.map((proc, idx) => (
@@ -280,7 +280,7 @@ export default function ProceduresPage() {
                     )}
                   >
                     <span className={cn(
-                      "w-5 h-5 rounded-md flex items-center justify-center text-[9px] font-bold shrink-0 tabular-nums",
+                      "w-5 h-5 rounded-md flex items-center justify-center text-[9px] font-bold shrink-0",
                       activeSectionId === proc.id ? "bg-primary text-primary-foreground" : "bg-muted/60 text-ink-3"
                     )}>
                       {idx + 1}
@@ -292,7 +292,7 @@ export default function ProceduresPage() {
               <div className="p-3 border-t border-border/20 bg-muted/10 space-y-1.5 text-[10px]">
                 <div className="flex justify-between text-muted-foreground">
                   <span className="flex items-center gap-1"><FileText className="w-3 h-3" /> Total</span>
-                  <span className="font-semibold text-foreground text-[9px] tabular-nums">{digitalProcedures.length} SOPs</span>
+                  <span className="font-semibold text-foreground text-[9px]">{digitalProcedures.length} SOPs</span>
                 </div>
               </div>
             </div>
@@ -436,7 +436,7 @@ export default function ProceduresPage() {
                             <select
                               value={proc.recordFrequency || "As needed"}
                               onChange={(e) => updateProcedure(proc.id, { recordFrequency: e.target.value })}
-                              className="h-6 text-[10px] bg-background border border-primary/20 rounded-md px-1.5 text-foreground"
+                              className="h-11 text-[10px] bg-background border border-primary/20 rounded-md px-1.5 text-foreground"
                             >
                               <option value="As needed">As needed</option>
                               <option value="Monthly">Monthly</option>
@@ -474,7 +474,7 @@ export default function ProceduresPage() {
                           <div className="flex items-center gap-2 mb-3">
                             <Layers className="w-3.5 h-3.5 text-primary-tint" />
                             <span className="text-[11px] font-bold uppercase tracking-wider text-ink-2">Related QMS Records</span>
-                            <Badge variant="outline" className="text-[9px] h-4 font-mono tabular-nums">{related.length}</Badge>
+                            <Badge variant="outline" className="text-[9px] h-4 font-mono">{related.length}</Badge>
                           </div>
                           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
                             {related.map((rec) => (
@@ -559,7 +559,7 @@ export default function ProceduresPage() {
                     </div>
                   </div>
                   <div className="flex items-center gap-1.5">
-                    <Badge variant="outline" className="text-[9px] h-5 font-mono tabular-nums">
+                    <Badge variant="outline" className="text-[9px] h-5 font-mono">
                       {(selectedIndex ?? 0) + 1}/{nonFolderFiles.length}
                     </Badge>
                     <Button variant="outline" size="icon" className="h-7 w-7 rounded-lg ds-hit-44" onClick={() => setSelectedIndex(selectedIndex! > 0 ? selectedIndex! - 1 : 0)} disabled={selectedIndex === 0}>

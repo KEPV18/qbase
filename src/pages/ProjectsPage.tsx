@@ -234,7 +234,7 @@ export default function ProjectsPage() {
                         </div>
                         <div className="flex flex-col items-end gap-1 shrink-0">
                           {recordCount > 0 && (
-                            <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-sm tabular-nums ${
+                            <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-sm ${
                               isSelected
                                 ? 'bg-background/15 text-background'
                                 : 'bg-muted text-ink-2 dark:text-ink-2'

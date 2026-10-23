@@ -627,7 +627,7 @@ const RecordListPage: React.FC = () => {
                         <button
                           key={p}
                           onClick={() => setPage(p)}
-                          className={`ds-press w-8 h-8 text-sm rounded-sm flex items-center justify-center tabular-nums ${
+                          className={`ds-press w-8 h-8 text-sm rounded-sm flex items-center justify-center ${
                             p === safePage
                               ? 'bg-primary text-primary-foreground font-semibold'
                               : 'bg-secondary border border-border text-secondary-foreground hover:bg-accent'

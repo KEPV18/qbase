@@ -295,10 +295,10 @@ export function RiskRegisterTab() {
                                         <div className="text-[10px] text-muted-foreground truncate mt-0.5" title={risk.cause}>{risk.cause}</div>
                                     </TableCell>
                                     <TableCell className="text-center">
-                                        <Badge variant="outline" className={cn("font-bold text-[10px] tabular-nums", getRiskLevelColor(risk.risk_score))}>
+                                        <Badge variant="outline" className={cn("font-bold text-[10px]", getRiskLevelColor(risk.risk_score))}>
                                             {risk.risk_score}
                                         </Badge>
-                                        <div className="text-[8px] text-muted-foreground mt-0.5 tabular-nums">{risk.likelihood}×{risk.impact}</div>
+                                        <div className="text-[8px] text-muted-foreground mt-0.5">{risk.likelihood}×{risk.impact}</div>
                                     </TableCell>
                                     <TableCell className="text-[10px] text-muted-foreground truncate max-w-[130px] hidden lg:table-cell" title={risk.action_control}>{risk.action_control || "—"}</TableCell>
                                     <TableCell className="text-xs font-medium">{risk.owner}</TableCell>

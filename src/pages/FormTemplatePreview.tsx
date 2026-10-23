@@ -91,7 +91,7 @@ export default function FormTemplatePreview() {
           {/* Center: Form info */}
           <div className="flex items-center gap-3">
             <span className="font-mono text-base font-bold text-primary-tint">{code}</span>
-            <span className="text-border">·</span>
+            <span className="text-ink-3 dark:text-ink-3">·</span>
             <span className="text-sm text-foreground font-medium">{schema.name}</span>
             <Badge variant="outline" className="text-[10px] px-2 py-0 h-5 font-mono">
               {currentIndex + 1} / {ALL_FORM_CODES.length}

@@ -613,7 +613,7 @@ export default function SWOTAnalysisPage(): JSX.Element {
               key={stat.label}
               className="px-5 py-4 text-center border-b border-r border-border -mb-px -mr-px"
             >
-              <div className={cn('text-2xl font-bold tracking-[-0.01em] tabular-nums text-foreground', stat.tone)}>
+              <div className={cn('text-2xl font-bold tracking-[-0.01em] text-foreground', stat.tone)}>
                 {stat.value}
               </div>
               <div className="mt-0.5 text-xs text-muted-foreground">{stat.label}</div>
@@ -642,7 +642,7 @@ export default function SWOTAnalysisPage(): JSX.Element {
                     <h2 className="text-[17px] font-semibold tracking-[-0.01em] text-foreground">
                       {config.title}
                     </h2>
-                    <span className="ml-auto text-[13px] tabular-nums text-muted-foreground">
+                    <span className="ml-auto text-[13px] text-muted-foreground">
                       {items.length}
                     </span>
                     <button
@@ -717,7 +717,7 @@ export default function SWOTAnalysisPage(): JSX.Element {
                     <ul className="mt-3 space-y-3">
                       {items.map(item => (
                         <li key={item.id} className="flex items-start gap-3">
-                          <span className="mt-[1px] flex-shrink-0 rounded-sm bg-muted px-1.5 py-[1px] font-mono text-[11px] tabular-nums text-foreground">
+                          <span className="mt-[1px] flex-shrink-0 rounded-sm bg-muted px-1.5 py-[1px] font-mono text-[11px] text-foreground">
                             {item.id}
                           </span>
                           <span className="min-w-0 flex-1">
@@ -891,7 +891,7 @@ export default function SWOTAnalysisPage(): JSX.Element {
                     </span>
                     <span className="mt-0.5 block text-[13.5px] text-foreground">{item.title}</span>
                   </span>
-                  <span className="text-xl font-bold tabular-nums tracking-[-0.01em] text-foreground">
+                  <span className="text-xl font-bold tracking-[-0.01em] text-foreground">
                     {count}
                   </span>
                 </li>
@@ -961,7 +961,7 @@ export default function SWOTAnalysisPage(): JSX.Element {
                   {selectedItem.isoClause && (
                     <div className="flex items-baseline justify-between gap-4 border-b border-border px-4 py-2.5">
                       <dt className="text-[12.5px] text-ink-2">ISO 9001:2015 clause</dt>
-                      <dd className="font-mono text-[12.5px] tabular-nums text-foreground">
+                      <dd className="font-mono text-[12.5px] text-foreground">
                         {selectedItem.isoClause}
                       </dd>
                     </div>

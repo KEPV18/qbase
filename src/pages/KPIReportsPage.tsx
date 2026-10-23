@@ -251,7 +251,7 @@ export default function KPIReportsPage() {
                         {/* A valid weight is the NORMAL state — greyscale.
                             The colour is spent on the role whose weights do
                             not add up, which is the one that needs it. */}
-                        <span className={cn("font-bold tabular-nums", isValid ? "text-foreground" : "text-destructive-tint")}>
+                        <span className={cn("font-bold", isValid ? "text-foreground" : "text-destructive-tint")}>
                           {(totalWeight * 100).toFixed(0)}%
                         </span>
                         {isValid ? <CheckCircle2 className="w-5 h-5 text-ink-4" /> : <AlertCircle className="w-5 h-5 text-destructive-tint" />}
@@ -278,7 +278,7 @@ export default function KPIReportsPage() {
                     This report documents Individual Performance Management (IPM) KPIs as required for
                     Management Review inputs (Clause 9.3.2). All KPI weights should sum to 100% per role.
                   </p>
-                  <p className="text-xs text-muted-foreground mt-2 tabular-nums">
+                  <p className="text-xs text-muted-foreground mt-2">
                     Generated: {new Date().toLocaleString()}
                   </p>
                 </div>
