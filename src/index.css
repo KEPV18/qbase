@@ -721,11 +721,35 @@
      step is a NEUTRAL grey halo, which under a blue button reads as a
      different surface rather than the same one, raised.  A filled
      accent surface carries its own tinted lift instead — the same
-     hue as its fill, one step deeper. ── */
+     hue as its fill, one step deeper.
+
+     These rules have to sit AFTER `.hover-lift:hover` (which sets the
+     neutral halo) and they win the tie on specificity, which is why
+     the filled button variants no longer carry `hover:shadow-lg`:
+     that utility is emitted after this block and was outranking all of
+     them, so hovering a filled button swapped its own hue for grey. ── */
   .shadow-primary:hover {
     box-shadow:
       0 2px 6px 0 hsl(var(--primary-solid) / 0.26),
       0 14px 34px 0 hsl(var(--primary-solid) / 0.3);
+  }
+
+  .shadow-destructive:hover {
+    box-shadow:
+      0 2px 6px 0 hsl(var(--destructive-solid) / 0.26),
+      0 14px 34px 0 hsl(var(--destructive-solid) / 0.3);
+  }
+
+  .shadow-success:hover {
+    box-shadow:
+      0 2px 6px 0 hsl(var(--success-solid) / 0.26),
+      0 14px 34px 0 hsl(var(--success-solid) / 0.3);
+  }
+
+  .shadow-warning:hover {
+    box-shadow:
+      0 2px 6px 0 hsl(var(--warning-solid) / 0.26),
+      0 14px 34px 0 hsl(var(--warning-solid) / 0.3);
   }
 
   /* ── Accent glow — a tinted breathing halo for the single colored CTA.

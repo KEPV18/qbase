@@ -21,14 +21,22 @@ export const buttonVariants = cva(
         // defines for a filled accent surface, and the breathing class
         // survives in the stylesheet as an explicit opt-in for a hero
         // CTA — never as a default.
-        default: "bg-primary text-primary-foreground hover:bg-primary-hover shadow-primary hover:shadow-lg",
-        destructive: "bg-destructive text-destructive-foreground hover:bg-destructive-hover shadow-destructive hover:shadow-lg",
+        //
+        // The filled variants do NOT carry `hover:shadow-lg`: that token
+        // is a NEUTRAL grey halo, so hovering swapped the button's own
+        // hue for a grey one — the opposite of the design system's rule
+        // that "the shadow carries the same hue so the button sits in the
+        // accent rather than on a neutral grey haze".  The tinted hover
+        // step is in the stylesheet instead (`.shadow-primary:hover` and
+        // its siblings), and it is what the lift now deepens into.
+        default: "bg-primary text-primary-foreground hover:bg-primary-hover shadow-primary",
+        destructive: "bg-destructive text-destructive-foreground hover:bg-destructive-hover shadow-destructive",
         outline: "border-2 border-primary/30 bg-transparent hover:bg-primary/10 hover:border-primary text-primary-tint",
         secondary: "bg-secondary text-secondary-foreground hover:bg-secondary/80",
         ghost: "hover:bg-accent hover:text-accent-foreground",
         link: "text-primary-tint underline-offset-4 hover:underline",
-        success: "bg-success text-success-foreground hover:bg-success-hover shadow-success hover:shadow-lg",
-        warning: "bg-warning text-warning-foreground hover:bg-warning-hover shadow-warning hover:shadow-lg",
+        success: "bg-success text-success-foreground hover:bg-success-hover shadow-success",
+        warning: "bg-warning text-warning-foreground hover:bg-warning-hover shadow-warning",
       },
       size: {
         // Touch targets are ≥44px on every tier.  The design system is
