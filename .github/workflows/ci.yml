@@ -1,0 +1,78 @@
+name: CI
+
+# The gate that was missing.
+#
+# `package.json` has had an `npm run ci` script for a while:
+#
+#     lint → typecheck → verify:schemas → test → build
+#
+# but nothing ever ran it, so the gate was a script in a file.  Two of the
+# five steps had never been exercised:
+#
+#   * `npm run typecheck` runs `tsc -b --force`.  The root `tsconfig.json`
+#     has `"files": []` with project references, so `tsc --noEmit` — the
+#     command most people type by hand — checks ZERO files and always
+#     passes.  `tsc -b --force` is the one that bites, and it found a real
+#     defect (`useFilter.ts` used `useEffect` without importing it) the
+#     first time it ran.
+#   * `npm run verify:schemas` reported two RPCs the client calls that no
+#     migration creates.
+#
+# A new test file is only run if it sits under the Vitest `include` globs,
+# so a suite added outside them is silently never executed.  Running the
+# suite here is what keeps that from being invisible.
+
+on:
+  push:
+    branches: ["**"]
+  pull_request:
+  workflow_dispatch:
+
+# A new push to the same branch cancels the run in flight — the result of
+# the newer commit is the one that matters.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  ci:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - name: STEP_1_CHECKOUT
+        uses: actions/checkout@v4
+
+      - name: STEP_2_SETUP_NODE
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+
+      - name: STEP_3_INSTALL
+        run: npm ci --no-audit --no-fund
+
+      - name: STEP_4_LINT
+        run: npm run lint
+
+      # `tsc -b --force`, not `tsc --noEmit`: the root tsconfig has an empty
+      # `files` array, so the latter checks nothing.
+      - name: STEP_5_TYPECHECK
+        run: npm run typecheck
+
+      - name: STEP_6_SCHEMA_PARITY
+        run: npm run verify:schemas
+
+      - name: STEP_7_TEST
+        run: npm run test
+
+      - name: STEP_8_BUILD
+        run: npm run build
+
+      - name: STEP_9_UPLOAD_PARITY_REPORT
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: schema-parity-report
+          path: audit/schema-parity-report.json
+          if-no-files-found: ignore

@@ -2,8 +2,9 @@
 import { createClient } from '@supabase/supabase-js';
 import fs from 'fs';
 import { readFileSync, existsSync } from 'node:fs';
-import { join } from 'node:path';
+import { join, resolve, dirname } from 'node:path';
 import { homedir } from 'node:os';
+import { fileURLToPath } from 'node:url';
 
 // Credentials are read from the environment, falling back to the operator env
 // file (~/.config/qbase/backup.env). Values are never printed or logged.
@@ -30,8 +31,48 @@ const SUPABASE_SERVICE_KEY = env.SUPABASE_SERVICE_ROLE_KEY;
 
 const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY);
 
-// Load form schemas from the TypeScript file
-const schemaContent = fs.readFileSync('/home/Kepv/.qwenpaw/workspaces/qms/qbase-work/src/data/formSchemas.ts', 'utf8');
+// The form schemas.
+//
+// The path used to be a hardcoded absolute one into another machine's
+// workspace (`/home/Kepv/.qwenpaw/...`).  It does not exist here, and the
+// capitalisation did not even match the real home directory, so the script
+// died with ENOENT before it read a single record.
+//
+// The path is resolved relative to this file now, with an override for the
+// case where the schemas live somewhere else.
+const SCHEMAS_PATH = process.env.QBASE_FORM_SCHEMAS
+  ? resolve(process.env.QBASE_FORM_SCHEMAS)
+  : resolve(dirname(fileURLToPath(import.meta.url)), 'src', 'data', 'formSchemas.ts');
+
+if (!existsSync(SCHEMAS_PATH)) {
+  console.error(
+    'The form schemas were not found at ' + SCHEMAS_PATH + '.\n' +
+    'Set QBASE_FORM_SCHEMAS to the file, or run the script from the repository root.'
+  );
+  process.exit(1);
+}
+
+// The report skeleton, used when no template file is present.
+//
+// The audit used to REQUIRE a template on the operator's Desktop, read it,
+// and patch two placeholders into it.  With no template, the audit could
+// not produce a report at all.  This is that same report, written out, so
+// the script produces a complete document whether or not a template
+// happens to be lying around.
+//
+// The two placeholders are the ones `generateReport` replaces: the summary
+// line and the empty findings row.
+const REPORT_HEADER = `# Comprehensive QMS Audit Report
+
+*To be filled upon completion of the audit.*
+
+## Findings
+
+| Form | Record | Field | Value | Type | Description | Recommendation | Severity |
+|           |                   |            |               |            |                      |                        |                   |
+
+## Categories
+`;
 
 // Define required fields per form based on the schema
 const SCHEMAS = {
@@ -596,7 +637,21 @@ function generateReport(findings, totalRecords, totalForms, counters) {
     typeCounts[f.type] = (typeCounts[f.type] || 0) + 1;
   }
   
-  let report = fs.readFileSync('/home/Kepv/Desktop/Comprehensive_Audit_Report.md', 'utf8');
+  // The report.
+  //
+  // This used to read a TEMPLATE from a hardcoded `/home/Kepv/Desktop/...`
+  // path, so the audit could not finish on any other machine — the read
+  // threw before a single finding was written.
+  //
+  // The template is now optional: when it is there it is used as the base
+  // (so an operator's own wording survives), and when it is not the report
+  // is built from scratch with the same structure.  The path itself comes
+  // from QBASE_AUDIT_REPORT, or from the Desktop of the current user.
+  const reportPath = process.env.QBASE_AUDIT_REPORT
+    ? resolve(process.env.QBASE_AUDIT_REPORT)
+    : join(homedir(), 'Desktop', 'Comprehensive_Audit_Report.md');
+
+  let report = existsSync(reportPath) ? fs.readFileSync(reportPath, 'utf8') : REPORT_HEADER;
   
   // Fill in the summary
   report = report.replace(
@@ -630,14 +685,14 @@ function generateReport(findings, totalRecords, totalForms, counters) {
     report += `${i+1}. **[${f.severity}]** ${f.form} - ${f.record} - ${f.field}: ${f.description}\n`;
   }
   
-  fs.writeFileSync('/home/Kepv/Desktop/Comprehensive_Audit_Report.md', report);
+  fs.writeFileSync(reportPath, report);
   console.log('\n=== AUDIT COMPLETE ===');
   console.log(`Total findings: ${findings.length}`);
   console.log(`Critical: ${severityCounts.CRITICAL}`);
   console.log(`High: ${severityCounts.HIGH}`);
   console.log(`Medium: ${severityCounts.MEDIUM}`);
   console.log(`Low: ${severityCounts.LOW}`);
-  console.log(`Report saved to /home/Kepv/Desktop/Comprehensive_Audit_Report.md`);
+  console.log(`Report saved to ${reportPath}`);
 }
 
 runAudit().catch(console.error);

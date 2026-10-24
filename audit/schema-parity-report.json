@@ -1,45 +1,25 @@
 {
-  "generatedAt": "2026-10-23T15:56:35.840Z",
+  "generatedAt": "2026-10-23T22:46:07.967Z",
   "sources": {
-    "code": "199 source files under src/",
-    "migrations": "31 SQL files under supabase/migrations/",
+    "code": "203 source files under src/",
+    "migrations": "48 SQL files under supabase/migrations/",
     "snapshot": "audit/rpc-args.json (readAt 2026-09-28T17:25:17.921Z)"
   },
   "counts": {
     "tablesReferencedByCode": 10,
-    "rpcsCalledByCode": 14,
-    "functionsCreatedByMigrations": 37,
+    "rpcsCalledByCode": 27,
+    "functionsCreatedByMigrations": 57,
     "tablesInSnapshot": 17,
-    "rpcsInSnapshot": 9
+    "rpcsInSnapshot": 9,
+    "rpcsCoveredBySnapshot": 5,
+    "rpcsOutsideSnapshotCoverage": 22
   },
   "summary": {
-    "totalFindings": 3,
+    "totalFindings": 0,
     "bySeverity": {
       "ERROR": 0,
-      "WARNING": 3
+      "WARNING": 0
     }
   },
-  "findings": [
-    {
-      "severity": "WARNING",
-      "code": "rpc-missing-migration",
-      "subject": "create_record_validated",
-      "detail": "RPC \"create_record_validated\" is called by the code and exists in production, but no migration in supabase/migrations/ creates it. It cannot be rebuilt from this repository alone.",
-      "evidence": "called from src/services/recordStorage.ts, src/services/recordStorage.ts"
-    },
-    {
-      "severity": "WARNING",
-      "code": "rpc-missing-migration",
-      "subject": "soft_delete_record",
-      "detail": "RPC \"soft_delete_record\" is called by the code and exists in production, but no migration in supabase/migrations/ creates it. It cannot be rebuilt from this repository alone.",
-      "evidence": "called from src/services/recordStorage.ts"
-    },
-    {
-      "severity": "WARNING",
-      "code": "rpc-missing-migration",
-      "subject": "admin_list_users",
-      "detail": "RPC \"admin_list_users\" is called by the code and exists in production, but no migration in supabase/migrations/ creates it. It cannot be rebuilt from this repository alone.",
-      "evidence": "called with no arguments"
-    }
-  ]
+  "findings": []
 }

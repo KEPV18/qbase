@@ -81,8 +81,24 @@ function sourceFiles(): string[] {
 /**
  * Collect the table and RPC names the code names.
  *
- * Both `.from('x')` and `.rpc('x', {...})` are matched, along with the
- * double-quoted variant, because the codebase uses both.
+ * FOUR call shapes reach the database, and the scanner has to see all of
+ * them — a name it cannot see is a name it cannot check:
+ *
+ *   supabase.from('records')            the JS client, table
+ *   supabase.rpc('name', { p_x: 1 })    the JS client, RPC
+ *   restRpc('name', { p_x: 1 })         raw fetch, RPC  (used where the JS
+ *                                        client hangs on the edge runtime)
+ *   restGet('/rest/v1/tenant_settings') raw fetch, table
+ *
+ * The scanner used to see only the first two.  Every RPC reached through
+ * `restRpc` — the whole admin spine (`admin_create_profile`,
+ * `admin_upsert_user_role`, `admin_delete_user_role`,
+ * `admin_deactivate_profile`, `self_provision_profile`,
+ * `admin_update_profile`) and the two DataSanitizer probes — was
+ * INVISIBLE to the parity check.  A function the code calls but no
+ * migration creates was not reported, and a function production does not
+ * have was not reported either: the check said the schema matched while
+ * a third of the RPC surface had never been looked at.
  */
 function scanCode(): { tables: Map<string, string[]>; rpcs: Map<string, Map<string, string[]>> } {
   const tables = new Map<string, string[]>();
@@ -92,6 +108,21 @@ function scanCode(): { tables: Map<string, string[]>; rpcs: Map<string, Map<stri
     if (!map.has(key)) map.set(key, []);
     const list = map.get(key)!;
     if (!list.includes(file)) list.push(file);
+  };
+
+  /** Record one RPC and the argument names the code sends with it. */
+  const noteRpc = (name: string, body: string, file: string) => {
+    const key = name.toLowerCase();
+    if (!rpcs.has(key)) rpcs.set(key, new Map());
+    const argMap = rpcs.get(key)!;
+    const argRe = /(?:^|[{,\s])(p_[a-z0-9_]+)\s*:/gi;
+    let a: RegExpExecArray | null;
+    while ((a = argRe.exec(body)) !== null) {
+      const arg = a[1].toLowerCase();
+      if (!argMap.has(arg)) argMap.set(arg, []);
+      const list = argMap.get(arg)!;
+      if (!list.includes(file)) list.push(file);
+    }
   };
 
   for (const file of sourceFiles()) {
@@ -107,22 +138,24 @@ function scanCode(): { tables: Map<string, string[]>; rpcs: Map<string, Map<stri
     let m: RegExpExecArray | null;
     while ((m = tableRe.exec(src)) !== null) note(tables, m[1].toLowerCase(), rel);
 
-    // ── RPCs, with their argument names ──
-    const rpcRe = /\.rpc\(\s*['"]([a-z_][a-z0-9_]*)['"]\s*(?:,\s*\{([\s\S]{0,1200}?)\}\s*)?\)/gi;
-    while ((m = rpcRe.exec(src)) !== null) {
+    // ── Tables, named in a REST path ──
+    // `restGet('/rest/v1/tenant_settings?…')` and the hand-built fetches
+    // name the table in the URL, not in a `.from()` call.
+    const restTableRe = /\/rest\/v1\/([a-z_][a-z0-9_]*)/gi;
+    while ((m = restTableRe.exec(src)) !== null) {
       const name = m[1].toLowerCase();
-      if (!rpcs.has(name)) rpcs.set(name, new Map());
-      const argMap = rpcs.get(name)!;
-      const body = m[2] ?? '';
-      const argRe = /(?:^|[{,\s])(p_[a-z0-9_]+)\s*:/gi;
-      let a: RegExpExecArray | null;
-      while ((a = argRe.exec(body)) !== null) {
-        const arg = a[1].toLowerCase();
-        if (!argMap.has(arg)) argMap.set(arg, []);
-        const list = argMap.get(arg)!;
-        if (!list.includes(rel)) list.push(rel);
-      }
+      if (name === 'rpc') continue; // `/rest/v1/rpc/<fn>` is an RPC path
+      note(tables, name, rel);
     }
+
+    // ── RPCs, with their argument names ──
+    // (a) the JS client
+    const rpcRe = /\.rpc\(\s*['"]([a-z_][a-z0-9_]*)['"]\s*(?:,\s*\{([\s\S]{0,1200}?)\}\s*)?\)/gi;
+    while ((m = rpcRe.exec(src)) !== null) noteRpc(m[1], m[2] ?? '', rel);
+
+    // (b) the raw-fetch path
+    const restRpcRe = /\brestRpc(?:<[^>]*>)?\(\s*['"]([a-z_][a-z0-9_]*)['"]\s*(?:,\s*\{([\s\S]{0,1200}?)\}\s*)?\)/gi;
+    while ((m = restRpcRe.exec(src)) !== null) noteRpc(m[1], m[2] ?? '', rel);
   }
 
   return { tables, rpcs };
@@ -341,6 +374,17 @@ function main(): void {
       functionsCreatedByMigrations: migrations.size,
       tablesInSnapshot: Object.keys(snapshot?.tables ?? {}).length,
       rpcsInSnapshot: Object.keys(snapshot?.rpcs ?? {}).length,
+      // How many of the code's RPCs the snapshot actually describes.
+      //
+      // The snapshot is a CURATED capture, not the full PostgREST RPC
+      // list: it carries 9 functions while the code calls 23.  The
+      // "the function does not exist in production" check can therefore
+      // only ever fire for the captured ones — for the rest, the
+      // migration is the authority.  Reporting the number keeps that
+      // limit visible instead of letting a partial check read as a
+      // complete one.
+      rpcsCoveredBySnapshot: Object.keys(snapshot?.rpcs ?? {}).filter(r => rpcs.has(r)).length,
+      rpcsOutsideSnapshotCoverage: [...rpcs.keys()].filter(r => !(r in (snapshot?.rpcs ?? {}))).length,
     },
     summary: {
       totalFindings: findings.length,
@@ -359,6 +403,10 @@ function main(): void {
   console.log(`  functions in migrations   : ${report.counts.functionsCreatedByMigrations}`);
   console.log(`  tables in snapshot        : ${report.counts.tablesInSnapshot}`);
   console.log(`  RPCs in snapshot          : ${report.counts.rpcsInSnapshot}`);
+  console.log(
+    `  of the code's RPCs, the snapshot describes : ${report.counts.rpcsCoveredBySnapshot}` +
+      `  (${report.counts.rpcsOutsideSnapshotCoverage} rest are checked against the migrations only)`,
+  );
   console.log('');
   for (const f of report.findings) {
     console.log(`  [${f.severity}] ${f.code}: ${f.subject}`);

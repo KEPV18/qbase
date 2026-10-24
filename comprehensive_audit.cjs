@@ -2,7 +2,7 @@
 const { createClient } = require('@supabase/supabase-js');
 const fs = require('fs');
 const { readFileSync, existsSync } = require('node:fs');
-const { join } = require('node:path');
+const { join, resolve, dirname } = require('node:path');
 const { homedir } = require('node:os');
 
 // Credentials are read from the environment, falling back to the operator env
@@ -30,16 +30,40 @@ const SUPABASE_SERVICE_KEY = env.SUPABASE_SERVICE_ROLE_KEY;
 
 const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY);
 
-// Load form schemas from the TypeScript file
-const schemaContent = fs.readFileSync('/home/Kepv/.qwenpaw/workspaces/qms/qbase-work/src/data/formSchemas.ts', 'utf8');
+// Load form schemas from the TypeScript file.
+//
+// The path used to be a hardcoded absolute one into another machine's
+// workspace (`/home/Kepv/.qwenpaw/workspaces/qms/qbase-work/...`).  That
+// path does not exist here — and did not have the same capitalisation as
+// the real home directory — so the script died with ENOENT at load, before
+// it read a single record.  The path is now resolved relative to this
+// file, with an override for the case where the schemas live elsewhere.
+const SCHEMAS_PATH = process.env.QBASE_FORM_SCHEMAS
+  ? resolve(process.env.QBASE_FORM_SCHEMAS)
+  : resolve(dirname(__filename), 'src', 'data', 'formSchemas.ts');
 
-// Parse schemas (simplified extraction)
-function parseSchemas(content) {
-  const schemas = {};
-  // This is a simplified parser - in reality we'd want a proper TS parser
-  // But for audit purposes, we'll hard-code the key requirements per form
-  
-  // We'll define the required fields per form based on the schema
+if (!existsSync(SCHEMAS_PATH)) {
+  console.error(
+    'The form schemas were not found at ' + SCHEMAS_PATH + '.\n' +
+    'Set QBASE_FORM_SCHEMAS to the file, or run the script from the repository root.'
+  );
+  process.exit(1);
+}
+
+// The content is not parsed — the required-field table in `parseSchemas`
+// below is the one the audit uses.  The file is still located and checked
+// here, so that a moved or renamed schema is reported as a clear message
+// rather than as a schema that silently stops matching the forms.
+fs.accessSync(SCHEMAS_PATH, fs.constants.R_OK);
+
+// The required fields per form.
+//
+// This is a simplified table, not a parser: the schema file is read above
+// so that a missing or moved schema is reported immediately, but the
+// requirements themselves are the ones written out here.  The function
+// therefore takes no argument — it used to take the file content and
+// ignore it.
+function parseSchemas() {
   return {
     "F/08": { name: "Order Form", required: ["serial", "client_name"], tableFields: [] },
     "F/09": { name: "Customer Complaint", required: ["serial", "date", "client_name", "description", "complaint_nature"], tableFields: [] },
@@ -79,7 +103,26 @@ function parseSchemas(content) {
   };
 }
 
-const SCHEMAS = parseSchemas(schemaContent);
+const SCHEMAS = parseSchemas();
+
+// The finding counters.
+//
+// These used to be declared with `let` INSIDE `runAudit`, while
+// `validateFormSpecific` — a top-level function — also increments them.
+// A function cannot see another function's locals, so the first record that
+// reached one of those increments died with
+//
+//     ReferenceError: totalInvalidValuesRef is not defined
+//
+// and the audit stopped half way through the register.  The counters are
+// module scope now, which is what both functions need.
+//
+// The array wrapper is deliberate: it lets a counter be incremented from
+// inside a nested function without rebinding it.
+const totalEmptyFieldsRef = [0];
+const totalInvalidValuesRef = [0];
+const totalInconsistenciesRef = [0];
+const totalDuplicatesRef = [0];
 
 async function runAudit() {
   console.log('Fetching all records...');
@@ -93,10 +136,6 @@ async function runAudit() {
   console.log(`Total records: ${records.length}`);
   
   const findings = [];
-  let totalEmptyFieldsRef = [0]; let totalInvalidValuesRef = [0]; let totalInconsistenciesRef = [0]; let totalDuplicatesRef = [0];
-  let totalInvalidValues = 0;
-  let totalInconsistencies = 0;
-  let totalDuplicates = 0;
   
   // Group by form
   const byForm = {};
