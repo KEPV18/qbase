@@ -375,6 +375,16 @@ export function detectMissingDependencies(allRecords: RecordData[]): MissingDepe
       // Only flag if trigger has 3+ records (avoid noise with test data)
       const triggerCount = allRecords.filter(r => r.formCode === trigger).length;
       if (triggerCount >= 3) {
+        // EVERY record of the trigger form is affected.
+        //
+        // The rule is a form-level one: the expected form does not exist at
+        // all, so every record that should have had a companion has lost it.
+        // The old `break` attached the signal to the FIRST trigger record
+        // only, and because the summary counts "clean" records as those
+        // without a signal, the other 54 records of that form were reported
+        // as CLEAN while the one flagged record was reported as having a
+        // missing dependency.  The count and the per-record report
+        // disagreed, and the count was the wrong one.
         for (const record of allRecords) {
           if (record.formCode === trigger) {
             deps.push({
@@ -383,7 +393,6 @@ export function detectMissingDependencies(allRecords: RecordData[]): MissingDepe
               expectedFormCode: expected,
               expectedPattern: `${expected} ${expectedName}`,
             });
-            break; // One signal per trigger form is enough
           }
         }
       }
@@ -424,14 +433,31 @@ export function evaluateRulesForRecord(
 export function evaluateAllRecords(allRecords: RecordData[]): IntegrityReport[] {
   const reports: IntegrityReport[] = [];
 
+  // The two global detectors are computed ONCE, not once per record.
+  //
+  // `detectMissingReferences` walks the whole record set and filters it again
+  // inside its own loop; `detectMissingDependencies` does the same.  Calling
+  // them inside the per-record loop made the Data Integrity page do O(n²)
+  // work on every recompute — with the production copy's 318 records that is
+  // hundreds of thousands of comparisons, recomputed for every record.
+  const refsBySerial = new Map<string, MissingReference[]>();
+  for (const ref of detectMissingReferences(allRecords)) {
+    const list = refsBySerial.get(ref.fromSerial);
+    if (list) list.push(ref);
+    else refsBySerial.set(ref.fromSerial, [ref]);
+  }
+
+  const depsBySerial = new Map<string, MissingDependency[]>();
+  for (const dep of detectMissingDependencies(allRecords)) {
+    const list = depsBySerial.get(dep.forSerial);
+    if (list) list.push(dep);
+    else depsBySerial.set(dep.forSerial, [dep]);
+  }
+
   for (const record of allRecords) {
     const signals = evaluateRulesForRecord(record, allRecords);
-    const missingRefs = detectMissingReferences(allRecords).filter(
-      r => r.fromSerial === record.serial
-    );
-    const missingDeps = detectMissingDependencies(allRecords).filter(
-      d => d.forSerial === record.serial
-    );
+    const missingRefs = refsBySerial.get(record.serial as string) ?? [];
+    const missingDeps = depsBySerial.get(record.serial as string) ?? [];
 
     if (signals.length > 0 || missingRefs.length > 0 || missingDeps.length > 0) {
       const overallSeverity: RuleSeverity = signals.some(s => s.severity === 'critical')

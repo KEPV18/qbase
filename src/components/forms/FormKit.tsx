@@ -17,7 +17,7 @@ export interface BaseTemplateProps {
   data?: Record<string, unknown>;
   isTemplate?: boolean;
   editMode?: boolean;
-  onChange?: (field: string, value: string) => void;
+  onChange?: (field: string, value: unknown) => void;
   className?: string;
 }
 
@@ -384,7 +384,7 @@ interface FormMetaGridProps {
   fields: MetaField[];
   data: Record<string, unknown>;
   editMode?: boolean;
-  onChange?: (field: string, value: string) => void;
+  onChange?: (field: string, value: unknown) => void;
   columns?: 2 | 3 | 4;
   className?: string;
   formCode?: string;
@@ -416,6 +416,12 @@ export function FormMetaGrid({ fields, data, editMode, onChange, columns = 2, cl
                     "w-full bg-transparent text-[12px] font-semibold outline-none border-b border-dashed pb-1 font-sans",
                     "text-foreground", underlineColor,
                   )}
+                  // The label above is a bare <span>, not a <label>, so it
+                  // is not associated with the input and the browser does not
+                  // use it as the accessible name.  Without this the control
+                  // was announced as "edit text, blank" — the reader could
+                  // not tell which of the metadata fields they were in.
+                  aria-label={f.label}
                   value={val(d, f.key)}
                   onChange={e => onChange?.(f.key, e.target.value)}
                 />
@@ -548,7 +554,7 @@ interface FormSignatureProps {
   fields: SignatureField[];
   data: Record<string, unknown>;
   editMode?: boolean;
-  onChange?: (field: string, value: string) => void;
+  onChange?: (field: string, value: unknown) => void;
   columns?: 1 | 2 | 3 | 4;
   className?: string;
   formCode?: string;
@@ -726,7 +732,7 @@ interface FieldRowProps {
   data: Record<string, unknown>;
   fieldKey: string;
   editMode?: boolean;
-  onChange?: (field: string, value: string) => void;
+  onChange?: (field: string, value: unknown) => void;
   formCode?: string;
   /** Full-width answer (spans remaining space) */
   fullWidth?: boolean;
@@ -775,7 +781,7 @@ interface TextBlockProps {
   data: Record<string, unknown>;
   fieldKey: string;
   editMode?: boolean;
-  onChange?: (field: string, value: string) => void;
+  onChange?: (field: string, value: unknown) => void;
   formCode?: string;
   minHeight?: string;
   className?: string;

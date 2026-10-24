@@ -150,8 +150,11 @@ export default function KPIReportsPage() {
               <div className="flex flex-col md:flex-row gap-4">
                 <div className="flex-1">
                   <label className="text-xs font-bold uppercase tracking-widest text-muted-foreground mb-2 block">Roles</label>
-                  <Select value={selectedRoles.length === 0 ? "all" : "selected"} onValueChange={(val) => { if (val === "all") setSelectedRoles([]); }}>
-                    <SelectTrigger><SelectValue placeholder="All Roles" /></SelectTrigger>
+                  <Select
+                    value={selectedRoles.length === 0 ? "all" : selectedRoles[0]}
+                    onValueChange={(val) => setSelectedRoles(val === "all" ? [] : [val])}
+                  >
+                    <SelectTrigger aria-label="Filter by role"><SelectValue placeholder="All Roles" /></SelectTrigger>
                     <SelectContent>
                       <SelectItem value="all">All Roles</SelectItem>
                       {KPI_DATA.map((role) => (
@@ -162,8 +165,11 @@ export default function KPIReportsPage() {
                 </div>
                 <div className="flex-1">
                   <label className="text-xs font-bold uppercase tracking-widest text-muted-foreground mb-2 block">Categories</label>
-                  <Select value={selectedCategories.length === 0 ? "all" : "selected"} onValueChange={(val) => { if (val === "all") setSelectedCategories([]); }}>
-                    <SelectTrigger><SelectValue placeholder="All Categories" /></SelectTrigger>
+                  <Select
+                    value={selectedCategories.length === 0 ? "all" : selectedCategories[0]}
+                    onValueChange={(val) => setSelectedCategories(val === "all" ? [] : [val])}
+                  >
+                    <SelectTrigger aria-label="Filter by category"><SelectValue placeholder="All Categories" /></SelectTrigger>
                     <SelectContent>
                       <SelectItem value="all">All Categories</SelectItem>
                       {categories.map((cat) => (<SelectItem key={cat} value={cat}>{cat}</SelectItem>))}

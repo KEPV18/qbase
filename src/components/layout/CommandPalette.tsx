@@ -4,9 +4,9 @@
 // "command palette (cmdk) with global search across records+modules+actions,
 //  keyboard nav in lists" — one ⌘K surface that searches the three things
 // the app actually has: navigation routes (modules), real records,
-// and user-facing actions. Filtering is done locally (records are already
-// loaded through the audited useRecords path — no extra table reads, and
-// the browser never writes anything: every item is pure navigation §5).
+// and user-facing actions. The records are searched through the SERVER
+// (one filtered page, not the whole table), and the browser never writes
+// anything: every item is pure navigation §5.
 //
 // Open triggers: ⌘K / Ctrl+K anywhere, or the TopNav search-chip button
 // (dispatches the OPEN_EVENT below). cmdk provides keyboard navigation
@@ -22,7 +22,7 @@ import {
   SunMoon, Workflow, Search, ArrowRight, Radar,
 } from "lucide-react";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
-import { useRecords } from "@/hooks/useRecordStorage";
+import { useRecordPage } from "@/hooks/useCompliance";
 import { useTheme } from "@/hooks/useTheme";
 import type { RecordData } from "@/components/forms/DynamicFormRenderer";
 
@@ -90,25 +90,29 @@ const MODULE_ICONS: Record<string, React.ElementType> = {
   "/admin/accounts": Settings,
 };
 
-/** Same match semantics as the TopNav inline search (serial → name → code → deep form_data scan). */
+/** Same match semantics as the TopNav inline search (serial → name → code). */
 function matchRecord(r: RecordData, q: string): boolean {
   const serial = String(r.serial ?? "").toLowerCase();
   const formName = String(r.formName ?? "").toLowerCase();
   const formCode = String(r.formCode ?? "").toLowerCase();
-  if (serial.includes(q) || formName.includes(q) || formCode.includes(q)) return true;
-  if (r.form_data && typeof r.form_data === "object") {
-    return Object.values(r.form_data as Record<string, unknown>).some(
-      (v) => typeof v === "string" && v.toLowerCase().includes(q),
-    );
-  }
-  return false;
+  return serial.includes(q) || formName.includes(q) || formCode.includes(q);
 }
 
 export function CommandPalette() {
   const navigate = useNavigate();
   const [open, setOpen] = useState(false);
   const [search, setSearch] = useState("");
-  const { data: records } = useRecords();
+  // The term the palette filters on.  It is declared BEFORE the query that
+  // uses it: a `const` read above its own declaration is a temporal-dead-zone
+  // `ReferenceError`, and the palette is mounted on every page.
+  const q = search.trim().toLowerCase();
+  // The palette searches the register through the SERVER, and asks for a
+  // PAGE — never the whole table.  The palette is mounted on every page,
+  // so a whole-table read here cost every page its register.
+  const { data: recordPage } = useRecordPage(
+    useMemo(() => (q ? { search: q } : {}), [q]),
+    { page: 0, pageSize: q ? 8 : 5, sort: 'created_desc' },
+  );
   const { resolvedTheme, setTheme } = useTheme();
 
   // Global open triggers: ⌘K / Ctrl+K (native browser find stays untouched),
@@ -135,8 +139,6 @@ export function CommandPalette() {
     navigate(path);
   };
 
-  const q = search.trim().toLowerCase();
-
   const moduleItems = useMemo(() => {
     if (!q) return MODULE_ROUTES;
     return MODULE_ROUTES.filter(
@@ -155,15 +157,12 @@ export function CommandPalette() {
   }, [q]);
 
   const recordHits = useMemo((): RecordData[] => {
-    if (!records) return [];
-    const source = q
-      ? records.filter((r) => matchRecord(r, q))
-      : [...records].sort(
-          (a, b) =>
-            new Date(String(b._createdAt ?? 0)).getTime() - new Date(String(a._createdAt ?? 0)).getTime(),
-        );
-    return source.slice(0, q ? 8 : 5);
-  }, [records, q]);
+    const rows = recordPage?.rows ?? [];
+    if (q) return rows;
+    // With no term the palette shows the most recent records — the server
+    // sorts them by creation date, newest first.
+    return rows;
+  }, [recordPage, q]);
 
   const showRecords = q || recordHits.length > 0;
 

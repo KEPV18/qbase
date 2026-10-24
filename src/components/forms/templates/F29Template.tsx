@@ -20,7 +20,7 @@ export interface F29Props {
   data?: Record<string, unknown>;
   isTemplate?: boolean;
   editMode?: boolean;
-  onChange?: (field: string, value: string) => void;
+  onChange?: (field: string, value: unknown) => void;
   className?: string;
 }
 
@@ -59,8 +59,19 @@ const STATUS_ITEMS = [
 const FC = "F/29";
 const NUM_TOPICS = 15;
 
+
+// A stable empty object.
+//
+// `data ?? {}` handed the components a NEW object on every render when the
+// form had no data yet.  That defeats every `useMemo` that depends on it:
+// the dependency changed identity each time, so the memo recomputed and
+// handed its consumers a new array, which re-rendered them in turn.  A
+// shared, frozen empty object keeps the identity stable.  Nothing writes
+// into `d` — it is only ever read — so one instance is safe.
+const EMPTY_DATA: Record<string, unknown> = Object.freeze({});
+
 export function F29Template({ data, isTemplate = true, editMode = false, onChange, className }: F29Props) {
-  const d = data ?? {};
+  const d = data ?? EMPTY_DATA;
   const rows = useMemo(() => parseRows(d), [d]);
 
   // Training status — check both training_status and result objects
@@ -72,7 +83,7 @@ export function F29Template({ data, isTemplate = true, editMode = false, onChang
   const inp = (key: string, label: string, width = "w-full") =>
     editMode ? (
       <input className={cn("border-b border-dashed border-warning/40 dark:border-warning/45 bg-transparent text-[12px] font-semibold px-1 outline-none", width)}
-        value={val(d, key)} onChange={e => onChange?.(key, e.target.value)} placeholder={label} />
+        value={val(d, key)} onChange={e => onChange?.(key, e.target.value)} aria-label={label} placeholder={label} />
     ) : (
       <span className={cn("border-b border-dashed border-warning/30 dark:border-warning/45 px-1 inline-block min-w-[4rem] text-[12px] font-semibold", width)}>
         {val(d, key) || (isTemplate ? "___" : "\u00A0")}

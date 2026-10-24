@@ -13,7 +13,7 @@ export interface F50Props {
   data?: Record<string, unknown>;
   isTemplate?: boolean;
   editMode?: boolean;
-  onChange?: (field: string, value: string) => void;
+  onChange?: (field: string, value: unknown) => void;
   className?: string;
 }
 
@@ -83,7 +83,7 @@ export function F50Template({ data, isTemplate = true, editMode = false, onChang
   }, [d.entries]);
 
   const updateEntries = useCallback((newEntries: Array<Record<string, string>>) => {
-    onChange?.("entries", JSON.stringify(newEntries));
+    onChange?.("entries", newEntries);
   }, [onChange]);
 
   const fieldUpdate = useCallback((idx: number, key: string, value: string) => {
@@ -107,10 +107,14 @@ export function F50Template({ data, isTemplate = true, editMode = false, onChang
   );
 
   // ── Editable cell ────────────────────────────────────────────────
+  // The placeholder is only a visual hint ("Qty"); the name has to say
+  // WHICH quantity and WHICH row, or every cell in the register announced
+  // identically.
   const rwCell = (idx: number, key: string, placeholder: string, center = false) => (
     <td className={valueCls}>
       <input
         type="text"
+        aria-label={`${placeholder} (row ${idx + 1})`}
         value={entries[idx][key]}
         placeholder={placeholder}
         className={cn(inputCls, center && "text-center")}
@@ -152,6 +156,7 @@ export function F50Template({ data, isTemplate = true, editMode = false, onChang
                       className="inline w-16 text-xs bg-transparent outline-none border-b border-border text-center text-foreground placeholder:text-ink-3"
                       value={serialValue}
                       onChange={e => onChange?.("serial", e.target.value)}
+                      aria-label="Revision number"
                       placeholder="00"
                     />
                   </>
@@ -212,6 +217,7 @@ export function F50Template({ data, isTemplate = true, editMode = false, onChang
                       <input
                         type="text"
                         value={entry.balance_qty}
+                        aria-label={`Balance Qty (row ${idx + 1})`}
                         placeholder="Qty"
                         className={cn(inputCls, "text-center")}
                         onChange={e => fieldUpdate(idx, "balance_qty", e.target.value)}

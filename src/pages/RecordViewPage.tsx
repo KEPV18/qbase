@@ -12,7 +12,7 @@ import {
   Download, FileJson, FileSpreadsheet, FileText as FileTextIcon,
   Trash2, Printer, ChevronLeft, ChevronRightIcon, XCircle, Table,
 } from 'lucide-react';
-import { getFormSchema, FORM_SCHEMAS } from '../data/formSchemas';
+import { getFormSchema, FORM_SCHEMAS, type FormSchema } from '../data/formSchemas';
 import { isoToDisplay } from '../schemas';
 import { resolveCoveragePeriod } from '@/lib/temporalUtils';
 import DynamicFormRenderer, { type RecordData } from '../components/forms/DynamicFormRenderer';
@@ -24,7 +24,8 @@ import { useAuditLog } from '../hooks/useAuditLog';
 import { useAuth } from '../hooks/useAuth';
 import { evaluateRulesForRecord, getSeverityColor, type RuleSeverity } from '../services/ruleEngine';
 import { getEditRiskLevel } from '../services/recordUtils';
-import { exportRecordToDocx } from '../services/docxExport';
+// The .docx exporter is imported dynamically inside the export handler —
+// see handleExportDocx below.
 import { exportRecordToJson, exportRecordToCsv } from '../services/fileExport';
 import { toast } from 'sonner';
 import { AppShell } from '@/components/layout/AppShell';
@@ -43,6 +44,53 @@ const CRITICAL_FIELDS = new Set([
   'project_name', 'employee_name', 'employee_id',
   'performance', 'overall_score', 'month', 'year',
 ]);
+
+// ============================================================================
+// Edit-form seeding
+// ============================================================================
+
+/**
+ * Seed the edit form from the RECORD, not from the catalogue.
+ *
+ * The edit form used to be seeded from the schema's field list alone, so
+ * every field the DOCUMENT carries and the catalogue does not declare was
+ * invisible in edit mode — 2 to 45 such fields per form, measured on the
+ * stored records.  The facsimile renders those fields (it is the form), so
+ * they showed up EMPTY on a record that was full, and the user could not
+ * correct them: the value was on the page, but not in the edit state.
+ *
+ * The catalogue is still consulted, for the fields it declares and the
+ * record does not carry: they get their default, so a declared field is
+ * never missing from the edit state.
+ *
+ * The record's own metadata (its identity and the `_`-prefixed bookkeeping
+ * columns) is not seeded: it is the server's, and the write path re-reads
+ * it from the stored row.
+ */
+function seedEditData(record: RecordData, schema: FormSchema | null): RecordData {
+  const data: RecordData = {};
+
+  for (const [key, value] of Object.entries(record)) {
+    if (IDENTITY_FIELDS.has(key)) continue;
+    if (key.startsWith('_')) continue;
+    if (value === undefined || value === null) continue;
+    data[key] = value as RecordData[string];
+  }
+
+  for (const field of schema?.fields ?? []) {
+    if (field.type === 'heading') continue;
+    const key = field.key as string;
+    if (key in data) continue;
+    const fallback = field.type === 'table' || field.type === 'array' ? []
+      : field.type === 'number' ? 0
+      : field.type === 'checkbox' ? false
+      : '';
+    const def = field.defaultValue;
+    data[key] = (def !== undefined && def !== null ? def : fallback) as RecordData[string];
+  }
+
+  return data;
+}
 
 // ============================================================================
 // Record View Page
@@ -80,16 +128,9 @@ const RecordViewPage: React.FC = () => {
   // Auto-enter edit mode when navigated with ?edit=true (from Data Retrofitting Hub)
   useEffect(() => {
     if (searchParams.get('edit') === 'true' && originalRecord && mode === 'view') {
-      const data: RecordData = {};
       const s = getFormSchema(originalRecord.formCode as string);
       if (s) {
-        s.fields.forEach(field => {
-          if (field.type === 'heading') return;
-          const key = field.key as string;
-          const val = (originalRecord as Record<string, unknown>)[key];
-          data[key] = (val !== undefined && val !== null ? val : (field.defaultValue ?? '')) as string | number | boolean | Record<string, unknown> | RecordData[] | null;
-        });
-        setEditData(data);
+        setEditData(seedEditData(originalRecord as RecordData, s));
         setErrors({});
         setModificationReason('Retrofitting empty record from offline Word document');
         setMode('edit');
@@ -253,14 +294,7 @@ const RecordViewPage: React.FC = () => {
   // ─── Handlers ───────────────────────────────────────────────────────────
 
   const handleStartEdit = () => {
-    const data: RecordData = {};
-    schema.fields.forEach(field => {
-      if (field.type === 'heading') return;
-      const key = field.key as string;
-      const val = (originalRecord as Record<string, unknown>)[key];
-      data[key] = (val !== undefined && val !== null ? val : (field.defaultValue ?? '')) as string | number | boolean | Record<string, unknown> | RecordData[] | null;
-    });
-    setEditData(data);
+    setEditData(seedEditData(originalRecord as RecordData, schema));
     setErrors({});
     setModificationReason('');
     setMode('edit');
@@ -319,7 +353,14 @@ const RecordViewPage: React.FC = () => {
 
   const handleExportDocx = async () => {
     setIsExporting(true); setExportMenuOpen(false);
-    try { await exportRecordToDocx(originalRecord as Record<string, unknown>); toast.success(`Exported ${originalRecord.serial} as .docx`); }
+    try {
+      // The `docx` library is loaded on demand.  It was a static import, so
+      // every visitor to a record page downloaded it — the export is the
+      // only thing that needs it.
+      const { exportRecordToDocx } = await import('../services/docxExport');
+      await exportRecordToDocx(originalRecord as Record<string, unknown>);
+      toast.success(`Exported ${originalRecord.serial} as .docx`);
+    }
     catch (err) { toast.error('Export failed: ' + (err as Error).message); }
     finally { setIsExporting(false); }
   };
@@ -916,7 +957,14 @@ const RecordViewPage: React.FC = () => {
                     data={editData}
                     isTemplate={false}
                     editMode={true}
-                    onChange={(field, value) => setEditData(prev => ({ ...prev, [field]: value }))}
+                    onChange={(field, value) => setEditData(prev => ({
+                      ...prev,
+                      // A template that edits a table hands back the whole row
+                      // ARRAY, not a string, so the value arrives as `unknown`.
+                      // `RecordData`'s index signature already allows an array
+                      // of row objects; this cast only re-states that.
+                      [field]: value as RecordData[string],
+                    }))}
                   />
                 </div>
               );

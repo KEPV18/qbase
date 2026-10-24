@@ -176,7 +176,14 @@ export function useSupabaseAuth({
         ]);
 
         if (profile) {
-          const isActive = !!(profile.is_active ?? false);
+          // `profiles.is_active` is NULLABLE with a column default of `true`,
+          // so a missing value is NOT a deactivation — only an explicit
+          // `false` is.  The login path below already read it that way; this
+          // one read it the other way round, so a profile whose column was
+          // NULL could sign in and was then thrown out again on the very
+          // next page load (the session-restore branch), which is the
+          // "the login page keeps flashing" symptom.
+          const isActive = !!(profile.is_active ?? true);
           if (!isActive) {
             await supabase.auth.signOut();
             saveSession(null);
@@ -233,6 +240,11 @@ export function useSupabaseAuth({
   React.useEffect(() => {
     if (bootstrapInitializedRef.current) return;
     bootstrapInitializedRef.current = true;
+    // The three values this effect closes over are all stable — a React
+    // state setter never changes identity, and `syncUserProfile` is a
+    // `useCallback` whose own dependencies are those same setters.  Listing
+    // them is therefore free at runtime, and it is what says so out loud
+    // instead of leaving it to be re-derived.
 
     // Latch recovery mode. Three sources, in order of reliability:
     //   1. the persisted sessionStorage marker (survives an F5 reload — the
@@ -350,7 +362,7 @@ export function useSupabaseAuth({
       clearTimeout(safetyTimer);
       subscription.unsubscribe();
     };
-  }, []);
+  }, [setUser, setLoading, syncUserProfile]);
 
   /* ── Storage Sync ───────────────────────────────────────────────────────── */
 

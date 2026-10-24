@@ -19,7 +19,7 @@ export interface F45Props {
   data?: Record<string, unknown>;
   isTemplate?: boolean;
   editMode?: boolean;
-  onChange?: (field: string, value: string | Record<string, unknown> | Array<Record<string, unknown>> | DocRow[]) => void;
+  onChange?: (field: string, value: unknown) => void;
   className?: string;
 }
 
@@ -89,6 +89,31 @@ function makeEmptyRow(): DocRow {
   };
 }
 
+// The accessible name of each cell input, keyed by the column.
+//
+// A cell input in a table row has no name of its own: the column header
+// above it is NOT its accessible name, so a screen reader announced
+// "edit text, blank" for all 31 columns of this table.  The names below
+// are the header text of the matching column.
+const DOC_COL_LABELS: Record<keyof DocRow, string> = {
+  sr: "Sr.",
+  title: "Title of Document",
+  doc_number: "Document Number 1",
+  doc_number2: "Document Number 2",
+  doc_number3: "Document Number 3",
+  current_revision: "Current Revision",
+  revision_date: "Revision Date",
+  revision_details: "Revision Details 1",
+  revision_details2: "Revision Details 2",
+  revision_details3: "Revision Details 3",
+  revision_details4: "Revision Details 4",
+  dist_1: "Person 1", dist_2: "Person 2", dist_3: "Person 3", dist_4: "Person 4",
+  dist_5: "Person 5", dist_6: "Person 6", dist_7: "Person 7", dist_8: "Person 8",
+  dist_9: "Person 9", dist_10: "Person 10", dist_11: "Person 11", dist_12: "Person 12",
+  dist_13: "Person 13", dist_14: "Person 14", dist_15: "Person 15", dist_16: "Person 16",
+  dist_17: "Person 17",
+};
+
 const DOC_COL_KEYS: (keyof DocRow)[] = [
   "sr", "title", "doc_number", "doc_number2", "doc_number3",
   "current_revision", "revision_date",
@@ -128,6 +153,8 @@ export function F45Template({ data, isTemplate = true, editMode = false, onChang
         className={cn("border-b border-dashed border-foreground/40 bg-transparent text-[10px] px-0.5", width)}
         value={val(d, key)}
         onChange={e => onChange?.(key, e.target.value)}
+        aria-label={label}
+
         placeholder={label}
       />
     ) : (
@@ -213,6 +240,7 @@ export function F45Template({ data, isTemplate = true, editMode = false, onChang
                   <td key={key} className="border border-border px-0.5 py-0.5">
                     {editMode ? (
                       <input
+                        aria-label={DOC_COL_LABELS[key]}
                         className="w-full bg-transparent border-b border-dashed border-foreground/30 outline-none text-[9px]"
                         value={row[key] || ""}
                         onChange={(e) => updateRow(idx, key, e.target.value)}

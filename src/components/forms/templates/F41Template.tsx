@@ -16,7 +16,7 @@ export interface F41Props {
   data?: Record<string, unknown>;
   isTemplate?: boolean;
   editMode?: boolean;
-  onChange?: (field: string, value: string) => void;
+  onChange?: (field: string, value: unknown) => void;
   className?: string;
 }
 
@@ -89,17 +89,24 @@ export function F41Template({ data, isTemplate = true, editMode = false, onChang
     });
   }, []);
 
-  const cellInp = (idx: number, key: keyof RowData, _label: string) =>
+  // The label was already being passed in — and discarded.  A cell input in
+  // a table row has no name of its own: the column header above it is not
+  // its accessible name, so a screen reader announced "edit text, blank"
+  // for every field in the matrix.  The label is the header text, which is
+  // what the caller now passes.
+  const cellInp = (idx: number, key: keyof RowData, label: string) =>
     editMode ? (
-      <input className="w-full bg-transparent text-[10px] px-0.5 border-none outline-none"
+      <input aria-label={label} className="w-full bg-transparent text-[10px] px-0.5 border-none outline-none"
         value={String(rows[idx]?.[key] || "")} onChange={e => updateRow(idx, key, e.target.value)} />
     ) : (
       <span className="text-[10px]">{String(rows[idx]?.[key] || "")}</span>
     );
 
+  // The 15 "Type of Training Required" columns are numbered in the header,
+  // so the name of a cell input is that number, not nothing.
   const tInp = (idx: number, tIdx: number) =>
     editMode ? (
-      <input className="w-full bg-transparent text-[9px] px-0.5 border-none outline-none text-center"
+      <input aria-label={`Type of Training Required ${tIdx + 1}`} className="w-full bg-transparent text-[9px] px-0.5 border-none outline-none text-center"
         value={rows[idx]?.training[tIdx] || ""} onChange={e => updateTraining(idx, tIdx, e.target.value)} />
     ) : (
       <span className="text-[9px] text-center inline-block w-full">{rows[idx]?.training[tIdx] || ""}</span>
@@ -184,11 +191,11 @@ export function F41Template({ data, isTemplate = true, editMode = false, onChang
                 <td className="border border-border p-0.5">{cellInp(idx, "name", "Name")}</td>
                 <td className="border border-border p-0.5">{cellInp(idx, "designation", "Designation")}</td>
                 <td className="border border-border p-0.5"></td>
-                <td className="border border-border p-0.5 text-center">{cellInp(idx, "qualAvail", "")}</td>
+                <td className="border border-border p-0.5 text-center">{cellInp(idx, "qualAvail", "Qualification Available")}</td>
                 <td className="border border-border p-0.5"></td>
-                <td className="border border-border p-0.5 text-center">{cellInp(idx, "expAvail", "")}</td>
+                <td className="border border-border p-0.5 text-center">{cellInp(idx, "expAvail", "Experience Available")}</td>
                 <td className="border border-border p-0.5"></td>
-                <td className="border border-border p-0.5 text-center">{cellInp(idx, "skillAvail", "")}</td>
+                <td className="border border-border p-0.5 text-center">{cellInp(idx, "skillAvail", "Skill Available")}</td>
                 <td className="border border-border p-0.5"></td>
                 {Array.from({ length: 15 }, (_, tIdx) => (
                   <td key={tIdx} className="border border-border p-0 text-center">{tInp(idx, tIdx)}</td>
@@ -283,7 +290,7 @@ export function F41Template({ data, isTemplate = true, editMode = false, onChang
                     <React.Fragment key={colIdx}>
                       <td className="border border-border p-1 text-center text-[10px]">
                         {editMode ? (
-                          <input className="w-full bg-transparent text-[10px] text-center border-none outline-none"
+                          <input aria-label="Sr. No." className="w-full bg-transparent text-[10px] text-center border-none outline-none"
                             value={col[rowIdx]?.srNo || ""} onChange={e => {
                               const absIdx = colIdx * colSize + rowIdx;
                               setTopics(prev => {
@@ -297,7 +304,7 @@ export function F41Template({ data, isTemplate = true, editMode = false, onChang
                       </td>
                       <td className="border border-border p-1 text-center text-[10px]">
                         {editMode ? (
-                          <input className="w-full bg-transparent text-[10px] text-center border-none outline-none"
+                          <input aria-label="Topic No." className="w-full bg-transparent text-[10px] text-center border-none outline-none"
                             value={col[rowIdx]?.topicNo || ""} onChange={e => {
                               const absIdx = colIdx * colSize + rowIdx;
                               setTopics(prev => {

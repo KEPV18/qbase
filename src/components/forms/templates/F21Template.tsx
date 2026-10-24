@@ -13,7 +13,7 @@ export interface F21Props {
   data?: Record<string, unknown>;
   isTemplate?: boolean;
   editMode?: boolean;
-  onChange?: (field: string, value: string) => void;
+  onChange?: (field: string, value: unknown) => void;
   className?: string;
 }
 
@@ -26,7 +26,7 @@ export function F21Template({ data, isTemplate = true, editMode = false, onChang
   const inp = (key: string, label: string, width = "w-48") =>
     editMode ? (
       <input className={cn("border-b border-dashed border-foreground/40 bg-transparent text-sm px-1", width)}
-        value={val(d, key)} onChange={e => onChange?.(key, e.target.value)} placeholder={label} />
+        value={val(d, key)} onChange={e => onChange?.(key, e.target.value)} aria-label={label} placeholder={label} />
     ) : (
       <span className={cn("border-b border-dashed border-foreground/30 px-1 min-w-[6rem] inline-block", width)}>
         {val(d, key) || (ph ? "___" : "")}
@@ -36,7 +36,7 @@ export function F21Template({ data, isTemplate = true, editMode = false, onChang
   const textArea = (key: string, placeholder: string) =>
     editMode ? (
       <textarea className="w-full bg-transparent text-[12px] p-2 border border-dashed border-foreground/40 rounded-md resize-none min-h-[120px]"
-        value={val(d, key) || ""} onChange={e => onChange?.(key, e.target.value)} placeholder={placeholder} />
+        value={val(d, key) || ""} onChange={e => onChange?.(key, e.target.value)} aria-label={placeholder} placeholder={placeholder} />
     ) : (
       <div className="whitespace-pre-wrap text-[12px] leading-[1.85] min-h-[120px] text-foreground">
         {val(d, key) || (ph ? "___" : "")}

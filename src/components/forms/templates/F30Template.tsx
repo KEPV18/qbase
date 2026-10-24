@@ -13,7 +13,7 @@ export interface F30Props {
   data?: Record<string, unknown>;
   isTemplate?: boolean;
   editMode?: boolean;
-  onChange?: (field: string, value: string) => void;
+  onChange?: (field: string, value: unknown) => void;
   className?: string;
 }
 
@@ -64,7 +64,7 @@ export function F30Template({ data, isTemplate = true, editMode = false, onChang
 
   const inp = (key: string, label: string, width: string = "w-full") =>
     editMode ? (
-      <input className={cn("border-b border-dashed border-border bg-transparent text-foreground text-sm px-1 outline-none", width)} value={val(d, key)} onChange={e => onChange?.(key, e.target.value)} placeholder={label} />
+      <input className={cn("border-b border-dashed border-border bg-transparent text-foreground text-sm px-1 outline-none", width)} value={val(d, key)} onChange={e => onChange?.(key, e.target.value)} aria-label={label} placeholder={label} />
     ) : (
       <span className={cn("border-b border-dashed border-border text-foreground px-1 inline-block min-w-[4rem]", width)}>{val(d, key) || (ph ? "___" : "\u00A0")}</span>
     );

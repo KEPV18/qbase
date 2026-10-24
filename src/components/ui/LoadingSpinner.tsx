@@ -85,7 +85,11 @@ export function TableRowSkeleton({ columns = 4 }: { columns?: number }) {
     <tr className="border-b">
       {Array.from({ length: columns }).map((_, i) => (
         <td key={i} className="p-3">
-          <div className="skeleton h-4 rounded-md" style={{ width: `${60 + Math.random() * 40}%` }} />
+          {/* The width is derived from the column index, not from
+              Math.random(): a random width in the render body is a NEW
+              width on every re-render, so the skeleton visibly jitters
+              every time anything above it updates. */}
+          <div className="skeleton h-4 rounded-md" style={{ width: `${60 + (i % 3) * 15}%` }} />
         </td>
       ))}
     </tr>

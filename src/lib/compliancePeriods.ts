@@ -150,11 +150,77 @@ export function monthKey(date: Date): string {
   return `${date.getFullYear()}-${pad2(date.getMonth() + 1)}`;
 }
 
-/** Periods of the frequency that have already begun. */
-export function getExpectedPeriods(freq: PeriodicFrequency, asOf: Date = new Date()): Period[] {
+// ============================================================================
+// The reporting window
+//
+// The window is the set of periods a form is judged on.  It used to be
+// "the periods of the calendar year of `asOf`" — and that window MOVES with
+// the calendar, which silently emptied it every 1 January:
+//
+//   a monthly form that was never filed reported nine missed months on
+//   22 October 2026, and on 6 January 2027 it reported NONE.  The December
+//   period had not closed yet, so it was not a gap — but it was also no
+//   longer IN the window, so the day its deadline passed the period
+//   disappeared and the form read as perfectly up to date.
+//
+// The window is now anchored to the DATA, not to the calendar:
+//
+//   • it starts at the month the organisation was first using these forms
+//     (`sinceMonth` — the earliest month any record covers), so a period
+//     that ended before that was never owed and is not a gap, and
+//   • it runs to the end of the current calendar year, so a period whose
+//     deadline falls in January is still on the table when January comes.
+//
+// The look-back is capped at one extra year so the table cannot grow without
+// bound and a stray ancient record cannot pull in a decade of phantom gaps.
+// ============================================================================
+
+/** How many calendar years back the window may reach beyond the current one. */
+const WINDOW_LOOKBACK_YEARS = 1;
+
+/**
+ * The first month the reporting window may contain, as 'YYYY-MM'.
+ *
+ * `sinceMonth` is the earliest month the organisation was actually using
+ * these forms.  A period that ended before it was never owed.
+ */
+export function getWindowStartMonth(asOf: Date = new Date(), sinceMonth?: string | null): string {
   const year = asOf.getFullYear();
+  const floor = `${year - WINDOW_LOOKBACK_YEARS}-01`;   // the look-back cap
+  const ceiling = `${year}-01`;                        // never past this year
+  const requested =
+    typeof sinceMonth === 'string' && /^\d{4}-\d{2}$/.test(sinceMonth) ? sinceMonth : floor;
+  if (requested > ceiling) return ceiling;
+  if (requested < floor) return floor;
+  return requested;
+}
+
+/** Every period in the reporting window, oldest first. */
+export function getWindowPeriods(
+  freq: PeriodicFrequency,
+  asOf: Date = new Date(),
+  sinceMonth?: string | null,
+): Period[] {
+  const year = asOf.getFullYear();
+  const start = getWindowStartMonth(asOf, sinceMonth);
+  const startYear = Number(start.slice(0, 4));
+  const periods: Period[] = [];
+  for (let y = startYear; y <= year; y++) {
+    periods.push(...getPeriodsForYear(freq, y));
+  }
+  // A period that ended before the organisation started using these forms
+  // was never owed.
+  return periods.filter(p => p.endMonth >= start);
+}
+
+/** Periods of the frequency that have already begun. */
+export function getExpectedPeriods(
+  freq: PeriodicFrequency,
+  asOf: Date = new Date(),
+  sinceMonth?: string | null,
+): Period[] {
   const current = monthKey(asOf);
-  return getPeriodsForYear(freq, year).filter(p => p.startMonth <= current);
+  return getWindowPeriods(freq, asOf, sinceMonth).filter(p => p.startMonth <= current);
 }
 
 /** The first period that has not begun yet. */
@@ -186,9 +252,10 @@ export function getMissingPeriods(
   coveredMonths: Iterable<string>,
   freq: PeriodicFrequency,
   asOf: Date = new Date(),
+  sinceMonth?: string | null,
 ): Period[] {
   const covered = new Set(coveredMonths);
-  return getExpectedPeriods(freq, asOf).filter(
+  return getExpectedPeriods(freq, asOf, sinceMonth).filter(
     p => isPeriodDue(p, asOf) && !isPeriodCovered(p, covered),
   );
 }
@@ -233,10 +300,11 @@ export function getPeriodStates(
   coveredMonths: Iterable<string>,
   freq: PeriodicFrequency,
   asOf: Date = new Date(),
+  sinceMonth?: string | null,
 ): PeriodStateRow[] {
   const covered = new Set(coveredMonths);
   const current = monthKey(asOf);
-  return getPeriodsForYear(freq, asOf.getFullYear()).map(period => {
+  return getWindowPeriods(freq, asOf, sinceMonth).map(period => {
     if (isPeriodCovered(period, covered)) {
       return { period, state: 'covered', daysLate: 0 };
     }
@@ -256,9 +324,11 @@ export function getNextDueDate(
   coveredMonths: Iterable<string>,
   freq: PeriodicFrequency,
   asOf: Date = new Date(),
+  sinceMonth?: string | null,
 ): Period | null {
   const covered = new Set(coveredMonths);
-  const uncovered = getExpectedPeriods(freq, asOf).filter(p => !isPeriodCovered(p, covered));
+  const uncovered = getExpectedPeriods(freq, asOf, sinceMonth)
+    .filter(p => !isPeriodCovered(p, covered));
   if (uncovered.length > 0) return uncovered[0];
   return getUpcomingPeriods(freq, asOf, 1)[0] ?? null;
 }

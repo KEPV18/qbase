@@ -399,7 +399,13 @@ function RestoreTab() {
                 ) : (
                   <AlertTriangle className="w-5 h-5 text-warning-tint" />
                 )}
-                <span className="font-medium">{lastRestore.success ? "Restore Successful" : "Restore Completed with Issues"}</span>
+                <span className="font-medium">
+                  {lastRestore.success
+                    ? lastRestore.imported === 0 && lastRestore.skipped > 0
+                      ? "Register Already Up to Date"
+                      : "Restore Successful"
+                    : "Restore Completed with Issues"}
+                </span>
               </div>
               <div className="grid grid-cols-3 gap-4 text-sm">
                 <div>
@@ -419,6 +425,13 @@ function RestoreTab() {
                 <div className="mt-3 p-2 bg-background rounded-md border text-xs font-mono max-h-40 overflow-auto">
                   {lastRestore.errors.map((e, i) => (
                     <div key={i} className="text-destructive-tint py-0.5">{e}</div>
+                  ))}
+                </div>
+              )}
+              {lastRestore.skippedDetails.length > 0 && (
+                <div className="mt-2 p-2 bg-background rounded-md border text-xs font-mono max-h-40 overflow-auto">
+                  {lastRestore.skippedDetails.map((e, i) => (
+                    <div key={i} className="text-warning-tint py-0.5">{e}</div>
                   ))}
                 </div>
               )}
@@ -608,7 +621,7 @@ function ImportTab() {
                   {dryRun ? "Validation Result" : "Import Result"}
                 </span>
               </div>
-              <div className="grid grid-cols-3 gap-4 text-sm">
+              <div className="grid grid-cols-2 sm:grid-cols-5 gap-4 text-sm">
                 <div>
                   <span className="text-muted-foreground">{dryRun ? "Valid" : "Imported"}</span>
                   <p className="text-lg font-semibold text-success-tint">{result.imported}</p>
@@ -618,8 +631,16 @@ function ImportTab() {
                   <p className="text-lg font-semibold text-destructive-tint">{result.failed}</p>
                 </div>
                 <div>
+                  <span className="text-muted-foreground">Skipped</span>
+                  <p className="text-lg font-semibold text-warning-tint">{result.skipped}</p>
+                </div>
+                <div>
+                  <span className="text-muted-foreground">As they are</span>
+                  <p className="text-lg font-semibold text-warning-tint">{result.warnings.length}</p>
+                </div>
+                <div>
                   <span className="text-muted-foreground">Total</span>
-                  <p className="text-lg font-semibold">{result.imported + result.failed}</p>
+                  <p className="text-lg font-semibold">{result.imported + result.failed + result.skipped}</p>
                 </div>
               </div>
               {result.errors.length > 0 && (
@@ -627,6 +648,24 @@ function ImportTab() {
                   {result.errors.map((e, i) => (
                     <div key={i} className="text-destructive-tint py-0.5">
                       Row {e.row} ({e.serial}): {e.error}
+                    </div>
+                  ))}
+                </div>
+              )}
+              {result.skippedRows.length > 0 && (
+                <div className="mt-2 p-2 bg-background rounded-md border text-xs font-mono max-h-40 overflow-auto">
+                  {result.skippedRows.map((e, i) => (
+                    <div key={i} className="text-warning-tint py-0.5">
+                      Row {e.row} ({e.serial}): {e.reason}
+                    </div>
+                  ))}
+                </div>
+              )}
+              {result.warnings.length > 0 && (
+                <div className="mt-2 p-2 bg-background rounded-md border text-xs font-mono max-h-40 overflow-auto">
+                  {result.warnings.map((w, i) => (
+                    <div key={i} className="text-warning-tint py-0.5">
+                      Row {w.row} ({w.serial}): {w.message}
                     </div>
                   ))}
                 </div>

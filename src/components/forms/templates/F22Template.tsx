@@ -13,7 +13,7 @@ export interface F22Props {
   data?: Record<string, unknown>;
   isTemplate?: boolean;
   editMode?: boolean;
-  onChange?: (field: string, value: string | Record<string, unknown>) => void;
+  onChange?: (field: string, value: unknown) => void;
   className?: string;
 }
 
@@ -48,6 +48,8 @@ export function F22Template({ data, isTemplate = true, editMode = false, onChang
         className="w-full bg-transparent text-[11px] px-1 border-none outline-none"
         value={val(d, key)}
         onChange={e => onChange?.(key, e.target.value)}
+        aria-label={placeholder}
+
         placeholder={placeholder}
       />
     ) : (
@@ -62,6 +64,8 @@ export function F22Template({ data, isTemplate = true, editMode = false, onChang
         className={cn("w-full bg-transparent text-[11px] px-1 border-none outline-none resize-none", minH)}
         value={val(d, key)}
         onChange={e => onChange?.(key, e.target.value)}
+        aria-label={placeholder}
+
         placeholder={placeholder}
       />
     ) : (

@@ -19,6 +19,7 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { toast } from "sonner";
 
 // ============================================================================
 // Config
@@ -170,8 +171,24 @@ export default function NotificationsPage() {
           title="Notifications"
           description={unreadCount > 0 ? `${unreadCount} unread · ${criticalCount} critical` : "All caught up"}
           actions={[
-            ...(unreadCount > 0 ? [{ label: "Mark All Read", icon: CheckCheck, onClick: markAllRead }] : []),
-            ...(notifications.length > 0 ? [{ label: "Clear All", icon: Trash2, onClick: clearAll, variant: "outline" as const }] : []),
+            ...(unreadCount > 0 ? [{
+              label: "Mark All Read",
+              icon: CheckCheck,
+              onClick: async () => {
+                // The hook answers `false` when the server refused the write
+                // (RLS).  Say so, instead of leaving the user tapping a
+                // button that did nothing.
+                if (!(await markAllRead())) toast.error('Could not mark all notifications as read');
+              },
+            }] : []),
+            ...(notifications.length > 0 ? [{
+              label: "Clear All",
+              icon: Trash2,
+              variant: "outline" as const,
+              onClick: async () => {
+                if (!(await clearAll())) toast.error('Could not clear the notifications');
+              },
+            }] : []),
           ]}
         />
 
@@ -332,9 +349,15 @@ export default function NotificationsPage() {
                               </Button>
                             )}
                             <button
-                              onClick={() => notif.read ? markAsUnread(notif.id) : markAsRead(notif.id)}
+                              onClick={async () => {
+                                const ok = notif.read
+                                  ? await markAsUnread(notif.id)
+                                  : await markAsRead(notif.id);
+                                if (!ok) toast.error('Could not update the notification');
+                              }}
                               className="p-1.5 rounded-sm text-muted-foreground hover:text-foreground hover:bg-muted/50 ds-hit-44"
                               title={notif.read ? "Mark as unread" : "Mark as read"}
+                              aria-label={notif.read ? "Mark the notification as unread" : "Mark the notification as read"}
                             >
                               {notif.read ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
                             </button>

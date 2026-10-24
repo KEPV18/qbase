@@ -27,14 +27,12 @@ import { Button } from "@/components/ui/button";
 import {
   PanelCell, PanelCells, PanelFigure, PanelHeader, PanelRow, PanelRows, UnifiedPanel,
 } from "@/components/ui/UnifiedPanel";
-import { useRecords } from "@/hooks/useRecordStorage";
+import { useComplianceMap } from "@/hooks/useCompliance";
 import { CANONICAL_FORMS } from "@/data/formCatalog";
-import { buildComplianceMap } from "@/lib/compliance";
 import {
   buildComplianceReport, formatDueDate, reportAnchorId,
   type ReportForm, type ReportPeriod,
 } from "@/lib/complianceReport";
-import { getRecordMonth } from "@/lib/temporalUtils";
 import { cn } from "@/lib/utils";
 
 /** '2026-03-05' → '5 Mar' — the compact form used inside the year grid. */
@@ -225,27 +223,23 @@ export default function ComplianceReportPage() {
   const [searchParams] = useSearchParams();
   // `?form=F%2F49` — the form that was pressed in the radar.
   const focusCode = searchParams.get("form");
-  const { data: records, isLoading, error, refetch } = useRecords();
+  // The compliance model is computed by the SERVER, over the rows this
+  // viewer may see.  This page used to download the whole register to
+  // rebuild it in the browser.
+  const {
+    data: complianceResult,
+    isLoading,
+    error,
+    refetch,
+  } = useComplianceMap();
 
   const report = useMemo(() => {
-    const filings = (records || []).map(r => ({
-      formCode: String(r.formCode),
-      createdAt: String(r._createdAt || ""),
-      month: getRecordMonth(r),
-    }));
-    const map = buildComplianceMap(
-      filings,
-      CANONICAL_FORMS.map(f => ({
-        code: f.code,
-        name: f.name,
-        frequency: f.frequency,
-      })),
-    );
+    const map = complianceResult?.map ?? new Map();
     return buildComplianceReport(
       map,
       CANONICAL_FORMS.map(f => ({ code: f.code, section: f.sectionName })),
     );
-  }, [records]);
+  }, [complianceResult]);
 
   const scrollToForm = useCallback((code: string) => {
     const el = document.getElementById(reportAnchorId(code));

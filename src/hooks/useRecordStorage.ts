@@ -33,6 +33,17 @@ const RECORD_KEYS = {
   dashboardStats: ['dashboard-stats'] as const,
 };
 
+/**
+ * The serials already in use for a form — the duplicate check.
+ *
+ * It has its own key because it is a different question ("which serials are
+ * taken?") from the record list, and it is invalidated by every write: a
+ * serial that had just been used must not still be offered as free.
+ */
+const SERIAL_KEYS = {
+  byForm: (formCode: string) => ['forge-serials', formCode] as const,
+};
+
 // ============================================================================
 // useDashboardStats — org-level KPIs via the ONE dashboard_stats RPC (Prime D6)
 // Each widget consuming this hook documents its exact query (migration
@@ -132,7 +143,17 @@ export function useCreateRecord() {
         const createdFormCode = result.record.formCode;
         if (createdFormCode) {
           queryClient.invalidateQueries({ queryKey: RECORD_KEYS.byForm(createdFormCode) });
+          // The serial is now taken — the duplicate check must not offer it
+          // again.  Nothing invalidated this key, so the form kept listing
+          // a serial that had just been used.
+          queryClient.invalidateQueries({ queryKey: SERIAL_KEYS.byForm(createdFormCode) });
         }
+      } else {
+        // The storage layer REPORTS a failure by returning {success:false}
+        // instead of throwing, so `onError` never runs for it.  Without this
+        // branch a rejected record was created with no message at all: the
+        // form looked saved and nothing was saved.
+        toast.error(`Create failed: ${result.error || 'Unknown error'}`);
       }
       // Invalidate all record queries (source of truth = the records table)
       queryClient.invalidateQueries({ queryKey: RECORD_KEYS.all });
@@ -239,6 +260,10 @@ export function useUpdateRecord() {
     onSuccess: (result: StorageResult, { serial }) => {
       if (result.success) {
         toast.success(`Record ${serial} updated successfully`);
+      } else {
+        // Same as the create path: a refusal comes back as {success:false},
+        // not as a thrown error, and used to be reported to nobody.
+        toast.error(`Update failed: ${result.error || 'Unknown error'}`);
       }
       // Invalidate both individual and list caches
       queryClient.invalidateQueries({ queryKey: RECORD_KEYS.all });
@@ -279,7 +304,7 @@ export function useUpdateRecord() {
 
 export function useExistingSerials(formCode: string) {
   return useQuery({
-    queryKey: ['forge-serials', formCode],
+    queryKey: SERIAL_KEYS.byForm(formCode),
     queryFn: () => getRecords(formCode).then(records => records.map(r => r.serial as string)),
     staleTime: 10_000,      // 10 seconds — needs to be fresh for duplicate checks
     gcTime: 60_000,
@@ -314,6 +339,8 @@ export function useDeleteRecord() {
         toast.error(`Delete failed: ${result.error || 'Unknown error'}`);
       }
       queryClient.invalidateQueries({ queryKey: RECORD_KEYS.all });
+      // A deleted serial is free again.
+      queryClient.invalidateQueries({ queryKey: ['forge-serials'] });
     },
 
     onError: (error: Error, _variables, context) => {

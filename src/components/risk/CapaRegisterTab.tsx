@@ -50,7 +50,11 @@ export function CapaRegisterTab() {
     const isOverdue = (capa: CAPA) => {
         if (capa.status === "Closed") return false;
         if (!capa.target_completion_date) return false;
-        return new Date(capa.target_completion_date) < new Date();
+        // The target date is a DAY, not an instant.  `new Date("2026-10-23")`
+        // is UTC midnight, so from 00:00 UTC a task was already "late" on the
+        // day it was due.  Compare against the END of the due day instead.
+        const dueEndOfDay = new Date(`${capa.target_completion_date}T23:59:59`);
+        return dueEndOfDay.getTime() < Date.now();
     };
 
     const getLinkedRisk = (related_risk: string | null) => {
@@ -172,7 +176,7 @@ export function CapaRegisterTab() {
                         className="pl-9 h-9 text-sm bg-background border-border/50"
                     />
                     {search && (
-                        <button onClick={() => setSearch("")} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground">
+                        <button onClick={() => setSearch("")} aria-label="Clear the CAPA search" className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground">
                             <X className="w-3.5 h-3.5" />
                         </button>
                     )}
@@ -230,10 +234,7 @@ export function CapaRegisterTab() {
                             return (
                                 <TableRow
                                     key={capa.capa_id}
-                                    className={cn(
-                                        "hover:bg-muted/20 transition-colors border-b border-border/30",
-                                        isOverdue(capa) && "bg-destructive/5"
-                                    )}
+                                    className="hover:bg-muted/20 transition-colors border-b border-border/30"
                                 >
                                     <TableCell className="font-bold text-xs font-mono">
                                         <div className="flex items-center gap-1.5">

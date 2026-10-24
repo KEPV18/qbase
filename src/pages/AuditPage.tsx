@@ -1,6 +1,10 @@
 // ============================================================================
 // QBase — Audit Page (Supabase-connected)
 // Shows audit status of all 35 forms and their records.
+//
+// The compliance model comes from the SERVER (see `@/hooks/useCompliance`),
+// and the list behind the table is ONE PAGE of the register, filtered on the
+// server — not the whole table, downloaded and filtered in the browser.
 // ============================================================================
 
 import { Suspense, lazy, useState } from "react";
@@ -9,7 +13,7 @@ import { AppShell } from "@/components/layout/AppShell";
 import {
   RefreshCw, CheckCircle, Clock,
   AlertTriangle, FileX, CalendarClock, FileText,
-  Search, ChevronRight, FilePlus,
+  Search, ChevronRight, ChevronLeft, FilePlus,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { AsyncBoundary } from "@/components/ui/AsyncBoundary";
@@ -20,29 +24,193 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { PanelCell, PanelCells, PanelFigure, UnifiedPanel } from "@/components/ui/UnifiedPanel";
 import { cn } from "@/lib/utils";
-import { useAuditPage, type AuditTab } from "./audit/useAuditPage";
+import { useAuditPage, type AuditTab, type AuditFormRow } from "./audit/useAuditPage";
 import { FORM_SCHEMAS } from "@/data/formSchemas";
+import type { RecordData } from "@/components/forms/DynamicFormRenderer";
 
 /* ─── Tab definitions ───────────────────────────────────────────── */
 const AUDIT_TABS: { value: AuditTab; label: string; icon: React.ElementType }[] = [
-  { value: "pending", label: "Pending", icon: Clock },
+  { value: "pending", label: "Pending Review", icon: Clock },
   { value: "compliant", label: "Compliant", icon: CheckCircle },
   { value: "issues", label: "Issues", icon: AlertTriangle },
   { value: "overdue", label: "Overdue", icon: CalendarClock },
   { value: "never-filled", label: "Never Filled", icon: FileX },
 ];
 
+/* ─── The record rows ────────────────────────────────────────────── */
+function RecordRows({
+  records,
+  activeTab,
+  scopeIsOrgWide,
+  hasRecordsInView,
+  onOpen,
+}: {
+  records: RecordData[];
+  activeTab: AuditTab;
+  scopeIsOrgWide: boolean;
+  hasRecordsInView: boolean;
+  onOpen: (serial: string) => void;
+}) {
+  if (records.length === 0) {
+    return (
+      <div className="p-12 text-center">
+        <FileX className="w-10 h-10 text-ink-4 mx-auto mb-3" />
+        <p className="text-sm text-muted-foreground">
+          {!scopeIsOrgWide && !hasRecordsInView
+            ? 'No records are visible to your account yet.'
+            : activeTab === 'compliant' ? 'No compliant records.'
+            : activeTab === 'issues' ? 'No issues found.'
+            : activeTab === 'pending' ? 'Nothing is waiting for a review.'
+            : 'No records found.'}
+        </p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="divide-y divide-border/20">
+      {records.map((r, idx) => {
+        // A server row carries its metadata at the TOP level — the same
+        // shape `parseRowToRecord` produces.
+        const fd = r as unknown as Record<string, unknown>;
+        const hasSerial = !!(r.serial as string);
+        const frequency = (fd._frequency as string) || '';
+        const section = (fd._sectionName as string) || '';
+
+        return (
+          <div
+            key={(r.id as string) || (r.serial as string) || `${r.formCode}-${idx}`}
+            className={cn(
+              "px-4 py-3 flex items-center gap-3 hover:bg-muted/30 transition-colors",
+              hasSerial && "cursor-pointer"
+            )}
+            onClick={() => hasSerial && onOpen(r.serial as string)}
+          >
+            {/* Status icon */}
+            <div className={cn(
+              "w-8 h-8 rounded-full flex items-center justify-center border shrink-0",
+              activeTab === 'pending'
+                ? "bg-warning/10 border-warning/20"
+                : activeTab === 'issues'
+                ? "bg-destructive/10 border-destructive/20"
+                : "bg-success/10 border-success/20"
+            )}>
+              {activeTab === 'pending' ? <Clock className="w-4 h-4 text-warning-tint" /> :
+               activeTab === 'issues' ? <AlertTriangle className="w-4 h-4 text-destructive-tint" /> :
+               <CheckCircle className="w-4 h-4 text-success-tint" />}
+            </div>
+
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center gap-2">
+                <span className="text-sm font-mono font-medium">
+                  {hasSerial ? r.serial : r.formCode}
+                </span>
+                <Badge variant="outline" className="text-[9px]">{r.formCode}</Badge>
+              </div>
+              <span className="text-xs text-muted-foreground">{r.formName}</span>
+              {section && <span className="text-[10px] text-muted-foreground ml-2">· {section}</span>}
+              {frequency && <span className="text-[10px] text-muted-foreground ml-2">· {frequency}</span>}
+            </div>
+
+            {hasSerial && <ChevronRight className="w-3.5 w-3.5 text-muted-foreground" />}
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+/* ─── The form rows ──────────────────────────────────────────────── */
+//
+// A form is what owes a filing; a record is never "overdue".  The two
+// FORM tabs therefore list forms, and each row opens the detailed report
+// for that form — the big page behind the Compliance Radar.
+function FormRows({
+  rows,
+  scopeIsOrgWide,
+  hasRecordsInView,
+  onOpen,
+}: {
+  rows: AuditFormRow[];
+  scopeIsOrgWide: boolean;
+  hasRecordsInView: boolean;
+  onOpen: (code: string) => void;
+}) {
+  if (rows.length === 0) {
+    return (
+      <div className="p-12 text-center">
+        <FileX className="w-10 h-10 text-ink-4 mx-auto mb-3" />
+        <p className="text-sm text-muted-foreground">
+          {!scopeIsOrgWide && !hasRecordsInView
+            ? 'No records are visible to your account yet.'
+            : 'All forms have records!'}
+        </p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="divide-y divide-border/20">
+      {rows.map((row) => (
+        <div
+          key={row.code}
+          className="px-4 py-3 flex items-center gap-3 hover:bg-muted/30 transition-colors cursor-pointer"
+          onClick={() => onOpen(row.code)}
+        >
+          <div className="w-8 h-8 rounded-full flex items-center justify-center border shrink-0 bg-warning/10 border-warning/20">
+            {row.status === 'overdue'
+              ? <AlertTriangle className="w-4 h-4 text-warning-tint" />
+              : <FileX className="w-4 h-4 text-muted-foreground" />}
+          </div>
+
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center gap-2">
+              <span className="text-sm font-mono font-medium">{row.code}</span>
+              <Badge variant="outline" className="text-[9px]">{row.frequency}</Badge>
+            </div>
+            <span className="text-xs text-muted-foreground">{row.name}</span>
+            {row.section && <span className="text-[10px] text-muted-foreground ml-2">· {row.section}</span>}
+            {row.missingCount > 0 && (
+              <span className="text-[10px] text-warning-tint ml-2">
+                · {row.missingCountLabel} missing
+                {row.missingPeriods.length > 0 && `: ${row.missingPeriods.join(', ')}`}
+              </span>
+            )}
+          </div>
+
+          {row.overdueDays > 0 && (
+            <span className="text-[10px] text-destructive-tint font-medium shrink-0">
+              {row.overdueDays}d late
+            </span>
+          )}
+          <ChevronRight className="w-3.5 w-3.5 text-muted-foreground shrink-0" />
+        </div>
+      ))}
+    </div>
+  );
+}
+
 /* ─── Main page ──────────────────────────────────────────────────── */
 export default function AuditPage() {
   const navigate = useNavigate();
   const {
-    records, stats, isLoading, error, refetch,
+    records, formRows, stats, isLoading, error, refetch,
     activeTab, setActiveTab, search, setSearch,
+    page, pageCount, totalRows, setPage,
+    scopeIsOrgWide,
   } = useAuditPage();
 
   const complianceRate = stats.totalForms > 0
     ? Math.round((stats.filledForms / stats.totalForms) * 100)
     : 0;
+
+  // Does the viewer have any records in view at all?
+  const hasRecordsInView = stats.totalRecords > 0;
+
+  // Two of the five tabs list FORMS (a form is what owes a filing); the
+  // other three list RECORDS, one server-filtered page at a time.
+  const isRecordTab = activeTab === "pending" || activeTab === "compliant" || activeTab === "issues";
+  const shownPage = page + 1;
 
   if (isLoading || error) {
     return (
@@ -71,7 +239,30 @@ export default function AuditPage() {
         />
 
         {/* Decision banner */}
-        {stats.issues > 0 ? (
+        {!scopeIsOrgWide ? (
+          /* A scoped viewer cannot support an organisation-wide verdict.
+             The compliance figures are computed from the records their
+             role gives them access to; presenting them as facts about
+             the company is how a user with an empty view was told the
+             company had never filled 36 forms. */
+          <Card className="border-border/30 bg-muted/20">
+            <CardContent className="p-4 flex items-center gap-3">
+              <FileText className="w-5 h-5 text-muted-foreground shrink-0" />
+              <div className="flex-1">
+                <p className="text-sm font-medium text-foreground">
+                  {hasRecordsInView
+                    ? `Showing the ${stats.totalRecords} record${stats.totalRecords === 1 ? "" : "s"} you can access`
+                    : "No records are visible to your account yet"}
+                </p>
+                <p className="text-xs text-muted-foreground">
+                  {hasRecordsInView
+                    ? "These figures cover the records your role gives you access to — not the whole organisation. The organisation-wide compliance view is available to managers, department heads and admins."
+                    : "Your account can see the records you filed and the records in your department. There are none to review yet."}
+                </p>
+              </div>
+            </CardContent>
+          </Card>
+        ) : stats.issues > 0 ? (
           <Card className="border-destructive/20 bg-destructive/5">
             <CardContent className="p-4 flex items-center gap-3">
               <AlertTriangle className="w-5 h-5 text-destructive-tint" />
@@ -129,11 +320,11 @@ export default function AuditPage() {
         <UnifiedPanel>
           <PanelCells columns={6}>
             <PanelCell><PanelFigure icon={FileText} label="Total Records" value={stats.totalRecords} /></PanelCell>
-            <PanelCell><PanelFigure icon={Clock} label="Pending" value={stats.pending} tone="warning" dot /></PanelCell>
+            <PanelCell><PanelFigure icon={Clock} label="Pending Review" value={stats.pendingReview} tone="warning" dot /></PanelCell>
             <PanelCell><PanelFigure icon={CheckCircle} label="Compliant" value={stats.compliant} tone="success" dot /></PanelCell>
             <PanelCell><PanelFigure icon={AlertTriangle} label="Issues" value={stats.issues} tone="destructive" dot /></PanelCell>
             <PanelCell><PanelFigure icon={CalendarClock} label="Overdue" value={stats.overdue} tone="warning" dot /></PanelCell>
-            <PanelCell><PanelFigure icon={FileX} label="Never Filled" value={stats.neverFilled} tone="warning" dot /></PanelCell>
+            <PanelCell><PanelFigure icon={FileX} label={scopeIsOrgWide ? "Never Filled" : "Never Filled (in view)"} value={stats.neverFilled} tone="warning" dot /></PanelCell>
           </PanelCells>
         </UnifiedPanel>
 
@@ -148,7 +339,7 @@ export default function AuditPage() {
               <div className="bg-success h-2 rounded-full transition-all duration-200 ease-out-quart" style={{ width: `${complianceRate}%` }} />
             </div>
             <p className="text-[10px] text-muted-foreground mt-2">
-              {stats.filledForms} of {stats.totalForms} forms have records
+              {stats.filledForms} of {stats.totalForms} forms have records{scopeIsOrgWide ? "" : " in your view"}
             </p>
           </CardContent>
         </Card>
@@ -183,85 +374,55 @@ export default function AuditPage() {
             </div>
 
             <div className="max-h-[60vh] overflow-y-auto">
-              {records.length === 0 ? (
-                <div className="p-12 text-center">
-                  <FileX className="w-10 h-10 text-ink-4 mx-auto mb-3" />
-                  <p className="text-sm text-muted-foreground">
-                    {activeTab === 'never-filled' ? 'All forms have records!' :
-                     activeTab === 'compliant' ? 'No compliant forms yet.' :
-                     activeTab === 'issues' ? 'No issues found.' :
-                     activeTab === 'overdue' ? 'No overdue forms.' :
-                     'No records found.'}
-                  </p>
-                </div>
+              {isRecordTab ? (
+                <RecordRows
+                  records={records}
+                  activeTab={activeTab}
+                  scopeIsOrgWide={scopeIsOrgWide}
+                  hasRecordsInView={hasRecordsInView}
+                  onOpen={(serial) => navigate(`/records/${encodeURIComponent(serial)}`)}
+                />
               ) : (
-                <div className="divide-y divide-border/20">
-                  {records.map((r, idx) => {
-                    const fd = (r.formData as Record<string, unknown>) || {};
-                    const hasSerial = !!(r.serial as string);
-                    const auditStatus = (fd._auditStatus as string) || '';
-                    const frequency = (fd._frequency as string) || '';
-                    const section = (fd._section as string) || '';
-
-                    return (
-                      <div
-                        key={(r.serial as string) || `${r.formCode}-${idx}`}
-                        className={cn(
-                          "px-4 py-3 flex items-center gap-3 hover:bg-muted/30 transition-colors",
-                          hasSerial && "cursor-pointer"
-                        )}
-                        onClick={() => hasSerial && navigate(`/records/${encodeURIComponent(r.serial as string)}`)}
-                      >
-                        {/* Status icon */}
-                        <div className={cn(
-                          "w-8 h-8 rounded-full flex items-center justify-center border shrink-0",
-                          auditStatus === 'overdue' || auditStatus === 'never-filled'
-                            ? "bg-warning/10 border-warning/20"
-                            : activeTab === 'issues'
-                            ? "bg-destructive/10 border-destructive/20"
-                            : "bg-success/10 border-success/20"
-                        )}>
-                          {auditStatus === 'overdue' || auditStatus === 'never-filled' ? <AlertTriangle className="w-4 h-4 text-warning-tint" /> :
-                           activeTab === 'issues' ? <AlertTriangle className="w-4 h-4 text-destructive-tint" /> :
-                           <CheckCircle className="w-4 h-4 text-success-tint" />}
-                        </div>
-
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-2">
-                            <span className="text-sm font-mono font-medium">
-                              {hasSerial ? r.serial : r.formCode}
-                            </span>
-                            <Badge variant="outline" className="text-[9px]">{r.formCode}</Badge>
-                          </div>
-                          <span className="text-xs text-muted-foreground">{r.formName}</span>
-                          {section && <span className="text-[10px] text-muted-foreground ml-2">· {section}</span>}
-                          {frequency && <span className="text-[10px] text-muted-foreground ml-2">· {frequency}</span>}
-                        </div>
-
-                        {hasSerial && <ChevronRight className="w-3.5 h-3.5 text-muted-foreground" />}
-                      </div>
-                    );
-                  })}
-                </div>
+                <FormRows
+                  rows={formRows}
+                  scopeIsOrgWide={scopeIsOrgWide}
+                  hasRecordsInView={hasRecordsInView}
+                  onOpen={(code) => navigate(`/compliance?form=${encodeURIComponent(code)}`)}
+                />
               )}
             </div>
+
+            {/* The paging — the record tabs ask the server for one page at a
+                time, so the list behind the table is no longer the whole
+                table. */}
+            {isRecordTab && pageCount > 1 && (
+              <div className="flex items-center justify-between px-4 py-2.5 border-t border-border/30">
+                <p className="text-[11px] text-muted-foreground">
+                  {totalRows} record{totalRows === 1 ? '' : 's'} · page {shownPage} of {pageCount}
+                </p>
+                <div className="flex items-center gap-1">
+                  <button
+                    type="button"
+                    onClick={() => setPage(p => Math.max(0, p - 1))}
+                    disabled={page === 0}
+                    className="ds-press ds-focus-ring px-2.5 py-1 text-[11px] font-medium bg-secondary border border-border rounded-sm text-secondary-foreground hover:bg-accent disabled:opacity-30 disabled:cursor-not-allowed flex items-center gap-1"
+                  >
+                    <ChevronLeft className="w-3.5 h-3.5" /> Prev
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setPage(p => Math.min(pageCount - 1, p + 1))}
+                    disabled={page >= pageCount - 1}
+                    className="ds-press ds-focus-ring px-2.5 py-1 text-[11px] font-medium bg-secondary border border-border rounded-sm text-secondary-foreground hover:bg-accent disabled:opacity-30 disabled:cursor-not-allowed flex items-center gap-1"
+                  >
+                    Next <ChevronRight className="w-3.5 h-3.5" />
+                  </button>
+                </div>
+              </div>
+            )}
           </Tabs>
         </Card>
       </div>
     </AppShell>
   );
 }
-
-/**
- * One stat tile.
- *
- * `tone` is a semantic name, not a raw palette key.  The old map keyed on
- * `cyan` / `amber` / `emerald` / `red` — the Tailwind-500 hue names — so
- * the same semantic state had to be spelled differently on every page, and
- * `purple` did not exist at all.  The four states below are the four the
- * design system actually has, and each resolves to a token.
- *
- * The map itself now lives in `UnifiedPanel.PanelFigure`, so the four
- * states have exactly one spelling in the whole app: `default`,
- * `success`, `warning`, `destructive`, `info`.
- */

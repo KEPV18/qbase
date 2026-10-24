@@ -16,7 +16,7 @@ export interface F28Props {
   data?: Record<string, unknown>;
   isTemplate?: boolean;
   editMode?: boolean;
-  onChange?: (field: string, value: string) => void;
+  onChange?: (field: string, value: unknown) => void;
   className?: string;
 }
 
@@ -30,8 +30,12 @@ interface AttendeeRow {
   result: string;
 }
 
-function parseAttendees(d: Record<string, unknown>): AttendeeRow[] {
-  const raw = d.attendees || d.items || d.rows || [];
+// The attendee rows live under one of three names, depending on how the
+// form was filled.  The caller resolves the name and passes the array in, so
+// that the memo's dependency is the array itself rather than the whole
+// `data` object — `d` changes identity on every parent render, which made
+// the memo recompute each time and re-seed the editable rows.
+function parseAttendees(raw: unknown): AttendeeRow[] {
   if (Array.isArray(raw) && raw.length > 0) {
     return raw.map((a: Record<string, unknown>, i: number) => ({
       sl_no: Number(a.sl_no ?? a.slNo ?? (i + 1)),
@@ -46,10 +50,26 @@ function parseAttendees(d: Record<string, unknown>): AttendeeRow[] {
   return [];
 }
 
-export function F28Template({ data, isTemplate = true, editMode = false, onChange, className }: F28Props) {
-  const d = data ?? {};
 
-  const initialRows = useMemo(() => parseAttendees(d), [d.attendees, d.items, d.rows]);
+// A stable empty object.
+//
+// `data ?? {}` handed the components a NEW object on every render when the
+// form had no data yet.  That defeats every `useMemo` that depends on it:
+// the dependency changed identity each time, so the memo recomputed and
+// handed its consumers a new array, which re-rendered them in turn.  A
+// shared, frozen empty object keeps the identity stable.  Nothing writes
+// into `d` — it is only ever read — so one instance is safe.
+const EMPTY_DATA: Record<string, unknown> = Object.freeze({});
+
+// The same trick for the attendee array: a fresh `[]` on every render would
+// give the memo a new dependency each time.
+const EMPTY_ARRAY: readonly unknown[] = Object.freeze([]);
+
+export function F28Template({ data, isTemplate = true, editMode = false, onChange, className }: F28Props) {
+  const d = data ?? EMPTY_DATA;
+
+  const rawAttendees = d.attendees ?? d.items ?? d.rows ?? EMPTY_ARRAY;
+  const initialRows = useMemo(() => parseAttendees(rawAttendees), [rawAttendees]);
   const [rows, setRows] = useState<AttendeeRow[]>(initialRows);
 
   useEffect(() => { setRows(initialRows); }, [initialRows]);
@@ -57,7 +77,7 @@ export function F28Template({ data, isTemplate = true, editMode = false, onChang
   const updateRow = useCallback((idx: number, key: keyof AttendeeRow, value: string | number) => {
     setRows(prev => { const next = [...prev]; next[idx] = { ...next[idx], [key]: value }; return next; });
     const updated = [...rows]; updated[idx] = { ...updated[idx], [key]: value };
-    onChange?.("attendees", JSON.stringify(updated));
+    onChange?.("attendees", updated);
   }, [rows, onChange]);
 
   const addRow = useCallback(() => {
@@ -116,37 +136,37 @@ export function F28Template({ data, isTemplate = true, editMode = false, onChang
             <FormTableRow key={idx} index={idx}>
               <FormTableCell align="center">
                 {editMode ? (
-                  <input className="w-10 bg-transparent text-xs text-center outline-none" type="number" min={1} value={row.sl_no} onChange={e => updateRow(idx, "sl_no", parseInt(e.target.value) || idx + 1)} />
+                  <input aria-label={`Sr. No. (row ${idx + 1})`} className="w-10 bg-transparent text-xs text-center outline-none" type="number" min={1} value={row.sl_no} onChange={e => updateRow(idx, "sl_no", parseInt(e.target.value) || idx + 1)} />
                 ) : row.sl_no}
               </FormTableCell>
               <FormTableCell>
                 {editMode ? (
-                  <input className="w-full bg-transparent text-xs outline-none border-b border-dashed border-foreground/40" value={row.name} onChange={e => updateRow(idx, "name", e.target.value)} placeholder="Name" />
+                  <input aria-label={`Name Of The Participant (row ${idx + 1})`} className="w-full bg-transparent text-xs outline-none border-b border-dashed border-foreground/40" value={row.name} onChange={e => updateRow(idx, "name", e.target.value)} placeholder="Name" />
                 ) : row.name}
               </FormTableCell>
               <FormTableCell>
                 {editMode ? (
-                  <input className="w-full bg-transparent text-xs outline-none border-b border-dashed border-foreground/40" value={row.department} onChange={e => updateRow(idx, "department", e.target.value)} placeholder="Department" />
+                  <input aria-label={`Department (row ${idx + 1})`} className="w-full bg-transparent text-xs outline-none border-b border-dashed border-foreground/40" value={row.department} onChange={e => updateRow(idx, "department", e.target.value)} placeholder="Department" />
                 ) : row.department}
               </FormTableCell>
               <FormTableCell align="center">
                 {editMode ? (
-                  <input className="w-16 bg-transparent text-xs text-center outline-none border-b border-dashed border-foreground/40" value={row.id_no} onChange={e => updateRow(idx, "id_no", e.target.value)} placeholder="ID" />
+                  <input aria-label={`ID NO. (row ${idx + 1})`} className="w-16 bg-transparent text-xs text-center outline-none border-b border-dashed border-foreground/40" value={row.id_no} onChange={e => updateRow(idx, "id_no", e.target.value)} placeholder="ID" />
                 ) : row.id_no}
               </FormTableCell>
               <FormTableCell align="center">
                 {editMode ? (
-                  <input className="w-24 bg-transparent text-xs text-center outline-none border-b border-dashed border-foreground/40" value={row.date} onChange={e => updateRow(idx, "date", e.target.value)} placeholder="DD/MM/YYYY" />
+                  <input aria-label={`Training Date (row ${idx + 1})`} className="w-24 bg-transparent text-xs text-center outline-none border-b border-dashed border-foreground/40" value={row.date} onChange={e => updateRow(idx, "date", e.target.value)} placeholder="DD/MM/YYYY" />
                 ) : row.date}
               </FormTableCell>
               <FormTableCell>
                 {editMode ? (
-                  <input className="w-full bg-transparent text-xs outline-none border-b border-dashed border-foreground/40" value={row.signature} onChange={e => updateRow(idx, "signature", e.target.value)} placeholder="Signature" />
+                  <input aria-label={`Signature (row ${idx + 1})`} className="w-full bg-transparent text-xs outline-none border-b border-dashed border-foreground/40" value={row.signature} onChange={e => updateRow(idx, "signature", e.target.value)} placeholder="Signature" />
                 ) : row.signature}
               </FormTableCell>
               <FormTableCell align="center">
                 {editMode ? (
-                  <input className="w-20 bg-transparent text-xs text-center outline-none border-b border-dashed border-foreground/40" value={row.result} onChange={e => updateRow(idx, "result", e.target.value)} placeholder="Result" />
+                  <input aria-label={`Result (row ${idx + 1})`} className="w-20 bg-transparent text-xs text-center outline-none border-b border-dashed border-foreground/40" value={row.result} onChange={e => updateRow(idx, "result", e.target.value)} placeholder="Result" />
                 ) : row.result}
               </FormTableCell>
             </FormTableRow>

@@ -59,7 +59,22 @@ export default function TraceabilityPage() {
   }, [registry]);
 
   const handleOpenRecord = (id: string) => {
-    navigate(`/record/${id}`);
+    // `/record/...` is not a route — it redirects to the record LIST
+    // (src/App.tsx), so every "open this record" click in the trace landed
+    // on the list instead of on the record.
+    //
+    // A form record is addressed by its serial (`/records/F%2F09-001`); a
+    // CAPA or a risk lives on the risk page, and a project on the projects
+    // page.
+    if (/^F\/\d{1,2}-\d{3,4}$/i.test(id)) {
+      navigate(`/records/${encodeURIComponent(id)}`);
+      return;
+    }
+    if (/^Project-/i.test(id)) {
+      navigate('/projects');
+      return;
+    }
+    navigate('/risk-management');
   };
 
   const handleSelectChange = (value: string) => {

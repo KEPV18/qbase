@@ -19,7 +19,7 @@ export interface F46Props {
   data?: Record<string, unknown>;
   isTemplate?: boolean;
   editMode?: boolean;
-  onChange?: (field: string, value: string) => void;
+  onChange?: (field: string, value: unknown) => void;
   className?: string;
 }
 
@@ -41,6 +41,8 @@ export function F46Template({ data, isTemplate = true, editMode = false, onChang
         className={cn("border-b border-dashed border-foreground/40 bg-transparent text-sm px-1", width)}
         value={val(d, key)}
         onChange={e => onChange?.(key, e.target.value)}
+        aria-label={label}
+
         placeholder={label}
       />
     ) : (
@@ -55,6 +57,8 @@ export function F46Template({ data, isTemplate = true, editMode = false, onChang
         className={cn("w-full bg-transparent text-sm p-2 border-none outline-none resize-y", minH)}
         value={val(d, key) || ""}
         onChange={e => onChange?.(key, e.target.value)}
+        aria-label={placeholder}
+
         placeholder={placeholder}
       />
     ) : (

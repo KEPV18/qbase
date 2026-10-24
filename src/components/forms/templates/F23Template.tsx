@@ -16,7 +16,7 @@ export interface F23Props {
   data?: Record<string, unknown>;
   isTemplate?: boolean;
   editMode?: boolean;
-  onChange?: (field: string, value: string | Record<string, unknown> | Array<Record<string, unknown>> | RowData[]) => void;
+  onChange?: (field: string, value: unknown) => void;
   className?: string;
 }
 
@@ -94,6 +94,8 @@ export function F23Template({ data, isTemplate = true, editMode = false, onChang
         className={cn("border-b border-dashed border-foreground/40 bg-transparent text-xs px-1", width)}
         value={val(d, key)}
         onChange={e => onChange?.(key, e.target.value)}
+        aria-label={label}
+
         placeholder={label}
       />
     ) : (
@@ -145,10 +147,11 @@ export function F23Template({ data, isTemplate = true, editMode = false, onChang
             {/* Rows 3–15: 13 data rows */}
             {rows.map((row, idx) => (
               <tr key={idx} className={cn(idx % 2 === 1 && "bg-muted/20")}>
-                {COL_KEYS.map((key) => (
+                {COL_KEYS.map((key, colIdx) => (
                   <td key={key} className="border border-border px-1.5 py-0.5">
                     {editMode ? (
                       <input
+                        aria-label={COL_HEADERS[colIdx]}
                         className="w-full bg-transparent border-b border-dashed border-foreground/30 outline-none text-[10px]"
                         value={row[key]}
                         onChange={(e) => updateRow(idx, key, e.target.value)}

@@ -198,10 +198,16 @@ export function useTraceabilityResolver(recordId?: string) {
   const queryClient = useQueryClient();
 
   // Query for full registry (used on the overview page)
+  //
+  // On the detail page the chain query builds the very same registry, so
+  // running this one as well meant every record page loaded the CAPAs, the
+  // risks and the projects TWICE.  It only runs where it is the one that is
+  // read.
   const registryQuery = useQuery({
     queryKey: [QUERY_KEY, "registry"],
     queryFn: buildFullRegistry,
     staleTime: 5 * 60 * 1000, // 5 min
+    enabled: !recordId,
   });
 
   // Query for specific trace chain (used on the detail page)

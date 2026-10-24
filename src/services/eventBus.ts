@@ -109,12 +109,15 @@ async function resolveTargetUserIds(event: SystemEvent): Promise<string[]> {
 let _cachedAdminIds: string[] | null = null;
 let _cachedLeadershipIds: string[] | null = null;
 
+// The audience lists come from two SECURITY DEFINER RPCs, not from a read
+// of the whole `user_roles` table.  That table used to be readable by every
+// signed-in account (its SELECT policy was `USING (true)`), which meant the
+// event bus was reading every user's role and department — and was the
+// reason the blanket policy could not simply be dropped.  These two
+// functions return the same two lists and nothing else.
 async function getAdminUserIds(): Promise<string[]> {
   if (_cachedAdminIds) return _cachedAdminIds;
-  const { data, error } = await supabase
-    .from('user_roles')
-    .select('user_id')
-    .eq('role', 'admin');
+  const { data, error } = await supabase.rpc('prime_admin_user_ids');
   if (error) {
     // Do NOT cache the failure: an empty list cached here made every
     // subsequent critical event silently skip its admin audience until the
@@ -122,22 +125,19 @@ async function getAdminUserIds(): Promise<string[]> {
     log.system.warn('eventBus:admin_ids_query_failed', error.message);
     return [];
   }
-  _cachedAdminIds = (data || []).map(r => r.user_id);
-  return _cachedAdminIds!;
+  _cachedAdminIds = Array.isArray(data) ? (data as string[]) : [];
+  return _cachedAdminIds;
 }
 
 async function getLeadershipUserIds(): Promise<string[]> {
   if (_cachedLeadershipIds) return _cachedLeadershipIds;
-  const { data, error } = await supabase
-    .from('user_roles')
-    .select('user_id')
-    .in('role', ['admin', 'manager']);
+  const { data, error } = await supabase.rpc('prime_leadership_user_ids');
   if (error) {
     log.system.warn('eventBus:leadership_ids_query_failed', error.message);
     return [];
   }
-  _cachedLeadershipIds = (data || []).map(r => r.user_id);
-  return _cachedLeadershipIds!;
+  _cachedLeadershipIds = Array.isArray(data) ? (data as string[]) : [];
+  return _cachedLeadershipIds;
 }
 
 /** Clear cached role IDs — call after role changes */

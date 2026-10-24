@@ -482,12 +482,12 @@ function AccountsTab() {
                             } finally {
                               setResettingPw(p => ({ ...p, [u.id]: false }));
                             }
-                          }} disabled={resettingPw[u.id]}>
+                          }} disabled={resettingPw[u.id]} aria-label={`Send a password reset link to ${u.email}`}>
                             {resettingPw[u.id] ? <Loader2 className="w-3 h-3 animate-spin" /> : <KeyRound className="w-3 h-3" />}
                           </Button>
                           <Button size="sm" variant="ghost" className="text-xs text-destructive-tint hover:text-destructive" onClick={() =>
                             setPendingRemoval({ id: u.id, name: u.name, email: u.email, pending: false })
-                          }>
+                          } aria-label={`Remove ${u.name || u.email}`}>
                             <Trash2 className="w-3 h-3" />
                           </Button>
                         </>

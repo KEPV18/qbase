@@ -14,7 +14,7 @@ export interface F11Props {
   data?: Record<string, unknown>;
   isTemplate?: boolean;
   editMode?: boolean;
-  onChange?: (field: string, value: string) => void;
+  onChange?: (field: string, value: unknown) => void;
   className?: string;
 }
 
@@ -144,7 +144,7 @@ export function F11Template({ data, isTemplate = true, editMode = false, onChang
       });
       const updated = [...rows];
       updated[idx] = { ...updated[idx], [key]: value };
-      onChange?.("items", JSON.stringify(updated));
+      onChange?.("items", updated);
     },
     [rows, onChange]
   );
@@ -163,6 +163,7 @@ export function F11Template({ data, isTemplate = true, editMode = false, onChang
         className="border-b border-dashed border-foreground/40 bg-transparent text-sm px-1 outline-none"
         value={val(d, key)}
         onChange={e => onChange?.(key, e.target.value)}
+        aria-label={placeholder}
         placeholder={placeholder}
       />
     ) : (
@@ -177,6 +178,7 @@ export function F11Template({ data, isTemplate = true, editMode = false, onChang
         className="w-full bg-transparent text-xs px-1 border-none outline-none"
         value={rows[idx]?.[key] || ""}
         onChange={e => updateRow(idx, key, e.target.value)}
+        aria-label={`$placeholder (row ${idx + 1})`}
         placeholder={placeholder}
       />
     ) : (
@@ -363,6 +365,7 @@ export function F11Template({ data, isTemplate = true, editMode = false, onChang
                     className="border-b border-dashed border-foreground/40 bg-transparent text-sm w-3/4 text-center"
                     value={val(d, "signature")}
                     onChange={e => onChange?.("signature", e.target.value)}
+                    aria-label="Signature / Date"
                     placeholder="Name / Date"
                   />
                 ) : val(d, "signature") ? (
@@ -371,17 +374,22 @@ export function F11Template({ data, isTemplate = true, editMode = false, onChang
                   <span className="text-muted-foreground">Signature / Date</span>
                 )}
               </td>
+              {/* The second signatory gets its OWN key.  Both cells used to
+                  read and write `signature`, so the two signatories shared one
+                  value: typing in the second cell overwrote the first, and the
+                  second signatory's mark was never stored. */}
               <td colSpan={5} className="border border-border p-3 text-xs text-center">
                 <div className="min-h-[40px]" />
                 {editMode ? (
                   <input
                     className="border-b border-dashed border-foreground/40 bg-transparent text-sm w-3/4 text-center"
-                    value={val(d, "signature")}
-                    onChange={e => onChange?.("signature", e.target.value)}
+                    value={val(d, "signature_2")}
+                    onChange={e => onChange?.("signature_2", e.target.value)}
+                    aria-label="Signature / Date (second signatory)"
                     placeholder="Name / Date"
                   />
-                ) : val(d, "signature") ? (
-                  <span className="font-medium">{val(d, "signature")}</span>
+                ) : val(d, "signature_2") ? (
+                  <span className="font-medium">{val(d, "signature_2")}</span>
                 ) : (
                   <span className="text-muted-foreground">Signature / Date</span>
                 )}

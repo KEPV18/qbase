@@ -20,7 +20,11 @@ export interface TemplateComponentProps {
   data?: Record<string, unknown>;
   isTemplate?: boolean;
   editMode?: boolean;
-  onChange?: (field: string, value: TemplateFieldValue) => void;
+  // The value is `unknown`, not `TemplateFieldValue`: a table template hands
+  // the parent an ARRAY of row objects under one field key, and the parent
+  // stores it as-is. Narrowing the union here would make the row array
+  // untypeable at the call site.
+  onChange?: (field: string, value: unknown) => void;
   className?: string;
 }
 

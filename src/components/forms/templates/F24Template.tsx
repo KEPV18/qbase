@@ -17,7 +17,7 @@ export interface F24Props {
   data?: Record<string, unknown>;
   isTemplate?: boolean;
   editMode?: boolean;
-  onChange?: (field: string, value: string | Record<string, unknown> | Array<Record<string, unknown>> | RowData[]) => void;
+  onChange?: (field: string, value: unknown) => void;
   className?: string;
 }
 
@@ -69,6 +69,8 @@ export function F24Template({ data, isTemplate = true, editMode = false, onChang
         className={cn("border-b border-dashed border-foreground/40 bg-transparent text-xs px-1", width)}
         value={val(d, key)}
         onChange={e => onChange?.(key, e.target.value)}
+        aria-label={label}
+
         placeholder={label}
       />
     ) : (
@@ -83,6 +85,8 @@ export function F24Template({ data, isTemplate = true, editMode = false, onChang
         className="w-full bg-transparent text-[10px] px-1 border-none outline-none"
         value={rows[idx]?.[key] || ""}
         onChange={e => updateRow(idx, key, e.target.value)}
+        aria-label={`$label (row ${idx + 1})`}
+
         placeholder={label}
       />
     ) : (

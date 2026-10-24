@@ -124,6 +124,11 @@ export function useNotifications() {
 
     if (error) {
       log.system.error('notifications', `Fetch failed: ${error.message}`);
+      // The spinner must come down on the failure path too.  It used to be
+      // left spinning for ever: the error branch returned before the
+      // `setLoading(false)` below, and the page waited on a fetch that had
+      // already failed.
+      setLoading(false);
       return;
     }
 
@@ -169,7 +174,7 @@ export function useNotifications() {
 
   // ─── Actions ───────────────────────────────────────────────
 
-  const markAsRead = async (id: string) => {
+  const markAsRead = async (id: string): Promise<boolean> => {
     const { data, error } = await supabase
       .from('notifications')
       .update({ read: true })
@@ -178,17 +183,18 @@ export function useNotifications() {
 
     if (error) {
       log.system.error('notifications', `markAsRead failed: ${error.message}`);
-      return;
+      return false;
     }
     if (!data || data.length === 0) {
       log.system.warn('notifications', `markAsRead had no effect (RLS?) for id: ${id}`);
       await fetchNotifications();
-      return;
+      return false;
     }
     setNotifications(prev => prev.map(n => n.id === id ? { ...n, read: true } : n));
+    return true;
   };
 
-  const markAsUnread = async (id: string) => {
+  const markAsUnread = async (id: string): Promise<boolean> => {
     const { data, error } = await supabase
       .from('notifications')
       .update({ read: false })
@@ -197,17 +203,18 @@ export function useNotifications() {
 
     if (error) {
       log.system.error('notifications', `markAsUnread failed: ${error.message}`);
-      return;
+      return false;
     }
     if (!data || data.length === 0) {
       await fetchNotifications();
-      return;
+      return false;
     }
     setNotifications(prev => prev.map(n => n.id === id ? { ...n, read: false } : n));
+    return true;
   };
 
-  const markAllRead = async () => {
-    if (!user) return;
+  const markAllRead = async (): Promise<boolean> => {
+    if (!user) return false;
     const { data, error } = await supabase
       .from('notifications')
       .update({ read: true })
@@ -217,12 +224,23 @@ export function useNotifications() {
 
     if (error) {
       log.system.error('notifications', `markAllRead failed: ${error.message}`);
-      return;
+      return false;
     }
-    setNotifications(prev => prev.map(n => ({ ...n, read: true })));
+    // An update RLS refuses still answers 200 with zero rows.  Marking
+    // every notification read locally anyway showed a clean inbox that the
+    // server did not have — the next poll brought the unread ones straight
+    // back with no explanation.
+    if (!data || data.length === 0) {
+      log.system.warn('notifications', 'markAllRead had no effect (RLS?)');
+      await fetchNotifications();
+      return false;
+    }
+    const updated = new Set((data as { id: string }[]).map(r => r.id));
+    setNotifications(prev => prev.map(n => (updated.has(n.id) ? { ...n, read: true } : n)));
+    return true;
   };
 
-  const removeNotification = async (id: string) => {
+  const removeNotification = async (id: string): Promise<boolean> => {
     const { data, error } = await supabase
       .from('notifications')
       .delete()
@@ -231,17 +249,18 @@ export function useNotifications() {
 
     if (error) {
       log.system.error('notifications', `removeNotification failed: ${error.message}`);
-      return;
+      return false;
     }
     if (!data || data.length === 0) {
       await fetchNotifications();
-      return;
+      return false;
     }
     setNotifications(prev => prev.filter(n => n.id !== id));
+    return true;
   };
 
-  const clearAll = async () => {
-    if (!user) return;
+  const clearAll = async (): Promise<boolean> => {
+    if (!user) return false;
     const { data, error } = await supabase
       .from('notifications')
       .delete()
@@ -250,9 +269,17 @@ export function useNotifications() {
 
     if (error) {
       log.system.error('notifications', `clearAll failed: ${error.message}`);
-      return;
+      return false;
+    }
+    // Same as markAllRead: zero rows means the delete was refused, not
+    // that the inbox was already empty.
+    if (!data || data.length === 0) {
+      log.system.warn('notifications', 'clearAll had no effect (RLS?)');
+      await fetchNotifications();
+      return false;
     }
     setNotifications([]);
+    return true;
   };
 
   // ─── Sound Configuration ───────────────────────────────────
@@ -308,18 +335,17 @@ export function useNotifications() {
 // Helper: Get admin user IDs (for event targeting)
 // ============================================================================
 
+// These two lists come from SECURITY DEFINER RPCs rather than from a read
+// of the whole `user_roles` table.  That table's SELECT policy was
+// `USING (true)`, so reading it exposed every user's role and department
+// to every signed-in account; migration 12 dropped that policy and added
+// these two functions in its place.  They return the same ids.
 export async function getAdminUserIds(): Promise<string[]> {
-  const { data } = await supabase
-    .from('user_roles')
-    .select('user_id')
-    .eq('role', 'admin');
-  return (data || []).map(r => r.user_id);
+  const { data } = await supabase.rpc('prime_admin_user_ids');
+  return Array.isArray(data) ? (data as string[]) : [];
 }
 
 export async function getLeadershipUserIds(): Promise<string[]> {
-  const { data } = await supabase
-    .from('user_roles')
-    .select('user_id')
-    .in('role', ['admin', 'manager']);
-  return (data || []).map(r => r.user_id);
+  const { data } = await supabase.rpc('prime_leadership_user_ids');
+  return Array.isArray(data) ? (data as string[]) : [];
 }

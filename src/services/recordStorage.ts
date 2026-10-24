@@ -15,6 +15,7 @@ import { log } from './logger';
 import { emitEvent, Events } from './eventBus';
 import { safeEmit } from '@/lib/safeEmit';
 import { restGet } from './userService';
+import { bulkTransitionRecords } from './bulkRecordOps';
 
 import type { RecordData } from '../components/forms/DynamicFormRenderer';
 
@@ -46,6 +47,41 @@ interface DbRecord {
   deleted_at: string | null;
   created_at: string;
   updated_at: string;
+}
+
+// ============================================================================
+// Protected keys — ONE source of truth
+// ============================================================================
+
+/**
+ * The keys that belong to the DATABASE, not to the form.
+ *
+ * `form_data` is the business content of a record; these keys are the
+ * record's identity and workflow state, and the columns (or the engine)
+ * own them.  `parseRowToRecord` strips them out of `form_data` so that a
+ * form can never overwrite them — and `updateRecord` puts back the ones the
+ * stored `form_data` really carries, so that stripping never becomes a
+ * deletion (see the Zero Data Loss note in `updateRecord`).
+ */
+const PROTECTED_KEYS = new Set([
+  'id', 'serial', 'formCode', 'form_code', 'formName', 'form_name',
+  'project_id', 'projectId',
+  '_createdAt', '_createdBy', '_lastModifiedAt', '_lastModifiedBy',
+  '_deletedAt', '_editCount', '_modificationReason',
+  '_status', '_approvalStatus', '_department',
+  '_section', '_sectionName', '_frequency',
+  'created_at', 'created_by', 'updated_at', 'last_modified_by',
+  'edit_count', 'modification_reason', 'deleted_at',
+  'approval_status', 'department', 'section', 'section_name', 'frequency',
+]);
+
+/** Is this value "nothing" — absent, blank, or an empty list? */
+function isBlankValue(value: unknown): boolean {
+  if (value === undefined || value === null) return true;
+  if (typeof value === 'string') return value.trim() === '';
+  if (Array.isArray(value)) return value.length === 0;
+  if (typeof value === 'object') return Object.keys(value as object).length === 0;
+  return false;
 }
 
 // ============================================================================
@@ -109,6 +145,11 @@ const FORM_DEPT_MAP: Record<string, Department> = {
   'F/17': 'Quality', 'F/47': 'Quality',
   'F/32': 'RD', 'F/34': 'RD', 'F/35': 'RD', 'F/37': 'RD',
   'F/20': 'Management', 'F/21': 'Management', 'F/23': 'Management', 'F/45': 'Management', 'F/46': 'Management', 'F/48': 'Management',
+  // F/49 — Document Master List, section 7 (Management & Documentation), the
+  // same section as F/45/F/46/F/48.  Without it `resolveDepartment` returned
+  // null, so a F/49 record carried no department and the department-scoped
+  // row-level policy could not see it.
+  'F/49': 'Management',
 };
 
 /** Resolve department from form_code */
@@ -117,7 +158,7 @@ export function resolveDepartment(formCode: string): Department | null {
 }
 
 /** Current user snapshot for RBAC decisions */
-interface CurrentUserSnapshot {
+export interface CurrentUserSnapshot {
   userId: string;
   email: string;
   role: ApprovalRole;
@@ -263,21 +304,12 @@ function parseRowToRecord(row: DbRecord): RecordData | null {
     ? { ...(row.form_data as Record<string, unknown>) }
     : {};
 
-  // PROTECTED KEYS: These are authoritative DB metadata fields that must NEVER
-  // be overwritten by form_data. If form_data contains these keys (e.g., from
-  // a bad backfill where form_data.serial = "F/40" instead of "F/40-001"),
-  // they are stripped here to preserve DB authority.
-  const PROTECTED_KEYS = new Set([
-    'id', 'serial', 'formCode', 'form_code', 'formName', 'form_name',
-    'project_id', 'projectId',
-    '_createdAt', '_createdBy', '_lastModifiedAt', '_lastModifiedBy',
-    '_deletedAt', '_editCount', '_modificationReason',
-    '_status', '_approvalStatus', '_department',
-    '_section', '_sectionName', '_frequency',
-    'created_at', 'created_by', 'updated_at', 'last_modified_by',
-    'edit_count', 'modification_reason', 'deleted_at',
-    'approval_status', 'department', 'section', 'section_name', 'frequency',
-  ]);
+  // PROTECTED KEYS (see the module-level list): these are authoritative DB
+  // metadata fields that must NEVER be overwritten by form_data. If form_data
+  // contains these keys (e.g., from a bad backfill where form_data.serial =
+  // "F/40" instead of "F/40-001"), they are stripped here to preserve DB
+  // authority — and `updateRecord` puts the stored value back, so that
+  // stripping never deletes anything.
 
   // Strip any protected keys from form_data to prevent collisions
   for (const key of PROTECTED_KEYS) {
@@ -325,46 +357,6 @@ function parseRowToRecord(row: DbRecord): RecordData | null {
   return recordData;
 }
 
-function recordToRow(data: RecordData): Omit<DbRecord, 'id' | 'created_at' | 'updated_at'> {
-  // Extract metadata from RecordData (fields starting with _)
-  const metadataKeys = new Set([
-    'serial', 'formCode', 'formName', 'project_id',
-    '_createdAt', '_createdBy', '_lastModifiedAt', '_lastModifiedBy',
-    '_editCount', '_modificationReason', '_status', '_approvalStatus', '_department',
-    '_section', '_sectionName', '_frequency',
-  ]);
-
-  // Everything else is business data → form_data
-  const formData: Record<string, unknown> = {};
-  for (const [key, value] of Object.entries(data)) {
-    if (!metadataKeys.has(key)) {
-      formData[key] = value;
-    }
-  }
-
-  const formCode = String(data.formCode ?? '');
-  const formSchema = getFormSchema(formCode);
-
-  return {
-    form_code: formCode,
-    serial: String(data.serial ?? ''),
-    form_name: String(data.formName ?? formSchema?.name ?? ''),
-    project_id: (data.project_id as string) || null,
-    // The only writable workflow column. `_approvalStatus` is a derived label
-    // for the UI and is deliberately NOT written anywhere.
-    status: toRecordStatusEnum(data._status),
-    form_data: formData,
-    section: Number(data._section ?? formSchema?.section ?? 0),
-    section_name: String(data._sectionName ?? formSchema?.sectionName ?? ''),
-    frequency: String(data._frequency ?? formSchema?.frequency ?? ''),
-    created_by: String(data._createdBy ?? ''),
-    last_modified_by: String(data._lastModifiedBy ?? ''),
-    edit_count: Number(data._editCount ?? 0),
-    modification_reason: String(data._modificationReason ?? ''),
-    deleted_at: null,
-  };
-}
-
 // ============================================================================
 // Auth helper — get current authenticated user
 // ============================================================================
@@ -379,6 +371,27 @@ async function getCurrentUserId(): Promise<string | null> {
   }
 }
 
+/**
+ * The authenticated account's UUID.
+ *
+ * `getCurrentUserId` answers the E-MAIL, because that is what the register
+ * shows and what the policies compare `created_by` against.  The create
+ * RPC's `p_created_by` is a `uuid`, though, and the e-mail raised
+ * "invalid input syntax for type uuid" — so no record could be created
+ * through that path at all.  The function now resolves the author from the
+ * session; this uuid is the value its parameter has always wanted, and the
+ * fallback for a call with no session.
+ */
+async function getCurrentUserAuthId(): Promise<string | null> {
+  try {
+    const { data: { user }, error } = await supabase.auth.getUser();
+    if (error || !user) return null;
+    return user.id || null;
+  } catch {
+    return null;
+  }
+}
+
 // ============================================================================
 // Public API — Read operations
 // ============================================================================
@@ -387,7 +400,7 @@ export async function getRecords(formCode?: string): Promise<RecordData[]> {
   const user = getCurrentUserSnapshot();
   const isAdmin = user?.role === 'admin';
 
-  const query = supabase
+  const baseQuery = supabase
     .from('records')
     .select('*')
     .is('deleted_at', null)  // Only active records
@@ -397,6 +410,15 @@ export async function getRecords(formCode?: string): Promise<RecordData[]> {
   // PostgREST schema). A query-level `.eq('department', …)` here made the entire
   // read fail with PGRST204 for any user who had a department, so department
   // scoping is applied in memory below instead.
+
+  // The FORM filter belongs in the query, not in JavaScript.
+  //
+  // `select('*')` without it downloads EVERY record of EVERY form — including
+  // each record's whole `form_data` blob — and throws the rest away in the
+  // filter at the bottom of this function.  The form-scoped callers (the
+  // serial list, the register view, the import check) paid for the entire
+  // table on every call.  The in-memory filter stays below as a safety net.
+  const query = formCode ? baseQuery.eq('form_code', formCode) : baseQuery;
 
   const { data, error } = await query;
 
@@ -410,7 +432,23 @@ export async function getRecords(formCode?: string): Promise<RecordData[]> {
 
   // Secondary RBAC filter (defense in depth)
   if (!isAdmin && user) {
-    records = records.filter(r => canAccessDepartment(user, r._department as string || null));
+    records = records.filter(r => {
+      // A user may always see the records they created.
+      //
+      // The row-level policy grants exactly that (`created_by = auth.uid()`),
+      // but the client filter did not: an employee whose account has no
+      // department assigned was denied every record of a department that is
+      // not theirs — INCLUDING the ones they had created themselves — so the
+      // register showed them an empty list while the database had returned
+      // their own rows.  The filter is now the same rule the policy is.
+      if (user.userId && r._createdBy === user.userId) return true;
+      // The author is stored as the actor's E-MAIL (the engine stamps it
+      // that way — see record_draft_create and create_record_validated),
+      // and 14 legacy rows carry the account's uuid instead.  Both are the
+      // same person, so both are the owner.
+      if (user.email && r._createdBy === user.email) return true;
+      return canAccessDepartment(user, r._department as string || null);
+    });
   }
 
   if (formCode) {
@@ -501,6 +539,11 @@ export async function createRecord(formData: RecordData): Promise<StorageResult>
     return { success: false, error: 'Unauthorized: please sign in to create records' };
   }
 
+  // The account's uuid — the type `p_created_by` declares.  The e-mail
+  // (`currentUser`) is what the register shows; the uuid is what the
+  // parameter takes.
+  const authId = await getCurrentUserAuthId();
+
   // 1. Pre-write validation
   const validation = preWriteValidation(formCode, formData, 'create', undefined, currentUser);
   if (!validation.valid || !validation.sanitizedData) {
@@ -586,7 +629,12 @@ export async function createRecord(formData: RecordData): Promise<StorageResult>
     // never found, and EVERY record create failed with PGRST202 before the body
     // ran. p_created_by was a real parameter that was never sent.
     const { data: rpcResult, error } = await supabase.rpc('create_record_validated', {
-      p_created_by: String(data._createdBy ?? ''),
+      // The account's uuid.  It used to be the e-mail, which the `uuid`
+      // parameter rejected — every create failed with "invalid input
+      // syntax for type uuid".  The function now stamps the author from
+      // the session, so the e-mail in the register is the one the session
+      // carries, and this is only the fallback.
+      p_created_by: authId ?? null,
       p_form_code: formCode,
       p_form_name: (data.formName as string) || formSchema?.name || '',
       p_form_data: businessData,
@@ -910,7 +958,12 @@ export async function updateRecord(
   };
 
   // 4. Validation
-  const validation = preWriteValidation(currentRecord.formCode as string, merged, 'update', serial);
+  //
+  // `currentRecord` is handed over as the STORED state: a required field the
+  // record never carried is not an error this edit introduced, so it must
+  // not block the save (all 69 stored F/43 records lack the `inductee_signature`
+  // the schema requires — the document stores it as `inductee_sign`).
+  const validation = preWriteValidation(currentRecord.formCode as string, merged, 'update', serial, undefined, currentRecord);
   if (!validation.valid || !validation.sanitizedData) {
     return { success: false, error: `Validation failed: ${validation.errors.map(e => `${e.field}: ${e.message}`).join('; ')}` };
   }
@@ -920,7 +973,6 @@ export async function updateRecord(
   // version snapshot (non-drafts), the audit row and edit_count bump;
   // record_transition is the single authority for workflow state (Prime §5/§6).
   try {
-    const rowShape = recordToRow(validation.sanitizedData);
     // form_data carries the business fields exactly like the create path does;
     // metadata columns are handled by the engine from the row itself.
     const businessData: Record<string, unknown> = {};
@@ -928,6 +980,33 @@ export async function updateRecord(
       if (key === 'id' || key === 'formCode' || key === 'formName' || key === 'serial' ||
           key.startsWith('_')) continue;
       businessData[key] = value;
+    }
+
+    // Zero Data Loss: `update_record_versioned` REPLACES form_data wholesale,
+    // so a key that is dropped here is DELETED from the record.
+    //
+    // `parseRowToRecord` strips the PROTECTED keys out of form_data — they
+    // are authoritative DB metadata — but the stored form_data of 229 live
+    // records carries one anyway: `serial` (316 records), `department`
+    // (215), `frequency` (8), `created_by` (5) and `approval_status` (1).
+    // The first edit of any of those records deleted it.
+    //
+    // The rule: a stored value is KEPT when the edit did not supply one.
+    // The key is absent from the payload, or the payload's value is empty
+    // — the latter because the app hides the protected value, so the form
+    // renders the field blank and an untouched field must not wipe what is
+    // stored.  A value the user DID type still wins, and an ordinary
+    // business field can still be cleared as usual.
+    const storedFormData = (currentRow as DbRecord).form_data as Record<string, unknown> | null;
+    if (storedFormData) {
+      for (const key of Object.keys(storedFormData)) {
+        if (!PROTECTED_KEYS.has(key)) continue;
+        const storedValue = storedFormData[key];
+        const payloadValue = businessData[key];
+        if (payloadValue === undefined || isBlankValue(payloadValue)) {
+          if (!isBlankValue(storedValue)) businessData[key] = storedValue;
+        }
+      }
     }
 
     // NOTE: neither approval_status nor department is sent — neither column
@@ -1246,14 +1325,92 @@ export async function approveRecords(
   if (!user) return { success: 0, failed: serials.length, errors: ['Unauthorized'] };
 
   const results = { success: 0, failed: 0, errors: [] as string[] };
+  if (!serials.length) return results;
 
+  // ONE read for the whole queue.
+  //
+  // The old loop read the queue ONE RECORD AT A TIME and then moved each
+  // record with its own transition: 2N round trips, and a dropped
+  // connection half-way through left a queue that was neither approved nor
+  // rejected.  The rules are unchanged — only pending_review records can
+  // be approved, and only by someone allowed to approve that department —
+  // but the queue is now read once and moved once.
+  const { data: rows, error: fetchError } = await supabase
+    .from('records')
+    .select('id, serial, form_code, status')
+    .in('serial', serials)
+    .is('deleted_at', null);
+
+  if (fetchError) {
+    return {
+      success: 0,
+      failed: serials.length,
+      errors: [`Could not read the queue: ${fetchError.message}`],
+    };
+  }
+
+  const bySerial = new Map(
+    ((rows ?? []) as { id: string; serial: string; form_code: string; status: string }[])
+      .map(r => [r.serial, r]),
+  );
+
+  const eligible: { id: string; serial: string }[] = [];
   for (const serial of serials) {
-    const result = await approveRecord(serial);
-    if (result.success) {
-      results.success++;
-    } else {
+    const row = bySerial.get(serial);
+    if (!row) {
       results.failed++;
-      results.errors.push(`${serial}: ${result.error}`);
+      results.errors.push(`${serial}: record not found`);
+      continue;
+    }
+    const status = toRecordStatusEnum(row.status);
+    if (status !== 'pending_review') {
+      results.failed++;
+      results.errors.push(`${serial}: record is not pending review (current status: ${status})`);
+      continue;
+    }
+    const recordDept = resolveDepartment(String(row.form_code || ''));
+    if (!canApprove(user, recordDept)) {
+      results.failed++;
+      results.errors.push(`${serial}: you do not have permission to approve this record`);
+      continue;
+    }
+    eligible.push({ id: row.id, serial });
+  }
+
+  if (!eligible.length) return results;
+
+  // ONE transition for the whole queue.  The server applies the SAME
+  // transition graph and the SAME role rules the single path applies —
+  // `record_transition` is called, not re-implemented — so a bulk approval
+  // can never be more permissive than a single one.  A refused record is
+  // reported; the others still move.
+  const outcome = await bulkTransitionRecords(
+    eligible.map(e => e.id),
+    'approved',
+    'bulk approval',
+  );
+
+  const refused = new Map(
+    outcome.rows
+      .filter(r => r.status !== 'transitioned')
+      .map(r => [r.id, r.error ?? 'the transition was refused']),
+  );
+
+  for (const entry of eligible) {
+    const error = refused.get(entry.id);
+    if (error) {
+      results.failed++;
+      results.errors.push(`${entry.serial}: ${error}`);
+    } else {
+      results.success++;
+      logOperation({
+        timestamp: new Date().toISOString(),
+        operation: 'update',
+        serial: entry.serial,
+        formCode: bySerial.get(entry.serial)?.form_code ?? '',
+        success: true,
+        durationMs: 0,
+      });
     }
   }
 

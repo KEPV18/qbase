@@ -4,7 +4,7 @@
 // DO NOT EDIT DIRECTLY — edit unifiedSchema.ts instead
 // ============================================================================
 
-import { FORM_ZOD_SCHEMAS, getZodSchema } from '@/schemas/unifiedSchema';
+import { FORM_ZOD_SCHEMAS, FORM_ZOD_SCHEMAS_LENIENT, getZodSchema } from '@/schemas/unifiedSchema';
 import { z } from 'zod';
 
 // Re-export all shared validators for backward compatibility
@@ -69,12 +69,24 @@ export interface ValidationError {
   code: 'required' | 'format' | 'enum' | 'range' | 'type' | 'custom';
 }
 
-export function validateFormData(formCode: string, data: Record<string, unknown>): {
+export function validateFormData(
+  formCode: string,
+  data: Record<string, unknown>,
+  options?: { lenient?: boolean }
+): {
   valid: boolean;
   errors: ValidationError[];
   sanitizedData: Record<string, unknown> | null;
 } {
-  const schema = FORM_ZOD_SCHEMAS[formCode];
+  // The LENIENT schema set checks the TYPE of a value but not whether a
+  // required field is filled in.  It is the schema an EDIT is validated
+  // against: the production records predate the catalogue's `required`
+  // flag, and under the strict schema every record that lacks one of those
+  // fields could not be saved at all.  The "must not be empty" rule is
+  // applied by the pre-write layer, which knows the stored record.
+  const schema = options?.lenient
+    ? FORM_ZOD_SCHEMAS_LENIENT[formCode]
+    : FORM_ZOD_SCHEMAS[formCode];
   if (!schema) {
     return {
       valid: false,

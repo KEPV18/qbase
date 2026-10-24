@@ -9,8 +9,24 @@ import { useSupabaseAuth } from "./useSupabaseAuth";
 import { useUserManagement } from "./useUserManagement";
 import { AUTH_LOCAL_DISABLED, loadUsersLocal } from "./useAuthUtils";
 import type { AppUser, Role } from "@/services/userService";
-// Import recordStorage's snapshot functions to keep them in sync
-import { setCurrentUserSnapshot, clearCurrentUserSnapshot } from "@/services/recordStorage";
+import { normalizeDepartment, type ApprovalRole } from "@/services/userService";
+// Import recordStorage's snapshot functions to keep them in sync.
+//
+// The setter is ALIASED here.  It used to be imported under the same name
+// as the React state setter below, and the state setter — declared later
+// in this very function body — shadowed the import for the whole body.
+// Every `setCurrentUserSnapshot(snapshot)` in this file therefore called
+// React's `useState` setter, and recordStorage's module-level snapshot was
+// NEVER written: it stayed `null` for the life of the session.  That
+// snapshot is what the storage layer reads to decide the approval
+// workflow, so `approveRecord` answered "Unauthorized: please sign in" for
+// every record, every new record was stamped `pending_review` no matter
+// who created it, and the employee edit guard never fired.
+import {
+  setCurrentUserSnapshot as setRecordStorageSnapshot,
+  clearCurrentUserSnapshot,
+  type CurrentUserSnapshot as RecordStorageSnapshot,
+} from "@/services/recordStorage";
 
 export type { AppUser, Role };
 
@@ -43,6 +59,38 @@ export type AuthContextValue = {
 };
 
 const AuthContext = React.createContext<AuthContextValue | null>(null);
+
+/**
+ * Map the app's user onto the storage layer's RBAC snapshot.
+ *
+ * The two layers speak different vocabularies.  `userService` knows SEVEN
+ * roles ("admin" | "manager" | "auditor" | "user" | "moderator" |
+ * "dept_head" | "employee") and keeps the department as a free-form
+ * string; `recordStorage` decides the approval workflow from THREE roles
+ * and from the six canonical departments.
+ *
+ * The mapping is deliberately narrow: only a real `admin` and a real
+ * `dept_head` carry authority, and everyone else is an `employee` — which
+ * is exactly how `resolveApprovalStatus` already treated them.  A
+ * `manager` gains no approval right it did not have before.
+ */
+function toRecordStorageSnapshot(user: {
+  id: string;
+  email: string;
+  role: string;
+  department: string | null;
+}): RecordStorageSnapshot {
+  const role: ApprovalRole =
+    user.role === 'admin' ? 'admin'
+      : user.role === 'dept_head' ? 'dept_head'
+        : 'employee';
+  return {
+    userId: user.id,
+    email: user.email,
+    role,
+    department: normalizeDepartment(user.department),
+  };
+}
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const initialLocal = (() => {
@@ -91,7 +139,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       };
       setCurrentUserSnapshot(snapshot);
       // Also sync with recordStorage for RBAC checks
-      setCurrentUserSnapshot(snapshot);
+      setRecordStorageSnapshot(toRecordStorageSnapshot(result.user));
     }
     return result;
   }, [login]);
@@ -115,7 +163,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       };
       setCurrentUserSnapshot(snapshot);
       // Also sync with recordStorage for RBAC checks
-      setCurrentUserSnapshot(snapshot);
+      setRecordStorageSnapshot(toRecordStorageSnapshot(user));
     } else {
       setCurrentUserSnapshot(null);
       clearCurrentUserSnapshot();

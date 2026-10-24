@@ -13,7 +13,7 @@ export interface F20Props {
   data?: Record<string, unknown>;
   isTemplate?: boolean;
   editMode?: boolean;
-  onChange?: (field: string, value: string) => void;
+  onChange?: (field: string, value: unknown) => void;
   className?: string;
 }
 
@@ -26,7 +26,7 @@ export function F20Template({ data, isTemplate = true, editMode = false, onChang
   const inp = (key: string, label: string, width = "w-48") =>
     editMode ? (
       <input className={cn("border-b border-dashed border-foreground/40 bg-transparent text-sm px-1", width)}
-        value={val(d, key)} onChange={e => onChange?.(key, e.target.value)} placeholder={label} />
+        value={val(d, key)} onChange={e => onChange?.(key, e.target.value)} aria-label={label} placeholder={label} />
     ) : (
       <span className={cn("border-b border-dashed border-foreground/30 px-1 min-w-[6rem] inline-block", width)}>
         {val(d, key) || (ph ? "___" : "")}

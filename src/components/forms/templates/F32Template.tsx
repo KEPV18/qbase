@@ -13,7 +13,7 @@ export interface F32Props {
   data?: Record<string, unknown>;
   isTemplate?: boolean;
   editMode?: boolean;
-  onChange?: (field: string, value: string) => void;
+  onChange?: (field: string, value: unknown) => void;
   className?: string;
 }
 
@@ -27,6 +27,8 @@ export function F32Template({ data, isTemplate = true, editMode = false, onChang
         className={cn("w-full bg-transparent text-xs px-1 border-none outline-none", className)}
         value={val(d, key)}
         onChange={e => onChange?.(key, e.target.value)}
+        aria-label={placeholder}
+
         placeholder={placeholder}
       />
     ) : (
@@ -39,6 +41,8 @@ export function F32Template({ data, isTemplate = true, editMode = false, onChang
         className={cn("w-full bg-transparent text-xs p-1 border border-dashed border-foreground/30 rounded-md resize-none", minH)}
         value={val(d, key) || ""}
         onChange={e => onChange?.(key, e.target.value)}
+        aria-label={placeholder}
+
         placeholder={placeholder}
       />
     ) : (

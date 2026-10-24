@@ -76,6 +76,20 @@ export function daysBetween(from: string, to: string = new Date().toISOString())
 }
 
 /**
+ * Whole days from `asOf` until a deadline.
+ *
+ * The deadline is the END of its day — the very instant `isPeriodDue` uses —
+ * so the countdown and the due-ness can never disagree by a day.  A bare
+ * 'YYYY-MM-DD' would be read as UTC midnight, which is a different moment in
+ * every timezone outside UTC: a form due on the 5th read as "due in 1 day"
+ * on the 3rd in Cairo and as "due in 2 days" in Los Angeles.
+ */
+export function daysUntilDeadline(dueDate: string, asOf: Date = new Date()): number {
+  const due = new Date(`${dueDate}T23:59:59`).getTime();
+  return Math.floor((due - asOf.getTime()) / (1000 * 60 * 60 * 24));
+}
+
+/**
  * Compliance status for a single form.
  */
 export interface FormCompliance {
@@ -92,6 +106,24 @@ export interface FormCompliance {
   isOverdue: boolean;
   overdueDays: number;
   recordCount: number;
+  /**
+   * How many of this form's records carry an ISSUE — a business state that
+   * is open, rejected, or mentions a non-conformity ('nc').
+   *
+   * This is the business status of a record, not its workflow status: a
+   * record can be approved and still carry an open issue.  The page counts
+   * the FORMS that have at least one.
+   */
+  issueCount: number;
+  /**
+   * The months this form's records cover, ascending.
+   *
+   * The engine works in covered months, not in filing dates: a filing made
+   * in April for March covers March.  The pages show the last covered
+   * month, so the set has to be visible — it used to be computed and
+   * thrown away.
+   */
+  months: string[];
   missingPeriods: Period[]; // the periods that were due and were not filed
   missingCount: number;
   /** What one missed period of this cadence is called ('month', 'quarter'…). */
@@ -114,6 +146,25 @@ export interface ComplianceRecord {
   formCode: string;
   createdAt: string;    // when the filing was made
   month: string | null; // 'YYYY-MM' the filing covers
+  /**
+   * The BUSINESS status of the record — the state the form carries, in its
+   * own field ('open', 'rejected', 'closed'…).  It is not the workflow
+   * status: a record can be approved and still carry an open issue.
+   */
+  businessStatus?: string | null;
+}
+
+/**
+ * Does this business status count as an issue?
+ *
+ * The same rule as the server's: an open or rejected record, or one whose
+ * status mentions a non-conformity ('nc').  The two have to agree, or the
+ * dashboard counts the issues of one engine and the audit page the issues
+ * of the other.
+ */
+export function isIssueStatus(businessStatus: unknown): boolean {
+  const status = String(businessStatus ?? '').toLowerCase();
+  return status === 'open' || status === 'rejected' || status.includes('nc');
 }
 
 /** A form definition, reduced to what the engine needs. */
@@ -132,7 +183,7 @@ export interface ComplianceForm {
  * — 1 period overdue". A form that owes a filing shows its cadence; a form
  * that owes none keeps the catalogue's own wording ("On event", "Daily").
  */
-const PERIODIC_LABELS: Record<PeriodicFrequency, string> = {
+export const PERIODIC_LABELS: Record<PeriodicFrequency, string> = {
   monthly: 'Monthly',
   quarterly: 'Quarterly',
   'semi-annual': 'Semi-annual',
@@ -145,26 +196,38 @@ const PERIODIC_LABELS: Record<PeriodicFrequency, string> = {
  * A form is late when it owes a filing for a period that has closed and that
  * no record covers. The same gaps drive the dashboard counter, the department
  * health card and the compliance radar — one model, one number.
+ *
+ * The reporting window starts at the earliest month any record covers — the
+ * month the organisation was first using these forms.  A period that ended
+ * before that was never owed, so it cannot be a gap; and a period whose
+ * deadline falls in January is still on the table when January comes, which
+ * is what stops a form that has been late all year from reading as up to
+ * date the moment the calendar turns over.
  */
 export function buildComplianceMap(
   records: ComplianceRecord[],
   forms: ComplianceForm[],
   asOf: Date = new Date(),
 ): Map<string, FormCompliance> {
-  const byForm = new Map<string, { latest: string; count: number; months: Set<string> }>();
+  const byForm = new Map<string, { latest: string; count: number; issues: number; months: Set<string> }>();
+  let datasetStart: string | null = null;
   for (const r of records) {
     const code = String(r.formCode ?? '');
     if (!code) continue;
     let entry = byForm.get(code);
     if (!entry) {
-      entry = { latest: r.createdAt, count: 0, months: new Set<string>() };
+      entry = { latest: r.createdAt, count: 0, issues: 0, months: new Set<string>() };
       byForm.set(code, entry);
     }
     entry.count += 1;
+    if (isIssueStatus(r.businessStatus)) entry.issues += 1;
     if (r.createdAt && (!entry.latest || r.createdAt > entry.latest)) {
       entry.latest = r.createdAt;
     }
-    if (r.month) entry.months.add(r.month);
+    if (r.month) {
+      entry.months.add(r.month);
+      if (!datasetStart || r.month < datasetStart) datasetStart = r.month;
+    }
   }
 
   const map = new Map<string, FormCompliance>();
@@ -175,11 +238,11 @@ export function buildComplianceMap(
     const months = entry?.months ?? new Set<string>();
     const lastRecordDate = entry?.latest || null;
 
-    const missingPeriods = periodic ? getMissingPeriods(months, periodic, asOf) : [];
-    const periodStates = periodic ? getPeriodStates(months, periodic, asOf) : [];
-    const nextPeriod = periodic ? getNextDueDate(months, periodic, asOf) : null;
+    const missingPeriods = periodic ? getMissingPeriods(months, periodic, asOf, datasetStart) : [];
+    const periodStates = periodic ? getPeriodStates(months, periodic, asOf, datasetStart) : [];
+    const nextPeriod = periodic ? getNextDueDate(months, periodic, asOf, datasetStart) : null;
     const nextDueDate = nextPeriod?.dueDate ?? null;
-    const daysUntilDue = nextDueDate ? daysBetween(asOf.toISOString(), nextDueDate) : null;
+    const daysUntilDue = nextDueDate ? daysUntilDeadline(nextDueDate, asOf) : null;
 
     // How long the form has been late: measured from the oldest missed deadline.
     const overdueDays = missingPeriods.length > 0
@@ -199,6 +262,8 @@ export function buildComplianceMap(
       isOverdue: missingPeriods.length > 0,
       overdueDays,
       recordCount: entry?.count ?? 0,
+      issueCount: entry?.issues ?? 0,
+      months: Array.from(months).sort(),
       missingPeriods,
       missingCount: missingPeriods.length,
       periodUnit: periodic ? periodUnit(periodic) : '',

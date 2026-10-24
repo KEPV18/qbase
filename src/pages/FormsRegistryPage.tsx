@@ -34,10 +34,8 @@ import {
 } from "lucide-react";
 import { getFormSchema } from "@/data/formSchemas";
 import { CANONICAL_FORMS } from "@/data/formCatalog";
-import { useRecords } from "@/hooks/useRecordStorage";
-import { buildComplianceMap } from "@/lib/compliance";
-import { getRecordMonth, monthLabel } from "@/lib/temporalUtils";
-import type { RecordData } from "@/components/forms/DynamicFormRenderer";
+import { useComplianceMap } from "@/hooks/useCompliance";
+import { monthLabel } from "@/lib/temporalUtils";
 
 // ============================================================================
 // Types
@@ -51,7 +49,13 @@ type ViewMode = "grid" | "list";
 
 export default function FormsRegistryPage() {
   const navigate = useNavigate();
-  const { data: records } = useRecords();
+  // The compliance model comes from the SERVER — the registry used to
+  // download the whole register to work out which forms were behind, and
+  // then counted them a second time by hand.
+  const {
+    data: complianceResult,
+    isError: recordsError,
+  } = useComplianceMap();
 
   // ── State ──
   const [searchTerm, setSearchTerm] = useState("");
@@ -64,22 +68,15 @@ export default function FormsRegistryPage() {
   // the registry cannot disagree with them about the same records.
   const missingMonthsMap = useMemo(() => {
     const map = new Map<string, { labels: string[]; countLabel: string }>();
-    if (!records) return map;
-    const compliance = buildComplianceMap(
-      (records as RecordData[]).map(r => ({
-        formCode: String(r.formCode),
-        createdAt: String(r._createdAt || ''),
-        month: getRecordMonth(r),
-      })),
-      CANONICAL_FORMS.map(f => ({ code: f.code, name: f.name, frequency: f.frequency })),
-    );
+    const compliance = complianceResult?.map;
+    if (!compliance) return map;
     compliance.forEach((c, code) => {
       if (c.missingCount > 0) {
         map.set(code, { labels: c.missingPeriods.map(p => p.label), countLabel: c.missingCountLabel });
       }
     });
     return map;
-  }, [records]);
+  }, [complianceResult]);
 
   // ── Filtered forms ──
   const filteredForms = useMemo(() => {
@@ -116,23 +113,23 @@ export default function FormsRegistryPage() {
   // ── Live record counts ──
   // The catalogue used to carry hard-coded `lastRecordCount` / `lastRecordDate`
   // values (254 records in total) that no longer matched the records
-  // themselves (316). The count and the last filing now come from the data.
+  // themselves (316). The count and the last filing now come from the data —
+  // and the data comes from the server, which counted it there.
   const recordStats = useMemo(() => {
     const counts = new Map<string, number>();
     const lastMonth = new Map<string, string>();
-    for (const r of (records || []) as RecordData[]) {
-      const code = String(r.formCode);
-      counts.set(code, (counts.get(code) ?? 0) + 1);
-      const month = getRecordMonth(r);
-      if (month && (!lastMonth.get(code) || month > lastMonth.get(code)!)) {
-        lastMonth.set(code, month);
-      }
-    }
+    const compliance = complianceResult?.map;
+    if (!compliance) return { counts, lastMonth };
+    compliance.forEach((c, code) => {
+      counts.set(code, c.recordCount);
+      const months = c.months ?? [];
+      if (months.length > 0) lastMonth.set(code, months[months.length - 1]);
+    });
     return { counts, lastMonth };
-  }, [records]);
+  }, [complianceResult]);
 
   // ── Total records count ──
-  const totalRecords = records?.length ?? 0;
+  const totalRecords = complianceResult?.totalRecords ?? 0;
 
   return (
     <AppShell>
@@ -140,6 +137,19 @@ export default function FormsRegistryPage() {
         <div className="max-w-grid mx-auto py-6">
 
           {/* ── Header ── */}
+          {recordsError && (
+            <div
+              role="alert"
+              className="mb-4 flex items-start gap-2.5 rounded-lg border border-destructive/40 bg-destructive/5 px-3.5 py-3 text-[13px] text-destructive-tint"
+            >
+              <AlertTriangle className="w-4 h-4 mt-0.5 shrink-0" aria-hidden="true" />
+              <span>
+                The records could not be loaded, so the missing periods below are
+                not known — a form with no badge here is <strong>not</strong> a
+                form that is up to date.
+              </span>
+            </div>
+          )}
           <div className="flex flex-col gap-1 mb-6">
             <div className="flex items-center gap-3">
               <div className="w-11 h-11 rounded-xl bg-primary/10 border border-primary/20 flex items-center justify-center">
@@ -150,7 +160,7 @@ export default function FormsRegistryPage() {
                   Forms Registry
                 </h1>
                 <p className="text-[13px] text-muted-foreground">
-                  {FORMS_REGISTRY.length} forms · {totalRecords} records · 7 sections · ISO 9001:2015
+                  {FORMS_REGISTRY.length} forms · {recordsError ? "—" : totalRecords} records · 7 sections · ISO 9001:2015
                 </p>
               </div>
             </div>

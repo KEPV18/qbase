@@ -8,7 +8,7 @@ export interface F16Props {
   data?: Record<string, unknown>;
   isTemplate?: boolean;
   editMode?: boolean;
-  onChange?: (field: string, value: string) => void;
+  onChange?: (field: string, value: unknown) => void;
   className?: string;
 }
 
@@ -18,7 +18,7 @@ export function F16Template({ data, isTemplate = true, editMode = false, onChang
 
   const inp = (key: string, label: string) =>
     editMode ? (
-      <input className="border-b border-dashed border-foreground/40 bg-transparent text-sm px-1 w-full" value={val(d, key)} onChange={e => onChange?.(key, e.target.value)} placeholder={label} />
+      <input className="border-b border-dashed border-foreground/40 bg-transparent text-sm px-1 w-full" value={val(d, key)} onChange={e => onChange?.(key, e.target.value)} aria-label={label} placeholder={label} />
     ) : (
       <span className="border-b border-dashed border-foreground/30 px-1 inline-block min-w-[4rem]">{val(d, key) || (ph ? "___" : "")}</span>
     );

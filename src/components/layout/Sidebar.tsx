@@ -8,7 +8,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate, useLocation, NavLink } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { useTenantIdentity } from "@/hooks/useTenantIdentity";
-import { useRecords } from "@/hooks/useRecordStorage";
+import { useComplianceMap } from "@/hooks/useCompliance";
 import {
   LayoutDashboard, Layers, FileText, Settings, Bell,
   Database, Shield, Users, BarChart3, Briefcase,
@@ -17,7 +17,7 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useNotifications } from "@/hooks/useNotifications";
-import { getMonthsFromRecords, monthLabel } from "@/lib/temporalUtils";
+import { monthLabel } from "@/lib/temporalUtils";
 import { PROJECTS } from "@/data/projectsData";
 import defaultLogo from "@/assets/qms-logo.png";
 
@@ -206,8 +206,11 @@ function ProjectFilterDropdown() {
 function MonthFilterDropdown() {
   const navigate = useNavigate();
   const location = useLocation();
-  const { data: records } = useRecords();
-  const availableMonths = useMemo(() => getMonthsFromRecords(records || []), [records]);
+  // The months the register covers, counted by the server.  The sidebar is
+  // on every page, and it used to hold the whole register to work out a
+  // list of months.
+  const { data: complianceResult } = useComplianceMap();
+  const availableMonths = useMemo(() => complianceResult?.months ?? [], [complianceResult]);
 
   // Read current month from URL query param
   const params = new URLSearchParams(location.search);

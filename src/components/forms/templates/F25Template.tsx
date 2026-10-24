@@ -12,7 +12,7 @@ export interface F25Props {
   data?: Record<string, unknown>;
   isTemplate?: boolean;
   editMode?: boolean;
-  onChange?: (field: string, value: string | Record<string, unknown>) => void;
+  onChange?: (field: string, value: unknown) => void;
   className?: string;
 }
 
@@ -69,6 +69,8 @@ export function F25Template({ data, isTemplate = true, editMode = false, onChang
         className="w-full bg-transparent text-[11px] px-1 border-none outline-none"
         value={val(d, key)}
         onChange={e => onChange?.(key, e.target.value)}
+        aria-label={placeholder}
+
         placeholder={placeholder}
       />
     ) : (
@@ -83,6 +85,8 @@ export function F25Template({ data, isTemplate = true, editMode = false, onChang
         className="w-full bg-transparent text-[11px] px-0.5 border-none outline-none"
         value={matrix[idx]?.[key] || ""}
         onChange={e => updateMatrix(idx, key, e.target.value)}
+        aria-label={`$placeholder (row ${idx + 1})`}
+
         placeholder={placeholder}
       />
     ) : (

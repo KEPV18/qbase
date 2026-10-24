@@ -5,6 +5,7 @@
 // =============================================================================
 
 import { supabase } from "@/integrations/supabase/client";
+import { bulkCreateRecords, chunkRows, type BulkRow } from "@/services/bulkRecordOps";
 import { toast } from "sonner";
 
 const BACKUP_VERSION = "qbase-backup-v1";
@@ -154,6 +155,15 @@ export interface RestoreResult {
   imported: number;
   skipped: number;
   errors: string[];
+  /**
+   * Why each row was skipped.
+   *
+   * A skip is NOT a failure: it is the restore refusing to overwrite a live
+   * record, which is the correct outcome and the one the Zero Data Loss
+   * rule requires.  The two are reported separately so that restoring the
+   * register's own backup onto itself does not read as a wall of errors.
+   */
+  skippedDetails: string[];
 }
 
 export async function importBackup(file: File, password: string): Promise<RestoreResult> {
@@ -193,26 +203,119 @@ export async function importBackup(file: File, password: string): Promise<Restor
     throw new Error("Backup payload must be an array of records");
   }
 
-  const result: RestoreResult = { success: true, imported: 0, skipped: 0, errors: [] };
+  const result: RestoreResult = { success: true, imported: 0, skipped: 0, errors: [], skippedDetails: [] };
 
-  // Upsert in batches of 50 to avoid Supabase limits
-  const BATCH_SIZE = 50;
-  for (let i = 0; i < records.length; i += BATCH_SIZE) {
-    const batch = records.slice(i, i + BATCH_SIZE);
-    const { error: upsertError } = await supabase.from("records").upsert(batch, { onConflict: "serial" });
+  // A restore must never OVERWRITE a live record.
+  //
+  // The old implementation upserted straight into the table on `serial`,
+  // so restoring a backup could replace a record that had been edited
+  // since the backup was taken — and it bypassed the engine, so a restored
+  // record had no version history, no edit count and NO audit row.  The
+  // bulk create SKIPS a serial that is already live and reports it, and it
+  // writes the audit row the engine writes.
+  const rows: BulkRow[] = records.map((raw) => {
+    const r = (raw ?? {}) as Record<string, unknown>;
+    const status = String(r.status ?? 'draft');
+    return {
+      form_code: String(r.form_code ?? ''),
+      form_name: String(r.form_name ?? ''),
+      form_data: (r.form_data ?? {}) as Record<string, unknown>,
+      serial: r.serial ? String(r.serial) : undefined,
+      // Only a real workflow state may be restored; anything else would be
+      // refused by the enum.
+      status: ['draft', 'pending_review', 'approved', 'rejected'].includes(status) ? status : 'draft',
+      section: typeof r.section === 'number' ? r.section : null,
+      section_name: r.section_name ? String(r.section_name) : null,
+      frequency: r.frequency ? String(r.frequency) : null,
+      // The author the record had where the backup came from.  The server
+      // does not let a client choose the author of a record — it is taken
+      // from the session — so this is kept in the audit row instead, and
+      // the provenance of the restored record is not lost.
+      original_created_by: r.created_by ? String(r.created_by) : undefined,
+    };
+  });
 
-    if (upsertError) {
-      result.errors.push(`Batch ${Math.floor(i / BATCH_SIZE) + 1}: ${upsertError.message}`);
-    } else {
-      result.imported += batch.length;
+  // A RESTORE is not a CREATE.
+  //
+  // The completeness rule — "the form's required fields must be present" —
+  // is a CREATE rule: it stops a half-filled record from being filed.  A
+  // restore writes back a record that ALREADY EXISTED.  Whether it was
+  // complete is a fact about the past, not a mistake the restore is making,
+  // and refusing it would DROP the register's own records (measured on the
+  // production copy: 7 of the 316 live records are incomplete, and the
+  // server's old stale lists refused 216 of them).
+  //
+  // So the restore asks for the exemption.  Everything else still holds:
+  // the role gate, the serial uniqueness (a live record is never
+  // overwritten), the audit row, and the transaction.
+  const RESTORE_OPTIONS = {
+    reason: 'restored_from_backup',
+    skipExisting: true,
+    allowIncomplete: true,
+  } as const;
+
+  // Whether the server had to be called in the old three-argument shape —
+  // reported once, not once per batch.
+  let legacyServerWarned = false;
+
+  for (const batch of chunkRows(rows)) {
+    let entries = batch;
+    let outcome = await bulkCreateRecords(entries, RESTORE_OPTIONS);
+
+    if (outcome.legacyServer && !legacyServerWarned) {
+      legacyServerWarned = true;
+      result.errors.push(
+        'The server does not have the restore-safe bulk create yet, so the records that were incomplete may have been refused. Apply the prime migrations and restore again.',
+      );
+    }
+
+    if (!outcome.committed) {
+      // The batch was refused and NOTHING was written.  Report the rows the
+      // server refused, drop them and send the rest — a restore should
+      // bring back everything it can and say what it could not.
+      const bad = new Set(outcome.failures.map(f => f.index));
+      for (const failure of outcome.failures) {
+        result.errors.push(`Row ${failure.index}: ${failure.error}`);
+      }
+      const rest = entries.filter((_, i) => !bad.has(i + 1));
+      if (!rest.length) {
+        result.skipped += entries.length;
+        continue;
+      }
+      entries = rest;
+      outcome = await bulkCreateRecords(entries, RESTORE_OPTIONS);
+      if (!outcome.committed) {
+        result.errors.push(`Batch of ${entries.length} records was refused: ${outcome.failures.map(f => f.error).join('; ')}`);
+        result.skipped += entries.length;
+        continue;
+      }
+    }
+
+    result.imported += outcome.created;
+    result.skipped += outcome.skipped;
+    for (const row of outcome.rows) {
+      if (row.status !== 'skipped') continue;
+      // A skip is the restore protecting a live record — a CORRECT outcome,
+      // not an error.  It is reported apart from the errors so the summary
+      // says what really happened.
+      result.skippedDetails.push(`Row ${row.index}: ${row.detail || 'a live record already carries this serial'}`);
     }
   }
 
   result.success = result.errors.length === 0;
-  result.skipped = records.length - result.imported;
 
   if (result.success) {
-    toast.success(`Restored ${result.imported} records successfully`);
+    if (result.imported === 0 && result.skipped > 0) {
+      // Nothing was written because every row was already live — the
+      // register was already up to date.  That is the restore working.
+      toast.success(`Nothing to restore — all ${result.skipped} record(s) are already in the register`);
+    } else {
+      toast.success(
+        result.skipped > 0
+          ? `Restored ${result.imported} records (${result.skipped} already in the register)`
+          : `Restored ${result.imported} records successfully`,
+      );
+    }
   } else {
     toast.error(`Restore completed with ${result.errors.length} errors (${result.imported} imported)`);
   }

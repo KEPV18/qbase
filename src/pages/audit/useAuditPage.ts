@@ -6,17 +6,36 @@
 import { useState, useMemo, useEffect, useCallback } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useQueryClient } from "@tanstack/react-query";
-import { useRecords } from "@/hooks/useRecordStorage";
+import { useAuth } from "@/hooks/useAuth";
+import { useComplianceMap, useRecordPage } from "@/hooks/useCompliance";
 import { CANONICAL_FORMS, getCanonicalSectionLabel } from "@/data/formCatalog";
-import { buildComplianceMap } from "@/lib/compliance";
-import { getRecordMonth } from "@/lib/temporalUtils";
+import type { FormCompliance } from "@/lib/compliance";
+import type { RecordPageFilter } from "@/services/complianceApi";
 import type { RecordData } from "@/components/forms/DynamicFormRenderer";
-import { toast } from "sonner";
+
+/**
+ * The client-side mirror of `public.prime_is_manager_or_admin()`.
+ *
+ * The two must agree.  If the client claims organisation scope the
+ * database does not grant, the audit page makes an organisation-wide
+ * claim from a partial view; if the client denies it, a manager or a
+ * department head loses the view their policy entitles them to.
+ *
+ * SQL side: `supabase/migrations/prime/20260929_01_authz_spine.sql`
+ *   where ur.role in ('admin', 'dept_head', 'manager')
+ */
+const ORG_WIDE_ROLES = new Set(["admin", "dept_head", "manager"]);
 
 export type AuditTab = "pending" | "compliant" | "issues" | "overdue" | "never-filled";
 
 export interface AuditStats {
-  pending: number;
+  /**
+   * The RECORDS that are waiting for a review (`records.status =
+   * 'pending_review'`).  It is a record count, not a form count: the other
+   * figures in this struct count forms, because a form is what owes a
+   * filing.
+   */
+  pendingReview: number;
   compliant: number;
   issues: number;
   overdue: number;
@@ -33,15 +52,78 @@ export interface CategoryBreakdown {
   issues: number;
 }
 
+/**
+ * One row of a FORM tab.
+ *
+ * Two of the five tabs list FORMS, not records: a form is what owes a
+ * filing, so "which forms are behind?" is a question about forms.  The
+ * record tabs list records.
+ */
+export interface AuditFormRow {
+  code: string;
+  name: string;
+  section: string;
+  frequency: string;
+  recordCount: number;
+  missingCount: number;
+  missingCountLabel: string;
+  overdueDays: number;
+  /** The labels of the missed periods — "March 2026, April 2026". */
+  missingPeriods: string[];
+  status: "overdue" | "never-filled";
+}
+
+/** How many rows a page of the register holds. */
+const PAGE_SIZE = 25;
+
 export function useAuditPage() {
   const navigate = useNavigate();
   const location = useLocation();
   const queryClient = useQueryClient();
-  const { data: records, isLoading, error, refetch } = useRecords();
+  const { user } = useAuth();
+
+  // ── The compliance model, computed by the server ────────────────────
+  //
+  // The model used to be computed HERE, in the browser, from a snapshot of
+  // every record the viewer could see — 318 rows and 379 kB of `form_data`
+  // on every visit, so that four pages could each count the same forms.
+  // The server now computes it, over the rows the row-level policy
+  // actually lets this viewer see.
+  const {
+    data: complianceResult,
+    isLoading: complianceLoading,
+    error: complianceError,
+    refetch: refetchCompliance,
+  } = useComplianceMap();
+
+  const compliance: Map<string, FormCompliance> = useMemo(
+    () => complianceResult?.map ?? new Map<string, FormCompliance>(),
+    [complianceResult],
+  );
+
+  // ── The scope of what this viewer can see ─────────────────────────────
+  //
+  // Every compliance figure on this page is computed against the form
+  // catalogue using ONLY the records the viewer can see — and what a
+  // viewer can see is decided by the RLS policy, not by the client:
+  //
+  //   records_read_dept_or_owner  (migration 15)
+  //     prime_is_manager_or_admin()               → the whole organisation
+  //     created_by = you                          → the records you filed
+  //     prime_record_department(...) = your dept  → your department's forms
+  //
+  // A plain user therefore sees a slice, and a slice cannot support an
+  // organisation-wide verdict.  Before this was in place, a user whose
+  // slice was empty was shown a green "All forms compliant" banner and
+  // "36 forms never filled — these forms need at least one record for
+  // compliance": both numbers described the empty view, not the
+  // organisation, and the page stated them as facts about the company.
+  const scopeIsOrgWide = ORG_WIDE_ROLES.has(String(user?.role || "").toLowerCase());
 
   const [activeTab, setActiveTab] = useState<AuditTab>("pending");
   const [search, setSearch] = useState("");
   const [sectionFilter, setSectionFilter] = useState("all");
+  const [page, setPage] = useState(0);
 
   // Parse URL params on mount
   useEffect(() => {
@@ -57,106 +139,109 @@ export function useAuditPage() {
     if (searchParam) setSearch(searchParam);
   }, [location.search]);
 
-  const handleRefresh = useCallback(() => {
-    queryClient.invalidateQueries({ queryKey: ['forge-records'] });
-    refetch();
-  }, [queryClient, refetch]);
+  // A new tab or a new search starts at the first page — page 3 of the
+  // previous filter is not a page of the new one.
+  useEffect(() => {
+    setPage(0);
+  }, [activeTab, search]);
 
+  // ── The record list behind the table ────────────────────────────────
+  //
+  // The three RECORD tabs ask the server for one page at a time, filtered
+  // on the server.  The two FORM tabs need no list of records: they are
+  // built from the compliance model below.
+  const isRecordTab = activeTab === "pending" || activeTab === "compliant" || activeTab === "issues";
+
+  const recordFilter: RecordPageFilter = useMemo(() => {
+    const filter: RecordPageFilter = {};
+    if (activeTab === "pending") filter.workflow_status = "pending_review";
+    if (activeTab === "compliant") filter.business = "ok";
+    if (activeTab === "issues") filter.business = "issue";
+    if (search.trim()) filter.search = search.trim();
+    return filter;
+  }, [activeTab, search]);
+
+  const {
+    data: recordPage,
+    isLoading: recordsLoading,
+    error: recordsError,
+    refetch: refetchRecords,
+  } = useRecordPage(recordFilter, {
+    page,
+    pageSize: PAGE_SIZE,
+    sort: "form_code",
+    enabled: isRecordTab,
+  });
+
+  const handleRefresh = useCallback(() => {
+    queryClient.invalidateQueries({ queryKey: ['compliance-map'] });
+    queryClient.invalidateQueries({ queryKey: ['records-page'] });
+    refetchCompliance();
+    if (isRecordTab) refetchRecords();
+  }, [queryClient, refetchCompliance, refetchRecords, isRecordTab]);
+
+  // ── The counts ─────────────────────────────────────────────────────
+  //
   // One model, shared with the dashboard: a form is overdue when it owes a
   // filing for a period that has closed and that no record covers. The audit
   // page used to apply its own thresholds (35/95/190/380 days plus a 60-day
   // catch-all), which is why it said "5 overdue forms" while the dashboard
   // said "8" about the very same records.
-  const compliance = useMemo(
-    () => buildComplianceMap(
-      (records || []).map(r => ({
-        formCode: String(r.formCode),
-        createdAt: String(r._createdAt || ''),
-        month: getRecordMonth(r),
-      })),
-      CANONICAL_FORMS.map(f => ({ code: f.code, name: f.name, frequency: f.frequency })),
-    ),
-    [records],
-  );
-
-  // Compute audit stats from real Supabase data
   const stats = useMemo((): AuditStats => {
-    const recordByForm = new Map<string, RecordData[]>();
-    records?.forEach(r => {
-      const existing = recordByForm.get(r.formCode as string) || [];
-      existing.push(r);
-      recordByForm.set(r.formCode as string, existing);
-    });
-
     const totalForms = CANONICAL_FORMS.length;
-    const filledForms = CANONICAL_FORMS.filter(s => (recordByForm.get(s.code)?.length || 0) > 0).length;
-    const neverFilled = totalForms - filledForms;
-    const totalRecords = records?.length ?? 0;
 
-    // Classify filled forms by their frequency/overdue status
+    let filledForms = 0;
+    let neverFilled = 0;
     let compliant = 0;
-    let pending = 0;
     let issues = 0;
     let overdue = 0;
-    let overdueFilled = 0;
 
-    CANONICAL_FORMS.forEach(form => {
-      const formRecords = recordByForm.get(form.code) || [];
-      const isOverdue = compliance.get(form.code)?.isOverdue ?? false;
+    for (const form of CANONICAL_FORMS) {
+      const c = compliance.get(form.code);
+      const recordCount = c?.recordCount ?? 0;
+      const issueCount = c?.issueCount ?? 0;
 
-      if (isOverdue) {
-        overdue++;
-        if (formRecords.length > 0) overdueFilled++;
-      }
+      if (recordCount > 0) filledForms++;
+      else neverFilled++;
 
-      if (formRecords.length === 0) return; // counted in neverFilled
+      if (c?.isOverdue) overdue++;
 
-      if (!isOverdue) {
-        // Simple heuristic: if records exist and not overdue, it's compliant
-        compliant++;
-      }
+      if (recordCount === 0) continue; // counted in neverFilled
 
-      // Check for issues — records with status fields indicating problems.
-      // form_data is spread onto the top level of the record (see
-      // parseRowToRecord), so the business status lives at `r.status` — reading
-      // it from `r.formData` always found nothing.
-      const hasIssues = formRecords.some(r => {
-        const status = (r.status as string || '').toLowerCase();
-        return status === 'open' || status === 'rejected' || status.includes('nc');
-      });
-      if (hasIssues) issues++;
-    });
+      if (!c?.isOverdue) compliant++;
 
-    pending = filledForms - compliant - overdueFilled;
+      // A form with a record that carries an issue state (a non-conformity
+      // that is open, rejected, or mentions "nc") is a form with issues.
+      // The server counts the records; the page counts the FORMS.
+      if (issueCount > 0) issues++;
+    }
 
-    return { pending: Math.max(0, pending), compliant, issues, overdue, neverFilled, totalForms, filledForms, totalRecords };
-  }, [records]);
+    // The records waiting for a review — the WORKFLOW status, which is not
+    // the business status a form carries.
+    const pendingReview = complianceResult?.statusCounts?.pending_review ?? 0;
+    const totalRecords = complianceResult?.totalRecords ?? 0;
+
+    return { pendingReview, compliant, issues, overdue, neverFilled, totalForms, filledForms, totalRecords };
+  }, [compliance, complianceResult]);
 
   // Section breakdowns
   const sectionBreakdowns = useMemo((): CategoryBreakdown[] => {
     const sections = new Map<number, { compliant: number; pending: number; issues: number }>();
-    const recordByForm = new Map<string, RecordData[]>();
-    records?.forEach(r => {
-      const existing = recordByForm.get(r.formCode as string) || [];
-      existing.push(r);
-      recordByForm.set(r.formCode as string, existing);
-    });
 
     CANONICAL_FORMS.forEach(form => {
       if (!sections.has(form.section)) {
         sections.set(form.section, { compliant: 0, pending: 0, issues: 0 });
       }
       const sec = sections.get(form.section)!;
-      const formRecords = recordByForm.get(form.code) || [];
-      if (formRecords.length === 0) {
+      const c = compliance.get(form.code);
+      const recordCount = c?.recordCount ?? 0;
+
+      if (recordCount === 0) {
         sec.pending++;
+      } else if ((c?.issueCount ?? 0) > 0) {
+        sec.issues++;
       } else {
-        const hasIssues = formRecords.some(r => {
-          const status = (r.status as string || '').toLowerCase();
-          return status === 'open' || status === 'rejected' || status.includes('nc');
-        });
-        if (hasIssues) sec.issues++;
-        else sec.compliant++;
+        sec.compliant++;
       }
     });
 
@@ -164,116 +249,86 @@ export function useAuditPage() {
       category: getCanonicalSectionLabel(section),
       ...counts,
     }));
-  }, [records]);
+  }, [compliance]);
 
-  // Filtered records for the current tab
-  const filteredRecords = useMemo((): RecordData[] => {
-    if (!records) return [];
-    const recordByForm = new Map<string, RecordData[]>();
-    records.forEach(r => {
-      const existing = recordByForm.get(r.formCode as string) || [];
-      existing.push(r);
-      recordByForm.set(r.formCode as string, existing);
-    });
+  // ── The two FORM tabs ──────────────────────────────────────────────
+  //
+  // "Overdue" and "Never Filled" are questions about FORMS: a form is what
+  // owes a filing, and a record is never "overdue" — it is filed or it is
+  // not.  The rows come from the compliance model, so they carry the
+  // detail the table shows: which periods are missing, and how late.
+  const formRows = useMemo((): AuditFormRow[] => {
+    const needle = search.trim().toLowerCase();
 
-    const result: RecordData[] = [];
+    const matches = (form: (typeof CANONICAL_FORMS)[number]) =>
+      !needle ||
+      form.code.toLowerCase().includes(needle) ||
+      form.name.toLowerCase().includes(needle);
 
-    switch (activeTab) {
-      case "pending":
-        // Forms with no records
-        CANONICAL_FORMS.filter(s => !recordByForm.has(s.code)).forEach(s => {
-          result.push({
-            serial: '',
-            formCode: s.code,
-            formName: s.name,
-            _createdAt: '',
-            _createdBy: '',
-            _editCount: 0,
-            _lastModifiedAt: null,
-            _lastModifiedBy: null,
-            _modificationReason: null,
-            formData: { _auditStatus: 'never-filled', _section: s.sectionName, _frequency: s.frequency },
-          } as RecordData);
+    const rows: AuditFormRow[] = [];
+
+    if (activeTab === "overdue") {
+      CANONICAL_FORMS.forEach(form => {
+        const c = compliance.get(form.code);
+        if (!c?.isOverdue) return;
+        if (!matches(form)) return;
+        rows.push({
+          code: form.code,
+          name: form.name,
+          section: form.sectionName,
+          frequency: form.frequency,
+          recordCount: c.recordCount,
+          missingCount: c.missingCount,
+          missingCountLabel: c.missingCountLabel,
+          overdueDays: c.overdueDays,
+          missingPeriods: c.missingPeriods.map((p) => p.label),
+          status: "overdue",
         });
-        break;
-
-      case "compliant":
-        // Records without issue status
-        records.forEach(r => {
-          const status = (r.status as string || '').toLowerCase();
-          if (status !== 'open' && status !== 'rejected' && !status.includes('nc')) {
-            result.push(r);
-          }
+      });
+    } else if (activeTab === "never-filled") {
+      CANONICAL_FORMS.forEach(form => {
+        const c = compliance.get(form.code);
+        if ((c?.recordCount ?? 0) > 0) return;
+        if (!matches(form)) return;
+        rows.push({
+          code: form.code,
+          name: form.name,
+          section: form.sectionName,
+          frequency: form.frequency,
+          recordCount: 0,
+          missingCount: c?.missingCount ?? 0,
+          missingCountLabel: c?.missingCountLabel ?? "",
+          overdueDays: c?.overdueDays ?? 0,
+          missingPeriods: (c?.missingPeriods ?? []).map((p) => p.label),
+          status: "never-filled",
         });
-        break;
-
-      case "issues":
-        // Records with issue status
-        records.forEach(r => {
-          const status = (r.status as string || '').toLowerCase();
-          if (status === 'open' || status === 'rejected' || status.includes('nc')) {
-            result.push(r);
-          }
-        });
-        break;
-
-      case "overdue":
-        // Forms that owe a filing for a closed period and have not filed it
-        CANONICAL_FORMS.forEach(form => {
-          const formRecords = recordByForm.get(form.code) || [];
-          if (compliance.get(form.code)?.isOverdue) {
-            result.push(...(formRecords.length > 0 ? formRecords : [{
-              serial: '',
-              formCode: form.code,
-              formName: form.name,
-              _createdAt: '',
-              _createdBy: '',
-              _editCount: 0,
-              _lastModifiedAt: null,
-              _lastModifiedBy: null,
-              _modificationReason: null,
-              formData: { _auditStatus: 'overdue', _section: form.sectionName, _frequency: form.frequency },
-            } as RecordData]));
-          }
-        });
-        break;
-
-      case "never-filled":
-        CANONICAL_FORMS.filter(s => !recordByForm.has(s.code)).forEach(s => {
-          result.push({
-            serial: '',
-            formCode: s.code,
-            formName: s.name,
-            _createdAt: '',
-            _createdBy: '',
-            _editCount: 0,
-            _lastModifiedAt: null,
-            _lastModifiedBy: null,
-            _modificationReason: null,
-            formData: { _auditStatus: 'never-filled', _section: s.sectionName, _frequency: s.frequency },
-          } as RecordData);
-        });
-        break;
+      });
     }
 
-    // Apply search
-    if (search) {
-      const lower = search.toLowerCase();
-      return result.filter(r =>
-        (r.serial as string || '').toLowerCase().includes(lower) ||
-        (r.formName as string || '').toLowerCase().includes(lower) ||
-        (r.formCode as string || '').toLowerCase().includes(lower)
-      );
-    }
+    return rows;
+  }, [activeTab, compliance, search]);
 
-    return result;
-  }, [records, activeTab, search, compliance]);
+  const isLoading = complianceLoading || (isRecordTab && recordsLoading);
+  const error = (complianceError ?? recordsError) as Error | null;
 
   return {
-    records: filteredRecords,
-    allRecords: records || [],
+    // The record tabs: the rows of the current page.
+    records: isRecordTab ? (recordPage?.rows ?? []) : [],
+    // The form tabs: the rows of the current view.
+    formRows,
+    // The paging.
+    page: isRecordTab ? page : 0,
+    pageCount: recordPage?.pageCount ?? 1,
+    totalRows: isRecordTab ? (recordPage?.total ?? 0) : formRows.length,
+    setPage,
     stats,
     sectionBreakdowns,
+    // Whether the compliance figures on this page describe the whole
+    // organisation or only the slice the viewer can see.
+    scopeIsOrgWide,
+    // Where the model came from — 'client' means the server has not been
+    // migrated and the answer was computed in the browser.
+    source: complianceResult?.source ?? 'server',
     isLoading,
     error,
     refetch: handleRefresh,

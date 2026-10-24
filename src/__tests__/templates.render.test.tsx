@@ -231,3 +231,93 @@ describe("QMS template registry — every template renders", () => {
     expect(screen.getAllByText(new RegExp(code.replace("/", "\\/"))).length).toBeGreaterThan(0);
   });
 });
+
+// ── The accessible-name guard ──────────────────────────────────────────────
+//
+// Every editable control in every template must have an accessible name.
+//
+// 31 controls across 13 templates had none: no `aria-label`, no
+// `aria-labelledby`, no wrapping `<label>`, no `title`, no `placeholder`.
+// A screen reader announced them as "edit text, blank", so a user filling a
+// form by keyboard and screen reader could not tell which column they were
+// in — the column header above a cell is NOT the cell input's accessible
+// name.
+//
+// The name is computed the way a browser computes it (HTML-AAM), so the
+// guard accepts any of: `aria-label`, `aria-labelledby`, an associated
+// `<label>`, `title`, `placeholder`.
+//
+// A placeholder is a weak name — the HTML-AAM makes it the last fallback —
+// but it is what the browser will use when nothing else is present, so a
+// control that has one is not anonymous.
+function accessibleName(el: Element): string {
+  const aria = el.getAttribute("aria-label");
+  if (aria && aria.trim()) return aria.trim();
+
+  const labelledBy = el.getAttribute("aria-labelledby");
+  if (labelledBy) {
+    const doc = el.ownerDocument;
+    const text = labelledBy
+      .split(/\s+/)
+      .map(id => doc.getElementById(id)?.textContent || "")
+      .join(" ")
+      .trim();
+    if (text) return text;
+  }
+
+  // `labels` is the DOM's own association: a wrapping <label> and a
+  // `for=`/`id=` pair both land here.
+  const labels = (el as HTMLInputElement).labels;
+  if (labels && labels.length > 0) {
+    const text = Array.from(labels)
+      .map(l => l.textContent || "")
+      .join(" ")
+      .trim();
+    if (text) return text;
+  }
+
+  const title = el.getAttribute("title");
+  if (title && title.trim()) return title.trim();
+
+  const placeholder = el.getAttribute("placeholder");
+  if (placeholder && placeholder.trim()) return placeholder.trim();
+
+  return "";
+}
+
+describe("QMS templates — every editable control has an accessible name", () => {
+  it.each(ALL_CODES)("%s names every control it renders", async (code) => {
+    const Template = QMS_TEMPLATE_REGISTRY[code];
+    expect(Template).toBeDefined();
+
+    const spy = vi.spyOn(console, "error").mockImplementation(() => {});
+    let container: HTMLElement | null = null;
+    try {
+      const result = render(
+        <Suspense fallback={<div>loading</div>}>
+          <Template data={makeData()} isTemplate={false} editMode onChange={() => {}} />
+        </Suspense>
+      );
+      container = result.container;
+      await waitFor(
+        () => {
+          expect(container!.innerHTML.length).toBeGreaterThan(200);
+        },
+        { timeout: 10_000 },
+      );
+    } finally {
+      spy.mockRestore();
+    }
+
+    const controls = Array.from(container!.querySelectorAll("input, select, textarea"));
+    const anonymous = controls
+      .filter(el => accessibleName(el) === "")
+      .map(el => {
+        const cls = el.getAttribute("class") || "";
+        const hint = el.getAttribute("placeholder") || el.getAttribute("name") || "";
+        return `<${el.tagName.toLowerCase()}${hint ? ` ${hint}` : ""} class="${cls.slice(0, 60)}">`;
+      });
+
+    expect(anonymous, `${code} has ${anonymous.length} control(s) with no accessible name`).toEqual([]);
+  });
+});

@@ -36,7 +36,12 @@ export const KPI_DATA: RoleKPIData[] = (kpiDataJson as RoleKPIData[]).map(role =
     kpis: role.kpis.map((kpi, i) => ({
       ...kpi,
       target: kpi.target || 0.9,
-      weight: rawSum > 0 ? kpi.weight / rawSum : 1 / role.kpis.length,
+      // The NORMALISED weight must come from the same array the sum was
+      // computed from.  Dividing the RAW `kpi.weight` by a sum that already
+      // substituted a missing weight with 0.1 made the weights of a role with
+      // an absent/zero weight add up to LESS than 1 — the KPI ring then drew
+      // a shorter arc than the data implied, with no error anywhere.
+      weight: rawSum > 0 ? rawWeights[i] / rawSum : 1 / role.kpis.length,
     })),
   };
 });

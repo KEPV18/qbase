@@ -13,7 +13,7 @@ export interface F10Props {
   data?: Record<string, unknown>;
   isTemplate?: boolean;
   editMode?: boolean;
-  onChange?: (field: string, value: string) => void;
+  onChange?: (field: string, value: unknown) => void;
   className?: string;
 }
 
@@ -45,15 +45,27 @@ export function F10Template({ data, isTemplate = true, editMode = false, onChang
   const labelCls = "border border-border px-2 py-1.5 text-sm font-semibold text-foreground bg-muted/50 dark:bg-secondary";
   const cellCls = "border border-border px-2 py-1.5 text-sm text-foreground";
 
-  const inp = (key: string, placeholder?: string) => {
+  // The field captions here are <strong> elements inside a table cell, so
+  // they are not associated with the input and the browser does not use
+  // them as the accessible name.  The name is passed explicitly: the
+  // placeholder is only the visual hint ("DD/MM/YYYY"), and a screen reader
+  // announcing the date format instead of the field is not useful.
+  const inp = (key: string, placeholder?: string, ariaLabel?: string) => {
     if (ph) return <span>{val(d, key) || ""}</span>;
     return <input className="w-full bg-transparent text-sm outline-none border-0 border-b border-border px-1"
+      aria-label={ariaLabel || placeholder || key}
       value={val(d, key)} onChange={e => onChange?.(key, e.target.value)} placeholder={placeholder} />;
   };
 
-  const textarea = (key: string, placeholder?: string, rows = 3) => {
+  const textarea = (key: string, placeholder?: string, rows = 3, ariaLabel?: string) => {
     if (ph) return <div className="whitespace-pre-wrap text-sm text-foreground min-h-[2rem]">{val(d, key) || ""}</div>;
+    // The caption above a textarea is a <div>, not a <label>, so it is not
+    // the accessible name.  Three of these fields carry an empty
+    // placeholder, which left them with no name at all — a screen reader
+    // announced "edit text, blank" and the reader could not tell the
+    // customer comment from the suggestions box.
     return <textarea className="w-full bg-transparent text-sm outline-none border border-border rounded-sm px-1 py-0.5 resize-y"
+      aria-label={ariaLabel || placeholder || key}
       value={val(d, key)} onChange={e => onChange?.(key, e.target.value)} placeholder={placeholder} rows={rows} />;
   };
 
@@ -79,10 +91,10 @@ export function F10Template({ data, isTemplate = true, editMode = false, onChang
           {/* ROW 1: Date + Year */}
           <tr>
             <td colSpan={5} className="border border-border px-3 py-1.5 text-sm text-foreground">
-              <strong>Date</strong> → {inp("date", "DD/MM/YYYY")}
+              <strong>Date</strong> → {inp("date", "DD/MM/YYYY", "Date")}
             </td>
             <td colSpan={4} className="border border-border px-3 py-1.5 text-sm text-foreground">
-              <strong>Year</strong> → {inp("year", "2026")}
+              <strong>Year</strong> → {inp("year", "2026", "Year")}
             </td>
           </tr>
 
@@ -92,7 +104,7 @@ export function F10Template({ data, isTemplate = true, editMode = false, onChang
               Name
             </td>
             <td colSpan={7} className="border border-border px-3 py-1.5 text-sm text-foreground">
-              {inp("client_name", "Customer / Distributor name")}
+              {inp("client_name", "Customer / Distributor name", "Name")}
             </td>
           </tr>
 
@@ -102,7 +114,7 @@ export function F10Template({ data, isTemplate = true, editMode = false, onChang
               Address
             </td>
             <td colSpan={7} className="border border-border px-3 py-1.5 text-sm">
-              {inp("address", "Full address")}
+              {inp("address", "Full address", "Address")}
             </td>
           </tr>
 
@@ -147,7 +159,7 @@ export function F10Template({ data, isTemplate = true, editMode = false, onChang
                             value={option}
                             checked={isSelected}
                             onChange={() => onChange?.(field.key, option)}
-                            aria-label={option}
+                            aria-label={`${field.label} — ${option}`}
                             className="accent-primary w-4 h-4" />
                         </label>
                       ) : (
@@ -159,6 +171,7 @@ export function F10Template({ data, isTemplate = true, editMode = false, onChang
                 <td className={cellCls}>
                   {editMode && !isTemplate ? (
                     <input className="w-full bg-transparent text-xs outline-none border-0 border-b border-border px-1"
+                      aria-label={`${field.label} — Comment`}
                       value={currentVal}
                       onChange={e => onChange?.(field.key, e.target.value)}
                       placeholder="Notes" />
@@ -174,7 +187,7 @@ export function F10Template({ data, isTemplate = true, editMode = false, onChang
           <tr>
             <td colSpan={9} className="border border-border px-2 py-1">
               <div className="text-xs font-semibold text-muted-foreground mb-1">Comment:</div>
-              {textarea("comment_text", "Customer comment...", 3)}
+              {textarea("comment_text", "Customer comment...", 3, "Comment")}
             </td>
           </tr>
 
@@ -182,7 +195,7 @@ export function F10Template({ data, isTemplate = true, editMode = false, onChang
           <tr>
             <td colSpan={9} className="border border-border px-2 py-1">
               <div className="text-xs font-semibold text-muted-foreground mb-1">Any other suggestions for improvement:</div>
-              {textarea("suggestions", "", 2)}
+              {textarea("suggestions", "", 2, "Any other suggestions for improvement")}
             </td>
           </tr>
 
@@ -190,11 +203,11 @@ export function F10Template({ data, isTemplate = true, editMode = false, onChang
           <tr>
             <td colSpan={5} className="border border-border px-2 py-1">
               <div className="text-xs font-semibold text-muted-foreground mb-1">Signature of Distributors with rubber stamp:</div>
-              {inp("distributor_signature", "Signature & stamp")}
+              {inp("distributor_signature", "Signature & stamp", "Signature of Distributors with rubber stamp")}
             </td>
             <td colSpan={4} className="border border-border px-2 py-1">
               <div className="text-xs font-semibold text-muted-foreground mb-1">Reviewed by — Sales Person / Authorised person:</div>
-              {inp("reviewed_by", "Name & signature")}
+              {inp("reviewed_by", "Name & signature", "Reviewed by — Sales Person / Authorised person")}
             </td>
           </tr>
 
@@ -207,19 +220,19 @@ export function F10Template({ data, isTemplate = true, editMode = false, onChang
           <tr>
             <td colSpan={9} className="border border-border px-2 py-1">
               <div className="text-xs font-semibold text-muted-foreground mb-1">Action proposed for future</div>
-              {textarea("action_proposed", "", 2)}
+              {textarea("action_proposed", "", 2, "Action proposed for future")}
             </td>
           </tr>
           <tr>
             <td colSpan={9} className="border border-border px-2 py-1">
               <div className="text-xs font-semibold text-muted-foreground mb-1">Corrective action reference</div>
-              {inp("corrective_action_ref", "Reference number")}
+              {inp("corrective_action_ref", "Reference number", "Corrective action reference")}
             </td>
           </tr>
           <tr>
             <td colSpan={9} className="border border-border px-2 py-1">
               <div className="text-xs font-semibold text-muted-foreground mb-1">Remarks</div>
-              {textarea("remarks", "", 2)}
+              {textarea("remarks", "", 2, "Remarks")}
             </td>
           </tr>
 

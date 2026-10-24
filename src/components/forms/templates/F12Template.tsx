@@ -15,7 +15,7 @@ export interface F12Props {
   data?: Record<string, unknown>;
   isTemplate?: boolean;
   editMode?: boolean;
-  onChange?: (field: string, value: string) => void;
+  onChange?: (field: string, value: unknown) => void;
   className?: string;
 }
 
@@ -82,7 +82,7 @@ export function F12Template({
       });
       const updated = [...rows];
       updated[idx] = { ...updated[idx], [key]: value };
-      onChange?.("items", JSON.stringify(updated));
+      onChange?.("items", updated);
     },
     [rows, onChange]
   );
@@ -111,6 +111,8 @@ export function F12Template({
         )}
         value={val(d, key)}
         onChange={(e) => onChange?.(key, e.target.value)}
+        aria-label={label}
+
         placeholder={label}
       />
     ) : (
@@ -130,6 +132,8 @@ export function F12Template({
         className="w-full bg-transparent text-xs px-1 border-none outline-none"
         value={rows[idx]?.[key] || ""}
         onChange={(e) => updateRow(idx, key, e.target.value)}
+        aria-label={`$label (row ${idx + 1})`}
+
         placeholder={label}
       />
     ) : (

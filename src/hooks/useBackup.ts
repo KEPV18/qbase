@@ -36,7 +36,10 @@ export function useBackup(): UseBackupReturn {
     try {
       const result = await importBackup(file, password);
       setLastRestore(result);
-      if (result.success) {
+      // Refresh when anything actually landed.  A restore that skipped every
+      // row (the register was already up to date) changed nothing, and a
+      // restore that partly failed still brought some records back.
+      if (result.imported > 0) {
         await refreshRecords(); // Refresh UI with restored data
       }
     } finally {

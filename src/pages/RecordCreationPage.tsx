@@ -126,7 +126,19 @@ const RecordCreationPage: React.FC = () => {
   const [dirty, setDirty] = useState(false);
   const [autosaveError, setAutosaveError] = useState<string | null>(null);
   const [submitPending, setSubmitPending] = useState(false);
-  const draftRetry = useRef(0); // bumped to re-run draft creation after a failure
+  // A retry counter, not a ref.
+  //
+  // It was `useRef(0)` and it was listed in the draft effect's dependency
+  // array.  A ref is not a valid dependency: mutating it does not re-render
+  // anything, so the effect only re-ran because the retry handler also
+  // called `setDraft(d => d)` to force a render pass — and that render
+  // happened to re-read `draftRetry.current` and produce a different dep
+  // value.  The retry worked, but it worked by accident, and it stopped
+  // working the moment React's bailout for an unchanged state changed.
+  //
+  // A number in state is a real dependency: it changes, so the effect
+  // re-runs, and the reason is written down.
+  const [draftRetry, setDraftRetry] = useState(0); // bumped to re-run draft creation after a failure
 
   // Template form data for DOCX-accurate form editing
   const [formData, setFormData] = useState<Record<string, unknown>>({});
@@ -199,7 +211,7 @@ const RecordCreationPage: React.FC = () => {
       setDraft({ id: result.id, serial: result.serial });
     })();
     return () => { cancelled = true; };
-  }, [step, selectedCode, draftRetry.current, created]);
+  }, [step, selectedCode, draftRetry, created]);
 
   // ── Template-path content: seeded from the resumed draft (or fresh
   // defaults) with the server-allocated serial. ──
@@ -216,7 +228,10 @@ const RecordCreationPage: React.FC = () => {
     if (draft) seed.serial = draft.serial;
     setFormData(seed);
     latestContentRef.current = seed;
-  }, [step, selectedCode, draft]);
+    // `resumedContent` belongs in this list: the seed IS the resumed
+    // content, so an effect that re-seeds without re-reading it would
+    // overwrite what the user already had with a blank form.
+  }, [step, selectedCode, draft, resumedContent]);
 
   // ── Debounced server-side autosave (template path — content in page state;
   // scope/selectedProject ride along so the draft always persists them too). ──
@@ -236,11 +251,14 @@ const RecordCreationPage: React.FC = () => {
     }, AUTOSAVE_DEBOUNCE_MS);
     autosaveTimer.current = t;
     return () => clearTimeout(t);
-  }, [formData, scope, selectedProjectId, draft, step, dirty]);
+  }, [formData, scope, selectedProjectId, draft, step, dirty, selectedCode]);
 
   // Template-path field change: keep the latest content fresh + schedule save.
   const handleTemplateFieldChange = useCallback(
-    (field: string, value: string | Record<string, unknown> | Array<Record<string, unknown>>) => {
+    // The value is `unknown`: a template that edits a table hands back the
+    // whole row ARRAY under one field key, not a string.  `formData` is a
+    // `Record<string, unknown>`, so it stores the value as it comes.
+    (field: string, value: unknown) => {
       setFormData(prev => {
         const next = { ...prev, [field]: value };
         latestContentRef.current = {
@@ -447,8 +465,9 @@ const RecordCreationPage: React.FC = () => {
 
   const retryDraft = () => {
     setCreateError(null);
-    draftRetry.current += 1;
-    setDraft(d => d); // force a re-render pass; the effect re-runs on draftRetry
+    // The counter is state, so this re-renders the component and the
+    // draft effect re-runs because the dependency genuinely changed.
+    setDraftRetry(n => n + 1);
   };
 
   // ── Success ──────────────────────────────────────────────────────────

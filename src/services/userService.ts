@@ -326,7 +326,11 @@ export function mapProfileToAppUser(profile: ProfileRow, role?: string | null, d
     password: "",
     role: (role?.toLowerCase() || "user") as Role,
     department: normalizeDepartment(department),
-    active: !!(profile.is_active ?? false),
+    // The column is NULLABLE with a default of `true`: a missing value means
+    // "not deactivated", not "deactivated".  Reading it as false here made
+    // the user list disagree with the auth path, which treats the same NULL
+    // as active.
+    active: !!(profile.is_active ?? true),
     lastLoginAt: profile.last_login ? new Date(profile.last_login).getTime() : 0,
     needsApprovalNotification: false,
   };

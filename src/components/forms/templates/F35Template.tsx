@@ -11,7 +11,7 @@ export interface F35Props {
   data?: Record<string, unknown>;
   isTemplate?: boolean;
   editMode?: boolean;
-  onChange?: (field: string, value: string | Record<string, unknown> | Array<Record<string, unknown>> | MonitorItem[]) => void;
+  onChange?: (field: string, value: unknown) => void;
   className?: string;
 }
 
@@ -63,6 +63,8 @@ export function F35Template({ data, isTemplate = true, editMode = false, onChang
           updated[idx] = { ...updated[idx], [subKey]: e.target.value };
           onChange?.("items", updated);
         }}
+        aria-label={`$label (row ${idx + 1})`}
+
         placeholder={label}
       />
     ) : (

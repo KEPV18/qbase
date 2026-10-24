@@ -16,7 +16,7 @@ export interface F47Props {
   data?: Record<string, unknown>;
   isTemplate?: boolean;
   editMode?: boolean;
-  onChange?: (field: string, value: string) => void;
+  onChange?: (field: string, value: unknown) => void;
   className?: string;
 }
 
@@ -313,10 +313,15 @@ export function F47Template({ data, isTemplate = true, editMode = false, onChang
     );
   };
 
-  const evidenceInp = (key: string) =>
+  // The evidence box belongs to ONE audit question, and there are 152 of
+  // them on this form — every one of them was announced with the same
+  // name, so a screen-reader user could not tell which question they were
+  // answering.  The question text is the name.
+  const evidenceInp = (key: string, question: string) =>
     editMode ? (
       <input
         className="w-full bg-transparent text-[10px] px-0.5 border-none outline-none"
+        aria-label={`Evidence / Reference — ${question}`}
         value={val(d, key)}
         onChange={e => onChange?.(key, e.target.value)}
         placeholder="Evidence/Reference"
@@ -380,7 +385,7 @@ export function F47Template({ data, isTemplate = true, editMode = false, onChang
                           <tr key={key} className="even:bg-muted/20">
                             <td className="border border-border px-1 py-0.5 text-[9px] text-muted-foreground">{subclause.ref}.{qi + 1}</td>
                             <td className="border border-border px-1 py-0.5 text-[9px]">{question}</td>
-                            <td className="border border-border px-1 py-0.5" colSpan={2}>{evidenceInp(`${key}_evidence`)}</td>
+                            <td className="border border-border px-1 py-0.5" colSpan={2}>{evidenceInp(`${key}_evidence`, question)}</td>
                             <td className="border border-border px-1 py-0.5">{statusRadio(key)}</td>
                           </tr>
                         );

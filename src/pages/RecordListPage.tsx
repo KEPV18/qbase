@@ -184,7 +184,7 @@ const RecordListPage: React.FC = () => {
       }
     });
     return list;
-  }, [records, formFilter, monthFilter, projectFilter, search, sortBy]);
+  }, [records, sectionFormCodes, formFilter, monthFilter, projectFilter, search, sortBy]);
 
   const totalPages = Math.max(1, Math.ceil(filteredRecords.length / PAGE_SIZE));
   const safePage = Math.min(page, totalPages);
@@ -531,7 +531,7 @@ const RecordListPage: React.FC = () => {
                 const risk = getEditRiskLevel(record);
                 const sev = integrityCache.get(record.serial as string) || 'clean';
                 const isSelected = selectedSerials.has(record.serial as string);
-                const status = (record.status as string) || '';
+                const status = (record._status as string) || '';
 
                 return (
                   <PanelRow

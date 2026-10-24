@@ -1,4 +1,4 @@
-import { useState, useMemo, useCallback } from 'react';
+import { useState, useMemo, useCallback, useEffect } from 'react';
 
 export interface UseFilterOptions<T> {
   data: T[];
@@ -93,12 +93,19 @@ export function useDebouncedSearch<T>(
   const [debouncedQuery, setDebouncedQuery] = useState('');
 
   // Debounce logic
-  useState(() => {
+  //
+  // This used to be a `useState` whose lazy initialiser armed a timer ONCE,
+  // with the cleanup function stored as state.  The timer therefore fired
+  // 300ms after the first render — with the query that was empty at the
+  // time — and never re-armed: the search box filtered on the FIRST
+  // character only.  An effect is what re-arms it, and it has to cancel the
+  // pending timer when the query changes again.
+  useEffect(() => {
     const timer = setTimeout(() => {
       setDebouncedQuery(query);
     }, delay);
     return () => clearTimeout(timer);
-  });
+  }, [query, delay]);
 
   const results = useMemo(() => {
     if (!debouncedQuery.trim()) return data;

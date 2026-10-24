@@ -13,7 +13,7 @@ export interface F43Props {
   data?: Record<string, unknown>;
   isTemplate?: boolean;
   editMode?: boolean;
-  onChange?: (field: string, value: string) => void;
+  onChange?: (field: string, value: unknown) => void;
   className?: string;
 }
 
@@ -122,7 +122,7 @@ export function F43Template({ data, isTemplate = true, editMode = false, onChang
                 <td className={tc}>{t.topic}</td>
                 <td className={tc + " text-center"}>
                   {editMode ? (
-                    <input className="w-full bg-transparent text-[10px] text-center border-none outline-none"
+                    <input aria-label={`Trainer (row ${t.num})`} className="w-full bg-transparent text-[10px] text-center border-none outline-none"
                       value={val(d, `topic_${t.num}_trainer`) || ""} onChange={e => onChange?.(`topic_${t.num}_trainer`, e.target.value)} />
                   ) : (
                     <span>{isCompleted && <Check className="w-3 h-3 align-middle" aria-hidden="true" />}</span>
@@ -130,7 +130,7 @@ export function F43Template({ data, isTemplate = true, editMode = false, onChang
                 </td>
                 <td className={tc + " text-center"}>
                   {editMode ? (
-                    <input className="w-full bg-transparent text-[10px] text-center border-none outline-none"
+                    <input aria-label={`Inductee (row ${t.num})`} className="w-full bg-transparent text-[10px] text-center border-none outline-none"
                       value={val(d, `topic_${t.num}_inductee`) || ""} onChange={e => onChange?.(`topic_${t.num}_inductee`, e.target.value)} />
                   ) : (
                     <span>{isCompleted && <Check className="w-3 h-3 align-middle" aria-hidden="true" />}</span>

@@ -39,7 +39,7 @@ export function F08Template({ data, isTemplate = true, editMode = false, onChang
   const serialValue = val(d, "serial");
 
   return (
-    <FormDocument formCode="F/08" formName="Purchase Order" serial={val(d, "serial")} sectionName="Sales & Customer Service">
+    <FormDocument formCode="F/08" formName="Order Form" serial={val(d, "serial")} sectionName="Sales & Customer Service">
       {/* ====== DESKTOP: Full DOCX-replica table ====== */}
       <div className="hidden md:block">
         <table className="w-full border-collapse border border-border">
@@ -117,7 +117,7 @@ export function F08Template({ data, isTemplate = true, editMode = false, onChang
               <tr key={idx}>
                 <td className="border border-border px-2 py-1.5 text-sm text-foreground text-center">
                   {editMode ? (
-                    <input className="w-full text-xs px-1 py-0.5 bg-transparent border-0 border-b border-border focus:outline-none text-center"
+                    <input aria-label="Sr. No." className="w-full text-xs px-1 py-0.5 bg-transparent border-0 border-b border-border focus:outline-none text-center"
                       value={idx + 1} disabled />
                   ) : (
                     idx + 1
@@ -128,6 +128,7 @@ export function F08Template({ data, isTemplate = true, editMode = false, onChang
                     <input className="w-full text-xs px-1 py-0.5 bg-transparent border-0 border-b border-border focus:outline-none"
                       value={item.product_name}
                       onChange={(e) => updateItem(idx, "product_name", e.target.value)}
+                      aria-label={`Product name (row ${idx + 1})`}
                       placeholder="Product name" />
                   ) : (
                     <span className="text-foreground">{item.product_name || "--"}</span>
@@ -138,6 +139,7 @@ export function F08Template({ data, isTemplate = true, editMode = false, onChang
                     <input className="w-full text-xs px-1 py-0.5 bg-transparent border-0 border-b border-border focus:outline-none"
                       value={item.specifications}
                       onChange={(e) => updateItem(idx, "specifications", e.target.value)}
+                      aria-label={`Specifications (row ${idx + 1})`}
                       placeholder="Specifications" />
                   ) : (
                     <span className="text-foreground">{item.specifications || "--"}</span>
@@ -152,6 +154,7 @@ export function F08Template({ data, isTemplate = true, editMode = false, onChang
                       <input className="flex-1 min-w-0 text-xs px-1 py-0.5 bg-transparent border-0 border-b border-border focus:outline-none"
                         value={item.qty}
                         onChange={(e) => updateItem(idx, "qty", e.target.value)}
+                        aria-label={`Qty (row ${idx + 1})`}
                         placeholder="Qty" />
                     ) : (
                       <span className="flex-1 min-w-0 text-foreground">{item.qty || "--"}</span>
@@ -192,6 +195,7 @@ export function F08Template({ data, isTemplate = true, editMode = false, onChang
                   <input className="w-full text-xs px-1 py-0.5 bg-transparent border-0 border-b border-border focus:outline-none"
                     value={val(d, "test_certificate_required")}
                     onChange={(e) => onChange && onChange("test_certificate_required", e.target.value)}
+                    aria-label="Test Certificate Required"
                     placeholder="Yes / No" />
                 ) : (
                   val(d, "test_certificate_required") || "Yes / No"
@@ -210,6 +214,7 @@ export function F08Template({ data, isTemplate = true, editMode = false, onChang
                   <input className="w-full text-xs px-1 py-0.5 bg-transparent border-0 border-b border-border focus:outline-none"
                     value={val(d, "delivery_schedule")}
                     onChange={(e) => onChange && onChange("delivery_schedule", e.target.value)}
+                    aria-label="Delivery Schedule"
                     placeholder="Delivery schedule" />
                 ) : (
                   val(d, "delivery_schedule") || "--"
@@ -228,6 +233,7 @@ export function F08Template({ data, isTemplate = true, editMode = false, onChang
                   <input className="w-full text-xs px-1 py-0.5 bg-transparent border-0 border-b border-border focus:outline-none"
                     value={val(d, "complies")}
                     onChange={(e) => onChange && onChange("complies", e.target.value)}
+                    aria-label="Complies / Does Not Comply"
                     placeholder="Complies / Does Not Comply" />
                 ) : (
                   val(d, "complies") || "Complies / Does Not Comply"
@@ -246,6 +252,7 @@ export function F08Template({ data, isTemplate = true, editMode = false, onChang
                   <input className="w-full text-xs px-1 py-0.5 bg-transparent border-0 border-b border-border focus:outline-none"
                     value={val(d, "order_status")}
                     onChange={(e) => onChange && onChange("order_status", e.target.value)}
+                    aria-label="Order Status"
                     placeholder="— Accepted / Rejected" />
                 ) : (
                   val(d, "order_status") || "— Accepted / Rejected"

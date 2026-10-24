@@ -16,6 +16,55 @@ const MONTH_NAMES_FULL = [
   'July', 'August', 'September', 'October', 'November', 'December',
 ];
 
+/**
+ * The two orders a slashed date can arrive in.
+ *
+ * `01/07/2026` is ambiguous: 1 July in DD/MM, 7 January in MM/DD.  The
+ * stored data is ISO (`YYYY-MM-DD` from Postgres) and the forms are filled
+ * in by hand in DD/MM/YYYY — the dataset confirms it: 240 of the 266 date
+ * values are slashed and the ones that disambiguate themselves (15/07,
+ * 31/07, 26/03) are all DD/MM.  So DD/MM is the house order, and it is what
+ * an ambiguous value is read as.
+ *
+ * The unambiguous cases are resolved exactly rather than guessed: a first
+ * part above 12 can only be a day, and a second part above 12 can only be a
+ * day.  Reading every slashed date as DD/MM meant a genuine MM/DD value
+ * such as `03/15/2026` was silently discarded — the month never resolved,
+ * so the record fell through to its creation date and was filed under the
+ * wrong month.
+ */
+export type SlashDateOrder = 'DD/MM' | 'MM/DD';
+
+export interface ResolvedSlashDate {
+  year: number;
+  month: number; // 1–12
+  day: number;
+  order: SlashDateOrder;
+}
+
+export function resolveSlashDate(value: string): ResolvedSlashDate | null {
+  const m = String(value ?? '').trim().match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+  if (!m) return null;
+  const first = parseInt(m[1], 10);
+  const second = parseInt(m[2], 10);
+  const year = parseInt(m[3], 10);
+
+  let order: SlashDateOrder;
+  let day: number;
+  let month: number;
+  if (first > 12 && second <= 12) {
+    order = 'DD/MM'; day = first; month = second;
+  } else if (second > 12 && first <= 12) {
+    order = 'MM/DD'; day = second; month = first;
+  } else if (first <= 12 && second <= 12) {
+    order = 'DD/MM'; day = first; month = second;
+  } else {
+    return null; // neither part can be a month — not a date
+  }
+  if (month < 1 || month > 12 || day < 1 || day > 31) return null;
+  return { year, month, day, order };
+}
+
 /** Try to extract a human-readable "Month YYYY" from a date string */
 function dateToMonthLabel(dateStr: string): string | null {
   if (!dateStr) return null;
@@ -35,13 +84,24 @@ function dateToMonthLabel(dateStr: string): string | null {
     }
   }
 
+  // Try MM/YYYY — the spelling the `record_month` field uses ("03/2026").
+  // A four-digit second part cannot be a day, so this cannot collide with
+  // the d/m/yyyy form below.  It has to be handled HERE and not only in
+  // normalizeYearMonth(): resolveCoveragePeriod() reads `record_month`
+  // through this function, so without it a record filed with a
+  // record_month and no coverage_period resolved to
+  // "Continuous / Open-Ended" and was counted as covering no period.
+  const my = s.match(/^(\d{1,2})\/(\d{4})$/);
+  if (my) {
+    const idx = parseInt(my[1], 10) - 1;
+    if (idx >= 0 && idx < 12) return `${MONTH_NAMES_FULL[idx]} ${my[2]}`;
+    return null;
+  }
+
   // Try DD/MM/YYYY or MM/DD/YYYY
-  const d = s.match(/^(\d{2})\/(\d{2})\/(\d{4})/);
+  const d = resolveSlashDate(s);
   if (d) {
-    const idx = parseInt(d[2], 10) - 1;
-    if (idx >= 0 && idx < 12) {
-      return `${MONTH_NAMES_FULL[idx]} ${d[3]}`;
-    }
+    return `${MONTH_NAMES_FULL[d.month - 1]} ${d.year}`;
   }
 
   return null;
@@ -108,39 +168,64 @@ export function resolveCoveragePeriod(record: RecordData): string {
 // So record_month and coverage_period are at the top level, NOT under form_data.
 // Returns YYYY-MM format (normalized).
 // ---------------------------------------------------------------------------
+
+/**
+ * Normalize a value to the `YYYY-MM` month key the compliance engine
+ * compares with.
+ *
+ * The key has to be EXACTLY `YYYY-MM`: the engine compares it as a string
+ * against `2026-01`-style period starts, so `2026-1` is not a shorter
+ * spelling of January, it is a key that matches nothing — the record then
+ * counted as covering no period at all, and the form it belongs to showed a
+ * gap that was never really missing.
+ */
+function normalizeYearMonth(value: string): string | null {
+  const trimmed = value.trim();
+
+  // Already YYYY-MM
+  if (/^\d{4}-\d{2}$/.test(trimmed)) return trimmed;
+
+  // YYYY-M → YYYY-0M
+  const short = trimmed.match(/^(\d{4})-(\d{1})$/);
+  if (short) {
+    const month = parseInt(short[2], 10);
+    if (month >= 1 && month <= 12) return `${short[1]}-${String(month).padStart(2, '0')}`;
+    return null;
+  }
+
+  // MM/YYYY → YYYY-MM
+  const slashed = trimmed.match(/^(\d{1,2})\/(\d{4})$/);
+  if (slashed) {
+    const month = parseInt(slashed[1], 10);
+    if (month >= 1 && month <= 12) return `${slashed[2]}-${String(month).padStart(2, '0')}`;
+    return null;
+  }
+
+  // "Month YYYY" / a date → YYYY-MM
+  const parsed = dateToMonthLabel(trimmed);
+  if (parsed) {
+    const parts = parsed.split(' ');
+    const monthIdx = MONTH_NAMES_FULL.indexOf(parts[0]);
+    if (monthIdx >= 0 && parts[1]) return `${parts[1]}-${String(monthIdx + 1).padStart(2, '0')}`;
+  }
+
+  return null;
+}
+
 export function getRecordMonth(record: RecordData): string | null {
   // 1. Try record_month — normalize MM/YYYY → YYYY-MM
   const rm = record.record_month as string | undefined;
   if (rm) {
-    const trimmed = rm.trim();
-    // Already YYYY-MM?
-    if (/^\d{4}-\d{2}$/.test(trimmed)) return trimmed;
-    // MM/YYYY → YYYY-MM
-    const mm = trimmed.match(/^(\d{1,2})\/(\d{4})$/);
-    if (mm) return `${mm[2]}-${String(parseInt(mm[1], 10)).padStart(2, '0')}`;
-    // Try dateToMonthLabel and convert back
-    const parsed = dateToMonthLabel(trimmed);
-    if (parsed) {
-      const parts = parsed.split(' ');
-      const monthIdx = MONTH_NAMES_FULL.indexOf(parts[0]);
-      if (monthIdx >= 0 && parts[1]) return `${parts[1]}-${String(monthIdx + 1).padStart(2, '0')}`;
-    }
-    return trimmed; // return as-is if we can't parse
+    const normalized = normalizeYearMonth(rm);
+    if (normalized) return normalized;
+    return rm.trim(); // return as-is if we can't parse
   }
 
   // 2. Try coverage_period — normalize "January 2026" → "2026-01"
   const cp = record.coverage_period as string | undefined;
   if (cp) {
-    const trimmed = cp.trim();
-    // Already YYYY-MM?
-    if (/^\d{4}-\d{2}$/.test(trimmed)) return trimmed;
-    // "Month YYYY" → YYYY-MM
-    const parsed = dateToMonthLabel(trimmed);
-    if (parsed) {
-      const parts = parsed.split(' ');
-      const monthIdx = MONTH_NAMES_FULL.indexOf(parts[0]);
-      if (monthIdx >= 0 && parts[1]) return `${parts[1]}-${String(monthIdx + 1).padStart(2, '0')}`;
-    }
+    const normalized = normalizeYearMonth(cp);
+    if (normalized) return normalized;
   }
 
   // 3. Try date field

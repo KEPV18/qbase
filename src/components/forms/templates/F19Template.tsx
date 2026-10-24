@@ -13,7 +13,7 @@ export interface F19Props {
   data?: Record<string, unknown>;
   isTemplate?: boolean;
   editMode?: boolean;
-  onChange?: (field: string, value: string) => void;
+  onChange?: (field: string, value: unknown) => void;
   className?: string;
 }
 
@@ -87,6 +87,7 @@ export function F19Template({ data, isTemplate = true, editMode = false, onChang
                       className="w-full bg-transparent text-[12px] font-semibold outline-none border-b border-dashed border-border pb-0.5 text-foreground"
                       value={val(d, field.key)}
                       onChange={e => onChange?.(field.key, e.target.value)}
+                      aria-label={field.label}
                       placeholder={`Enter ${field.label.toLowerCase()}...`}
                     />
                   ) : (
@@ -136,6 +137,7 @@ export function F19Template({ data, isTemplate = true, editMode = false, onChang
                     className="w-full bg-transparent text-[12px] font-semibold outline-none border-b border-dashed border-border pb-0.5 text-foreground"
                     value={val(d, field.key)}
                     onChange={e => onChange?.(field.key, e.target.value)}
+                    aria-label={field.label}
                     placeholder={`Enter ${field.label.toLowerCase()}...`}
                   />
                 ) : (

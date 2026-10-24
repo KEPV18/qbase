@@ -17,7 +17,7 @@ export interface FormTemplateBaseProps {
   data?: Record<string, unknown>;
   isTemplate?: boolean;
   editMode?: boolean;
-  onChange?: (field: string, value: string) => void;
+  onChange?: (field: string, value: unknown) => void;
   className?: string;
 }
 
@@ -122,7 +122,7 @@ export const DateOrTextCell: React.FC<{
   field: string;
   altFields?: string[];
   editMode?: boolean;
-  onChange?: (field: string, value: string) => void;
+  onChange?: (field: string, value: unknown) => void;
   defaultValue?: string;
   type?: "date" | "text";
 }> = ({ data, field, altFields, editMode, onChange, defaultValue, type = "text" }) => {
@@ -161,7 +161,7 @@ export const TextAreaCell: React.FC<{
   field: string;
   altFields?: string[];
   editMode?: boolean;
-  onChange?: (field: string, value: string) => void;
+  onChange?: (field: string, value: unknown) => void;
   rows?: number;
   placeholder?: string;
 }> = ({ data, field, altFields, editMode, onChange, rows = 3, placeholder }) => {
@@ -200,7 +200,7 @@ export const LabelInputRow: React.FC<{
   data?: Record<string, unknown>;
   field: string;
   editMode?: boolean;
-  onChange?: (field: string, value: string) => void;
+  onChange?: (field: string, value: unknown) => void;
   type?: "date" | "text";
   defaultValue?: string;
 }> = ({ label, data, field, editMode, onChange, type = "text", defaultValue }) => (
@@ -220,7 +220,7 @@ export const TitleRow: React.FC<{
   revision?: string;
   date?: string;
   editMode?: boolean;
-  onChange?: (field: string, value: string) => void;
+  onChange?: (field: string, value: unknown) => void;
 }> = ({ title, serial, revision, date, editMode, onChange }) => (
   <tr>
     <td colSpan={99} className="border-b border-border dark:border-ink-2">
@@ -247,7 +247,7 @@ export const FooterRow: React.FC<{
   reviewedBy?: string;
   approvedBy?: string;
   editMode?: boolean;
-  onChange?: (field: string, value: string) => void;
+  onChange?: (field: string, value: unknown) => void;
 }> = ({ preparedBy, reviewedBy, approvedBy, editMode, onChange }) => (
   <tr>
     <td colSpan={99} className="border-t border-border dark:border-ink-2">
@@ -314,7 +314,7 @@ export interface UseDynamicRowsOptions<T extends DynamicRowItem> {
   field: string;
   defaultItem: T;
   editMode: boolean;
-  onChange?: (field: string, value: string) => void;
+  onChange?: (field: string, value: unknown) => void;
 }
 
 export function useDynamicRows<T extends DynamicRowItem>(options: UseDynamicRowsOptions<T>) {
@@ -333,7 +333,7 @@ export function useDynamicRows<T extends DynamicRowItem>(options: UseDynamicRows
   }, [data, field, defaultItem]);
 
   const updateRows = useCallback((next: T[]) => {
-    if (onChange) onChange(field, JSON.stringify(next));
+    if (onChange) onChange(field, next);
   }, [field, onChange]);
 
   const addRow = useCallback(() => {

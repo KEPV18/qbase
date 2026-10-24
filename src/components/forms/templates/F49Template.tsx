@@ -11,7 +11,7 @@ export interface F49Props {
   data?: Record<string, unknown>;
   isTemplate?: boolean;
   editMode?: boolean;
-  onChange?: (field: string, value: string | Record<string, unknown> | Array<Record<string, unknown>>) => void;
+  onChange?: (field: string, value: unknown) => void;
   className?: string;
 }
 
@@ -25,6 +25,8 @@ export function F49Template({ data, isTemplate = true, editMode = false, onChang
         className={cn("border-b border-dashed border-foreground/40 bg-transparent text-sm px-1", width)}
         value={val(d, key)}
         onChange={e => onChange?.(key, e.target.value)}
+        aria-label={label}
+
         placeholder={label}
       />
     ) : (
@@ -74,6 +76,7 @@ export function F49Template({ data, isTemplate = true, editMode = false, onChang
                   <td className="border border-border p-2 text-center">
                     {editMode ? (
                       <input
+                        aria-label="Sr. No."
                         className="w-full bg-transparent text-sm border-none outline-none text-center"
                         value={String(item.srNo ?? idx + 1)}
                         onChange={e => {
@@ -89,6 +92,7 @@ export function F49Template({ data, isTemplate = true, editMode = false, onChang
                   <td className="border border-border p-2">
                     {editMode ? (
                       <input
+                        aria-label="Doc Code"
                         className="w-full bg-transparent text-sm border-none outline-none"
                         value={String(item.doc_code ?? "")}
                         onChange={e => {
@@ -104,6 +108,7 @@ export function F49Template({ data, isTemplate = true, editMode = false, onChang
                   <td className="border border-border p-2">
                     {editMode ? (
                       <input
+                        aria-label="Document Name"
                         className="w-full bg-transparent text-sm border-none outline-none"
                         value={String(item.doc_name ?? "")}
                         onChange={e => {
@@ -119,6 +124,7 @@ export function F49Template({ data, isTemplate = true, editMode = false, onChang
                   <td className="border border-border p-2 text-center">
                     {editMode ? (
                       <input
+                        aria-label="Revision"
                         className="w-full bg-transparent text-sm border-none outline-none text-center"
                         value={String(item.revision ?? "")}
                         onChange={e => {
@@ -134,6 +140,7 @@ export function F49Template({ data, isTemplate = true, editMode = false, onChang
                   <td className="border border-border p-2 text-center">
                     {editMode ? (
                       <input
+                        aria-label="Effective Date"
                         className="w-full bg-transparent text-sm border-none outline-none text-center"
                         value={String(item.effective_date ?? "")}
                         onChange={e => {
@@ -149,6 +156,7 @@ export function F49Template({ data, isTemplate = true, editMode = false, onChang
                   <td className="border border-border p-2 text-center">
                     {editMode ? (
                       <select
+                        aria-label="Status"
                         className="w-full bg-transparent text-sm"
                         value={String(item.status ?? "Active")}
                         onChange={e => {
@@ -168,6 +176,7 @@ export function F49Template({ data, isTemplate = true, editMode = false, onChang
                   <td className="border border-border p-2">
                     {editMode ? (
                       <input
+                        aria-label="Owner"
                         className="w-full bg-transparent text-sm border-none outline-none"
                         value={String(item.owner ?? "")}
                         onChange={e => {
@@ -183,6 +192,7 @@ export function F49Template({ data, isTemplate = true, editMode = false, onChang
                   <td className="border border-border p-2">
                     {editMode ? (
                       <input
+                        aria-label="Location"
                         className="w-full bg-transparent text-sm border-none outline-none"
                         value={String(item.location ?? "")}
                         onChange={e => {

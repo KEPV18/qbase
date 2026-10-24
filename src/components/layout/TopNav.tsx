@@ -3,7 +3,7 @@ import {
   Search, FileText, Bell, Moon, Sun,
 } from "lucide-react";
 import { useState, useEffect, useRef, useMemo } from "react";
-import { useRecords } from "@/hooks/useRecordStorage";
+import { useRecordPage } from "@/hooks/useCompliance";
 import { cn } from "@/lib/utils";
 import { useTenantIdentity } from "@/hooks/useTenantIdentity";
 import { useTheme } from "@/hooks/useTheme";
@@ -16,6 +16,23 @@ interface SearchResult {
   formName: string;
   formCode: string;
   match: string;
+}
+
+/**
+ * Which field of a row the search term hit.
+ *
+ * The badge beside a result says WHERE the hit was, so the same three
+ * checks run here as the server's filter runs there — serial, then the
+ * form name, then the form code.
+ */
+function classifyMatch(row: RecordData, q: string): string {
+  const serial = String(row.serial ?? '').toLowerCase();
+  const formName = String(row.formName ?? '').toLowerCase();
+  const formCode = String(row.formCode ?? '').toLowerCase();
+  if (serial.includes(q)) return 'serial';
+  if (formName.includes(q)) return 'name';
+  if (formCode.includes(q)) return 'code';
+  return 'data';
 }
 
 const PAGE_LABELS: Record<string, string> = {
@@ -53,12 +70,22 @@ function getPageLabel(path: string): string {
 export function TopNav() {
   const navigate = useNavigate();
   const location = useLocation();
-  const { data: records } = useRecords();
   const [searchTerm, setSearchTerm] = useState("");
   const [results, setResults] = useState<SearchResult[]>([]);
   const [showSearchDropdown, setShowSearchDropdown] = useState(false);
   const searchRef = useRef<HTMLDivElement>(null);
   const { theme, resolvedTheme, setTheme } = useTheme();
+
+  // The search is asked of the SERVER, and only while the user is typing.
+  //
+  // This bar used to hold the whole register — every row, every form_data
+  // blob — on EVERY page, because the top bar is on every page.  The
+  // search itself now costs one filtered page, and nothing at all until
+  // a term is typed.
+  const { data: searchPage } = useRecordPage(
+    useMemo(() => (searchTerm.trim() ? { search: searchTerm.trim() } : {}), [searchTerm]),
+    { page: 0, pageSize: 10, sort: 'form_code', enabled: searchTerm.trim().length > 0 },
+  );
 
   const { displayName, logoUrl } = useTenantIdentity();
   const brandLogo = logoUrl || defaultLogo;
@@ -76,51 +103,21 @@ export function TopNav() {
 
   useEffect(() => {
     if (!searchTerm.trim()) { setResults([]); setShowSearchDropdown(false); return; }
-    if (!records) return;
+    if (!searchPage) return;
     const q = searchTerm.toLowerCase();
-    const matches: SearchResult[] = [];
-    const visited = new Set<string>();
-    records.forEach(r => {
-      const serial = (r.serial as string)?.toLowerCase() || '';
-      const formName = (r.formName as string)?.toLowerCase() || '';
-      const formCode = (r.formCode as string)?.toLowerCase() || '';
-
-      // Match serial
-      if (serial.includes(q) && !visited.has(r.serial as string)) {
-        visited.add(r.serial as string);
-        matches.push({ serial: r.serial as string, formName: r.formName as string, formCode: r.formCode as string, match: 'serial' });
-        return;
-      }
-      // Match form name
-      if (formName.includes(q) && !visited.has(r.serial as string)) {
-        visited.add(r.serial as string);
-        matches.push({ serial: r.serial as string, formName: r.formName as string, formCode: r.formCode as string, match: 'name' });
-        return;
-      }
-      // Match form code
-      if (formCode.includes(q) && !visited.has(r.serial as string)) {
-        visited.add(r.serial as string);
-        matches.push({ serial: r.serial as string, formName: r.formName as string, formCode: r.formCode as string, match: 'code' });
-        return;
-      }
-
-      // Deep search: scan form_data JSONB fields for match
-      if (r.form_data && typeof r.form_data === 'object') {
-        const fd = r.form_data as unknown as Record<string, unknown>;
-        for (const val of Object.values(fd)) {
-          if (typeof val === 'string' && val.toLowerCase().includes(q)) {
-            if (!visited.has(r.serial as string)) {
-              visited.add(r.serial as string);
-              matches.push({ serial: r.serial as string, formName: r.formName as string, formCode: r.formCode as string, match: 'data' });
-              return;
-            }
-          }
-        }
-      }
-    });
-    setResults(matches.slice(0, 10));
+    // The server matched on the serial, the form name and the form code —
+    // the same three fields, in the same order, as the old client-side
+    // scan.  (The old scan also walked `form_data`, a field the record
+    // parser never populates — the business fields are FLATTENED onto the
+    // record — so that fourth check never matched anything.)
+    setResults(searchPage.rows.slice(0, 10).map(r => ({
+      serial: String(r.serial ?? ''),
+      formName: String(r.formName ?? ''),
+      formCode: String(r.formCode ?? ''),
+      match: classifyMatch(r, q),
+    })));
     setShowSearchDropdown(true);
-  }, [searchTerm, records]);
+  }, [searchTerm, searchPage]);
 
   return (
     <>

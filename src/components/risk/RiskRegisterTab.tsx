@@ -228,7 +228,7 @@ export function RiskRegisterTab() {
                         className="pl-9 text-sm bg-background border-border/50"
                     />
                     {search && (
-                        <button onClick={() => setSearch("")} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground">
+                        <button onClick={() => setSearch("")} aria-label="Clear the risk search" className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground">
                             <X className="w-3.5 h-3.5" />
                         </button>
                     )}

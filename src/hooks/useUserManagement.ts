@@ -129,7 +129,7 @@ export function useUserManagement({
     }
 
     return true;
-  }, [users, reloadUsers, hashLegacyPassword]);
+  }, [users, reloadUsers, setUsers]);
 
   /* ── Update User ────────────────────────────────────────────────────────── */
 
@@ -204,7 +204,7 @@ export function useUserManagement({
         await reloadUsers();
       }
     }
-  }, [users, user, reloadUsers]);
+  }, [users, user, reloadUsers, setUsers, setUser]);
 
   /* ── Remove User ────────────────────────────────────────────────────────── */
 
@@ -252,7 +252,7 @@ export function useUserManagement({
       invalidateRoleCache();
       await reloadUsers();
     }
-  }, [users, user, reloadUsers]);
+  }, [users, user, reloadUsers, setUsers, setUser]);
 
   /* ── Change Password ────────────────────────────────────────────────────── */
 

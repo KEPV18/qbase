@@ -31,6 +31,8 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
                 onClick={() => setSidebarOpen(!sidebarOpen)}
                 className="hidden lg:flex p-2 rounded-lg bg-card border border-border hover:bg-muted transition-colors ds-press ds-hit-44"
                 title={sidebarOpen ? "Collapse sidebar" : "Expand sidebar"}
+                aria-label={sidebarOpen ? "Collapse sidebar" : "Expand sidebar"}
+                aria-expanded={sidebarOpen}
               >
                 <PanelLeft className="w-4 h-4 text-foreground" />
               </button>
@@ -41,6 +43,7 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
             <button
               onClick={() => setMobileOpen(true)}
               className="p-2 rounded-lg bg-card border border-border hover:bg-background transition-colors ds-hit-44"
+              aria-label="Open the navigation menu"
             >
               <Menu className="w-5 h-5 text-foreground" />
             </button>

@@ -11,7 +11,7 @@ export interface F17Props {
   data?: Record<string, unknown>;
   isTemplate?: boolean;
   editMode?: boolean;
-  onChange?: (field: string, value: string) => void;
+  onChange?: (field: string, value: unknown) => void;
   className?: string;
 }
 
@@ -25,6 +25,8 @@ export function F17Template({ data, isTemplate = true, editMode = false, onChang
         className="w-full bg-transparent text-[11px] px-1 border-none outline-none"
         value={val(d, key)}
         onChange={e => onChange?.(key, e.target.value)}
+        aria-label={placeholder}
+
         placeholder={placeholder}
       />
     ) : (

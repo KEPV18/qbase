@@ -18,7 +18,7 @@ export interface F48Props {
   data?: Record<string, unknown>;
   isTemplate?: boolean;
   editMode?: boolean;
-  onChange?: (field: string, value: string) => void;
+  onChange?: (field: string, value: unknown) => void;
   className?: string;
 }
 
@@ -32,6 +32,8 @@ export function F48Template({ data, isTemplate = true, editMode = false, onChang
         className={cn("border-b border-dashed border-foreground/40 bg-transparent text-sm px-1", width)}
         value={val(d, key)}
         onChange={e => onChange?.(key, e.target.value)}
+        aria-label={label}
+
         placeholder={label}
       />
     ) : (
@@ -46,6 +48,8 @@ export function F48Template({ data, isTemplate = true, editMode = false, onChang
         className="w-full min-h-[100px] bg-transparent text-sm p-1 border-none outline-none resize-y"
         value={val(d, key) || ""}
         onChange={e => onChange?.(key, e.target.value)}
+        aria-label={placeholder}
+
         placeholder={placeholder}
       />
     ) : (
@@ -64,6 +68,7 @@ export function F48Template({ data, isTemplate = true, editMode = false, onChang
             <td className="border border-border p-2 w-1/3">
               {editMode ? (
                 <select
+                  aria-label="Type of Audit"
                   className="w-full bg-transparent text-sm"
                   value={val(d, "audit_type")}
                   onChange={e => onChange?.("audit_type", e.target.value)}

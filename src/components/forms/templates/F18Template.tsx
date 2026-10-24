@@ -14,7 +14,7 @@ export interface F18Props {
   data?: Record<string, unknown>;
   isTemplate?: boolean;
   editMode?: boolean;
-  onChange?: (field: string, value: string) => void;
+  onChange?: (field: string, value: unknown) => void;
   className?: string;
 }
 
@@ -28,6 +28,8 @@ export function F18Template({ data, isTemplate = true, editMode = false, onChang
         className="w-full bg-transparent text-[10px] px-0.5 border-none outline-none"
         value={val(d, key)}
         onChange={e => onChange?.(key, e.target.value)}
+        aria-label={placeholder}
+
         placeholder={placeholder}
       />
     ) : (

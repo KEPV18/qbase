@@ -9,32 +9,33 @@
 import { useState, useMemo, useEffect } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
-import { useRecords } from "@/hooks/useRecordStorage";
+import { useComplianceMap, useRecordPage } from "@/hooks/useCompliance";
 import { CANONICAL_FORMS } from "@/data/formCatalog";
 import { cn } from "@/lib/utils";
 import {
-  FileText, Folder, Search, ChevronRight, Plus,
+  FileText, Folder, Search, ChevronRight, ChevronLeft, Plus,
   AlertTriangle, CheckCircle, Clock, ShieldAlert, Calendar,
   Radar, ArrowUpAZ, ArrowDownAZ, XCircle, Loader2,
 } from "lucide-react";
 import { toast } from "sonner";
 import type { RecordData } from "@/components/forms/DynamicFormRenderer";
 import {
-  parseFrequency, buildComplianceMap, getUrgencyText, getLastFiledText,
+  parseFrequency, getUrgencyText, getLastFiledText,
   computeDeptHealth, type FormCompliance, type DeptHealth,
 } from "@/lib/compliance";
 import type { Period } from "@/lib/compliancePeriods";
 import { getDeptTheme } from "@/lib/departmentTheme";
 import { PanelCell, PanelCells, PanelHeader, PanelRow, PanelRows, UnifiedPanel } from "@/components/ui/UnifiedPanel";
-import {
-  getMonthsFromRecords, monthLabel, monthShortLabel,
-  getRecordMonth,
-} from "@/lib/temporalUtils";
+import { monthLabel, monthShortLabel } from "@/lib/temporalUtils";
 import { PROJECTS } from "@/data/projectsData";
 import { discardRecordDraft } from "@/services/recordStorage";
 import { useDashboardStats } from "@/hooks/useRecordStorage";
+import type { RecordPageFilter } from "@/services/complianceApi";
 import type { DashboardStats } from "@/services/dashboardStats";
 import { AsyncBoundary } from "@/components/ui/AsyncBoundary";
+
+/** How many rows the dashboard's records panel holds. */
+const RECORDS_PAGE_SIZE = 10;
 
 const DEPT_ORDER = [
   "Sales & Customer Service",
@@ -389,8 +390,19 @@ export default function Index() {
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   const { user } = useAuth();
-  const { data: records, isLoading: recordsLoading, error: recordsError, refetch: refetchRecords } = useRecords();
   const { data: stats, isLoading: statsLoading, error: statsError } = useDashboardStats();
+  // The compliance model is computed by the SERVER, over the rows the
+  // row-level policy lets this viewer see.  It used to be computed here,
+  // in the browser, from a download of the whole register.
+  const {
+    data: complianceResult,
+    isLoading: complianceLoading,
+    error: complianceError,
+  } = useComplianceMap();
+  const complianceMap = useMemo(
+    () => complianceResult?.map ?? new Map<string, FormCompliance>(),
+    [complianceResult],
+  );
   const [activeDept, setActiveDept] = useState(() => {
     const saved = localStorage.getItem('qms_activeDept');
     return saved || "Sales & Customer Service";
@@ -399,6 +411,7 @@ export default function Index() {
     return localStorage.getItem('qms_selectedForm') || null;
   });
   const [formSearch, setFormSearch] = useState("");
+  const [recordsPageIndex, setRecordsPageIndex] = useState(0);
 
   // Persist activeDept and selectedForm to localStorage
   useEffect(() => {
@@ -417,7 +430,8 @@ export default function Index() {
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>(() => {
     return (localStorage.getItem('qms_sortOrder') as 'asc' | 'desc') || 'asc';
   });
-  const availableMonths = useMemo(() => getMonthsFromRecords(records || []), [records]);
+  // The months the register covers, as the server counted them.
+  const availableMonths = useMemo(() => complianceResult?.months ?? [], [complianceResult]);
 
   // URL params from Sidebar filters act as the source of truth when present
   const urlMonth = searchParams.get('month') || "";
@@ -439,18 +453,8 @@ export default function Index() {
   // Radar all read the same period coverage engine, so they cannot contradict
   // each other (they used to: "All Recurring Forms Are Up to Date" sat next to
   // "8 overdue forms" because the radar checked a fixed Jan–Jun 2026 window
-  // while the counter used a different rule).
-  const complianceMap = useMemo(() => {
-    const filings = (records || []).map(r => ({
-      formCode: String(r.formCode),
-      createdAt: String(r._createdAt || ''),
-      month: getRecordMonth(r),
-    }));
-    return buildComplianceMap(
-      filings,
-      CANONICAL_FORMS.map(f => ({ code: f.code, name: f.name, frequency: f.frequency })),
-    );
-  }, [records]);
+  // while the counter used a different rule).  The model itself is computed
+  // by the server now — see `@/hooks/useCompliance`.
 
   // ── COMPLIANCE RADAR — the forms that owe a filing and have not filed ──
   const complianceGaps = useMemo<ComplianceGap[]>(() => {
@@ -485,13 +489,19 @@ export default function Index() {
   }, [complianceMap]);
 
   // ── Global totals ────────────────────────────────────────────────
-  const monthFilteredRecords = useMemo(() => {
-    if (!activeMonth || !records) return records || [];
-    return records.filter(r => getRecordMonth(r) === activeMonth);
-  }, [records, activeMonth]);
+  //
+  // The header counts the records of the selected month (or of the whole
+  // register when no month is chosen).  The count and the "approved" half
+  // of it are asked of the server, over the same rows the list shows.
+  const {
+    data: totalsPage,
+  } = useRecordPage(
+    useMemo(() => (activeMonth ? { month: activeMonth } : {}), [activeMonth]),
+    { page: 0, pageSize: 1 },
+  );
 
-  const totalRecords = monthFilteredRecords.length;
-  const approvedCount = monthFilteredRecords.filter((r) => r._approvalStatus === "Approved").length || 0;
+  const totalRecords = totalsPage?.total ?? complianceResult?.totalRecords ?? 0;
+  const approvedCount = totalsPage?.statusCounts?.approved ?? 0;
   const globalOverdue = useMemo(() => {
     let count = 0;
     complianceMap.forEach(c => { if (c.isOverdue) count++; });
@@ -509,19 +519,41 @@ export default function Index() {
   }, [activeDept, formSearch]);
 
   // ── Records display ──────────────────────────────────────────────
-  const displayedRecords = useMemo(() => {
-    if (!records) return [];
-    let r = [...records];
-    if (activeMonth) r = r.filter((rec) => getRecordMonth(rec) === activeMonth);
-    if (activeProject) r = r.filter((rec) => rec.project_id === activeProject);
-    if (selectedForm) r = r.filter((rec) => rec.formCode === selectedForm);
-    else {
-      const deptCodes = CANONICAL_FORMS.filter(f => f.sectionName === activeDept).map(f => f.code);
-      r = r.filter((rec) => deptCodes.includes(String(rec.formCode)));
-    }
-    const sorted = r.sort((a, b) => String(a.serial || '').localeCompare(String(b.serial || ''), undefined, { numeric: true, sensitivity: 'base' }));
-    return sortOrder === 'asc' ? sorted : sorted.reverse();
-  }, [records, activeMonth, activeProject, selectedForm, activeDept, sortOrder]);
+  //
+  // The panel asks the server for ONE page of the records of the selected
+  // form (or of the selected department), filtered by the month and the
+  // project the sidebar has chosen.
+  const deptFormCodes = useMemo(
+    () => CANONICAL_FORMS.filter(f => f.sectionName === activeDept).map(f => f.code),
+    [activeDept],
+  );
+
+  const recordsFilter = useMemo(() => {
+    const filter: RecordPageFilter = {};
+    if (selectedForm) filter.form_code = selectedForm;
+    else if (deptFormCodes.length > 0) filter.form_codes = deptFormCodes;
+    if (activeMonth) filter.month = activeMonth;
+    if (activeProject) filter.project_id = activeProject;
+    return filter;
+  }, [selectedForm, deptFormCodes, activeMonth, activeProject]);
+
+  const {
+    data: recordsPage,
+    isLoading: recordsLoading,
+    error: recordsError,
+    refetch: refetchRecords,
+  } = useRecordPage(recordsFilter, {
+    page: recordsPageIndex,
+    pageSize: RECORDS_PAGE_SIZE,
+    sort: sortOrder === 'asc' ? 'serial_asc' : 'serial_desc',
+  });
+
+  const displayedRecords = recordsPage?.rows ?? [];
+
+  // A new form, department, month or project starts at the first page.
+  useEffect(() => {
+    setRecordsPageIndex(0);
+  }, [selectedForm, activeDept, activeMonth, activeProject]);
 
   const handleDeptClick = useMemo(() => (dept: string) => {
     setActiveDept(dept);
@@ -529,10 +561,11 @@ export default function Index() {
   }, []);
 
   // ── Continue drafts (Prime §D4) — unsent server-side drafts resurface here ──
-  const myDrafts = useMemo(() => {
-    if (!records || !user?.email) return [];
-    return records.filter(r => r._status === "draft" && r._createdBy === user.email);
-  }, [records, user?.email]);
+  const { data: draftsPage } = useRecordPage(
+    useMemo(() => ({ mine_drafts: true }), []),
+    { page: 0, pageSize: 20 },
+  );
+  const myDrafts = draftsPage?.rows ?? [];
 
   const [discardingSerial, setDiscardingSerial] = useState<string | null>(null);
   const handleDiscardDraft = async (id: string, serial: string) => {
@@ -760,7 +793,7 @@ export default function Index() {
                     ? `Records — ${CANONICAL_FORMS.find(f => f.code === selectedForm)?.name || selectedForm}`
                     : `${activeDept} Records`}
                 </h2>
-                <p className="text-[11px] text-muted-foreground mt-0.5"><span>{displayedRecords.length}</span> entries</p>
+                <p className="text-[11px] text-muted-foreground mt-0.5"><span>{recordsPage?.total ?? 0}</span> entries</p>
               </div>
               {selectedForm && (
                 <button onClick={() => setSelectedForm(null)} className="text-xs font-medium text-muted-foreground hover:text-foreground">Clear</button>
@@ -795,11 +828,16 @@ export default function Index() {
                       onClick={() => navigate(`/records/${encodeURIComponent(record.serial || "")}`)}
                       className="w-full flex items-center gap-4 px-5 py-4 hover:bg-background dark:hover:bg-card/50 transition-colors text-left group"
                     >
-                      <span className="font-mono text-[10px] text-muted-foreground shrink-0 w-5 text-right">{idx + 1}</span>
+                      <span className="font-mono text-[10px] text-muted-foreground shrink-0 w-5 text-right">{recordsPageIndex * RECORDS_PAGE_SIZE + idx + 1}</span>
                       <span className="font-mono text-[10px] text-muted-foreground shrink-0">{record.serial}</span>
                       <div className="flex-1 min-w-0">
                         <p className="text-sm font-medium text-foreground dark:text-foreground truncate">
-                          {(record as RecordData).form_data?.client_name as string || (record as RecordData).form_data?.project_name as string || record.formName}
+                          {/* The business fields are FLATTENED onto the record by
+                              parseRowToRecord() — `record.form_data` does not
+                              exist, so reading `form_data.client_name` always
+                              gave undefined and the list fell back to the form
+                              name for every record. */}
+                          {(record as RecordData).client_name as string || (record as RecordData).project_name as string || record.formName}
                         </p>
                         <p className="text-[10px] text-muted-foreground mt-0.5">{record.formCode}</p>
                       </div>
@@ -812,6 +850,33 @@ export default function Index() {
                     </button>
                   ))}
                 </div>
+                {/* The paging — the panel asks the server for one page at a
+                    time, so the register is no longer downloaded whole. */}
+                {(recordsPage?.pageCount ?? 1) > 1 && (
+                  <div className="flex items-center justify-between px-5 py-2.5 border-t border-border dark:border-border/50">
+                    <p className="text-[10px] text-muted-foreground">
+                      Page {recordsPageIndex + 1} of {recordsPage?.pageCount ?? 1}
+                    </p>
+                    <div className="flex items-center gap-1">
+                      <button
+                        type="button"
+                        onClick={() => setRecordsPageIndex(p => Math.max(0, p - 1))}
+                        disabled={recordsPageIndex === 0}
+                        className="ds-press ds-focus-ring px-2.5 py-1 text-[11px] font-medium bg-secondary border border-border rounded-sm text-secondary-foreground hover:bg-accent disabled:opacity-30 disabled:cursor-not-allowed flex items-center gap-1"
+                      >
+                        <ChevronLeft className="w-3.5 h-3.5" /> Prev
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setRecordsPageIndex(p => Math.min((recordsPage?.pageCount ?? 1) - 1, p + 1))}
+                        disabled={recordsPageIndex >= (recordsPage?.pageCount ?? 1) - 1}
+                        className="ds-press ds-focus-ring px-2.5 py-1 text-[11px] font-medium bg-secondary border border-border rounded-sm text-secondary-foreground hover:bg-accent disabled:opacity-30 disabled:cursor-not-allowed flex items-center gap-1"
+                      >
+                        Next <ChevronRight className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+                  </div>
+                )}
                 </div>
               </AsyncBoundary>
             </div>

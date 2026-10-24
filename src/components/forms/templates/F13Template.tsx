@@ -12,7 +12,7 @@ export interface F13Props {
   data?: Record<string, unknown>;
   isTemplate?: boolean;
   editMode?: boolean;
-  onChange?: (field: string, value: string | Record<string, unknown>) => void;
+  onChange?: (field: string, value: unknown) => void;
   className?: string;
 }
 
@@ -92,6 +92,7 @@ export function F13Template({
     editMode ? (
       <input
         className={cn(inpStyle, opts?.className)}
+        aria-label={opts?.label || field}
         value={value}
         placeholder={opts?.label}
         onChange={(e) => onChange?.(field, e.target.value)}
@@ -105,6 +106,7 @@ export function F13Template({
     editMode ? (
       <input
         className={inpStyle}
+        aria-label={`${key} (row ${idx + 1})`}
         value={value}
         placeholder={key}
         onChange={(e) => {

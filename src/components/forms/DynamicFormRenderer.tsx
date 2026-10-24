@@ -561,6 +561,19 @@ const DynamicFormRenderer: React.FC<DynamicFormRendererProps> = ({
 
   const schema = selectedCode ? getFormSchema(selectedCode) : null;
 
+  // A stable identity for the incoming initial data.
+  //
+  // The reset effect used to depend on the `initialData` OBJECT, and the
+  // create page passes a fresh `{}` on every render — so every parent
+  // re-render (the first keystroke, the debounced autosave resolving)
+  // re-ran the effect and reset the form the user was typing into.  A
+  // content signature changes only when the DATA changes, which is the
+  // only moment a reset is wanted.
+  const initialSignature = React.useMemo(
+    () => JSON.stringify(initialData ?? {}),
+    [initialData],
+  );
+
   // Reset state when formCode changes
   React.useEffect(() => {
     if (formCode && formCode !== selectedCode) {
@@ -581,7 +594,14 @@ const DynamicFormRenderer: React.FC<DynamicFormRendererProps> = ({
       setGatePassed(false);
     }
     setGateAnswers(null);
-  }, [formCode, editMode, initialData]);
+    // `initialData` is deliberately NOT a dependency, and `initialSignature`
+    // stands in for it.  A parent that builds `initialData` inline hands
+    // over a NEW OBJECT on every render, so depending on its identity
+    // would reset the form — and wipe what the user had typed — on every
+    // render.  `initialSignature` is the CONTENT of `initialData`, so the
+    // effect re-runs when the content changes and not when the object does.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [formCode, editMode, selectedCode, initialSignature]);
 
   const handleFormSelect = (code: string) => {
     if (!gatePassed && code !== selectedCode) {
@@ -683,7 +703,10 @@ const DynamicFormRenderer: React.FC<DynamicFormRendererProps> = ({
           <NumberField
             key={field.key}
             field={field}
-            value={val as number || ''}
+            // `val as number || ''` turned a typed 0 into an EMPTY field:
+            // `0` is falsy, so the number the user had just typed vanished
+            // from the input and could never be entered at all.
+            value={val === undefined || val === null ? '' : (val as number)}
             onChange={v => handleFieldChange(field.key, v)}
             error={err}
             readOnly={readOnly}

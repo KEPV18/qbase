@@ -10,18 +10,19 @@ interface RiskHeatMapProps {
 const LIKELIHOOD_LABELS = ["Rare", "Unlikely", "Possible", "Likely", "Almost Certain"];
 const IMPACT_LABELS = ["Negligible", "Minor", "Moderate", "Major", "Catastrophic"];
 
+/**
+ * The four severity bands of the matrix.
+ *
+ * Medium (4-6) and High (7-12) used to carry the SAME classes, so the legend
+ * showed two different names over one colour and half the matrix could not
+ * be told apart.  The bands now run green → amber → red → solid red, which
+ * is the order a risk matrix is read in, and each band has its own swatch.
+ */
 function getCellColor(score: number): string {
   if (score <= 3) return "bg-success/20 border-success/30 text-success-tint";
   if (score <= 6) return "bg-warning/20 border-warning/30 text-warning-tint";
-  if (score <= 12) return "bg-warning/20 border-warning/30 text-warning-tint";
-  return "bg-destructive/20 border-destructive/30 text-destructive-tint";
-}
-
-function getCellBg(score: number): string {
-  if (score <= 3) return "bg-success/10";
-  if (score <= 6) return "bg-warning/10";
-  if (score <= 12) return "bg-warning/10";
-  return "bg-destructive/10";
+  if (score <= 12) return "bg-destructive/20 border-destructive/30 text-destructive-tint";
+  return "bg-destructive-solid border-destructive-solid text-white";
 }
 
 export function RiskHeatMap({ risks }: RiskHeatMapProps) {
@@ -69,7 +70,6 @@ export function RiskHeatMap({ risks }: RiskHeatMapProps) {
                         <div
                           className={cn(
                             "aspect-square rounded-sm border flex flex-col items-center justify-center relative transition-all hover:scale-105 cursor-default min-h-[40px]",
-                            getCellBg(score),
                             cellRisks.length > 0 ? getCellColor(score) : "bg-muted/20 border-border/30 text-ink-3"
                           )}
                         >
@@ -122,8 +122,8 @@ export function RiskHeatMap({ risks }: RiskHeatMapProps) {
         {[
           { label: "Low (1-3)", color: "bg-success/30" },
           { label: "Medium (4-6)", color: "bg-warning/30" },
-          { label: "High (7-12)", color: "bg-warning/30" },
-          { label: "Critical (13-25)", color: "bg-destructive/30" },
+          { label: "High (7-12)", color: "bg-destructive/30" },
+          { label: "Critical (13-25)", color: "bg-destructive-solid" },
         ].map(l => (
           <div key={l.label} className="flex items-center gap-1.5">
             <div className={cn("w-3 h-3 rounded-sm", l.color)} />

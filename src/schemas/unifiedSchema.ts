@@ -7,13 +7,43 @@
 // ============================================================================
 
 import { z } from 'zod';
+import {
+  isKnownFormCode,
+  resolveFormName,
+  resolveFormSection,
+  resolveFormSectionName,
+  resolveFormFrequency,
+} from '@/data/formIdentity';
 
 // ============================================================================
 // Primitive Validators (shared by both UI and Zod)
 // ============================================================================
 
 const DDMMYYYY_REGEX = /^(0[1-9]|[12]\d|3[01])\/(0[1-9]|1[0-2])\/\d{4}$/;
+const ISO_DATE_REGEX = /^(\d{4})-(\d{2})-(\d{2})$/;
 const SERIAL_REGEX = /^F\/\d{1,2}-\d{3,4}$/;
+
+/** Is this a real date on the calendar?  "2026-02-30" is not. */
+function isRealCalendarDate(year: number, month: number, day: number): boolean {
+  if (month < 1 || month > 12 || day < 1 || day > 31) return false;
+  const d = new Date(Date.UTC(year, month - 1, day));
+  return d.getUTCFullYear() === year && d.getUTCMonth() === month - 1 && d.getUTCDate() === day;
+}
+
+/**
+ * A date value: DD/MM/YYYY or YYYY-MM-DD, and a real date on the calendar.
+ *
+ * The house format is DD/MM/YYYY, but the importer wrote YYYY-MM-DD, and
+ * both are in the database — a validator that accepts only one of them
+ * refuses real records.
+ */
+const DATE_VALUE = z.string().refine((value) => {
+  const iso = ISO_DATE_REGEX.exec(value);
+  if (iso) return isRealCalendarDate(Number(iso[1]), Number(iso[2]), Number(iso[3]));
+  const display = DDMMYYYY_REGEX.exec(value);
+  if (display) return isRealCalendarDate(Number(display[3]), Number(display[2]), Number(display[1]));
+  return false;
+}, 'Date must be DD/MM/YYYY or YYYY-MM-DD');
 
 // ============================================================================
 // Core Field Definition — the ONLY place field metadata lives
@@ -94,7 +124,11 @@ export const UNIFIED_SCHEMAS: UnifiedFormSchema[] = [
       { key: "date", label: "Date", type: "text", required: false, width: "half" },
       { key: "client_name", label: "Customer", type: "text", required: true, width: "full" },
       { key: "mode_of_receipt", label: "Mode Of Receipt", type: "text", width: "full" },
-      { key: "items", label: "Products", type: "textarea", width: "full" },
+      { key: "items", label: "Products", type: "table", width: "full", columns: [
+        { key: "product_name", label: "Product Name", type: "text", width: "full" },
+        { key: "specifications", label: "Specifications", type: "text", width: "full" },
+        { key: "qty", label: "Qty", type: "text", width: "full" },
+      ]},
       { key: "test_certificate_required", label: "Test Certificate Required", type: "select", width: "half", options: ["Yes", "No"] },
       { key: "delivery_schedule", label: "Delivery Schedule", type: "text", width: "full" },
       { key: "complies", label: "Statutory & Regulatory", type: "select", width: "half", options: ["Complies", "Does Not Comply"] },
@@ -149,7 +183,15 @@ export const UNIFIED_SCHEMAS: UnifiedFormSchema[] = [
       ]},
       { key: "year", label: "Year", type: "text", width: "half" },
       { key: "client_name", label: "Customer Name", type: "text", required: true, width: "full" },
-      { key: "survey_score", label: "Survey Score", type: "number", width: "half" },
+      // The catalogue says "number", but one production F/10 record holds
+      // the free-text verdict ("Meeting Expectations") — the survey was
+      // scored in words, not in digits.  Both are accepted; the number
+      // rule is not enforced, because a number is the only thing the
+      // catalogue assumed and the record says otherwise.
+      { key: "survey_score", label: "Survey Score", type: "number", width: "half", zod: {
+        optional: true,
+        custom: z.union([z.number(), z.string()]),
+      }},
       { key: "feedback_details", label: "Feedback Details", type: "textarea", width: "full" },
       { key: "action_taken", label: "Action Taken", type: "textarea", width: "full" },
       { key: "reviewed_by", label: "Reviewed By", type: "text", width: "half" },
@@ -159,33 +201,42 @@ export const UNIFIED_SCHEMAS: UnifiedFormSchema[] = [
   // ── Section 02: Procurement & Vendors ─────────────────────────────────
   {
     code: "F/11",
-    name: "Vendor Evaluation",
+    // The name in the catalogue was "Vendor Evaluation" — a different
+    // form entirely.  The registry (src/data/formsRegistry.ts), the F/11
+    // facsimile and all 16 stored F/11 records describe a PRODUCTION
+    // PLAN, and the row columns the template edits are the plan's
+    // (product, batch, planned/actual completion, yield).  The vendor
+    // columns were also a silent data-loss bug: the Zod `table` shape
+    // declared only those, so every save replaced the real plan rows
+    // with ten empty vendor fields and reported the write as valid.
+    name: "Production Plan",
     section: 2,
     sectionName: "Operations & Production",
     frequency: "Monthly",
     importance: "Critical",
-    description: "Monthly vendor performance evaluation with items table.",
+    description: "Monthly production plan — the planned and the actual completion of every product batch.",
     fields: [
       { key: "serial", label: "Serial Number", type: "text", required: true, width: "half", defaultValue: "auto" },
       { key: "month", label: "Month", type: "text", required: true, width: "half" },
       { key: "date", label: "Date", type: "text", required: true, width: "half" },
-      { key: "items", label: "Evaluation Items", type: "table", width: "full", columns: [
-        { key: "srNo", label: "Sr. No.", type: "text", width: "full" },
-        { key: "vendor_name", label: "Vendor Name", type: "text", width: "full" },
-        { key: "material_service", label: "Material/Service", type: "text", width: "full" },
-        { key: "po_no", label: "PO No.", type: "text", width: "full" },
-        { key: "qty_ordered", label: "Qty Ordered", type: "text", width: "full" },
-        { key: "qty_received", label: "Qty Received", type: "text", width: "full" },
-        { key: "rejection_qty", label: "Rejection Qty", type: "text", width: "full" },
-        { key: "quality_rating", label: "Quality Rating", type: "select", width: "full", options: ["A", "B", "C"] },
-        { key: "delivery_rating", label: "Delivery Rating", type: "select", width: "full", options: ["A", "B", "C"] },
-        { key: "remarks", label: "Remarks", type: "text", width: "full" },
+      { key: "items", label: "Planning For Products", type: "table", width: "full", columns: [
+        { key: "product", label: "Product", type: "text", width: "full" },
+        { key: "batch_no", label: "Batch No.", type: "text", width: "full" },
+        { key: "plan_date", label: "Plan Date", type: "text", width: "full" },
+        { key: "plan_size", label: "Plan Size", type: "text", width: "full" },
+        { key: "plan_status", label: "Plan Status", type: "text", width: "full" },
+        { key: "actual_date", label: "Actual Date", type: "text", width: "full" },
+        { key: "actual_qty", label: "Actual Qty.", type: "text", width: "full" },
+        { key: "actual_status", label: "Actual Status", type: "text", width: "full" },
+        { key: "yield_percent", label: "% Yield", type: "text", width: "full" },
       ]},
+      { key: "remarks", label: "Remarks", type: "text", width: "full" },
       { key: "prepared_by", label: "Prepared By", type: "signature", required: true, width: "half" },
       { key: "reviewed_by", label: "Reviewed By", type: "signature", width: "half" },
       { key: "approved_by", label: "Approved By", type: "signature", width: "half" },
-      { key: "signature", label: "Signature", type: "signature", required: true, width: "half" },
       { key: "updated_based_on_progress", label: "Updated Based on Progress", type: "text", width: "full" },
+      { key: "signature", label: "Signature", type: "signature", required: true, width: "half" },
+      { key: "signature_2", label: "Signature (second signatory)", type: "signature", width: "half" },
     ],
   },
   {
@@ -199,8 +250,8 @@ export const UNIFIED_SCHEMAS: UnifiedFormSchema[] = [
     fields: [
       { key: "serial", label: "Serial Number", type: "text", required: true, width: "half", defaultValue: "auto" },
       { key: "date", label: "Date", type: "text", required: true, width: "half" },
-      { key: "department", label: "Department", type: "text", required: true, width: "full" },
-      { key: "requested_by", label: "Requested By", type: "signature", required: true, width: "half" },
+      { key: "department", label: "Department", type: "text", width: "full" },  // not required: the F/12 document has no such field
+      { key: "requested_by", label: "Requested By", type: "signature", width: "half" },  // not required: the F/12 document has no such field
       { key: "items", label: "Items", type: "table", width: "full", columns: [
         { key: "srNo", label: "Sr. No.", type: "text", width: "full" },
         { key: "description", label: "Description", type: "text", width: "full" },
@@ -242,7 +293,7 @@ export const UNIFIED_SCHEMAS: UnifiedFormSchema[] = [
       { key: "test_certificate_required", label: "Test Certificate Required", type: "select", width: "half", options: ["Yes", "No"] },
       { key: "insurance", label: "Insurance", type: "text", width: "half" },
       { key: "despatch_destination", label: "Despatch Destination", type: "text", width: "full" },
-      { key: "prepared_by", label: "Prepared By", type: "signature", required: true, width: "half" },
+      { key: "prepared_by", label: "Prepared By", type: "signature", width: "half" },  // not required: the F/13 document records this under `reviewed_and_approved_by`
       { key: "approved_by", label: "Approved By", type: "signature", width: "half" },
     ],
   },
@@ -257,8 +308,8 @@ export const UNIFIED_SCHEMAS: UnifiedFormSchema[] = [
     fields: [
       { key: "serial", label: "Serial Number", type: "text", required: true, width: "half", defaultValue: "auto" },
       { key: "date", label: "Date", type: "text", required: true, width: "half" },
-      { key: "po_no", label: "PO No.", type: "text", required: true, width: "half" },
-      { key: "vendor_name", label: "Vendor Name", type: "text", required: true, width: "full" },
+      { key: "po_no", label: "PO No.", type: "text", width: "half" },  // not required: the F/14 document has no such field
+      { key: "vendor_name", label: "Vendor Name", type: "text", width: "full" },  // not required: the F/14 document has no such field
       { key: "items", label: "Received Items", type: "table", width: "full", columns: [
         { key: "srNo", label: "Sr. No.", type: "text", width: "full" },
         { key: "description", label: "Description", type: "text", width: "full" },
@@ -268,7 +319,7 @@ export const UNIFIED_SCHEMAS: UnifiedFormSchema[] = [
         { key: "rejected_qty", label: "Rejected Qty", type: "text", width: "full" },
         { key: "remarks", label: "Remarks", type: "text", width: "full" },
       ]},
-      { key: "received_by", label: "Received By", type: "signature", required: true, width: "half" },
+      { key: "received_by", label: "Received By", type: "signature", width: "half" },  // not required: the F/14 document records this under `inspected_by`
       { key: "inspected_by", label: "Inspected By", type: "signature", width: "half" },
       { key: "remarks", label: "Remarks", type: "textarea", width: "full" },
     ],
@@ -283,8 +334,8 @@ export const UNIFIED_SCHEMAS: UnifiedFormSchema[] = [
     description: "Vendor registration and approval form with 29 fields.",
     fields: [
       { key: "serial", label: "Serial Number", type: "text", required: true, width: "half", defaultValue: "auto" },
-      { key: "date", label: "Date", type: "text", required: true, width: "half" },
-      { key: "name", label: "Vendor Name", type: "text", required: true, width: "full" },
+      { key: "date", label: "Date", type: "text", width: "half" },  // not required: the F/15 document records this under `date_of_approval`
+      { key: "name", label: "Vendor Name", type: "text", width: "full" },  // not required: the F/15 document records this under `supplier_name`
       { key: "address", label: "Address", type: "textarea", width: "full" },
       { key: "city", label: "City", type: "text", width: "half" },
       { key: "state", label: "State", type: "text", width: "half" },
@@ -324,8 +375,8 @@ export const UNIFIED_SCHEMAS: UnifiedFormSchema[] = [
     description: "Annual re-evaluation of approved vendors.",
     fields: [
       { key: "serial", label: "Serial Number", type: "text", required: true, width: "half", defaultValue: "auto" },
-      { key: "date", label: "Date", type: "text", required: true, width: "half" },
-      { key: "vendor_name", label: "Vendor Name", type: "text", required: true, width: "full" },
+      { key: "date", label: "Date", type: "text", width: "half" },  // not required: the F/16 document records this under `vendor_date`
+      { key: "vendor_name", label: "Vendor Name", type: "text", width: "full" },  // not required: the F/16 document records this under `vendor_auth_name`
       { key: "vendor_code", label: "Vendor Code", type: "text", width: "half" },
       { key: "items", label: "Evaluation Criteria", type: "table", width: "full", columns: [
         { key: "srNo", label: "Sr. No.", type: "text", width: "full" },
@@ -355,7 +406,7 @@ export const UNIFIED_SCHEMAS: UnifiedFormSchema[] = [
       { key: "serial", label: "Serial Number", type: "text", required: true, width: "half", defaultValue: "auto" },
       { key: "date", label: "Date", type: "text", required: true, width: "half" },
       { key: "product_name", label: "Product Name", type: "text", required: true, width: "full" },
-      { key: "quantity", label: "Quantity", type: "text", required: true, width: "half" },
+      { key: "quantity", label: "Quantity", type: "text", width: "half" },  // not required: the F/17 document has no such field
       { key: "target_date", label: "Target Date", type: "text", width: "half" },
       { key: "bom", label: "Bill of Materials", type: "table", width: "full", columns: [
         { key: "srNo", label: "Sr. No.", type: "text", width: "full" },
@@ -372,7 +423,7 @@ export const UNIFIED_SCHEMAS: UnifiedFormSchema[] = [
         { key: "time_estimate", label: "Time Estimate", type: "text", width: "full" },
         { key: "operator", label: "Operator", type: "text", width: "full" },
       ]},
-      { key: "prepared_by", label: "Prepared By", type: "signature", required: true, width: "half" },
+      { key: "prepared_by", label: "Prepared By", type: "signature", width: "half" },  // not required: the F/17 document records this under `tested_by`
       { key: "approved_by", label: "Approved By", type: "signature", width: "half" },
     ],
   },
@@ -396,7 +447,7 @@ export const UNIFIED_SCHEMAS: UnifiedFormSchema[] = [
         { key: "variance", label: "Variance", type: "text", width: "full" },
         { key: "remarks", label: "Remarks", type: "text", width: "full" },
       ]},
-      { key: "prepared_by", label: "Prepared By", type: "signature", required: true, width: "half" },
+      { key: "prepared_by", label: "Prepared By", type: "signature", width: "half" },  // not required: the F/18 document records this under `products_identified_by`
       { key: "reviewed_by", label: "Reviewed By", type: "signature", width: "half" },
     ],
   },
@@ -410,8 +461,8 @@ export const UNIFIED_SCHEMAS: UnifiedFormSchema[] = [
     description: "Product specification and description for each project.",
     fields: [
       { key: "serial", label: "Serial Number", type: "text", required: true, width: "half", defaultValue: "auto" },
-      { key: "date", label: "Date", type: "text", required: true, width: "half" },
-      { key: "project_code", label: "Project Code", type: "text", required: true, width: "half" },
+      { key: "date", label: "Date", type: "text", width: "half" },  // not required: the F/19 document has no such field
+      { key: "project_code", label: "Project Code", type: "text", width: "half" },  // not required: the F/19 document records this under `product_code`
       { key: "product_name", label: "Product Name", type: "text", required: true, width: "full" },
       { key: "specification", label: "Specification", type: "textarea", width: "full" },
       { key: "material", label: "Material", type: "text", width: "full" },
@@ -421,7 +472,7 @@ export const UNIFIED_SCHEMAS: UnifiedFormSchema[] = [
       { key: "packaging", label: "Packaging", type: "text", width: "full" },
       { key: "testing_requirements", label: "Testing Requirements", type: "textarea", width: "full" },
       { key: "approved_by", label: "Approved By", type: "signature", width: "half" },
-      { key: "prepared_by", label: "Prepared By", type: "signature", required: true, width: "half" },
+      { key: "prepared_by", label: "Prepared By", type: "signature", width: "half" },  // not required: the F/19 document has no such field
     ],
   },
   {
@@ -437,9 +488,13 @@ export const UNIFIED_SCHEMAS: UnifiedFormSchema[] = [
       { key: "date", label: "Date", type: "text", required: true, width: "half" },
       { key: "time", label: "Time", type: "text", width: "half" },
       { key: "place", label: "Place", type: "text", width: "half" },
-      { key: "agenda", label: "Agenda", type: "textarea", required: true, width: "full" },
+      { key: "agenda", label: "Agenda", type: "textarea", width: "full" },  // not required: the F/20 document has no such field
       { key: "minutes", label: "Minutes", type: "textarea", width: "full" },
-      { key: "action_items", label: "Action Items", type: "textarea", width: "full" },
+      { key: "action_items", label: "Action Items", type: "table", width: "full", columns: [
+        { key: "action", label: "Action", type: "text", width: "full" },
+        { key: "deadline", label: "Deadline", type: "text", width: "full" },
+        { key: "responsible", label: "Responsible", type: "text", width: "full" },
+      ]},
       { key: "chairperson", label: "Chairperson", type: "text", width: "half" },
       { key: "prepared_by", label: "Prepared By", type: "signature", width: "half" },
       { key: "approved_by", label: "Approved By", type: "signature", width: "half" },
@@ -461,7 +516,29 @@ export const UNIFIED_SCHEMAS: UnifiedFormSchema[] = [
       { key: "meeting_date", label: "Meeting Date", type: "text", required: true, width: "half" },
       { key: "meeting_time", label: "Time", type: "text", width: "half" },
       { key: "meeting_place", label: "Place", type: "text", width: "half" },
-      { key: "attendees", label: "Attendees", type: "text", width: "full" },
+      // The catalogue says "table", but one production F/21 record holds
+      // the attendees as free text — the list was typed into the field,
+      // not tabulated.  Both forms are accepted, and the row shape keeps
+      // its catch-all so a column the catalogue never listed survives.
+      { key: "attendees", label: "Attendees", type: "table", width: "full", columns: [
+        { key: "name", label: "Name", type: "text", width: "full" },
+        { key: "role", label: "Role", type: "text", width: "full" },
+      ], zod: {
+        optional: true,
+        custom: z.union([
+          z.array(z.object({
+            name: z.string().optional(),
+            role: z.string().optional(),
+          }).catchall(z.unknown())),
+          z.string(),
+        ]),
+      }},
+      { key: "action_items", label: "Action Items", type: "table", width: "full", columns: [
+        { key: "action", label: "Action", type: "text", width: "full" },
+        { key: "deadline", label: "Deadline", type: "text", width: "full" },
+        { key: "responsible", label: "Responsible", type: "text", width: "full" },
+        { key: "status", label: "Status", type: "text", width: "full" },
+      ]},
       { key: "discussion_points", label: "Discussion Points", type: "textarea", required: true, width: "full" },
       { key: "minutes_circulated_with", label: "Minutes Circulated With", type: "text", width: "full" },
       { key: "prepared_by", label: "Prepared By", type: "signature", width: "half" },
@@ -482,14 +559,14 @@ export const UNIFIED_SCHEMAS: UnifiedFormSchema[] = [
     fields: [
       { key: "serial", label: "Serial Number", type: "text", required: true, width: "half", defaultValue: "auto" },
       { key: "date", label: "Date", type: "text", required: true, width: "half" },
-      { key: "nc_type", label: "NC Type", type: "select", required: true, width: "half", options: ["Minor", "Major", "Critical"] },
-      { key: "source", label: "Source", type: "select", required: true, width: "half", options: ["Internal Audit", "Customer Complaint", "NC Report", "Management Review", "Other"] },
+      { key: "nc_type", label: "NC Type", type: "select", width: "half", options: ["Minor", "Major", "Critical"] },  // not required: the F/22 document records this under `nc_sources`
+      { key: "source", label: "Source", type: "select", width: "half", options: ["Internal Audit", "Customer Complaint", "NC Report", "Management Review", "Other"] },  // not required: the F/22 document has no such field
       { key: "description", label: "Description", type: "textarea", required: true, width: "full" },
       { key: "root_cause", label: "Root Cause", type: "textarea", width: "full" },
       { key: "immediate_action", label: "Immediate Action", type: "textarea", width: "full" },
       { key: "corrective_action", label: "Corrective Action", type: "textarea", width: "full" },
       { key: "preventive_action", label: "Preventive Action", type: "textarea", width: "full" },
-      { key: "responsible_person", label: "Responsible Person", type: "text", required: true, width: "half" },
+      { key: "responsible_person", label: "Responsible Person", type: "text", width: "half" },  // not required: the F/22 document has no such field
       { key: "target_date", label: "Target Date", type: "text", required: true, width: "half" },
       { key: "closure_date", label: "Closure Date", type: "text", width: "half" },
       { key: "verified_by", label: "Verified By", type: "signature", width: "half" },
@@ -502,7 +579,7 @@ export const UNIFIED_SCHEMAS: UnifiedFormSchema[] = [
           nc_report: z.boolean().optional(),
           management_review: z.boolean().optional(),
           other: z.string().optional(),
-        }).default({}),
+        }).catchall(z.unknown()).default({}),
       }},
     ],
   },
@@ -517,11 +594,11 @@ export const UNIFIED_SCHEMAS: UnifiedFormSchema[] = [
     fields: [
       { key: "serial", label: "Serial Number", type: "text", required: true, width: "half", defaultValue: "auto" },
       { key: "date", label: "Date", type: "text", required: true, width: "half" },
-      { key: "nc_ref", label: "NC Reference", type: "text", required: true, width: "half" },
-      { key: "root_cause", label: "Root Cause", type: "textarea", required: true, width: "full" },
-      { key: "corrective_action", label: "Corrective Action", type: "textarea", required: true, width: "full" },
-      { key: "responsible_person", label: "Responsible Person", type: "text", required: true, width: "half" },
-      { key: "target_date", label: "Target Date", type: "text", required: true, width: "half" },
+      { key: "nc_ref", label: "NC Reference", type: "text", width: "half" },  // not required: the F/23 document has no such field
+      { key: "root_cause", label: "Root Cause", type: "textarea", width: "full" },  // not required: the F/23 document has no such field
+      { key: "corrective_action", label: "Corrective Action", type: "textarea", width: "full" },  // not required: the F/23 document has no such field
+      { key: "responsible_person", label: "Responsible Person", type: "text", width: "half" },  // not required: the F/23 document records this under `person_responsible`
+      { key: "target_date", label: "Target Date", type: "text", width: "half" },  // not required: the F/23 document records this under `date`
       { key: "completion_date", label: "Completion Date", type: "text", width: "half" },
       { key: "effectiveness_check", label: "Effectiveness Check", type: "textarea", width: "full" },
       { key: "verified_by", label: "Verified By", type: "signature", width: "half" },
@@ -538,7 +615,7 @@ export const UNIFIED_SCHEMAS: UnifiedFormSchema[] = [
     description: "Quarterly internal audit plan.",
     fields: [
       { key: "serial", label: "Serial Number", type: "text", required: true, width: "half", defaultValue: "auto" },
-      { key: "quarter", label: "Quarter", type: "select", required: true, width: "half", options: ["Q1", "Q2", "Q3", "Q4"] },
+      { key: "quarter", label: "Quarter", type: "select", width: "half", options: ["Q1", "Q2", "Q3", "Q4"] },  // not required: the F/24 document has no such field
       { key: "year", label: "Year", type: "text", required: true, width: "half" },
       { key: "items", label: "Audit Items", type: "table", width: "full", columns: [
         { key: "srNo", label: "Sr. No.", type: "text", width: "full" },
@@ -565,7 +642,7 @@ export const UNIFIED_SCHEMAS: UnifiedFormSchema[] = [
     fields: [
       { key: "serial", label: "Serial Number", type: "text", required: true, width: "half", defaultValue: "auto" },
       { key: "date", label: "Date", type: "text", required: true, width: "half" },
-      { key: "period", label: "Review Period", type: "text", required: true, width: "full" },
+      { key: "period", label: "Review Period", type: "text", width: "full" },  // not required: the F/25 document has no such field
       { key: "attendees", label: "Attendees", type: "textarea", width: "full" },
       { key: "agenda", label: "Agenda", type: "table", width: "full", columns: [
         { key: "srNo", label: "Sr. No.", type: "text", width: "full" },
@@ -577,7 +654,7 @@ export const UNIFIED_SCHEMAS: UnifiedFormSchema[] = [
         { key: "target_date", label: "Target Date", type: "text", width: "full" },
         { key: "status", label: "Status", type: "select", width: "full", options: ["Open", "In Progress", "Closed"] },
       ]},
-      { key: "prepared_by", label: "Prepared By", type: "signature", required: true, width: "half" },
+      { key: "prepared_by", label: "Prepared By", type: "signature", width: "half" },  // not required: the F/25 document records this under `reviewed_by`
       { key: "approved_by", label: "Approved By", type: "signature", width: "half" },
     ],
   },
@@ -595,7 +672,7 @@ export const UNIFIED_SCHEMAS: UnifiedFormSchema[] = [
       { key: "serial", label: "Serial Number", type: "text", required: true, width: "half", defaultValue: "auto" },
       { key: "date", label: "Date", type: "text", required: true, width: "half" },
       { key: "topic", label: "Training Topic", type: "text", required: true, width: "full" },
-      { key: "trainer", label: "Trainer", type: "text", required: true, width: "half" },
+      { key: "trainer", label: "Trainer", type: "text", width: "half" },  // not required: the F/28 document records this under `trainer_signature`
       { key: "department", label: "Department", type: "text", width: "half" },
       { key: "course_name", label: "Course Name", type: "text", width: "full" },
       { key: "designation", label: "Designation", type: "text", width: "half" },
@@ -628,7 +705,7 @@ export const UNIFIED_SCHEMAS: UnifiedFormSchema[] = [
     description: "Employee training & competence record with 15-topic matrix.",
     fields: [
       { key: "serial", label: "Serial Number", type: "text", required: true, width: "half", defaultValue: "auto" },
-      { key: "date", label: "Date", type: "text", required: true, width: "half" },
+      { key: "date", label: "Date", type: "text", width: "half" },  // not required: the F/29 document has no such field
       { key: "trainer", label: "Trainer", type: "text", required: true, width: "half" },
       { key: "department", label: "Department", type: "text", width: "half" },
       { key: "course_name", label: "Course Name", type: "text", width: "full" },
@@ -638,8 +715,20 @@ export const UNIFIED_SCHEMAS: UnifiedFormSchema[] = [
       { key: "assessed_on", label: "Assessed On", type: "text", width: "half" },
       { key: "training_date", label: "Training Date", type: "text", width: "half" },
       { key: "training_type", label: "Training Type", type: "text", width: "half" },
-      { key: "training_status", label: "Training Status", type: "text", width: "half" },
-      { key: "items", label: "Competence Matrix", type: "table", required: true, width: "full", columns: [
+      // The catalogue says "text", but 20 of the production F/29 records
+      // hold an OBJECT here — the training status was recorded as a small
+      // structure (a status plus its basis), not as a word.  The text
+      // schema rejected every one of them, so those records could not be
+      // saved, and the object shape is accepted with a catch-all so the
+      // keys the catalogue never listed survive the save.
+      { key: "training_status", label: "Training Status", type: "text", width: "half", zod: {
+        optional: true,
+        custom: z.union([
+          z.string(),
+          z.record(z.string(), z.unknown()),
+        ]),
+      }},
+      { key: "items", label: "Competence Matrix", type: "table", width: "full", columns: [  // not required: the F/29 document has no such field
         { key: "srNo", label: "Sr. No.", type: "text", width: "full" },
         { key: "name", label: "Name", type: "text", width: "full" },
         { key: "designation", label: "Designation", type: "text", width: "full" },
@@ -650,12 +739,20 @@ export const UNIFIED_SCHEMAS: UnifiedFormSchema[] = [
         { key: "skillAvail", label: "Skill Available", type: "text", width: "full" },
       ]},
       { key: "result", label: "Result", type: "object", width: "full", zod: {
-        custom: z.object({
-          training_identified: z.string().optional(),
-          training_given: z.string().optional(),
-          training_effective: z.string().optional(),
-          training_not_required: z.string().optional(),
-        }).default({}),
+        // The stored value is an object in some records and a plain string
+        // in others ("Completed", "Pass"), and the object carries keys this
+        // catalogue never listed.  The strict shape rejected the string
+        // form outright, so those records could not be saved, and it
+        // stripped the unlisted keys from the object form.
+        custom: z.union([
+          z.object({
+            training_identified: z.string().optional(),
+            training_given: z.string().optional(),
+            training_effective: z.string().optional(),
+            training_not_required: z.string().optional(),
+          }).catchall(z.unknown()),
+          z.string(),
+        ]).optional(),
       }},
       { key: "prepared_by", label: "Prepared By", type: "signature", required: true, width: "half" },
       { key: "recorded_by", label: "Recorded By", type: "signature", width: "half" },
@@ -684,12 +781,30 @@ export const UNIFIED_SCHEMAS: UnifiedFormSchema[] = [
       { key: "working_in_organisation", label: "Working In Organisation", type: "text", required: true, width: "half" },
       { key: "last_year_increment", label: "Last Year Increment", type: "text", width: "half" },
       { key: "evaluation_done_by", label: "Evaluation Done By", type: "text", required: true, width: "half" },
-      { key: "evaluation_matrix", label: "Evaluation Matrix", type: "array", required: true, zod: {
+      // The stored rows are {criteria, id, score} — the appraisal criteria
+      // text, the criterion id and the score.  The old shape demanded a
+      // `category` key the rows do not have and a score between 1 and 5,
+      // so every one of the 57 stored F/30 records failed validation and
+      // could not be saved; the template also writes a score of 0, which
+      // the same rule rejected.  The rows are kept as they are and the
+      // unknown keys are preserved.
+      //
+      // `optional` because the CREATE form does not render `array` fields
+      // (DynamicFormRenderer's switch has no case for them): with the
+      // field required, a new F/30 record could not be created at all.
+      { key: "evaluation_matrix", label: "Evaluation Matrix", type: "array", zod: {
+        optional: true,
+        // No minimum length.  The rule "the matrix holds 20 rows" is a
+        // document rule, and enforcing it in the SCHEMA made the record
+        // un-saveable the moment the row count fell short — including
+        // through a save that changed nothing.  The rows themselves are
+        // what the facsimile edits; the count is not the schema's business.
         custom: z.array(z.object({
-          id: z.string(),
-          category: z.string(),
-          score: z.number().min(1).max(5),
-        })).min(20, '20 evaluation items required'),
+          id: z.string().optional(),
+          category: z.string().optional(),
+          criteria: z.string().optional(),
+          score: z.union([z.number(), z.string()]).optional(),
+        }).catchall(z.unknown())).default([]),
       }},
       { key: "total_marking", label: "Total Marking", type: "text", required: true, width: "half" },
       { key: "further_training_need", label: "Further Training Need", type: "text", width: "full" },
@@ -711,7 +826,7 @@ export const UNIFIED_SCHEMAS: UnifiedFormSchema[] = [
     description: "Skills and competence tracking matrix for all employees.",
     fields: [
       { key: "serial", label: "Serial Number", type: "text", required: true, width: "half", defaultValue: "auto" },
-      { key: "period", label: "Period", type: "text", required: true, width: "half" },
+      { key: "period", label: "Period", type: "text", width: "half" },  // not required: the F/40 document has no such field
       { key: "project_scope", label: "Project Scope", type: "text", width: "full" },
       { key: "items", label: "Competence Matrix Items", type: "table", width: "full", columns: [
         { key: "srNo", label: "Sr. No.", type: "text", width: "full" },
@@ -728,18 +843,21 @@ export const UNIFIED_SCHEMAS: UnifiedFormSchema[] = [
       ]},
       { key: "training_topics", label: "Training Topics", type: "array", zod: {
         custom: z.array(z.object({
-          code: z.string(),
-          name: z.string(),
-        })).default([]),
+          code: z.string().optional(),
+          name: z.string().optional(),
+        }).catchall(z.unknown())).default([]),
       }},
       { key: "training_given", label: "Training Given", type: "array", zod: {
+        // The stored rows are {srNo, topicNo} — a reference into the topic
+        // list, which is what the F/40 / F/41 facsimiles edit.  The old
+        // shape described a training record (code, name, date, participant,
+        // effective) that no stored row and no template uses, so every
+        // stored F/40 / F/41 record failed validation and could not be
+        // saved at all.
         custom: z.array(z.object({
-          code: z.string(),
-          name: z.string(),
-          date: z.string(),
-          participant: z.string(),
-          effective: z.boolean(),
-        })).default([]),
+          srNo: z.string().optional(),
+          topicNo: z.string().optional(),
+        }).catchall(z.unknown())).default([]),
       }},
       { key: "reviewed_by", label: "Reviewed By", type: "text", width: "half" },
       { key: "reviewed_on", label: "Reviewed On", type: "text", width: "half" },
@@ -758,7 +876,7 @@ export const UNIFIED_SCHEMAS: UnifiedFormSchema[] = [
     description: "Competence gap analysis based on available qualifications, experience, skills, and training received.",
     fields: [
       { key: "serial", label: "Serial Number", type: "text", required: true, width: "half", defaultValue: "auto" },
-      { key: "date", label: "Date", type: "text", required: true, width: "half" },
+      { key: "date", label: "Date", type: "text", width: "half" },  // not required: the F/41 document has no such field
       { key: "matrix_ref", label: "Competence Matrix Ref", type: "text", width: "half" },
       { key: "project_scope", label: "Project Scope", type: "text", width: "full" },
       { key: "items", label: "Gap Analysis Items", type: "table", width: "full", columns: [
@@ -772,18 +890,21 @@ export const UNIFIED_SCHEMAS: UnifiedFormSchema[] = [
       ]},
       { key: "training_topics", label: "Training Topics", type: "array", zod: {
         custom: z.array(z.object({
-          code: z.string(),
-          name: z.string(),
-        })).default([]),
+          code: z.string().optional(),
+          name: z.string().optional(),
+        }).catchall(z.unknown())).default([]),
       }},
       { key: "training_given", label: "Training Given", type: "array", zod: {
+        // The stored rows are {srNo, topicNo} — a reference into the topic
+        // list, which is what the F/40 / F/41 facsimiles edit.  The old
+        // shape described a training record (code, name, date, participant,
+        // effective) that no stored row and no template uses, so every
+        // stored F/40 / F/41 record failed validation and could not be
+        // saved at all.
         custom: z.array(z.object({
-          code: z.string(),
-          name: z.string(),
-          date: z.string(),
-          participant: z.string(),
-          effective: z.boolean(),
-        })).default([]),
+          srNo: z.string().optional(),
+          topicNo: z.string().optional(),
+        }).catchall(z.unknown())).default([]),
       }},
       { key: "reviewed_by", label: "Reviewed By", type: "text", width: "half" },
       { key: "reviewed_on", label: "Reviewed On", type: "text", width: "half" },
@@ -803,7 +924,7 @@ export const UNIFIED_SCHEMAS: UnifiedFormSchema[] = [
       { key: "serial", label: "Serial Number", type: "text", required: true, width: "half", defaultValue: "auto" },
       { key: "date", label: "Date", type: "text", required: true, width: "half" },
       { key: "year", label: "Year", type: "text", required: true, width: "half" },
-      { key: "objectives", label: "Training Objectives", type: "text", required: true, width: "full" },
+      { key: "objectives", label: "Training Objectives", type: "text", width: "full" },  // not required: the F/42 document has no such field
       { key: "project_scope", label: "Project Scope", type: "text", width: "full" },
       { key: "items", label: "Training Program Items", type: "table", width: "full", columns: [
         { key: "topicNo", label: "Topic No.", type: "text", width: "full" },
@@ -821,7 +942,7 @@ export const UNIFIED_SCHEMAS: UnifiedFormSchema[] = [
         { key: "effNote", label: "Effectiveness Note", type: "text", width: "full" },
         { key: "remarks", label: "Remarks", type: "text", width: "full" },
       ]},
-      { key: "prepared_by", label: "Prepared By", type: "signature", required: true, width: "half" },
+      { key: "prepared_by", label: "Prepared By", type: "signature", width: "half" },  // not required: the F/42 document records this under `approved_by`
       { key: "approved_by", label: "Approved By", type: "signature", width: "half" },
     ],
   },
@@ -851,13 +972,13 @@ export const UNIFIED_SCHEMAS: UnifiedFormSchema[] = [
         { key: "inductee_check", label: "Inductee", type: "checkbox", width: "full" },
       ]},
       { key: "inductee_name", label: "Inductee Name", type: "text", width: "half" },
-      { key: "inductee_signature", label: "Inductee Signature", type: "signature", required: true, width: "half" },
+      { key: "inductee_signature", label: "Inductee Signature", type: "signature", width: "half" },  // not required: the F/43 document records this under `manager_signature`
       { key: "inductee_date", label: "Inductee Date", type: "text", width: "half" },
       { key: "trainer_name", label: "Trainer Name", type: "text", width: "half" },
       { key: "trainer_signature", label: "Trainer Signature", type: "signature", required: true, width: "half" },
       { key: "trainer_date", label: "Trainer Date", type: "text", width: "half" },
       { key: "authorised_person", label: "Authorised Person", type: "text", width: "half" },
-      { key: "authorised_signature", label: "Authorised Signature", type: "signature", required: true, width: "half" },
+      { key: "authorised_signature", label: "Authorised Signature", type: "signature", width: "half" },  // not required: the F/43 document records this under `issued_by`
       { key: "authorised_date", label: "Authorised Date", type: "text", width: "half" },
       { key: "effectiveness", label: "Effectiveness", type: "textarea", width: "full" },
     ],
@@ -875,7 +996,7 @@ export const UNIFIED_SCHEMAS: UnifiedFormSchema[] = [
       { key: "date", label: "Date", type: "text", required: true, width: "half" },
       { key: "employee_name", label: "Employee Name", type: "text", required: true, width: "half" },
       { key: "employee_id", label: "Employee ID", type: "text", width: "half" },
-      { key: "designation", label: "Designation", type: "text", required: true, width: "half" },
+      { key: "designation", label: "Designation", type: "text", width: "half" },  // not required: the F/44 document records this under `job_title`
       { key: "department", label: "Department", type: "text", width: "half" },
       { key: "project", label: "Project", type: "text", width: "half" },
       { key: "reporting_to", label: "Reporting To", type: "text", width: "half" },
@@ -902,8 +1023,8 @@ export const UNIFIED_SCHEMAS: UnifiedFormSchema[] = [
     description: "Exit interview record for departing employees.",
     fields: [
       { key: "serial", label: "Serial Number", type: "text", required: true, width: "half", defaultValue: "auto" },
-      { key: "date", label: "Date", type: "text", required: true, width: "half" },
-      { key: "employee_name", label: "Employee Name", type: "text", required: true, width: "half" },
+      { key: "date", label: "Date", type: "text", width: "half" },  // not required: the F/45 document has no such field
+      { key: "employee_name", label: "Employee Name", type: "text", width: "half" },  // not required: the F/45 document has no such field
       { key: "employee_id", label: "Employee ID", type: "text", width: "half" },
       { key: "designation", label: "Designation", type: "text", width: "half" },
       { key: "department", label: "Department", type: "text", width: "half" },
@@ -911,7 +1032,7 @@ export const UNIFIED_SCHEMAS: UnifiedFormSchema[] = [
       { key: "date_of_leaving", label: "Date of Leaving", type: "text", width: "half" },
       { key: "reason_for_leaving", label: "Reason for Leaving", type: "textarea", width: "full" },
       { key: "feedback", label: "Feedback", type: "textarea", width: "full" },
-      { key: "conducted_by", label: "Conducted By", type: "signature", required: true, width: "half" },
+      { key: "conducted_by", label: "Conducted By", type: "signature", width: "half" },  // not required: the F/45 document records this under `maintained_by`
       { key: "employee_signature", label: "Employee Signature", type: "signature", width: "half" },
     ],
   },
@@ -926,9 +1047,9 @@ export const UNIFIED_SCHEMAS: UnifiedFormSchema[] = [
     fields: [
       { key: "serial", label: "Serial Number", type: "text", required: true, width: "half", defaultValue: "auto" },
       { key: "date", label: "Date", type: "text", required: true, width: "half" },
-      { key: "employee_name", label: "Employee Name", type: "text", required: true, width: "half" },
+      { key: "employee_name", label: "Employee Name", type: "text", width: "half" },  // not required: the F/46 document has no such field
       { key: "employee_id", label: "Employee ID", type: "text", width: "half" },
-      { key: "suggestion", label: "Suggestion", type: "textarea", required: true, width: "full" },
+      { key: "suggestion", label: "Suggestion", type: "textarea", width: "full" },  // not required: the F/46 document has no such field
       { key: "benefits", label: "Expected Benefits", type: "textarea", width: "full" },
       { key: "status", label: "Status", type: "select", width: "half", options: ["Submitted", "Under Review", "Accepted", "Implemented", "Rejected"] },
       { key: "evaluated_by", label: "Evaluated By", type: "signature", width: "half" },
@@ -946,18 +1067,31 @@ export const UNIFIED_SCHEMAS: UnifiedFormSchema[] = [
     description: "Competency assessment checklist for specific roles.",
     fields: [
       { key: "serial", label: "Serial Number", type: "text", required: true, width: "half", defaultValue: "auto" },
-      { key: "date", label: "Date", type: "text", required: true, width: "half" },
-      { key: "employee_name", label: "Employee Name", type: "text", required: true, width: "full" },
-      { key: "role", label: "Role", type: "text", required: true, width: "full" },
-      { key: "checklist_items", label: "Checklist Items", type: "array", required: true, zod: {
+      { key: "date", label: "Date", type: "text", width: "half" },  // not required: the F/47 document records this under `audit_date`
+      { key: "employee_name", label: "Employee Name", type: "text", width: "full" },  // not required: the F/47 document has no such field
+      { key: "role", label: "Role", type: "text", width: "full" },  // not required: the F/47 document has no such field
+      // The stored rows are {clause, question, status, subclause} — the ISO
+      // 9001 audit checklist, which is what the F/47 facsimile renders.
+      // The old shape described a competency assessment (competency / level
+      // / evidence) that no record and no template uses, so the stored
+      // checklist was rejected on every save.
+      //
+      // `optional` for the same reason as F/30: the CREATE form does not
+      // render `array` fields, so a required one made the form
+      // un-creatable.
+      { key: "checklist_items", label: "Checklist Items", type: "array", zod: {
+        optional: true,
+        // No minimum length, for the same reason as F/30's evaluation matrix:
+        // a count rule in the schema makes a record un-saveable.
         custom: z.array(z.object({
-          competency: z.string(),
-          level: z.enum(['Expert', 'Proficient', 'Basic', 'Needs Training']),
-          evidence: z.string(),
-        })).min(1),
+          clause: z.string().optional(),
+          subclause: z.string().optional(),
+          question: z.string().optional(),
+          status: z.string().optional(),
+        }).catchall(z.unknown())).default([]),
       }},
       { key: "overall_rating", label: "Overall Rating", type: "select", width: "half", options: ["Expert", "Proficient", "Basic", "Needs Training"] },
-      { key: "assessed_by", label: "Assessed By", type: "signature", required: true, width: "half" },
+      { key: "assessed_by", label: "Assessed By", type: "signature", width: "half" },  // not required: the F/47 document records this under `approved_by`
       { key: "reviewed_by", label: "Reviewed By", type: "signature", width: "half" },
       { key: "next_assessment", label: "Next Assessment Date", type: "text", width: "half" },
     ],
@@ -972,7 +1106,7 @@ export const UNIFIED_SCHEMAS: UnifiedFormSchema[] = [
     description: "Monthly internal audit report with findings and follow-up tracking.",
     fields: [
       { key: "serial", label: "Serial Number", type: "text", required: true, width: "half", defaultValue: "auto" },
-      { key: "date", label: "Date", type: "text", required: true, width: "half" },
+      { key: "date", label: "Date", type: "text", width: "half" },  // not required: the F/48 document records this under `date_of_audit`
       { key: "audit_type", label: "Type of Audit", type: "select", required: true, width: "half", options: ["Internal", "External", "Supplier", "Second Party"] },
       { key: "date_of_audit", label: "Date of Audit", type: "text", width: "half" },
       { key: "audit_team", label: "Audit Team", type: "text", width: "full" },
@@ -1001,7 +1135,7 @@ export const UNIFIED_SCHEMAS: UnifiedFormSchema[] = [
       { key: "serial", label: "Serial Number", type: "text", required: true, width: "half", defaultValue: "auto" },
       { key: "date", label: "Date", type: "text", required: true, width: "half" },
       { key: "from_department", label: "From Department", type: "text", required: true, width: "full" },
-      { key: "to_department", label: "To Department", type: "text", required: true, width: "full" },
+      { key: "to_department", label: "To Department", type: "text", width: "full" },  // not required: the F/32 document records this under `assigned_to`
       { key: "request_type", label: "Request Type", type: "select", width: "half", options: ["New Product", "Product Modification", "Process Improvement", "Other"] },
       { key: "customer_name", label: "Customer Name", type: "text", width: "full" },
       { key: "product_name", label: "Product Name", type: "text", required: true, width: "full" },
@@ -1014,7 +1148,7 @@ export const UNIFIED_SCHEMAS: UnifiedFormSchema[] = [
       { key: "design_input_details", label: "Design Input Details", type: "textarea", width: "full" },
       { key: "target_completion", label: "Target Completion", type: "text", width: "half" },
       { key: "remarks", label: "Remarks", type: "textarea", width: "full" },
-      { key: "requested_by", label: "Requested By", type: "signature", required: true, width: "half" },
+      { key: "requested_by", label: "Requested By", type: "signature", width: "half" },  // not required: the F/32 document records this under `approved_by`
       { key: "feasibility", label: "Feasibility", type: "select", width: "half", options: ["Feasible", "Not Feasible", "Conditional"] },
       { key: "rejection_reason", label: "Rejection Reason", type: "textarea", width: "full" },
       { key: "project_no", label: "Project No.", type: "text", width: "half" },
@@ -1062,9 +1196,9 @@ export const UNIFIED_SCHEMAS: UnifiedFormSchema[] = [
     description: "Monthly design progress monitoring matrix.",
     fields: [
       { key: "serial", label: "Serial Number", type: "text", required: true, width: "half", defaultValue: "auto" },
-      { key: "month", label: "Month", type: "text", required: true, width: "half" },
-      { key: "year", label: "Year", type: "text", required: true, width: "half" },
-      { key: "date", label: "Date", type: "text", required: true, width: "half" },
+      { key: "month", label: "Month", type: "text", width: "half" },  // not required: the F/35 document has no such field
+      { key: "year", label: "Year", type: "text", width: "half" },  // not required: the F/35 document has no such field
+      { key: "date", label: "Date", type: "text", width: "half" },  // not required: the F/35 document has no such field
       { key: "items", label: "Monitoring Items", type: "table", width: "full", columns: [
         { key: "srNo", label: "Sr. No.", type: "text", width: "full" },
         { key: "product_name", label: "Product Name", type: "text", width: "full" },
@@ -1079,7 +1213,7 @@ export const UNIFIED_SCHEMAS: UnifiedFormSchema[] = [
         { key: "status", label: "Status", type: "text", width: "full" },
         { key: "design_head_sign", label: "Design Head Sign", type: "signature", width: "full" },
       ]},
-      { key: "prepared_by", label: "Prepared By", type: "signature", required: true, width: "half" },
+      { key: "prepared_by", label: "Prepared By", type: "signature", width: "half" },  // not required: the F/35 document has no such field
       { key: "reviewed_by", label: "Reviewed By", type: "signature", width: "half" },
     ],
   },
@@ -1146,7 +1280,7 @@ export const UNIFIED_SCHEMAS: UnifiedFormSchema[] = [
     description: "Record retention and disposal schedule.",
     fields: [
       { key: "serial", label: "Serial Number", type: "text", required: true, width: "half", defaultValue: "auto" },
-      { key: "date", label: "Date", type: "text", required: true, width: "half" },
+      { key: "date", label: "Date", type: "text", width: "half" },  // not required: the F/50 document records this under `received_date`
       { key: "items", label: "Records", type: "table", width: "full", columns: [
         { key: "srNo", label: "Sr. No.", type: "text", width: "full" },
         { key: "record_type", label: "Record Type", type: "text", width: "full" },
@@ -1157,7 +1291,7 @@ export const UNIFIED_SCHEMAS: UnifiedFormSchema[] = [
         { key: "format", label: "Format", type: "text", width: "full" },
         { key: "remarks", label: "Remarks", type: "text", width: "full" },
       ]},
-      { key: "prepared_by", label: "Prepared By", type: "signature", required: true, width: "half" },
+      { key: "prepared_by", label: "Prepared By", type: "signature", width: "half" },  // not required: the F/50 document records this under `received_by_sign`
       { key: "approved_by", label: "Approved By", type: "signature", width: "half" },
     ],
   },
@@ -1168,12 +1302,20 @@ export const UNIFIED_SCHEMAS: UnifiedFormSchema[] = [
 // ============================================================================
 
 function toFormSchema(u: UnifiedFormSchema) {
+  // The NAME, SECTION and CADENCE come from the identity layer, not from
+  // this file.  The `name` written here is the historical label of the
+  // schema, and for 16 of the 36 forms it names a DIFFERENT form (F/12 was
+  // "Purchase Requisition", F/23 "Corrective Action", F/50 "Record
+  // Retention Schedule").  The production records were filed under the
+  // catalogue names, so the catalogue is what the app must show and what a
+  // new record must be stamped with.  The old labels are kept as aliases in
+  // src/data/formIdentity.ts, so anything still carrying one resolves.
   return {
     code: u.code,
-    name: u.name,
-    section: u.section,
-    sectionName: u.sectionName,
-    frequency: u.frequency,
+    name: isKnownFormCode(u.code) ? resolveFormName(u.code) : u.name,
+    section: resolveFormSection(u.code) || u.section,
+    sectionName: resolveFormSectionName(u.code) || u.sectionName,
+    frequency: resolveFormFrequency(u.code) || u.frequency,
     importance: u.importance,
     description: u.description,
     fields: u.fields.map(f => ({
@@ -1202,7 +1344,45 @@ function toFormSchema(u: UnifiedFormSchema) {
   };
 }
 
-function toZodSchema(u: UnifiedFormSchema): z.ZodObject<Record<string, z.ZodTypeAny>> {
+/**
+ * A table cell.
+ *
+ * The app stores every cell as text, but the imported production data
+ * carries a NUMBER in some columns (a serial no. written as a number) and
+ * a boolean in others.  The old `z.string()` rejected the whole record
+ * over one such cell, so the record could not be saved at all — the
+ * validation error was raised for a cell the user never touched.
+ */
+const CELL_VALUE = z.union([z.string(), z.number(), z.boolean()]);
+
+/**
+ * Build the Zod schema of one form.
+ *
+ * `lenient` decides what "required" means:
+ *
+ *  - strict (the default): a required field must be PRESENT and non-empty.
+ *    That is the right rule for a NEW record.
+ *
+ *  - lenient: a required field may be absent or empty, and only its TYPE is
+ *    checked.  That is the right rule for an EDIT of a record that was
+ *    created before the catalogue's `required` flag existed: on the local
+ *    production copy, 130 record/field pairs across 25 forms are missing a
+ *    field the schema marks required — all 69 F/43 records lack
+ *    `inductee_signature` (the document stores it as `inductee_sign`), 20
+ *    F/29 records have no `date`, 9 F/19 records have no `project_code`.
+ *    Under the strict rule every one of those records could not be saved
+ *    at all, and the user could not even fix the field, because the key
+ *    the form renders is not the key the schema wants.
+ *
+ *    The "must not be empty" rule is not dropped by the lenient schema —
+ *    it moves to the pre-write layer, which knows whether the STORED
+ *    record had a value.  Clearing a value that WAS there is still an
+ *    error; a value that was never there is not.
+ */
+function toZodSchema(
+  u: UnifiedFormSchema,
+  lenient = false
+): z.ZodObject<Record<string, z.ZodTypeAny>> {
   const shape: Record<string, z.ZodTypeAny> = {};
 
   for (const f of u.fields) {
@@ -1216,51 +1396,96 @@ function toZodSchema(u: UnifiedFormSchema): z.ZodObject<Record<string, z.ZodType
       switch (f.type) {
         case "text":
         case "textarea":
-          zodField = f.required ? z.string().min(1, f.validation?.message || 'Required') : z.string().default('');
+          // An absent field stays ABSENT.  It used to be filled in with an
+          // empty string, and `update_record_versioned` replaces
+          // form_data wholesale — so every save added a key the record
+          // never had, and a record that was empty where the catalogue
+          // says "not filled in" became a record that says "filled in
+          // with nothing".  Measured on the local production copy: 1,326
+          // such keys across 316 records.
+          zodField = (f.required && !lenient)
+            ? z.string().min(1, f.validation?.message || 'Required')
+            : z.string().optional();
           break;
         case "number":
-          zodField = f.required
+          zodField = (f.required && !lenient)
             ? z.number({ error: 'Must be a number' }).min(f.validation?.min ?? -Infinity).max(f.validation?.max ?? Infinity)
-            : z.number().optional().default(0);
+            : z.number().optional();
           break;
         case "date":
-          zodField = f.required
-            ? z.string().regex(DDMMYYYY_REGEX, 'Date must be DD/MM/YYYY')
-            : z.string().regex(DDMMYYYY_REGEX, 'Date must be DD/MM/YYYY').optional().default('');
+          // A date field accepts EITHER shape the app writes — DD/MM/YYYY
+          // (what the UI shows) or YYYY-MM-DD (what the importer stored) —
+          // and must be a real date on the calendar.  The old rule asked
+          // for DD/MM/YYYY only, while the pre-write layer rewrote every
+          // DD/MM/YYYY value into YYYY-MM-DD before validation, so the two
+          // halves contradicted each other: under the old pair, a date
+          // field could never validate.  No field in the catalogue has
+          // `type: "date"` today, so this branch has never run; it is
+          // fixed here so it is a trap for nobody.
+          zodField = (f.required && !lenient)
+            ? DATE_VALUE
+            : DATE_VALUE.optional();
           break;
         case "select":
-          zodField = f.required
-            ? z.enum(f.options as [string, ...string[]])
-            : z.enum(f.options as [string, ...string[]]).optional().default(f.options?.[0] || '');
+          // A select that is absent stays ABSENT — it is not filled in with
+          // the first option.  The first option is a value the record never
+          // had, and for a "severity" or "compliance" select it is a
+          // fabricated answer: every save wrote the first option into the
+          // record, so a non-conformity that was never classified came back
+          // as "Minor" and a compliance question nobody answered came back
+          // as "Yes".  The same rule applies to a REQUIRED select in the
+          // lenient variant (an edit) — a required field may be empty, but
+          // an empty one is empty, not the first choice.
+          if (f.required && !lenient) {
+            zodField = z.enum(f.options as [string, ...string[]]);
+          } else {
+            zodField = z.enum(f.options as [string, ...string[]]).optional();
+          }
           break;
         case "multiselect":
-          zodField = f.required
+          zodField = (f.required && !lenient)
             ? z.array(z.string()).min(1)
-            : z.array(z.string()).default([]);
+            : z.array(z.string()).optional();
           break;
         case "checkbox":
-          zodField = f.required ? z.boolean() : z.boolean().default(false);
+          zodField = (f.required && !lenient) ? z.boolean() : z.boolean().optional();
           break;
         case "radio":
-          zodField = f.required
-            ? z.enum(f.options as [string, ...string[]])
-            : z.enum(f.options as [string, ...string[]]).optional().default(f.options?.[0] || '');
+          if (f.required && !lenient) {
+            zodField = z.enum(f.options as [string, ...string[]]);
+          } else {
+            // NO default.  A radio the user never answered stays ABSENT
+            // instead of being filled in with the first option — a value
+            // the record never had.  For a "severity" radio that default
+            // is a fabricated answer ("Minor" for a non-conformity that
+            // was never classified), and it was written to the record on
+            // every save.
+            zodField = z.enum(f.options as [string, ...string[]]).optional();
+          }
           break;
         case "signature":
-          zodField = f.required ? z.string().min(1, 'Signature required') : z.string().default('');
+          zodField = (f.required && !lenient) ? z.string().min(1, 'Signature required') : z.string().optional();
           break;
         case "table":
+          // The row shape is LOOSE and the columns are TOLERANT.
+          //
+          //  - loose: a column the schema does not declare — the document
+          //    has one the schema never learned about — is PRESERVED
+          //    instead of stripped.  Stripping it destroyed the row on
+          //    every save, because `update_record_versioned` replaces
+          //    `form_data` wholesale with the sanitized payload: a key
+          //    Zod dropped was gone for good.
+          //  - tolerant: a cell may hold a string, a number or a boolean,
+          //    and a column the row does not carry stays ABSENT (no empty
+          //    placeholder column is injected into the stored rows).
           zodField = z.array(z.object(
             Object.fromEntries(
-              (f.columns || []).map(c => [
-                c.key,
-                c.required ? z.string().min(1) : z.string().default('')
-              ])
+              (f.columns || []).map(c => [c.key, CELL_VALUE.optional()])
             )
-          )).default([]);
+          ).catchall(z.unknown())).optional();
           break;
         case "array":
-          zodField = z.array(z.any()).default([]);
+          zodField = z.array(z.any()).optional();
           break;
         default:
           zodField = z.any();
@@ -1280,7 +1505,22 @@ function toZodSchema(u: UnifiedFormSchema): z.ZodObject<Record<string, z.ZodType
     shape[f.key] = zodField;
   }
 
-  return z.object(shape);
+  // The form object is LOOSE.
+  //
+  // The schema describes the fields the CREATE form renders.  It is not a
+  // whitelist of what a record may hold: the 37 document facsimiles own
+  // the real `form_data` shape, and they carry fields this catalogue does
+  // not know about (a project scope, a coverage period, a monthly-review
+  // narrative).  Zod's default object strips every undeclared key, and
+  // because `update_record_versioned` replaces `form_data` wholesale with
+  // the sanitized payload, a stripped key was DESTROYED on the first edit
+  // of a record — silently, with `valid: true`.  Measured on the local
+  // production copy: 33 of the 37 forms have business fields the schema
+  // does not declare, between 2 and 45 of them per form.
+  //
+  // `catchall` keeps them.  The declared fields are still validated; the
+  // undeclared ones are simply carried through untouched.
+  return z.object(shape).catchall(z.unknown());
 }
 
 // ============================================================================
@@ -1290,6 +1530,24 @@ function toZodSchema(u: UnifiedFormSchema): z.ZodObject<Record<string, z.ZodType
 export const FORM_SCHEMAS = UNIFIED_SCHEMAS.map(toFormSchema);
 export const FORM_ZOD_SCHEMAS: Record<string, z.ZodType> = Object.fromEntries(
   UNIFIED_SCHEMAS.map(u => [u.code, toZodSchema(u)])
+);
+
+/**
+ * The LENIENT schema of every form.
+ *
+ * Same as the strict one, except that a required field may be absent or
+ * empty: only the TYPE of a value is checked.  It is the schema an EDIT is
+ * validated against, because the production records predate the catalogue's
+ * `required` flag — 130 record/field pairs across 25 forms are missing a
+ * field the schema marks required, and under the strict schema every one
+ * of those records was un-saveable.
+ *
+ * The "must not be empty" rule is not lost: the pre-write layer applies it,
+ * with the STORED record in hand, so clearing a value that WAS there is
+ * still refused while a value that was never there is not.
+ */
+export const FORM_ZOD_SCHEMAS_LENIENT: Record<string, z.ZodType> = Object.fromEntries(
+  UNIFIED_SCHEMAS.map(u => [u.code, toZodSchema(u, true)])
 );
 
 // Type exports

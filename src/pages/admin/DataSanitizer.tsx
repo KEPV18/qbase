@@ -91,10 +91,32 @@ export default function DataSanitizer() {
   const [activeTab, setActiveTab] = useState<'ghosts' | 'incomplete'>('incomplete');
 
   // ── Use the existing useRecords hook for all records ──
-  const { data: allRecords, isLoading: recordsLoading } = useRecords();
+  const { data: allRecords, isLoading: recordsLoading, isError: recordsError } = useRecords();
 
   // ── Scan: fetch ghost records + total count via RPC, validate client-side ──
   const scan = useCallback(async () => {
+    // The incomplete-field check reads every record, so it cannot run before
+    // the records are actually here.
+    //
+    // It used to run anyway.  The first pass (the records had not arrived
+    // yet) reported ZERO incomplete records, and if the fetch failed it
+    // reported that for ever — the page then reported the data as 100%
+    // healthy because it had never looked at it.  Now the scan waits for
+    // the records, and a failed fetch is an error, not a clean bill.
+    if (recordsError) {
+      setError("The records could not be loaded, so the incomplete-field check could not run.");
+      setLoading(false);
+      setScanning(false);
+      toast.error("Scan failed: the records could not be loaded");
+      return;
+    }
+    if (!allRecords) {
+      // Still on their way — the effect below re-runs the scan the moment
+      // they land.  `loading` stays true so the page keeps saying
+      // "scanning" instead of reporting a clean bill of health.
+      return;
+    }
+
     setScanning(true);
     setError(null);
     try {
@@ -166,7 +188,7 @@ export default function DataSanitizer() {
       setScanning(false);
       setLoading(false);
     }
-  }, [allRecords]);
+  }, [allRecords, recordsError]);
 
   // ── Initial scan on mount ────────────────────────────────────────────────
   useEffect(() => { scan(); }, [scan]);
@@ -245,7 +267,7 @@ export default function DataSanitizer() {
           title="Data Retrofitting & Completion Hub"
           description="Detect ghost records and incomplete records. Serial integrity preserved for ISO compliance."
           action={
-            <Button variant="outline" size="sm" onClick={scan} disabled={scanning}>
+            <Button variant="outline" size="sm" onClick={scan} disabled={scanning || recordsLoading}>
               {scanning ? (
                 <Loader2 className="w-4 h-4 animate-spin mr-2" />
               ) : (

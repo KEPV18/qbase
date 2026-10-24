@@ -231,6 +231,8 @@ function TraceRecordCard({
               variant="ghost"
               size="sm"
               onClick={() => setExpanded(!expanded)}
+              aria-label={expanded ? `Collapse ${node.record.title}` : `Expand ${node.record.title}`}
+              aria-expanded={expanded}
             >
               {expanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
             </Button>

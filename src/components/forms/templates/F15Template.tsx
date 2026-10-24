@@ -7,7 +7,7 @@ export interface F15Props {
   data?: Record<string, unknown>;
   isTemplate?: boolean;
   editMode?: boolean;
-  onChange?: (field: string, value: string | Record<string, unknown> | Array<Record<string, unknown>> | RowData[]) => void;
+  onChange?: (field: string, value: unknown) => void;
   className?: string;
 }
 
@@ -43,14 +43,14 @@ export function F15Template({ data, isTemplate = true, editMode = false, onChang
 
   const cellInp = (idx: number, key: keyof RowData, label: string) =>
     editMode ? (
-      <input className="w-full bg-transparent text-xs px-1 border-none outline-none" value={rows[idx]?.[key] || ""} onChange={e => updateRow(idx, key, e.target.value)} placeholder={label} />
+      <input className="w-full bg-transparent text-xs px-1 border-none outline-none" value={rows[idx]?.[key] || ""} onChange={e => updateRow(idx, key, e.target.value)} aria-label={`$label (row ${idx + 1})`} placeholder={label} />
     ) : (
       <span className="text-xs">{rows[idx]?.[key] || ""}</span>
     );
 
   const metaInp = (key: string, label: string) =>
     editMode ? (
-      <input className="border-b border-dashed border-foreground/40 bg-transparent text-xs px-1 w-full" value={val(d, key)} onChange={e => onChange?.(key, e.target.value)} placeholder={label} />
+      <input className="border-b border-dashed border-foreground/40 bg-transparent text-xs px-1 w-full" value={val(d, key)} onChange={e => onChange?.(key, e.target.value)} aria-label={label} placeholder={label} />
     ) : (
       <span className="border-b border-dashed border-foreground/30 px-1 inline-block">{val(d, key) || (ph ? "___" : "")}</span>
     );

@@ -12,7 +12,7 @@ export interface F09Props {
   data?: Record<string, unknown>;
   isTemplate?: boolean;
   editMode?: boolean;
-  onChange?: (field: string, value: string) => void;
+  onChange?: (field: string, value: unknown) => void;
   className?: string;
 }
 
@@ -32,17 +32,37 @@ function todayDDMMYYYY(): string {
   return `${day}/${month}/${year}`;
 }
 
+
+// A stable empty object.
+//
+// `data ?? {}` handed the components a NEW object on every render when the
+// form had no data yet.  That defeats every `useMemo` that depends on it:
+// the dependency changed identity each time, so the memo recomputed and
+// handed its consumers a new array, which re-rendered them in turn.  A
+// shared, frozen empty object keeps the identity stable.  Nothing writes
+// into `d` — it is only ever read — so one instance is safe.
+const EMPTY_DATA: Record<string, unknown> = Object.freeze({});
+
 export function F09Template({ data, isTemplate = true, editMode = false, onChange, className }: F09Props) {
-  const d = data ?? {};
+  const d = data ?? EMPTY_DATA;
   const ph = isTemplate || !editMode;
   // Database uses 'serial' field
   const serialValue = val(d, "serial") || val(d, "formCode") || "";
 
+  // The complaint nature, read once.
+  //
+  // The memo used to depend on `val(d, "complaint_nature")` — a call, so
+  // the dependency was not statically checkable and every render produced
+  // a new dependency array to compare.  The value it returns is a string,
+  // so naming it makes the dependency both checkable and exact: the memo
+  // recomputes when the nature changes, and not when the object does.
+  const complaintNature = val(d, "complaint_nature");
+
   const natureChecks = useMemo(() => ({
-    serious: val(d, "complaint_nature") === "SERIOUS",
-    major: val(d, "complaint_nature") === "MAJOR",
-    minor: val(d, "complaint_nature") === "MINOR",
-  }), [val(d, "complaint_nature")]);
+    serious: complaintNature === "SERIOUS",
+    major: complaintNature === "MAJOR",
+    minor: complaintNature === "MINOR",
+  }), [complaintNature]);
 
   const inp = (key: string, placeholder?: string, width?: string) => {
     if (ph) return <span className="px-1 text-sm text-foreground">{val(d, key) || ""}</span>;
@@ -51,6 +71,7 @@ export function F09Template({ data, isTemplate = true, editMode = false, onChang
         className={`w-full bg-transparent text-sm outline-none border-0 border-b border-border px-1 py-0.5 ${width || ""}`}
         value={val(d, key)}
         onChange={e => onChange?.(key, e.target.value)}
+        aria-label={placeholder || key}
         placeholder={placeholder || ""}
       />
     );
@@ -63,6 +84,7 @@ export function F09Template({ data, isTemplate = true, editMode = false, onChang
         className="w-full bg-transparent text-sm outline-none border border-border rounded-sm px-1 py-0.5 resize-y"
         value={val(d, key)}
         onChange={e => onChange?.(key, e.target.value)}
+        aria-label={placeholder || key}
         placeholder={placeholder || ""}
         rows={rows}
       />

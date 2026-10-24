@@ -12,7 +12,7 @@ export interface F42Props {
   data?: Record<string, unknown>;
   isTemplate?: boolean;
   editMode?: boolean;
-  onChange?: (field: string, value: string) => void;
+  onChange?: (field: string, value: unknown) => void;
   className?: string;
 }
 
@@ -59,25 +59,38 @@ export function F42Template({ data, isTemplate = true, editMode = false, onChang
   const updateRow = useCallback((idx: number, key: keyof RowData, value: string) => {
     setRows(prev => { const next = [...prev]; next[idx] = { ...next[idx], [key]: value }; return next; });
     const updated = [...rows]; updated[idx] = { ...updated[idx], [key]: value };
-    onChange?.("items", JSON.stringify(updated));
+    onChange?.("items", updated);
   }, [rows, onChange]);
 
   const addRow = useCallback(() => { setRows(prev => [...prev, emptyRow()]); }, []);
   const removeRow = useCallback((idx: number) => { setRows(prev => prev.filter((_, i) => i !== idx)); }, []);
 
-  const inp = (key: string, label: string, width: string = "w-28") =>
+  // The width is a Tailwind class, so it belongs in `className`.
+  //
+  // It used to be handed to `style={{ width }}`, which is not CSS: the
+  // browser reads "w-28" as an invalid length and drops the declaration,
+  // so every field in this row rendered at the input's intrinsic width
+  // and the printed facsimile lost its column alignment.  The value is a
+  // literal in the source, so Tailwind's scanner still emits the class.
+  const inp = (key: string, label: string, widthClass: string = "w-28") =>
     editMode ? (
-      <input className="border-b border-dashed border-foreground/40 bg-transparent text-xs px-1" style={{ width }}
-        value={val(d, key)} onChange={e => onChange?.(key, e.target.value)} placeholder={label} />
+      <input className={`border-b border-dashed border-foreground/40 bg-transparent text-xs px-1 ${widthClass}`}
+        value={val(d, key)} onChange={e => onChange?.(key, e.target.value)} aria-label={label} placeholder={label} />
     ) : (
-      <span className="border-b border-dashed border-foreground/30 px-1 inline-block" style={{ width }}>
+      <span className={`border-b border-dashed border-foreground/30 px-1 inline-block ${widthClass}`}>
         {val(d, key) || (ph ? "___" : "")}
       </span>
     );
 
-  const cellInp = (idx: number, key: keyof RowData, label: string) =>
+  // The accessible name of a cell input cannot come from the column
+  // header above it — a table header is not the cell's name.  `placeholder`
+  // is the browser's last-resort fallback and, for the effectiveness-note
+  // column, there was not even that.  So every cell names itself with the
+  // full column title, and the short placeholder stays as the visual hint.
+  const cellInp = (idx: number, key: keyof RowData, label: string, ariaLabel?: string) =>
     editMode ? (
       <input className="w-full bg-transparent text-[10px] px-0.5 border-none outline-none"
+        aria-label={`${ariaLabel || label} (row ${idx + 1})`}
         value={rows[idx]?.[key] || ""} onChange={e => updateRow(idx, key, e.target.value)} placeholder={label} />
     ) : (
       <span className="text-[10px]">{rows[idx]?.[key] || ""}</span>
@@ -156,20 +169,20 @@ export function F42Template({ data, isTemplate = true, editMode = false, onChang
           <tbody>
             {rows.map((row, idx) => (
               <tr key={idx} className="group hover:bg-muted/50">
-                <td className="border border-border p-0.5 text-center">{cellInp(idx, "topicNo", "#")}</td>
-                <td className="border border-border p-0.5">{cellInp(idx, "title", "Title")}</td>
-                <td className="border border-border p-0.5">{cellInp(idx, "participants", "Who")}</td>
-                <td className="border border-border p-0.5">{cellInp(idx, "identifiedBy", "By")}</td>
-                <td className="border border-border p-0.5">{cellInp(idx, "reason", "Reason")}</td>
-                <td className="border border-border p-0.5 text-center">{cellInp(idx, "modeInternal", "Int.")}</td>
-                <td className="border border-border p-0.5 text-center">{cellInp(idx, "modeExternal", "Ext.")}</td>
-                <td className="border border-border p-0.5">{cellInp(idx, "faculty", "Name")}</td>
-                <td className="border border-border p-0.5">{cellInp(idx, "plannedDate", "Date")}</td>
-                <td className="border border-border p-0.5">{cellInp(idx, "actualDate", "Date")}</td>
-                <td className="border border-border p-0.5">{cellInp(idx, "effMethod", "Method")}</td>
-                <td className="border border-border p-0.5">{cellInp(idx, "effBy", "By")}</td>
-                <td className="border border-border p-0.5">{cellInp(idx, "effNote", "")}</td>
-                <td className="border border-border p-0.5">{cellInp(idx, "remarks", "Remarks")}</td>
+                <td className="border border-border p-0.5 text-center">{cellInp(idx, "topicNo", "#", "Topic No.")}</td>
+                <td className="border border-border p-0.5">{cellInp(idx, "title", "Title", "Title Of Training")}</td>
+                <td className="border border-border p-0.5">{cellInp(idx, "participants", "Who", "Participants For Training")}</td>
+                <td className="border border-border p-0.5">{cellInp(idx, "identifiedBy", "By", "Identified By")}</td>
+                <td className="border border-border p-0.5">{cellInp(idx, "reason", "Reason", "Reason For Need Identification")}</td>
+                <td className="border border-border p-0.5 text-center">{cellInp(idx, "modeInternal", "Int.", "Mode Of Training — Internal")}</td>
+                <td className="border border-border p-0.5 text-center">{cellInp(idx, "modeExternal", "Ext.", "Mode Of Training — External")}</td>
+                <td className="border border-border p-0.5">{cellInp(idx, "faculty", "Name", "Faculty")}</td>
+                <td className="border border-border p-0.5">{cellInp(idx, "plannedDate", "Date", "Planned Date")}</td>
+                <td className="border border-border p-0.5">{cellInp(idx, "actualDate", "Date", "Actual Date")}</td>
+                <td className="border border-border p-0.5">{cellInp(idx, "effMethod", "Method", "Effectiveness Checks — Method")}</td>
+                <td className="border border-border p-0.5">{cellInp(idx, "effBy", "By", "Effectiveness Checks — By")}</td>
+                <td className="border border-border p-0.5">{cellInp(idx, "effNote", "", "Effectiveness Checks — Note")}</td>
+                <td className="border border-border p-0.5">{cellInp(idx, "remarks", "Remarks", "Remarks / Ref. Of Certificate No.")}</td>
                 {editMode && (
                   <td className="border border-border p-0 text-center align-middle">
                     {rows.length > 1 && (
