@@ -56,8 +56,11 @@ describe('procedureRecordMapping', () => {
       const capa = related.find((r) => r.code === 'F/22');
       expect(capa).toBeDefined();
       expect(capa!.actualRecordCount).toBe(2);
-      // The name comes from the canonical schema registry, not the record.
-      expect(capa!.recordName).toBe('Non-Conformity Report');
+      // The name comes from the catalogue, not from the record: the record
+      // still carries the old schema name ("Non-Conformity Report"), and the
+      // form is called "Corrective Action" in the ISO handbook and on the
+      // document.  The old name is an alias, not the answer.
+      expect(capa!.recordName).toBe('Corrective Action');
     });
 
     it('lists a governed form with a count of 0 when no record exists yet', () => {

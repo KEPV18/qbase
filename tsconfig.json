@@ -1,4 +1,23 @@
 {
+  // ─────────────────────────────────────────────────────────────────────────
+  // This file is a SOLUTION file: it holds no source of its own ("files": [])
+  // and only points at the two projects that do.
+  //
+  // CONSEQUENCE — read this before typing `tsc --noEmit`:
+  //
+  //   `npx tsc --noEmit` on THIS file checks ZERO files.  It walks no
+  //   sources, finds no errors, and exits 0 — always, whatever is broken.
+  //   It is a green light that means nothing.
+  //
+  //   The two commands that actually check something are:
+  //
+  //     npm run typecheck      →  tsc -b --force      (builds both projects)
+  //     npm run typecheck:app  →  tsc -p tsconfig.app.json --noEmit
+  //
+  //   This trap already cost a real defect: `src/hooks/useFilter.ts` used
+  //   `useEffect` without importing it, and every `tsc --noEmit` said the
+  //   tree was clean.  `tsc -b --force` found it the first time it ran.
+  // ─────────────────────────────────────────────────────────────────────────
   "compilerOptions": {
     "allowJs": true,
     "noImplicitAny": false,
@@ -19,6 +38,9 @@
     },
     {
       "path": "./tsconfig.node.json"
+    },
+    {
+      "path": "./tsconfig.scripts.json"
     }
   ]
 }

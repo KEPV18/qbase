@@ -33,6 +33,16 @@ import { parseFrequency, buildComplianceMap, computeDeptHealth } from '../compli
 // The reference moment the live pages were measured at.
 const AS_OF = new Date('2026-10-22T12:00:00');
 
+/**
+ * The month the organisation was first using these forms — the earliest
+ * month any record in the dataset covers.
+ *
+ * The reporting window starts here, so a period that ended before it was
+ * never owed and can never be a gap.  Without it the window reaches back
+ * into 2025 and demands filings for periods that predate the data.
+ */
+const DATA_START = '2026-01';
+
 /** Build the filing list from a compact "code: months" map. */
 const filingsFor = (spec: Record<string, string[]>): { code: string; month: string }[] =>
   Object.entries(spec).flatMap(([code, months]) =>
@@ -161,13 +171,13 @@ describe('isPeriodDue', () => {
 describe('getMissingPeriods', () => {
   it('never reports the open period as a gap', () => {
     // October 2026 closes on Oct 31 and is due Nov 5 — still open on Oct 22.
-    const gaps = getMissingPeriods([], 'monthly', AS_OF);
+    const gaps = getMissingPeriods([], 'monthly', AS_OF, DATA_START);
     expect(gaps.map(p => p.key)).not.toContain('2026-10');
     expect(gaps.map(p => p.key)).toContain('2026-09');
   });
 
   it('does not report a covered period', () => {
-    const gaps = getMissingPeriods(['2026-08', '2026-09'], 'monthly', AS_OF);
+    const gaps = getMissingPeriods(['2026-08', '2026-09'], 'monthly', AS_OF, DATA_START);
     expect(gaps.map(p => p.key)).not.toContain('2026-08');
     expect(gaps.map(p => p.key)).not.toContain('2026-09');
   });
@@ -176,12 +186,12 @@ describe('getMissingPeriods', () => {
 describe('getNextDueDate', () => {
   it('returns the next period that has not begun when everything is filed', () => {
     const all2026 = Array.from({ length: 12 }, (_, i) => `2026-${String(i + 1).padStart(2, '0')}`);
-    const next = getNextDueDate(all2026, 'monthly', AS_OF);
+    const next = getNextDueDate(all2026, 'monthly', AS_OF, DATA_START);
     expect(next?.key).toBe('2026-11');
   });
 
   it('returns the oldest open period when the form is already late', () => {
-    const next = getNextDueDate(['2026-09'], 'monthly', AS_OF);
+    const next = getNextDueDate(['2026-09'], 'monthly', AS_OF, DATA_START);
     expect(next?.key).toBe('2026-01');
   });
 });
@@ -269,7 +279,7 @@ describe('buildComplianceMap — the restored dataset', () => {
 
 describe('getPeriodStates — the whole year, period by period', () => {
   it('marks the never-filed form: every closed period missing, the rest open', () => {
-    const states = getPeriodStates([], 'monthly', AS_OF);
+    const states = getPeriodStates([], 'monthly', AS_OF, DATA_START);
     const stateOf = (key: string) => states.find(s => s.period.key === key)!.state;
     // January through September closed and were not filed.
     expect(stateOf('2026-01')).toBe('missing');
@@ -282,7 +292,7 @@ describe('getPeriodStates — the whole year, period by period', () => {
   });
 
   it('marks a filed period as covered', () => {
-    const states = getPeriodStates(['2026-01', '2026-07', '2026-08'], 'monthly', AS_OF);
+    const states = getPeriodStates(['2026-01', '2026-07', '2026-08'], 'monthly', AS_OF, DATA_START);
     const stateOf = (key: string) => states.find(s => s.period.key === key)!.state;
     expect(stateOf('2026-01')).toBe('covered');
     expect(stateOf('2026-07')).toBe('covered');
@@ -292,8 +302,8 @@ describe('getPeriodStates — the whole year, period by period', () => {
 
   it('agrees with getMissingPeriods — the same gaps, read twice', () => {
     for (const covered of [[], ['2026-01'], ['2026-01', '2026-07', '2026-08']]) {
-      const missing = getMissingPeriods(covered, 'monthly', AS_OF).map(p => p.key);
-      const fromStates = getPeriodStates(covered, 'monthly', AS_OF)
+      const missing = getMissingPeriods(covered, 'monthly', AS_OF, DATA_START).map(p => p.key);
+      const fromStates = getPeriodStates(covered, 'monthly', AS_OF, DATA_START)
         .filter(s => s.state === 'missing')
         .map(s => s.period.key);
       expect(fromStates).toEqual(missing);
@@ -301,7 +311,7 @@ describe('getPeriodStates — the whole year, period by period', () => {
   });
 
   it('measures the lateness of each missing period the way the form measures its own', () => {
-    const states = getPeriodStates([], 'monthly', AS_OF);
+    const states = getPeriodStates([], 'monthly', AS_OF, DATA_START);
     const january = states.find(s => s.period.key === '2026-01')!;
     const september = states.find(s => s.period.key === '2026-09')!;
     // January was due 2026-02-05 → 259 days late; September was due
@@ -312,7 +322,7 @@ describe('getPeriodStates — the whole year, period by period', () => {
   });
 
   it('gives a period that is not missing no lateness at all', () => {
-    const states = getPeriodStates(['2026-01'], 'monthly', AS_OF);
+    const states = getPeriodStates(['2026-01'], 'monthly', AS_OF, DATA_START);
     for (const s of states) {
       if (s.state !== 'missing') expect(s.daysLate).toBe(0);
     }
@@ -380,5 +390,75 @@ describe('the missed count in its own unit', () => {
       const n = Number(c.missingCountLabel.split(' ')[0]);
       expect(n, `${code} count`).toBe(c.missingCount);
     }
+  });
+});
+
+// ============================================================================
+// The window follows the DATA, not the calendar
+//
+// The old window was "the periods of the calendar year of asOf".  Every
+// 1 January it emptied itself: a period whose deadline falls in January
+// (the December month, the fourth quarter, the second half-year, the annual
+// filing) had already left the window before its deadline arrived.
+//
+// The consequence was not a rounding error — it was a compliance report
+// that certified a lapsing form as up to date.  F/49 had not been filed
+// once; on 22 October 2026 it owed nine months, and on 6 January 2027 the
+// engine said it owed none.
+// ============================================================================
+describe('the window across the turn of the year', () => {
+  const NEW_YEAR = new Date('2027-01-06T12:00:00');
+
+  it('still reports the gaps of a form that was never filed', () => {
+    const gaps = getMissingPeriods([], 'monthly', NEW_YEAR, DATA_START);
+    // January to December 2026 — the December period came due on
+    // 5 January 2027 and was never filed.
+    expect(gaps.map(p => p.key)).toEqual([
+      '2026-01', '2026-02', '2026-03', '2026-04', '2026-05', '2026-06',
+      '2026-07', '2026-08', '2026-09', '2026-10', '2026-11', '2026-12',
+    ]);
+  });
+
+  it('keeps the quarterly, half-yearly and annual deadlines that fall in January', () => {
+    // Every cadence has a period whose deadline lands in January, and every
+    // one of them used to vanish the moment the year turned.  Their
+    // deadlines differ (10, 15 and 14 January), so this is read late in
+    // the month, once all three have come due.
+    const lateJanuary = new Date('2027-01-20T12:00:00');
+    expect(getMissingPeriods([], 'quarterly', lateJanuary, DATA_START).map(p => p.key))
+      .toContain('2026-Q4');
+    expect(getMissingPeriods([], 'semi-annual', lateJanuary, DATA_START).map(p => p.key))
+      .toContain('2026-H2');
+    expect(getMissingPeriods([], 'annual', lateJanuary, DATA_START).map(p => p.key))
+      .toContain('2026');
+  });
+
+  it('does not invent a gap for a period that ended before the data began', () => {
+    // The 2025 annual period closed on 31 December 2025 — before the first
+    // record.  It was never owed, so it must not be a gap...
+    const asOf = new Date('2026-02-01T12:00:00');
+    expect(getMissingPeriods(['2026-01'], 'annual', asOf, DATA_START).map(p => p.key))
+      .toEqual([]);
+    // ...and the window really does exclude it, rather than the gap
+    // happening to be covered by luck.
+    expect(getMissingPeriods(['2026-01'], 'annual', asOf, '2025-01').map(p => p.key))
+      .toContain('2025');
+  });
+
+  it('still calls a never-filed form overdue in January', () => {
+    const january = buildComplianceMap(records, FORMS, NEW_YEAR);
+    const f49 = january.get('F/49')!;
+    expect(f49.isOverdue).toBe(true);
+    expect(f49.missingCount).toBe(12);
+    // The lateness is measured from the oldest missed deadline, so it does
+    // not restart when the year turns over.
+    expect(f49.overdueDays).toBeGreaterThanOrEqual(334);
+  });
+
+  it('does not let the look-back run away', () => {
+    // The window reaches at most one year past the current one, so a stray
+    // ancient record cannot pull in a decade of phantom gaps.
+    const gaps = getMissingPeriods([], 'monthly', AS_OF, '1999-01');
+    expect(gaps.length).toBeLessThanOrEqual(24);
   });
 });

@@ -12,7 +12,11 @@
     "moduleDetection": "force",
     "moduleResolution": "bundler",
     "noEmit": true,
-    "noFallthroughCasesInSwitch": false,
+    "noFallthroughCasesInSwitch": true,
+    // `catch (e)` is `unknown`, not `any`.  The flag was free to turn on
+    // (zero errors across the tree) and it stops a mistyped property
+    // access on a caught value from compiling silently.
+    "useUnknownInCatchVariables": true,
     "noImplicitAny": true,
     "strictNullChecks": true,
     "noUnusedLocals": false,

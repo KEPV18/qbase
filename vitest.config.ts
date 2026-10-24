@@ -15,7 +15,24 @@ export default defineConfig({
     globals: true,
     environment: "jsdom",
     setupFiles: ["./src/test/setup.ts"],
-    include: ["src/**/*.{test,spec}.{js,ts,jsx,tsx}"],
+    // Unit tests live under `src/`, but the include list used to name
+    // `src/` ONLY — so a test written under `tests/` (the natural home
+    // for a new suite) was silently never run, and the suite it belongs
+    // to reported green without it.
+    //
+    // `tests/e2e/` is excluded on purpose: those files are Playwright
+    // specs, run by `npm run test:e2e`, and Vitest cannot execute them.
+    include: [
+      "src/**/*.{test,spec}.{js,ts,jsx,tsx}",
+      "tests/**/*.{test,spec}.{js,ts,jsx,tsx}",
+    ],
+    exclude: [
+      "**/node_modules/**",
+      "**/dist/**",
+      "**/dist-local/**",
+      "**/dist-preview/**",
+      "tests/e2e/**",
+    ],
     // Dummy credentials for the test pipeline only. client.ts throws at module
     // load when they are missing (fail-closed in production, which we keep);
     // tests import modules that transitively load that module.

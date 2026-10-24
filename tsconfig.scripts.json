@@ -1,0 +1,51 @@
+{
+  // ─────────────────────────────────────────────────────────────────────────
+  // The THIRD project of the solution — the one that checks everything that
+  // is not application source.
+  //
+  // Until this file existed, `tsc -b --force` walked only `src/` and
+  // `vite.config.ts`.  Everything else in the repository was outside the
+  // type checker:
+  //
+  //   scripts/verify-schema-parity.ts   the schema-parity gate itself
+  //   tests/e2e/*.spec.ts                the Playwright suite
+  //   playwright.config.ts               the Playwright configuration
+  //   vitest.config.ts                   the unit-test configuration
+  //   tailwind.config.ts                 the design-token configuration
+  //
+  // A broken gate script is worse than no gate script: it fails, or it
+  // passes for the wrong reason, and nothing notices until the day it
+  // matters.  These five are now checked by the same `npm run typecheck`
+  // that CI runs.
+  //
+  // The Supabase Edge Function under `supabase/functions/` is deliberately
+  // NOT here: it runs on Deno, imports from `https://esm.sh/...`, and is
+  // type-checked by Deno's own toolchain, not by Node's.
+  // ─────────────────────────────────────────────────────────────────────────
+  "compilerOptions": {
+    "target": "ES2022",
+    "lib": ["ES2023", "DOM"],
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "moduleDetection": "force",
+    "allowImportingTsExtensions": true,
+    "isolatedModules": true,
+    "resolveJsonModule": true,
+    "noEmit": true,
+    "skipLibCheck": true,
+    "strict": false,
+    "noImplicitAny": false,
+    "strictNullChecks": false,
+    "noUnusedLocals": false,
+    "noUnusedParameters": false,
+    "useUnknownInCatchVariables": true,
+    "types": ["node"]
+  },
+  "include": [
+    "scripts/**/*.ts",
+    "tests/**/*.ts",
+    "playwright.config.ts",
+    "vitest.config.ts",
+    "tailwind.config.ts"
+  ]
+}
