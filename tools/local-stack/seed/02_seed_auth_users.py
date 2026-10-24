@@ -19,8 +19,8 @@ import psycopg
 from psycopg.rows import dict_row
 from psycopg.types.json import Jsonb
 
-DSN = "postgresql://postgres@127.0.0.1:5433/qbase_local"
-OUT = "/tmp/qbase-local/LOCAL_LOGIN.txt"
+DSN = os.environ.get("QBASE_LOCAL_DSN", "postgresql://postgres@127.0.0.1:5433/qbase_local")
+OUT = os.environ.get("QBASE_LOCAL_LOGIN_FILE", "/tmp/qbase-local/LOCAL_LOGIN.txt")
 
 ALPHABET = string.ascii_letters + string.digits + "-_"
 

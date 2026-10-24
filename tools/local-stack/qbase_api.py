@@ -37,6 +37,7 @@ import json
 import os
 import re
 import secrets
+import sys
 import threading
 import time
 import urllib.parse
@@ -419,6 +420,26 @@ def _type_score(typ, v):
     return 0
 
 
+def input_names(o):
+    """The names of the INPUT arguments only.
+
+    `proargnames` of a function with `returns table(...)` also lists the OUT
+    parameter names, and a caller can never send those.  `pronargs` is the
+    count of input arguments, so the first `pronargs` names are the ones.
+    """
+    names = list(o["proargnames"] or [])
+    nargs = o.get("pronargs")
+    if nargs is None:
+        return names
+    try:
+        nargs = int(nargs)
+    except (TypeError, ValueError):
+        return names
+    if 0 <= nargs < len(names):
+        return names[:nargs]
+    return names
+
+
 def arg_defaults(args_text):
     """Map argument name -> has a DEFAULT, from pg_get_function_arguments().
 
@@ -450,7 +471,9 @@ def arg_defaults(args_text):
 
 def overload_score(o, body):
     """PostgREST resolves overloads by argument name and JSON value type."""
-    names = o["proargnames"] or []
+    # Only the INPUT arguments can be sent; the OUT parameters of a
+    # `returns table(...)` function are not arguments at all.
+    names = input_names(o)
     types = o.get("argtypes") or []
     score = 0
     for i, n in enumerate(names):
@@ -514,9 +537,18 @@ def delete_with_audit_guard(cur, table, where, params):
     public.audit_log has an immutability trigger, so the records -> audit_log
     cascade would fail. The guard is disabled only for the duration of the
     child delete and re-enabled immediately afterwards.
+
+    Disabling a trigger needs the OWNER of audit_log.  Production gives
+    `authenticated` no DELETE privilege on records at all — `soft_delete_record`
+    is the only way a record goes — so when the request is running as an
+    impersonated role the guard is skipped and the DELETE below is refused
+    with the same permission error production gives, instead of an ownership
+    error about a trigger the caller was never going to get past.
     """
     triggers = []
-    if table == "records":
+    cur.execute("select current_user")
+    running_as = cur.fetchone()[0]
+    if table == "records" and running_as in ("postgres", "service_role"):
         cur.execute(
             """select tgname from pg_trigger
                where tgrelid = 'public.audit_log'::regclass and not tgisinternal"""
@@ -585,10 +617,74 @@ class Handler(BaseHTTPRequestHandler):
             except Exception:
                 pass
 
+    def _db_role(self):
+        """The database role the caller is, the way PostgREST resolves it.
+
+        A request carrying a signed-in user's JWT is `authenticated`; a
+        request with only the anon key is `anon`; a request with the
+        service key is `service_role`, which is allowed past the row
+        policies in production as well.
+        """
+        token = self._bearer()
+        payload = decode_jwt(token) if token else None
+        if not payload:
+            return "anon"
+        role = str(payload.get("role") or "authenticated").lower()
+        if role in ("anon", "authenticated", "service_role"):
+            return role
+        return "authenticated"
+
+    def _impersonate(self, role):
+        """Run the rest of this request as `role`.
+
+        `SET ROLE` is what PostgREST does for every statement.  The claims
+        GUCs alone are not enough: the shim connects as `postgres`, which
+        OWNS the tables, and a table owner bypasses its own ROW LEVEL
+        SECURITY policies.  So every local request saw the whole register
+        — 318 records for everybody, admin or not — while production gives
+        a signed-in user only the rows the policies allow.  A local test of
+        any policy was therefore meaningless.
+
+        The switch is committed, because the connection is thread-local and
+        the next request on the same thread sets the role again for itself.
+        """
+        try:
+            with conn().cursor() as cur:
+                cur.execute("set role " + role)
+            conn().commit()
+        except Exception as exc:  # noqa — a missing role must not break the call
+            try:
+                conn().rollback()
+            except Exception:
+                pass
+            print(f"[shim] could not switch to role {role}: {exc}", file=sys.stderr)
+
+    # The headers the browser is allowed to SEND.
+    #
+    # This list has to match the real server's, and it was missing two:
+    # `content-profile` and `accept-profile`.  `@supabase/postgrest-js`
+    # puts `Accept-Profile: public` on every GET and `Content-Profile:
+    # public` on every POST/PATCH/DELETE, because supabase-js's default
+    # schema is `public` — so the browser's PREFLIGHT asked for a header
+    # this list did not name, Chrome refused the preflight, and the
+    # request was never sent at all.  The CORS proxy in front of the shim
+    # answers with `*` and hid the gap; a build pointed straight at a
+    # shim port — which the runtime address override allows, and which is
+    # what the local stack does — hit it, and every read failed in the
+    # browser while the same call worked from curl.
+    #
+    # The real Supabase (Kong) allows: accept, authorization,
+    # content-profile, content-type, x-client-info, apikey, prefer, range,
+    # x-supabase-api-version, accept-profile.
+    ALLOWED_REQUEST_HEADERS = (
+        "accept, authorization, content-profile, content-type, x-client-info, "
+        "apikey, prefer, range, x-supabase-api-version, accept-profile"
+    )
+
     def do_OPTIONS(self):
         self.send_response(204)
         self.send_header("Access-Control-Allow-Origin", "*")
-        self.send_header("Access-Control-Allow-Headers", "authorization, apikey, content-type, authorization, x-client-info, prefer, range, x-supabase-api-version")
+        self.send_header("Access-Control-Allow-Headers", self.ALLOWED_REQUEST_HEADERS)
         self.send_header("Access-Control-Allow-Methods", "GET,POST,PATCH,DELETE,PUT,OPTIONS")
         self.send_header("Access-Control-Expose-Headers", "Content-Range")
         self.end_headers()
@@ -616,6 +712,18 @@ class Handler(BaseHTTPRequestHandler):
 
         # every statement runs with the caller's claims on the connection
         self._apply_jwt_claims()
+
+        # …and as the caller's DATABASE ROLE, the way PostgREST does it.
+        #
+        # The claims alone are not enough: the shim connects as `postgres`,
+        # which owns the tables, and a table owner bypasses its own row
+        # policies.  The role is switched for the `/rest/v1` path only —
+        # the auth and storage endpoints are the Supabase SERVER talking to
+        # its own tables, and they run as the owner, as they do in
+        # production.
+        self._impersonate(
+            self._db_role() if path.startswith("/rest/v1/") else "postgres"
+        )
 
         if path == "/auth/v1/health":
             return json_out(self, 200, {"version": "qbase-api", "name": "qbase-api"})
@@ -780,7 +888,17 @@ class Handler(BaseHTTPRequestHandler):
                 # argtypes are resolved to real type NAMES, not raw OIDs:
                 # proargtypes::text[] yields '2951' for uuid[], which produced
                 # `p_user_ids => $1::2951` and a 400 on every array argument.
-                "select p.proname, p.proargnames::text[], "
+                #
+                # pronargs is the number of INPUT arguments.  proargnames
+                # carries the OUT parameters of a `returns table(...)`
+                # function as well, so create_record_validated's names were
+                # {..., out_id, out_serial, out_form_code} — three names the
+                # caller can never send.  The dispatcher looked for them in
+                # the payload, found none, decided the function "cannot be
+                # called with this payload" and skipped the only candidate:
+                # every local create failed with "create_record_validated:
+                # None" while the same call worked in production.
+                "select p.proname, p.proargnames::text[], p.pronargs, "
                 "array(select pg_catalog.format_type(u.oid, null) "
                 "      from unnest(p.proargtypes::oid[]) u(oid)) as argtypes, "
                 "p.proretset, pg_catalog.format_type(p.prorettype, null) rt, "
@@ -803,7 +921,7 @@ class Handler(BaseHTTPRequestHandler):
         # error behind its own message.
         candidate_errors = []
         for o in candidates:
-            names = o["proargnames"] or []
+            names = input_names(o)
             types = o.get("argtypes") or []
             has_default = arg_defaults(o.get("args_text") or "")
             try:
@@ -818,7 +936,17 @@ class Handler(BaseHTTPRequestHandler):
                                 # cannot be called with this payload
                                 usable = False
                                 break
-                            ph.append(f"{n} => default")
+                            # The argument has a default: OMIT it and let
+                            # Postgres fill it in.  The call is in NAMED
+                            # notation, so a defaulted argument may be left
+                            # out wherever it sits, and Postgres then uses
+                            # the default declared on the function.
+                            #
+                            # It used to be written as `n => default`, which
+                            # is not SQL: "DEFAULT is not allowed in this
+                            # context" — so every RPC that relied on a
+                            # default argument failed in the local stack
+                            # while working in production.
                             continue
                         value = body[n]
                         if typ.endswith("[]") and isinstance(value, list):

@@ -19,12 +19,46 @@ project backup and brought to the current migration state:
 | | |
 |---|---|
 | public tables | 18 |
-| public functions | 54 |
-| RLS policies | 101 (18 legacy ones dropped by migration 10) |
-| records | 318 |
-| audit_log | 6523 |
-| profiles / user_roles | 4 / 4 |
-| auth.users | 4 (created locally, see below) |
+| public functions | 67 (60 + the 7 of migration 20) |
+| RLS policies | 93 (18 legacy ones dropped by migration 10) |
+| records | 321 |
+| audit_log | 6534 |
+| profiles / user_roles | 6 / 6 |
+| auth.users | 6 (created locally, see below) |
+
+## The schema is IN the repository; the data is not
+
+`seed/schema.sql` is the local environment's own copy of the schema: every
+table, column, constraint, index, trigger, RLS policy, grant and function of
+the `public` schema, with **no data**. It is what makes the environment
+independent — `prepare.sh` rebuilds the database from the repository alone,
+and nothing outside the repository is needed.
+
+The **data** is a separate, optional step. The register's rows carry real
+names and real e-mail addresses, so they are not committed; they live in a
+data-only dump outside the repository:
+
+```
+$QBASE_DATA_DUMP            (default: /home/kepv/QMS_BACKUP/local-rebuild/01_data.sql)
+```
+
+To refresh the data dump after the live project changes:
+
+```bash
+pg_dump --data-only --schema=public <connection-string> > /home/kepv/QMS_BACKUP/local-rebuild/01_data.sql
+```
+
+To refresh the **schema** file after a migration has been applied locally:
+
+```bash
+pg_dump --schema-only --no-owner --schema=public \
+  -h 127.0.0.1 -p 5433 -U postgres -d qbase_local \
+  | grep -vE '^\\(un)?restrict ' | grep -vE '^CREATE SCHEMA public;$' \
+  > tools/local-stack/seed/schema.sql
+```
+
+Without a data dump the environment is still complete and the app runs — the
+register is simply empty, and `prepare.sh` says so at the end.
 
 ## The `auth` schema
 
@@ -61,10 +95,13 @@ the local database now reports 54/54 functions with `service_role` EXECUTE,
 ## Bringing it up
 
 ```bash
-# 1. rebuild the local database from the project backup
+# 1. rebuild the local database from the repository (schema + the optional
+#    data dump), apply the prime migrations and the local ACL parity
 bash tools/local-stack/prepare.sh
 
 # 2. create the local login accounts (writes LOCAL_LOGIN.txt, mode 0600)
+#    — prepare.sh already does this when it loaded a data dump; run it
+#    by hand when the register is empty
 python3 tools/local-stack/seed/02_seed_auth_users.py
 
 # 3. build the SPA against the local API
@@ -120,8 +157,99 @@ live project (read-only on production).
 
 `seed/05_cleanup_probe.py` removes the residue of a write probe.
 
+### Proving that the two compliance engines agree
+
+```bash
+npx tsx tools/local-stack/verify-compliance-parity.ts
+```
+
+The compliance model exists twice on purpose: once in TypeScript
+(`src/lib/compliancePeriods.ts`, the engine the pages that do not go
+through the RPC read) and once in PL/pgSQL (`public.compliance_map`, the
+engine the **server** runs, so the verdict comes from the server's view of
+the register rather than from a snapshot the browser happens to hold).
+
+Two implementations of one model is a liability, not a feature — they drift,
+and then the dashboard says "5 overdue" while the audit page says "8". This
+script runs BOTH engines over the whole local register at one fixed instant
+and compares them field by field. Any difference is printed and the script
+exits 1.
+
+It is read-only: it reads the local database and writes nothing. The fixed
+instant can be moved with `QBASE_PARITY_AS_OF`, and the engine's calendar
+with the machine's own offset — the script sends the same instant and the
+same offset to the server that the client would.
+
+The constants the two engines share — the grace days, the one-year
+look-back, the order a record's month is decided in, the order a frequency
+string is read in — are asserted without a database by
+`src/lib/__tests__/serverComplianceParity.test.ts`, so CI runs that half on
+every push.
+
+### Proving that the verdict is the server's, in a browser
+
+```bash
+node tools/local-stack/verify-server-compliance-path.mjs
+```
+
+The compliance model is computed by the server (`public.compliance_map`,
+`public.records_page`), so the browser must **ask** and must not **download
+the register**. This script signs in with the local credential, opens the
+four pages that answer a compliance question — the dashboard, the audit
+dashboard, the forms registry and the compliance report — and checks three
+things:
+
+1. each of them calls the server (`compliance_map`, `records_page`,
+   `dashboard_stats`);
+2. none of them reads the whole table — the `records?select=*` download is
+   gone, and the list behind the audit table is one filtered page at a time;
+3. the pages render the server's answer with **no console error** — it also
+   opens the audit's *Overdue* tab, counts the forms the server sent, and
+   clicks one to prove the detailed report opens.
+
+It reads only, prints aggregates (request counts, row counts, console-error
+strings — never a serial, a name, an e-mail or a field value), and exits 1
+if any of the three claims fails. It needs a browser and the running stack,
+so it is a tool for the hand, not a CI step.
+
+### Proving that a rebuild reproduces the environment
+
+```bash
+# rebuild into a scratch database, side by side with the live local one
+QBASE_LOCAL_DB=qbase_rebuild_test QBASE_SKIP_SEED_USERS=1 \
+  bash tools/local-stack/prepare.sh
+
+# compare the two structures, line by line
+bash tools/local-stack/compare-rebuild.sh
+```
+
+`compare-rebuild.sh` reads both databases through `fingerprint.sql` — the
+tables, the columns, the constraints, the indexes, the triggers, the RLS
+policies, the table grants, and the functions with their bodies and their
+ACLs — and diffs the two. Measured on 2026-10-24: **IDENTICAL**, 683 lines
+on both sides, with 321 records, 6 profiles and 6534 audit rows.
+
+The migrations are idempotent, which is what makes the second run a
+no-op: every one of them can be applied twice, and the state afterwards is
+the same. (Migration 15 was not — it created two policies without dropping
+them first, so a rebuild died halfway. It is fixed.)
+
 ## Notes
 
+* **The shim's CORS preflight has to allow what the client sends.**
+  `@supabase/postgrest-js` puts `Accept-Profile: public` on every read and
+  `Content-Profile: public` on every write, because supabase-js's default
+  schema is `public`. The shim's allow-list
+  (`qbase_api.py` → `ALLOWED_REQUEST_HEADERS`) names both, and it must
+  keep naming them: a header the preflight does not allow makes Chrome
+  refuse the **preflight**, so the request is never sent and the page
+  silently shows nothing. The CORS proxy in front of the shim answers its
+  own preflight with `*` and hides the gap — which is why a build pointed
+  straight at a shim port (the runtime address override allows it, and the
+  local stack does it) is the one that breaks.
+  `src/lib/__tests__/localStackCors.test.ts` pins the list, and checks it
+  against the installed client, so a postgrest-js upgrade that starts
+  sending a new header fails the build rather than the browser.
 * The shim connects as the `postgres` role, so RLS is not enforced locally —
   the same way the live stack behaves through the pooler. The privilege layer
   is still present in the local database and can be inspected directly.

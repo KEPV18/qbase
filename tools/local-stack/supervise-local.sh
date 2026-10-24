@@ -37,6 +37,12 @@ PREVIEW_PID_FILE="$STATE/proxy-preview.pid"
 # The production alias of this project — the address the owner types.
 PRODUCTION_ORIGIN="${PRODUCTION_ORIGIN:-https://qbase-sable.vercel.app}"
 
+# The database the local shim talks to.  It is set HERE, in the environment
+# of this script, so that a shim this script starts can never inherit the
+# LIVE project from another instance: run-shim.py keeps an SB_DSN that is
+# already set, and the local stack is the one place that sets it.
+export SB_DSN="postgresql://postgres@127.0.0.1:5433/qbase_local"
+
 mkdir -p "$LOGS" "$STATE"
 umask 077
 
@@ -67,14 +73,22 @@ start_postgres() {
 # the environment on disk — would put a service key and a JWT secret in a
 # file, and that is a worse trade than one manual command.
 shim_source_pid() {
+  # Prefer an instance that already points at the LOCAL database: the
+  # credentials are the same either way, but a source on the live DSN
+  # would hand a live SB_DSN to the new shim.
+  local fallback=""
   for p in /proc/[0-9]*; do
     local pid=${p#/proc/}
     [ -r "$p/cmdline" ] || continue
     tr '\0' ' ' < "$p/cmdline" 2>/dev/null | grep -q 'qbase_api.py' || continue
     [ -r "$p/environ" ] || continue
     tr '\0' '\n' < "$p/environ" 2>/dev/null | grep -q '^SB_REF=' || continue
-    echo "$pid"; return 0
+    if tr '\0' '\n' < "$p/environ" 2>/dev/null | grep -q '^SB_DSN=.*5433'; then
+      echo "$pid"; return 0
+    fi
+    [ -n "$fallback" ] || fallback="$pid"
   done
+  [ -n "$fallback" ] && { echo "$fallback"; return 0; }
   return 1
 }
 

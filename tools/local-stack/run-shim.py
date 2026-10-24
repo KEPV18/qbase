@@ -14,7 +14,14 @@ import os
 import sys
 
 KEYS = ("SB_REF", "SB_REGION", "SB_DB_PASS", "SB_ANON_KEY", "SB_SERVICE_KEY",
-        "QBASE_JWT_SECRET")
+        "QBASE_JWT_SECRET",
+        # SB_DSN names the database the shim talks to.  It was missing here,
+        # so a RESTART of the local shim (the supervisor starts one whenever
+        # the port is down) came up WITHOUT it and fell back to the
+        # Supabase pooler — that is, the LIVE project — while the local
+        # stack still answered "local database on this machine".  The
+        # restart looked healthy and pointed the local app at production.
+        "SB_DSN")
 PYTHON = "/home/kepv/.local/share/pipx/venvs/qwenpaw/bin/python3"
 
 
@@ -56,8 +63,19 @@ def main() -> int:
                 continue
             k, v = chunk.split(b"=", 1)
             key = k.decode()
-            if key in KEYS:
-                env[key] = v.decode()
+            if key not in KEYS:
+                continue
+            if key == "SB_DSN" and env.get("SB_DSN"):
+                # The DATABASE is never inherited over an explicit choice.
+                #
+                # SB_DSN names the database the shim talks to.  Inheriting
+                # it from the source instance is right when the source is
+                # another local shim, and catastrophic when it is not: the
+                # local stack would come up pointing at the LIVE project
+                # while still answering "the local database on this
+                # machine".  So an SB_DSN the caller set is kept.
+                continue
+            env[key] = v.decode()
     missing = [k for k in ("SB_REF", "SB_DB_PASS") if k not in env]
     if missing:
         print(f"refusing to start: {', '.join(missing)} not found in the source env",
