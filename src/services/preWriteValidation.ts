@@ -39,9 +39,41 @@ const VALIDATION_LOG: Array<{
   rawPayload: RecordData;
 }> = [];
 
-const MAX_VALIDATION_LOG = 1000;
+/**
+ * The window is 200 entries.
+ *
+ * It was 1000, and every entry holds the RAW PAYLOAD of the write — so the
+ * log was a place where form content sat in a module-level global, in every
+ * tab, for the life of the session.
+ */
+const MAX_VALIDATION_LOG = 200;
+
+/**
+ * Is the rejected-write log on?
+ *
+ * It is off in a production build unless it is asked for, and on in a
+ * development build.  `setValidationLogEnabled(true)` turns it on for a
+ * support session; turning it off drops what it holds, so the form content
+ * does not stay in the tab after the session that wanted it.
+ */
+let validationLogEnabled =
+  typeof import.meta !== 'undefined' && import.meta.env?.DEV === true;
+
+/** Turn the rejected-write log on or off. */
+export function setValidationLogEnabled(enabled: boolean): void {
+  validationLogEnabled = enabled;
+  if (!enabled) VALIDATION_LOG.length = 0;
+}
+
+/** Is the rejected-write log on? */
+export function isValidationLogEnabled(): boolean {
+  return validationLogEnabled;
+}
 
 function pushValidationLog(entry: typeof VALIDATION_LOG[0]) {
+  // Off means off: the payload is not retained, so the form content never
+  // sits in the global.
+  if (!validationLogEnabled) return;
   VALIDATION_LOG.push(entry);
   if (VALIDATION_LOG.length > MAX_VALIDATION_LOG) {
     VALIDATION_LOG.splice(0, VALIDATION_LOG.length - MAX_VALIDATION_LOG);

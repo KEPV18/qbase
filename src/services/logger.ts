@@ -22,7 +22,15 @@ export interface StructuredLogEntry {
 // ─── Ring buffer (in-memory, bounded) ───────────────────────────────────────
 
 const LOG_BUFFER: StructuredLogEntry[] = [];
-const MAX_BUFFER = 500;
+
+/**
+ * The window is 200 entries.
+ *
+ * It was 500, and the buffer is a global that lives in every tab for the
+ * life of the session.  Two hundred entries is still enough to read a whole
+ * interaction, and the console output — the actual trace — is unaffected.
+ */
+const MAX_BUFFER = 200;
 
 function push(entry: StructuredLogEntry): void {
   LOG_BUFFER.push(entry);
