@@ -128,7 +128,7 @@ export default async function handler(req, res) {
                     fs.writeFileSync(envPath, envContent);
                     localSaveMsg = '<p style="color: #2e7d32; font-weight: bold;">✅ تم حفظ التوكن تلقائياً في ملف .env الخاص بك! لا داعي لنسخه يدوياً.</p>';
                     console.log('OAuth callback: refresh token persisted to local .env');
-                } catch (e) {
+                } catch {
                     console.error('OAuth callback: failed to persist refresh token to .env');
                 }
 

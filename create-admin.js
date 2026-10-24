@@ -18,8 +18,16 @@ if (!SUPABASE_URL || !SERVICE_ROLE_KEY) {
 const supabase = createClient(SUPABASE_URL, SERVICE_ROLE_KEY)
 
 async function createAdmin() {
-  const email = 'admin@test.com'
-  const password = 'Admin123456'
+  // The account to create is NOT in this file.  A credential written into
+  // a source file is a credential in the repository and in its history,
+  // and this one has the admin role.
+  const email = (process.env.ADMIN_EMAIL || '').trim()
+  const password = process.env.ADMIN_PASSWORD || ''
+
+  if (!email || !password) {
+    console.error('Set ADMIN_EMAIL and ADMIN_PASSWORD before running this.')
+    process.exit(1)
+  }
 
   const { data: existingRole } = await supabase
     .from('user_roles')

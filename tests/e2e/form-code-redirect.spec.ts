@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test';
+import { E2E_EMAIL, E2E_PASSWORD } from './credentials';
 
 // ============================================================================
 // E2E Tests: FormCodeRedirect (/records/F/40 → /records/F/40-001)
@@ -8,8 +9,8 @@ test.describe('FormCodeRedirect', () => {
   test.beforeEach(async ({ page }) => {
     // Login first
     await page.goto('/login');
-    await page.fill('input[type="email"]', 'ibnkhaled16@gmail.com');
-    await page.fill('input[type="password"]', 'Batman2026!');
+    await page.fill('input[type="email"]', E2E_EMAIL);
+    await page.fill('input[type="password"]', E2E_PASSWORD);
     await page.click('button[type="submit"]');
     await expect(page).toHaveURL('/');
     await expect(page.locator('text=Dashboard')).toBeVisible({ timeout: 10000 });

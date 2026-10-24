@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test';
+import { E2E_EMAIL, E2E_PASSWORD } from './credentials';
 
 // ============================================================================
 // E2E Tests: Authentication & Login Flow
@@ -21,8 +22,8 @@ test.describe('Authentication', () => {
     await page.goto('/login');
     
     // Fill login form
-    await page.fill('input[type="email"]', 'ibnkhaled16@gmail.com');
-    await page.fill('input[type="password"]', 'Batman2026!');
+    await page.fill('input[type="email"]', E2E_EMAIL);
+    await page.fill('input[type="password"]', E2E_PASSWORD);
     
     await page.click('button[type="submit"]');
     
@@ -45,8 +46,8 @@ test.describe('Authentication', () => {
 
   test('should maintain session after refresh', async ({ page }) => {
     await page.goto('/login');
-    await page.fill('input[type="email"]', 'ibnkhaled16@gmail.com');
-    await page.fill('input[type="password"]', 'Batman2026!');
+    await page.fill('input[type="email"]', E2E_EMAIL);
+    await page.fill('input[type="password"]', E2E_PASSWORD);
     await page.click('button[type="submit"]');
     await expect(page).toHaveURL('/');
     
@@ -58,8 +59,8 @@ test.describe('Authentication', () => {
 
   test('should logout successfully', async ({ page }) => {
     await page.goto('/login');
-    await page.fill('input[type="email"]', 'ibnkhaled16@gmail.com');
-    await page.fill('input[type="password"]', 'Batman2026!');
+    await page.fill('input[type="email"]', E2E_EMAIL);
+    await page.fill('input[type="password"]', E2E_PASSWORD);
     await page.click('button[type="submit"]');
     await expect(page).toHaveURL('/');
     

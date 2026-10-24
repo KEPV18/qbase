@@ -1,4 +1,6 @@
 import { test, expect } from '@playwright/test';
+import { E2E_EMAIL, E2E_PASSWORD } from './credentials';
+import { QUICK_JUMP, selectOptionByText } from './quickJump';
 
 // ============================================================================
 // E2E Tests: Record CRUD Operations
@@ -8,8 +10,8 @@ test.describe('Records - CRUD Operations', () => {
   test.beforeEach(async ({ page }) => {
     // Login first
     await page.goto('/login');
-    await page.fill('input[type="email"]', 'ibnkhaled16@gmail.com');
-    await page.fill('input[type="password"]', 'Batman2026!');
+    await page.fill('input[type="email"]', E2E_EMAIL);
+    await page.fill('input[type="password"]', E2E_PASSWORD);
     await page.click('button[type="submit"]');
     await expect(page).toHaveURL('/');
     await expect(page.locator('text=Dashboard')).toBeVisible({ timeout: 10000 });
@@ -80,11 +82,11 @@ test.describe('Records - CRUD Operations', () => {
     await expect(page.locator('text=F/40-001')).toBeVisible({ timeout: 10000 });
     
     // Find and click the Quick-Jump dropdown
-    const dropdown = page.locator('select').first();
+    const dropdown = page.locator(QUICK_JUMP);
     await expect(dropdown).toBeVisible();
     
     // Select another record
-    await dropdown.selectOption({ label: /F\/40-002/ });
+    await selectOptionByText(dropdown, 'F/40-002');
     
     // Should navigate to F/40-002
     await expect(page).toHaveURL(/records\/F\/40-002/);
