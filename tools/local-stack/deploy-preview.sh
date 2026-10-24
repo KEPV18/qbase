@@ -5,11 +5,12 @@
 #   bash tools/local-stack/deploy-preview.sh
 #
 # What it does, in order:
-#   1. builds the app against the LOCAL API (127.0.0.1:54352)
+#   1. builds the app against the LOCAL API (127.0.0.1:54356)
 #   2. deploys it to Vercel as a preview
-#   3. writes the new origin to ~/.local/qbase-local/preview-origin, which
-#      is what the supervisor reads — so the proxy that serves the local
-#      API to that origin is replaced automatically
+#   3. writes the new origin to ~/.local/qbase-local/preview-origin AND to
+#      ~/.local/qbase-local/preview-allow-list — the file the proxy that
+#      serves the local API re-reads, so the new origin is allowed
+#      WITHOUT the proxy being stopped and started again
 #   4. waits for the deployment to be READY and prints the URL
 #
 # WHY A NEW URL EVERY TIME: a Vercel preview gets a fresh hostname, and
@@ -24,7 +25,7 @@ set -u
 REPO="/home/kepv/qbase-remediation"
 TOOLS="$REPO/tools/local-stack"
 STATE="/home/kepv/.local/qbase-local"
-API_PORT=54352
+API_PORT="${API_PORT:-54356}"
 API_URL="http://127.0.0.1:$API_PORT"
 PRODUCTION_ALIAS="https://qbase-sable.vercel.app"
 
@@ -98,7 +99,20 @@ HOST=${URL#https://}
 HOST=${HOST%%/*}
 ORIGIN="https://$HOST"
 printf '%s\n' "$ORIGIN" > "$STATE/preview-origin"
+
+# The allow-list the preview proxy reads.  It is a FILE, so the proxy picks
+# the new origin up on its next request — no process is stopped or started
+# to make room for it.  The production alias is on the list too: it is the
+# address the owner types, and a deployment that lands on it has to be able
+# to reach the local API as well.
+if [ "$ORIGIN" = "$PRODUCTION_ALIAS" ]; then
+  ALLOW="$ORIGIN"
+else
+  ALLOW="$ORIGIN,$PRODUCTION_ALIAS"
+fi
+printf '%s\n' "$ALLOW" > "$STATE/preview-allow-list"
 echo "── origin: $ORIGIN  (target: $TARGET)"
+echo "   allowed origins: $ALLOW"
 
 echo "── waiting for the deployment to be ready"
 for _ in $(seq 1 40); do

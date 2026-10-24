@@ -23,10 +23,23 @@ outright (403) and never reaches the database — so no other site can use
 this browser to read or write the local data.
 
     ALLOWED_ORIGIN='https://qbase-*.vercel.app' python3 cors-proxy.py \
-        --listen 54352 --upstream 127.0.0.1:54350
+        --listen 54356 --upstream 127.0.0.1:54350
 
 With ALLOWED_ORIGIN unset the proxy behaves as it always has: every
 origin is allowed, which is what the local SPA on 127.0.0.1:5210 needs.
+
+THE ALLOW-LIST CAN ALSO BE A FILE
+---------------------------------
+A Vercel preview gets a NEW hostname with every deployment, and the list
+above is read once, at start-up.  So every new preview needed the proxy
+REPLACED — a process that had to be killed and started again, which is
+both clumsy and a thing nobody should have to do to correct a list.
+
+ALLOWED_ORIGIN_FILE names a file whose content is the same comma-separated
+list.  It is read on every request (one stat; the content is re-read only
+when the file changes), so the list can be corrected while the proxy keeps
+running.  A configured file that is missing or empty DENIES every origin:
+a list that cannot be read is not an invitation.
 """
 import argparse
 import http.server
@@ -43,17 +56,55 @@ LISTEN = 54321
 # "every origin", which is the local SPA's case.
 ALLOWED_ORIGINS = [o.strip() for o in os.environ.get("ALLOWED_ORIGIN", "").split(",") if o.strip()]
 
+# The same list, but in a FILE — read fresh, so it can be corrected while
+# the proxy keeps running.  See the module docstring.
+ALLOWED_ORIGIN_FILE = os.environ.get("ALLOWED_ORIGIN_FILE", "").strip()
+
+_allow_cache = {"mtime": None, "list": None}
+
+
+def allow_list():
+    """The origins allowed to reach the API, and whether a list is in force.
+
+    Returns `(origins, restricted)`.
+
+    - no ALLOWED_ORIGIN and no file: unrestricted, every origin passes.
+    - ALLOWED_ORIGIN set: that list, restricted.
+    - a file set: its content, re-read whenever the file changes.  A file
+      that is missing or empty gives an EMPTY list, and an empty list in
+      a restricted proxy DENIES every origin — a list that cannot be read
+      must not turn into a door that stands open.
+    """
+    if not ALLOWED_ORIGIN_FILE:
+        return ALLOWED_ORIGINS, bool(ALLOWED_ORIGINS)
+    try:
+        mtime = os.path.getmtime(ALLOWED_ORIGIN_FILE)
+    except OSError:
+        return [], True
+    if _allow_cache["mtime"] != mtime:
+        try:
+            with open(ALLOWED_ORIGIN_FILE, "r", encoding="utf-8") as fh:
+                raw = fh.read()
+        except OSError:
+            return [], True
+        _allow_cache["list"] = [o.strip() for o in raw.split(",") if o.strip()]
+        _allow_cache["mtime"] = mtime
+    return _allow_cache["list"], True
+
 
 def origin_allowed(origin):
     """Is this request's origin on the allow-list?
 
     A request with no Origin header (curl, a server-side call) is not a
     browser asking for a private resource, so it is allowed through."""
-    if not ALLOWED_ORIGINS:
+    allowed, restricted = allow_list()
+    if not restricted:
         return True
     if not origin:
         return True
-    for pat in ALLOWED_ORIGINS:
+    if not allowed:
+        return False
+    for pat in allowed:
         if pat == origin:
             return True
         if "*" in pat:
@@ -79,7 +130,8 @@ class Proxy(http.server.BaseHTTPRequestHandler):
             # the response to the page.  And no private-network opt-in
             # either, so the request never leaves the browser.
             return
-        if ALLOWED_ORIGINS and origin:
+        _allowed, restricted = allow_list()
+        if restricted and origin:
             self.send_header("Access-Control-Allow-Origin", origin)
             self.send_header("Vary", "Origin")
         else:

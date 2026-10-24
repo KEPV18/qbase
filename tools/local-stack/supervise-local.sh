@@ -4,7 +4,7 @@
 #   127.0.0.1:5433   Postgres (qbase_local)
 #   127.0.0.1:54350  the API shim (qbase_api.py)
 #   127.0.0.1:54351  the CORS proxy for the local SPA
-#   127.0.0.1:54352  the CORS proxy for the VERCEL PREVIEW (one origin only)
+#   127.0.0.1:54356  the CORS proxy for the VERCEL PREVIEW (one origin only)
 #   127.0.0.1:5210   the local SPA (also on 5211)
 #
 # WHY THIS EXISTS: a Vercel preview is served over HTTPS and has to reach
@@ -16,9 +16,9 @@
 # THE ONE RULE: it never stops anything.  Every check is "is this port
 # answering?  if not, start it".  A piece that is already up is left
 # exactly as it is — including a piece somebody else started by hand.
-# The single exception is the preview proxy (54352), which this script
-# owns: when the allowed ORIGIN changes, that proxy has to be replaced,
-# because the origin is read once, at start.
+# The preview proxy is no longer the exception it used to be: its
+# allow-list lives in a FILE that the proxy re-reads, so a new preview's
+# origin no longer means replacing a running process.
 #
 # The origin lives in $STATE/preview-origin, so a new deployment can be
 # pointed at simply by writing the new origin there.
@@ -32,8 +32,11 @@ PG_BIN="/home/kepv/.local/pgsql-dl/pg/bin/postgres"
 PGDATA="$STATE/pgdata"
 SHIM_PY="/home/kepv/.local/share/pipx/venvs/qwenpaw/bin/python3"
 ORIGIN_FILE="$STATE/preview-origin"
-APPLIED_FILE="$STATE/preview-origin.applied"
+ALLOW_FILE="$STATE/preview-allow-list"
 PREVIEW_PID_FILE="$STATE/proxy-preview.pid"
+# The port the preview talks to.  It is baked into the preview's build, so
+# it only changes when a build is made against a different one.
+PREVIEW_PORT="${PREVIEW_PORT:-54356}"
 # The production alias of this project — the address the owner types.
 PRODUCTION_ORIGIN="${PRODUCTION_ORIGIN:-https://qbase-sable.vercel.app}"
 
@@ -123,10 +126,10 @@ start_proxy() {
   return 1
 }
 
-# The preview proxy is the one this script OWNS: the allowed origin is read
-# once, at start, so a new deployment means a new proxy.  Only the pid this
-# script started is ever stopped, and only after checking that it is still
-# the preview proxy.
+# The preview proxy's allow-list lives in a FILE, and the proxy re-reads it
+# whenever it changes.  So a new deployment's origin is a one-line change
+# in that file instead of a process that has to be killed and started again
+# — and this script never has to stop anything at all.
 #
 # TWO origins are allowed, not one: the newest deployment's own hostname,
 # and the production alias.  The alias is the address the owner actually
@@ -135,47 +138,37 @@ start_proxy() {
 # Both are named hosts of this one project — the list is not a wildcard
 # over all of vercel.app, because the point of the list is to keep the
 # local database out of reach of every other site on the internet.
-start_preview_proxy() {
-  local origin=""
-  [ -s "$ORIGIN_FILE" ] && origin=$(head -1 "$ORIGIN_FILE" | tr -d '[:space:]')
-  if [ -z "$origin" ]; then
-    port_up 54352 || say "preview proxy: no origin in $ORIGIN_FILE — not starting it"
-    return 0
-  fi
+sync_allow_list() {
+  local origin="" allow="" current=""
+  [ -s "$ORIGIN_FILE" ] || return 0
+  origin=$(head -1 "$ORIGIN_FILE" | tr -d '[:space:]')
+  [ -n "$origin" ] || return 0
 
-  local allow="$origin"
-  if [ "$origin" != "$PRODUCTION_ORIGIN" ]; then
+  if [ "$origin" = "$PRODUCTION_ORIGIN" ]; then
+    allow="$origin"
+  else
     allow="$origin,$PRODUCTION_ORIGIN"
   fi
 
-  local applied=""
-  [ -s "$APPLIED_FILE" ] && applied=$(head -1 "$APPLIED_FILE" | tr -d '[:space:]')
-  if port_up 54352 && [ "$applied" = "$allow" ]; then
+  [ -s "$ALLOW_FILE" ] && current=$(head -1 "$ALLOW_FILE" | tr -d '[:space:]')
+  [ "$current" = "$allow" ] && return 0
+
+  printf '%s\n' "$allow" > "$ALLOW_FILE"
+  say "preview proxy: the allowed origin is now $allow"
+}
+
+start_preview_proxy() {
+  port_up "$PREVIEW_PORT" && return 0
+  [ -s "$ALLOW_FILE" ] || {
+    say "preview proxy: no allow-list in $ALLOW_FILE — not starting it"
     return 0
-  fi
-
-  if port_up 54352; then
-    # The origin changed (or the pid was lost): replace OUR proxy only.
-    local pid=""
-    [ -s "$PREVIEW_PID_FILE" ] && pid=$(head -1 "$PREVIEW_PID_FILE" | tr -d '[:space:]')
-    if [ -n "$pid" ] && [ -r "/proc/$pid/cmdline" ] \
-       && tr '\0' ' ' < "/proc/$pid/cmdline" | grep -q -- '--listen 54352'; then
-      say "preview proxy: the allowed origin changed — replacing it"
-      kill "$pid" 2>/dev/null
-      for _ in $(seq 1 10); do port_up 54352 || break; sleep 1; done
-    else
-      say "preview proxy: 54352 is held by a process this script did not start — leaving it alone"
-      return 0
-    fi
-  fi
-
-  say "preview proxy: starting for $allow"
-  ALLOWED_ORIGIN="$allow" nohup python3 "$TOOLS/cors-proxy.py" \
-    --listen 54352 --upstream 127.0.0.1:54350 \
+  }
+  say "preview proxy: starting on $PREVIEW_PORT"
+  ALLOWED_ORIGIN_FILE="$ALLOW_FILE" nohup python3 "$TOOLS/cors-proxy.py" \
+    --listen "$PREVIEW_PORT" --upstream 127.0.0.1:54350 \
     >> "$LOGS/proxy-preview.log" 2>&1 &
   echo $! > "$PREVIEW_PID_FILE"
-  printf '%s\n' "$allow" > "$APPLIED_FILE"
-  for _ in $(seq 1 20); do port_up 54352 && { say "preview proxy: up"; return 0; }; sleep 1; done
+  for _ in $(seq 1 20); do port_up "$PREVIEW_PORT" && { say "preview proxy: up"; return 0; }; sleep 1; done
   say "preview proxy: did not come up — see $LOGS/proxy-preview.log"
   return 1
 }
@@ -197,6 +190,7 @@ while true; do
   start_postgres
   start_shim
   start_proxy 54351
+  sync_allow_list
   start_preview_proxy
   start_spa 5210
   start_spa 5211

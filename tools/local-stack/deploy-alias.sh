@@ -24,7 +24,7 @@ set -u
 REPO="/home/kepv/qbase-remediation"
 TOOLS="$REPO/tools/local-stack"
 STATE="/home/kepv/.local/qbase-local"
-API_PORT=54352
+API_PORT="${API_PORT:-54356}"
 API_URL="http://127.0.0.1:$API_PORT"
 ALIAS="https://qbase-sable.vercel.app"
 
