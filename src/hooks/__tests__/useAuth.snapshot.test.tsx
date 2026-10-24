@@ -112,6 +112,47 @@ describe('AuthProvider — the RBAC snapshot recordStorage reads', () => {
     expect(getCurrentUserSnapshot()!.department).toBe('Quality');
   });
 
+  it('carries the server role beside the approval role', async () => {
+    // The server's READ and EDIT rules are wider than its approval rules:
+    // `prime_is_manager_or_admin()` counts a `manager`, and
+    // `update_record_versioned` lets a `manager` edit a non-draft.  The
+    // snapshot therefore carries the role the server sees (`serverRole`)
+    // NEXT TO the narrow approval vocabulary (`role`), so the browser stops
+    // showing a manager less than the database had already granted.
+    loginMock.mockResolvedValue({
+      ok: true, code: 'ok', message: '',
+      user: { ...APP_USER, role: 'manager', department: 'Quality' },
+      backend: 'supabase',
+    });
+
+    render(<AuthProvider><Probe /></AuthProvider>);
+    screen.getByText('sign in').click();
+
+    await waitFor(() => expect(getCurrentUserSnapshot()).not.toBeNull());
+    const snapshot = getCurrentUserSnapshot()!;
+    // The approval vocabulary stays narrow: a manager gains no approval
+    // right it did not have before.
+    expect(snapshot.role).toBe('employee');
+    // The server's role travels with it.
+    expect(snapshot.serverRole).toBe('manager');
+  });
+
+  it('keeps a department head a department head in both vocabularies', async () => {
+    loginMock.mockResolvedValue({
+      ok: true, code: 'ok', message: '',
+      user: { ...APP_USER, role: 'dept_head', department: 'Quality' },
+      backend: 'supabase',
+    });
+
+    render(<AuthProvider><Probe /></AuthProvider>);
+    screen.getByText('sign in').click();
+
+    await waitFor(() => expect(getCurrentUserSnapshot()).not.toBeNull());
+    const snapshot = getCurrentUserSnapshot()!;
+    expect(snapshot.role).toBe('dept_head');
+    expect(snapshot.serverRole).toBe('dept_head');
+  });
+
   it('clears the snapshot on sign-out', async () => {
     loginMock.mockResolvedValue({
       ok: true, code: 'ok', message: '', user: APP_USER, backend: 'supabase',

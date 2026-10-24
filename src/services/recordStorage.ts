@@ -136,6 +136,20 @@ export function toRecordStatusEnum(value: string | null | undefined): RecordStat
 export type Department = 'HR' | 'Sales' | 'Operations' | 'Quality' | 'RD' | 'Management';
 export type ApprovalRole = 'admin' | 'dept_head' | 'employee';
 
+/**
+ * The role the SERVER sees — `public.user_roles.role`.
+ *
+ * The approval vocabulary above is deliberately narrow (three values), and it
+ * matches the server's APPROVAL rules exactly.  The server's READ and EDIT
+ * rules are wider: `prime_is_manager_or_admin()` counts a `manager`, and
+ * `update_record_versioned` lets a `manager` edit a record that is not a
+ * draft.  One field cannot carry both, so the snapshot carries the two
+ * separately.
+ */
+export type ServerRole =
+  | 'admin' | 'dept_head' | 'manager' | 'employee'
+  | 'auditor' | 'user' | 'moderator';
+
 /** Department mapping from form code — canonical source of truth */
 const FORM_DEPT_MAP: Record<string, Department> = {
   'F/08': 'Sales', 'F/09': 'Sales', 'F/10': 'Sales', 'F/50': 'Sales',
@@ -161,7 +175,20 @@ export function resolveDepartment(formCode: string): Department | null {
 export interface CurrentUserSnapshot {
   userId: string;
   email: string;
+  /** The APPROVAL role — the narrow vocabulary the workflow is decided by. */
   role: ApprovalRole;
+  /**
+   * The role the server sees (`public.user_roles.role`).
+   *
+   * `role` above is the approval vocabulary; the server's READ and EDIT
+   * rules are wider — `prime_is_manager_or_admin()` counts a `manager`, and
+   * `update_record_versioned` lets a `manager` edit a non-draft.  Collapsing
+   * the two into one field made the browser show a `manager` and a
+   * `dept_head` LESS than the database had already granted them.  Optional,
+   * so a snapshot written before this field existed still works: it then
+   * falls back to `role`.
+   */
+  serverRole?: ServerRole;
   department: Department | null;
 }
 
@@ -190,12 +217,96 @@ async function getCurrentUser(): Promise<CurrentUserSnapshot | null> {
   return getCurrentUserSnapshot();
 }
 
-/** Check if user can access a record's department */
-function canAccessDepartment(user: CurrentUserSnapshot, recordDept: string | null): boolean {
-  if (user.role === 'admin') return true;
-  // If record has no department assigned, allow access (unassigned = no restriction)
-  if (!recordDept) return true;
-  // If user has no department, deny access to department-assigned records
+/**
+ * The role the server uses for this decision.
+ *
+ * `serverRole` is the role `public.prime_user_role()` returns; `role` is the
+ * approval vocabulary and is the fallback for a snapshot that predates the
+ * field.
+ */
+function effectiveServerRole(user: CurrentUserSnapshot): string {
+  return user.serverRole ?? user.role;
+}
+
+/**
+ * May this user read the WHOLE register?
+ *
+ * The server's answer, verbatim: `public.prime_is_manager_or_admin()` is
+ * `role in ('admin', 'dept_head', 'manager')`, and the read policy
+ * `records_read_dept_or_owner` grants the whole register to exactly those
+ * roles.
+ *
+ * The client used to say "admin only", so a `manager` and a `dept_head` saw
+ * a fraction of what the database had already granted them.
+ */
+export function canReadWholeRegister(user: CurrentUserSnapshot | null): boolean {
+  if (!user) return false;
+  const serverRole = effectiveServerRole(user);
+  return serverRole === 'admin' || serverRole === 'dept_head' || serverRole === 'manager';
+}
+
+/**
+ * May this user edit a record that is NOT a draft?
+ *
+ * The server's answer, verbatim: `update_record_versioned` refuses a
+ * non-draft edit to any role outside `('admin', 'manager', 'dept_head')`.
+ * A `manager` used to be collapsed into an `employee` by the auth layer, so
+ * the client refused an edit the server would have accepted.
+ */
+export function canEditNonDraft(user: CurrentUserSnapshot): boolean {
+  const serverRole = effectiveServerRole(user);
+  return serverRole === 'admin' || serverRole === 'manager' || serverRole === 'dept_head';
+}
+
+/**
+ * May this user see this record?
+ *
+ * The client mirror of the row-level policy `records_read_dept_or_owner`:
+ *
+ *   prime_is_manager_or_admin()
+ *   OR created_by = auth.uid()::text
+ *   OR created_by = prime_current_user_email()
+ *   OR prime_record_department(form_code) = current_user_department()
+ *
+ * The server has already applied that policy — the rows that reach this
+ * function are the ones it allowed.  This predicate can therefore only
+ * REMOVE a row the server granted, never add one.
+ *
+ * Two details the old client filter had wrong:
+ *
+ *  - it lacked the owner branch in `getRecord`, so a user was refused a
+ *    record they had created themselves, in another department, while the
+ *    policy grants it to them;
+ *  - it treated a record with no department as unrestricted, while the
+ *    policy's `prime_record_department(form_code) = current_user_department()`
+ *    is a NULL comparison and is therefore false for a form with no
+ *    department — such a record is the owner's alone.
+ */
+export function canViewRecord(
+  user: CurrentUserSnapshot | null,
+  record: { _createdBy?: unknown; _department?: unknown }
+): boolean {
+  // No snapshot: the client knows nothing about the caller, and the server's
+  // own policy is the authority.  The read is logged by the caller.
+  if (!user) return true;
+
+  if (canReadWholeRegister(user)) return true;
+
+  // A user may always see the records they created.
+  //
+  // The author is stored as the actor's E-MAIL (the engine stamps it that
+  // way — see record_draft_create and create_record_validated), and 14
+  // legacy rows carry the account's uuid instead.  Both are the same
+  // person, so both are the owner.
+  const createdBy = typeof record._createdBy === 'string' ? record._createdBy : '';
+  if (user.userId && createdBy === user.userId) return true;
+  if (user.email && createdBy === user.email) return true;
+
+  // The department clause.  `prime_record_department()` returns NULL for a
+  // form that has no department, and the server's comparison of two NULLs
+  // is false — so a record with no department is not department-visible.
+  const recordDept = (record._department as string) || null;
+  if (!recordDept) return false;
   if (!user.department) return false;
   return recordDept === user.department;
 }
@@ -398,7 +509,6 @@ async function getCurrentUserAuthId(): Promise<string | null> {
 
 export async function getRecords(formCode?: string): Promise<RecordData[]> {
   const user = getCurrentUserSnapshot();
-  const isAdmin = user?.role === 'admin';
 
   const baseQuery = supabase
     .from('records')
@@ -430,25 +540,29 @@ export async function getRecords(formCode?: string): Promise<RecordData[]> {
     .map(row => parseRowToRecord(row))
     .filter((r): r is RecordData => r !== null);
 
-  // Secondary RBAC filter (defense in depth)
-  if (!isAdmin && user) {
-    records = records.filter(r => {
-      // A user may always see the records they created.
-      //
-      // The row-level policy grants exactly that (`created_by = auth.uid()`),
-      // but the client filter did not: an employee whose account has no
-      // department assigned was denied every record of a department that is
-      // not theirs — INCLUDING the ones they had created themselves — so the
-      // register showed them an empty list while the database had returned
-      // their own rows.  The filter is now the same rule the policy is.
-      if (user.userId && r._createdBy === user.userId) return true;
-      // The author is stored as the actor's E-MAIL (the engine stamps it
-      // that way — see record_draft_create and create_record_validated),
-      // and 14 legacy rows carry the account's uuid instead.  Both are the
-      // same person, so both are the owner.
-      if (user.email && r._createdBy === user.email) return true;
-      return canAccessDepartment(user, r._department as string || null);
-    });
+  // Secondary RBAC filter (defence in depth).
+  //
+  // This is the client mirror of the row-level policy
+  // `records_read_dept_or_owner` — see `canViewRecord`.  The server has
+  // already applied that policy: the rows that arrive here are the ones it
+  // allowed, and this filter can only remove a row the server granted.
+  //
+  // It used to remove too many.  It narrowed a `manager` and a `dept_head`
+  // to their own department, although `prime_is_manager_or_admin()` grants
+  // both the whole register, and it had no owner branch at all in
+  // `getRecord`.
+  if (user) {
+    records = records.filter(r => canViewRecord(user, r));
+  } else {
+    // No snapshot yet — the auth provider has not written one, or nobody is
+    // signed in.  The client cannot narrow a set it knows nothing about and
+    // the server's policy is the authority, but the case is worth a line in
+    // the log: a silent widening is how a filter gets mistaken for a
+    // guarantee.
+    log.system.warn(
+      'recordStorage:no_snapshot',
+      'Record read with no user snapshot — the server policy is the only filter for this read'
+    );
   }
 
   if (formCode) {
@@ -492,9 +606,11 @@ export async function getRecord(serial: string): Promise<RecordData | null> {
   const record = parseRowToRecord(data as DbRecord);
   if (!record) return null;
 
-  // RBAC: check if user can view this record.
-  // `records` has no department column — use the form→department mapping.
-  if (user && !canAccessDepartment(user, resolveDepartment((data as DbRecord).form_code))) {
+  // RBAC: the same rule the read policy is — including the owner branch,
+  // which `getRecords` had and this function did not.  A user who had
+  // created a record in another department was refused the record the
+  // server had just returned to them.
+  if (!canViewRecord(user, record)) {
     throw new RecordStorageError(
       `Access denied: you do not have permission to view record ${serial}`,
       'NOT_FOUND'
@@ -922,8 +1038,14 @@ export async function updateRecord(
   const recordDept = resolveDepartment(formCode);
   const currentStatus = toRecordStatusEnum((currentRow as DbRecord).status);
 
-  // Enforce approval workflow: employees can only edit Draft records
-  if (actor?.role === 'employee' && currentStatus !== 'draft') {
+  // Enforce approval workflow: only the privileged roles may edit a record
+  // that is not a draft.
+  //
+  // The server's `update_record_versioned` allows ('admin', 'manager',
+  // 'dept_head') to edit a non-draft and refuses every other role.  A
+  // `manager` used to be collapsed into an `employee` by the auth layer, so
+  // the client refused an edit the server would have accepted.
+  if (actor && !canEditNonDraft(actor) && currentStatus !== 'draft') {
     return {
       success: false,
       error: 'Employees can only edit records in Draft status. Please contact your department head.',
@@ -1423,7 +1545,6 @@ export async function approveRecords(
 
 export async function getArchivedRecords(): Promise<RecordData[]> {
   const user = getCurrentUserSnapshot();
-  const isAdmin = user?.role === 'admin';
 
   // NOTE: this used to call purgeOldArchives() before reading, and that function
   // permanently DELETEs every record soft-deleted more than 30 days ago. That made
@@ -1449,8 +1570,18 @@ export async function getArchivedRecords(): Promise<RecordData[]> {
     .map(row => parseRowToRecord(row))
     .filter((r): r is RecordData => r !== null);
 
-  if (!isAdmin && user) {
-    archived = archived.filter(r => canAccessDepartment(user, (r._department as string) || null));
+  // The same rule as `getRecords` — the client mirror of the read policy.
+  // The archive used to narrow a `manager` and a `dept_head` to their own
+  // department, although `prime_is_manager_or_admin()` grants both the whole
+  // register, and it had no owner branch: a user was refused an archived
+  // record they had created themselves.
+  if (user) {
+    archived = archived.filter(r => canViewRecord(user, r));
+  } else {
+    log.system.warn(
+      'recordStorage:no_snapshot',
+      'Archive read with no user snapshot — the server policy is the only filter for this read'
+    );
   }
 
   return archived;

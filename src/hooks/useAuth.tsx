@@ -69,15 +69,24 @@ const AuthContext = React.createContext<AuthContextValue | null>(null);
  * string; `recordStorage` decides the approval workflow from THREE roles
  * and from the six canonical departments.
  *
- * The mapping is deliberately narrow: only a real `admin` and a real
- * `dept_head` carry authority, and everyone else is an `employee` — which
- * is exactly how `resolveApprovalStatus` already treated them.  A
- * `manager` gains no approval right it did not have before.
+ * The APPROVAL mapping is deliberately narrow: only a real `admin` and a
+ * real `dept_head` carry authority, and everyone else is an `employee` —
+ * which is exactly how `resolveApprovalStatus` already treated them.  A
+ * `manager` gains no approval right it did not have before, and the server
+ * agrees: `record_transition` refuses an approval from anyone who is not
+ * an `admin` or the owning `dept_head`.
+ *
+ * The server's READ and EDIT rules are wider, though: `prime_is_manager_or_admin()`
+ * counts a `manager` (so a manager reads the whole register) and
+ * `update_record_versioned` lets a `manager` edit a record that is not a
+ * draft.  Collapsing the two into one field made the browser show a manager
+ * and a department head LESS than the database had already granted them, so
+ * the server's own role travels along in `serverRole`.
  */
 function toRecordStorageSnapshot(user: {
   id: string;
   email: string;
-  role: string;
+  role: Role;
   department: string | null;
 }): RecordStorageSnapshot {
   const role: ApprovalRole =
@@ -88,6 +97,10 @@ function toRecordStorageSnapshot(user: {
     userId: user.id,
     email: user.email,
     role,
+    // The role the server sees — `public.user_roles.role`.  It is the same
+    // value the app shows, but it is kept separately because the server's
+    // read and edit rules are wider than its approval rules.
+    serverRole: user.role,
     department: normalizeDepartment(user.department),
   };
 }
