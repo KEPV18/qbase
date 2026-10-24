@@ -22,7 +22,7 @@ import { getAccentStyles } from '@/components/forms/FormKit';
 import { useRecord, useUpdateRecord, useRecords, useDeleteRecord } from '../hooks/useRecordStorage';
 import { useAuditLog } from '../hooks/useAuditLog';
 import { useAuth } from '../hooks/useAuth';
-import { evaluateRulesForRecord, getSeverityColor, type RuleSeverity } from '../services/ruleEngine';
+import { buildRuleContext, evaluateRulesForRecord, getSeverityColor, type RuleSeverity } from '../services/ruleEngine';
 import { getEditRiskLevel } from '../services/recordUtils';
 // The .docx exporter is imported dynamically inside the export handler —
 // see handleExportDocx below.
@@ -162,10 +162,10 @@ const RecordViewPage: React.FC = () => {
 
   const integritySignals = useMemo(() => {
     if (!originalRecord || !allRecords) return [];
-    return evaluateRulesForRecord(
-      originalRecord as unknown as RecordData,
-      allRecords as unknown as RecordData[],
-    );
+    // The register is indexed once; the rules look their neighbours up in
+    // the index instead of scanning the whole table for this one record.
+    const ctx = buildRuleContext(allRecords as unknown as RecordData[]);
+    return evaluateRulesForRecord(originalRecord as unknown as RecordData, ctx);
   }, [originalRecord, allRecords]);
 
   const integritySeverity: RuleSeverity = integritySignals.length === 0

@@ -2,8 +2,13 @@
 // QBase — Rule Engine & Data Integrity Detection
 // Phase 7B+7C: Non-blocking detection + progressive enforcement
 //
-// ALL rules default to "warn" mode. No hard enforcement until explicitly
-// switched to "strict" by admin. Observes first, enforces only when safe.
+// Every rule reports in "warn" mode: the engine OBSERVES, it never blocks a
+// write.  There is deliberately no way to switch a rule to "strict" from
+// code — the old `setRuleMode` mutated this module's in-memory RULES array,
+// the server never saw the change, and no caller existed, so a rule set that
+// could be "switched" in one browser tab and not in another was a rule set
+// nobody could reason about.  Enforcement is a server-side decision, and it
+// lives there.
 // ============================================================================
 import { log } from "@/services/logger";
 
@@ -27,7 +32,64 @@ export interface IntegrityRule {
   description: string;
   type: RuleType;
   mode: RuleMode;       // always "warn" by default
-  check: (record: RecordData, allRecords: RecordData[]) => IntegritySignal | null;
+  check: (record: RecordData, ctx: RuleContext) => IntegritySignal | null;
+}
+
+/**
+ * The register, indexed once.
+ *
+ * Every cross-form rule used to scan the whole record array inside its own
+ * body (`allRecords.filter(r => r.formCode === 'F/28')`), so evaluating the
+ * register cost O(n²): the record list called `evaluateRulesForRecord` for
+ * every record, and each of those calls re-scanned the whole table for every
+ * scanning rule.  With the production copy's 318 records that is hundreds of
+ * thousands of comparisons, in the browser, on the records list.
+ *
+ * The index turns each of those scans into a map lookup, and the evaluation
+ * of the whole register into O(n).  It is derived from the records in memory:
+ * nothing is read, written or cached across calls.
+ */
+export interface RuleContext {
+  /** Every record of one form code, in register order. */
+  byFormCode: Map<string, RecordData[]>;
+  /** The serials of one form code. */
+  serialsByFormCode: Map<string, Set<string>>;
+  /** Every serial in the register. */
+  serials: Set<string>;
+}
+
+/** Build the rule context once for a set of records. */
+export function buildRuleContext(allRecords: RecordData[]): RuleContext {
+  const byFormCode = new Map<string, RecordData[]>();
+  const serialsByFormCode = new Map<string, Set<string>>();
+  const serials = new Set<string>();
+
+  for (const record of allRecords) {
+    const formCode = (record.formCode as string) || '';
+    const serial = (record.serial as string) || '';
+
+    if (formCode) {
+      const list = byFormCode.get(formCode);
+      if (list) list.push(record);
+      else byFormCode.set(formCode, [record]);
+    }
+
+    if (serial) {
+      serials.add(serial);
+      if (formCode) {
+        const set = serialsByFormCode.get(formCode);
+        if (set) set.add(serial);
+        else serialsByFormCode.set(formCode, new Set([serial]));
+      }
+    }
+  }
+
+  return { byFormCode, serialsByFormCode, serials };
+}
+
+/** The records of one form code, or an empty list. */
+function recordsOf(ctx: RuleContext, formCode: string): RecordData[] {
+  return ctx.byFormCode.get(formCode) ?? [];
 }
 
 export interface IntegritySignal {
@@ -79,13 +141,13 @@ const RULES: IntegrityRule[] = [
     description: 'F/43 Induction Training must reference existing F/28 Training Attendance',
     type: 'reference',
     mode: 'warn',
-    check: (record, allRecords) => {
+    check: (record, ctx) => {
       if (record.formCode !== 'F/43') return null;
       const trainingDate = record.training_date || record.date;
       if (!trainingDate) return null;
 
       // Check if any F/28 exists for the same project
-      const f28s = allRecords.filter(r => r.formCode === 'F/28');
+      const f28s = recordsOf(ctx, 'F/28');
       if (f28s.length === 0) {
         return {
           ruleId: 'REF-F43-F28',
@@ -102,9 +164,9 @@ const RULES: IntegrityRule[] = [
     description: 'F/30 Performance Appraisal should have related F/43 Induction Training',
     type: 'reference',
     mode: 'warn',
-    check: (record, allRecords) => {
+    check: (record, ctx) => {
       if (record.formCode !== 'F/30') return null;
-      const f43s = allRecords.filter(r => r.formCode === 'F/43');
+      const f43s = recordsOf(ctx, 'F/43');
       if (f43s.length === 0) {
         return {
           ruleId: 'REF-F30-F43',
@@ -121,12 +183,12 @@ const RULES: IntegrityRule[] = [
     description: 'F/22 Corrective Action should reference existing F/12 Non-Conforming',
     type: 'reference',
     mode: 'warn',
-    check: (record, allRecords) => {
+    check: (record, ctx) => {
       if (record.formCode !== 'F/22') return null;
       const ncRef = String(record.nc_reference || record.related_nc || '');
       if (!ncRef) return null;
-      const f12s = allRecords.filter(r => r.formCode === 'F/12');
-      const exists = f12s.some(r => r.serial === ncRef || (r as Record<string, unknown>).serial === ncRef);
+      // A set lookup, not a scan of the F/12 records.
+      const exists = ctx.serialsByFormCode.get('F/12')?.has(ncRef) ?? false;
       if (!exists && ncRef.startsWith('F/12')) {
         return {
           ruleId: 'REF-F22-F12',
@@ -145,9 +207,9 @@ const RULES: IntegrityRule[] = [
     description: 'F/08 Order Form should have corresponding F/19 Product Description',
     type: 'dependency',
     mode: 'warn',
-    check: (record, allRecords) => {
+    check: (record, ctx) => {
       if (record.formCode !== 'F/08') return null;
-      const f19s = allRecords.filter(r => r.formCode === 'F/19');
+      const f19s = recordsOf(ctx, 'F/19');
       if (f19s.length === 0) {
         return {
           ruleId: 'DEP-F08-F19',
@@ -164,7 +226,7 @@ const RULES: IntegrityRule[] = [
     description: 'Records with project names should have consistent project references',
     type: 'dependency',
     mode: 'warn',
-    check: (record, allRecords) => {
+    check: (record) => {
       const projectField = record.project || record.project_name;
       if (!projectField) return null;
       return null; // No check needed — project consistency is informational only
@@ -309,21 +371,37 @@ export function detectSerialGaps(allRecords: RecordData[]): SerialGap[] {
 // Reference Detection
 // ============================================================================
 
-export function detectMissingReferences(allRecords: RecordData[]): MissingReference[] {
+/**
+ * The F/43 → F/28 and F/22 → F/12 reference gaps.
+ *
+ * The F/43 → F/28 check used to filter the whole record array for EVERY
+ * F/43 record — a scan inside a loop, i.e. O(n²).  The project names of the
+ * F/28 records are now collected once into a set, and every F/43 record asks
+ * the set a single question.
+ *
+ * `context` may be passed in when the caller already has one, so the index
+ * is built once per evaluation rather than once per call.
+ */
+export function detectMissingReferences(
+  allRecords: RecordData[],
+  context?: RuleContext
+): MissingReference[] {
+  const ctx = context ?? buildRuleContext(allRecords);
   const refs: MissingReference[] = [];
-  const allSerials = new Set(allRecords.map(r => r.serial as string));
+
+  // The project names the F/28 records carry, collected once.
+  const f28Projects = new Set<string>();
+  for (const r of recordsOf(ctx, 'F/28')) {
+    const project = (r.project as string) || (r.project_name as string);
+    if (project) f28Projects.add(project);
+  }
 
   // F/43 → F/28 connection
-  for (const record of allRecords) {
-    if (record.formCode !== 'F/43') continue;
+  for (const record of recordsOf(ctx, 'F/43')) {
     const projectName = (record.project as string) || (record.project_name as string);
     if (!projectName) continue;
 
-    const f28sForProject = allRecords.filter(
-      r => r.formCode === 'F/28' && ((r.project as string) || (r.project_name as string)) === projectName
-    );
-
-    if (f28sForProject.length === 0) {
+    if (!f28Projects.has(projectName)) {
       refs.push({
         fromSerial: record.serial as string,
         fromField: 'project',
@@ -334,12 +412,11 @@ export function detectMissingReferences(allRecords: RecordData[]): MissingRefere
   }
 
   // F/22 → F/12 reference check (if nc_reference field exists)
-  for (const record of allRecords) {
-    if (record.formCode !== 'F/22') continue;
+  for (const record of recordsOf(ctx, 'F/22')) {
     const ncRef = (record.nc_reference as string) || (record.related_nc as string);
     if (!ncRef || !ncRef.startsWith('F/12')) continue;
 
-    if (!allSerials.has(ncRef)) {
+    if (!ctx.serials.has(ncRef)) {
       refs.push({
         fromSerial: record.serial as string,
         fromField: 'nc_reference',
@@ -356,9 +433,13 @@ export function detectMissingReferences(allRecords: RecordData[]): MissingRefere
 // Dependency Detection
 // ============================================================================
 
-export function detectMissingDependencies(allRecords: RecordData[]): MissingDependency[] {
+export function detectMissingDependencies(
+  allRecords: RecordData[],
+  context?: RuleContext
+): MissingDependency[] {
+  const ctx = context ?? buildRuleContext(allRecords);
   const deps: MissingDependency[] = [];
-  const formCodesPresent = new Set(allRecords.map(r => r.formCode as string));
+  const formCodesPresent = new Set(ctx.byFormCode.keys());
 
   // Expected form pairs: if F/08 exists, F/19 should exist
   const expectedPairs: [string, string, string][] = [
@@ -373,8 +454,8 @@ export function detectMissingDependencies(allRecords: RecordData[]): MissingDepe
   for (const [trigger, expected, expectedName] of expectedPairs) {
     if (formCodesPresent.has(trigger) && !formCodesPresent.has(expected)) {
       // Only flag if trigger has 3+ records (avoid noise with test data)
-      const triggerCount = allRecords.filter(r => r.formCode === trigger).length;
-      if (triggerCount >= 3) {
+      const triggerRecords = recordsOf(ctx, trigger);
+      if (triggerRecords.length >= 3) {
         // EVERY record of the trigger form is affected.
         //
         // The rule is a form-level one: the expected form does not exist at
@@ -385,15 +466,13 @@ export function detectMissingDependencies(allRecords: RecordData[]): MissingDepe
         // as CLEAN while the one flagged record was reported as having a
         // missing dependency.  The count and the per-record report
         // disagreed, and the count was the wrong one.
-        for (const record of allRecords) {
-          if (record.formCode === trigger) {
-            deps.push({
-              forSerial: record.serial as string,
-              forFormCode: trigger,
-              expectedFormCode: expected,
-              expectedPattern: `${expected} ${expectedName}`,
-            });
-          }
+        for (const record of triggerRecords) {
+          deps.push({
+            forSerial: record.serial as string,
+            forFormCode: trigger,
+            expectedFormCode: expected,
+            expectedPattern: `${expected} ${expectedName}`,
+          });
         }
       }
     }
@@ -406,15 +485,24 @@ export function detectMissingDependencies(allRecords: RecordData[]): MissingDepe
 // Main Evaluation Function
 // ============================================================================
 
+/**
+ * The signals one record raises.
+ *
+ * The second argument is the indexed register, NOT the raw array: every rule
+ * that looks at another form looks it up in the index, and the whole
+ * evaluation of the register costs O(n) instead of O(n²).  Passing the raw
+ * array here is no longer possible — the type is the context — so the slow
+ * shape cannot come back.
+ */
 export function evaluateRulesForRecord(
   record: RecordData,
-  allRecords: RecordData[]
+  ctx: RuleContext
 ): IntegritySignal[] {
   const signals: IntegritySignal[] = [];
 
   for (const rule of RULES) {
     try {
-      const signal = rule.check(record, allRecords);
+      const signal = rule.check(record, ctx);
       if (signal) {
         signals.push({
           ...signal,
@@ -430,8 +518,23 @@ export function evaluateRulesForRecord(
   return signals;
 }
 
-export function evaluateAllRecords(allRecords: RecordData[]): IntegrityReport[] {
+/** Everything the data-integrity page needs, computed in one pass. */
+export interface RegisterEvaluation {
+  reports: IntegrityReport[];
+  serialGaps: SerialGap[];
+  missingReferences: MissingReference[];
+  missingDependencies: MissingDependency[];
+}
+
+/**
+ * Evaluate the whole register in O(n).
+ *
+ * The index is built once, the two global detectors run once, and every
+ * record is then evaluated against that shared context.
+ */
+export function evaluateRegister(allRecords: RecordData[]): RegisterEvaluation {
   const reports: IntegrityReport[] = [];
+  const ctx = buildRuleContext(allRecords);
 
   // The two global detectors are computed ONCE, not once per record.
   //
@@ -440,22 +543,25 @@ export function evaluateAllRecords(allRecords: RecordData[]): IntegrityReport[] 
   // them inside the per-record loop made the Data Integrity page do O(n²)
   // work on every recompute — with the production copy's 318 records that is
   // hundreds of thousands of comparisons, recomputed for every record.
+  const missingReferences = detectMissingReferences(allRecords, ctx);
+  const missingDependencies = detectMissingDependencies(allRecords, ctx);
+
   const refsBySerial = new Map<string, MissingReference[]>();
-  for (const ref of detectMissingReferences(allRecords)) {
+  for (const ref of missingReferences) {
     const list = refsBySerial.get(ref.fromSerial);
     if (list) list.push(ref);
     else refsBySerial.set(ref.fromSerial, [ref]);
   }
 
   const depsBySerial = new Map<string, MissingDependency[]>();
-  for (const dep of detectMissingDependencies(allRecords)) {
+  for (const dep of missingDependencies) {
     const list = depsBySerial.get(dep.forSerial);
     if (list) list.push(dep);
     else depsBySerial.set(dep.forSerial, [dep]);
   }
 
   for (const record of allRecords) {
-    const signals = evaluateRulesForRecord(record, allRecords);
+    const signals = evaluateRulesForRecord(record, ctx);
     const missingRefs = refsBySerial.get(record.serial as string) ?? [];
     const missingDeps = depsBySerial.get(record.serial as string) ?? [];
 
@@ -478,7 +584,23 @@ export function evaluateAllRecords(allRecords: RecordData[]): IntegrityReport[] 
     }
   }
 
-  return reports;
+  return {
+    reports,
+    serialGaps: detectSerialGaps(allRecords),
+    missingReferences,
+    missingDependencies,
+  };
+}
+
+/**
+ * The per-record reports of the whole register.
+ *
+ * Kept as its own export for the callers that only want the reports; the
+ * page that needs the flat lists as well uses `evaluateRegister`, so nothing
+ * is computed twice.
+ */
+export function evaluateAllRecords(allRecords: RecordData[]): IntegrityReport[] {
+  return evaluateRegister(allRecords).reports;
 }
 
 // ============================================================================
@@ -512,10 +634,12 @@ export function useDataIntegrityReport() {
     }
 
     const allRecordsList = records as unknown as RecordData[];
-    const recordsWithIssues = evaluateAllRecords(allRecordsList);
-    const serialGaps = detectSerialGaps(allRecordsList);
-    const missingReferences = detectMissingReferences(allRecordsList);
-    const missingDependencies = detectMissingDependencies(allRecordsList);
+    // ONE evaluation pass.  The page used to call `evaluateAllRecords` and
+    // then run the two global detectors a second time on its own, so the
+    // reference and dependency detectors walked the whole register twice for
+    // every recompute.
+    const { reports: recordsWithIssues, serialGaps, missingReferences, missingDependencies } =
+      evaluateRegister(allRecordsList);
 
     const recordsWithSignalSet = new Set(recordsWithIssues.map(r => r.recordSerial));
     const cleanRecords = allRecordsList.filter(r => !recordsWithSignalSet.has(r.serial as string)).length;
@@ -592,11 +716,4 @@ export function getRuleModeColor(mode: RuleMode): string {
 
 export function getAllRules(): IntegrityRule[] {
   return [...RULES];
-}
-
-export function setRuleMode(ruleId: string, mode: RuleMode): void {
-  const rule = RULES.find(r => r.id === ruleId);
-  if (rule) {
-    rule.mode = mode;
-  }
 }

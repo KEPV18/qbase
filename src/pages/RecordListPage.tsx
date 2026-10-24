@@ -17,7 +17,7 @@ import { PROJECTS } from '../data/projectsData';
 import { isoToDisplay } from '../schemas';
 import { useRecords } from '../hooks/useRecordStorage';
 import { approveRecords } from '../services/recordStorage';
-import { evaluateRulesForRecord, getSeverityColor as getIntSeverityColor, type RuleSeverity, type RecordData } from '../services/ruleEngine';
+import { buildRuleContext, evaluateRulesForRecord, getSeverityColor as getIntSeverityColor, type RuleSeverity, type RecordData } from '../services/ruleEngine';
 import { getEditRiskLevel } from '../services/recordUtils';
 import { exportRecordsToDocx } from '../services/docxExport';
 import { exportRecordsToJson, exportRecordsToCsv } from '../services/fileExport';
@@ -149,11 +149,19 @@ const RecordListPage: React.FC = () => {
   }, [urlFormCode, urlMonth, urlProject]);
 
   // Integrity cache
+  //
+  // The register is indexed ONCE and every record is evaluated against that
+  // shared index.  The rules used to receive the raw array and re-scan it
+  // for every record, which is O(n²): with the production copy's 318
+  // records that is hundreds of thousands of comparisons on the records list,
+  // on every recompute.
   const integrityCache = useMemo(() => {
     const cache = new Map<string, RuleSeverity>();
     if (!records) return cache;
-    for (const record of records) {
-      const signals = evaluateRulesForRecord(record as unknown as RecordData, records as unknown as RecordData[]);
+    const list = records as unknown as RecordData[];
+    const ctx = buildRuleContext(list);
+    for (const record of list) {
+      const signals = evaluateRulesForRecord(record, ctx);
       const sev: RuleSeverity = signals.length === 0 ? 'clean' : signals.some(s => s.severity === 'critical') ? 'critical' : 'warning';
       cache.set(record.serial as string, sev);
     }
