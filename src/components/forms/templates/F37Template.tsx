@@ -6,7 +6,7 @@
 
 import React from "react";
 import { cn } from "@/lib/utils";
-import { FormDocument, val } from "../FormKit";
+import { FormDocument, val, coerceTableRows } from "../FormKit";
 
 export interface F37Props {
   data?: Record<string, unknown>;
@@ -23,8 +23,8 @@ interface ExperimentRow {
 }
 
 function parseExperiments(d: Record<string, unknown>): ExperimentRow[] {
-  const raw = d.experiments;
-  if (Array.isArray(raw) && raw.length > 0 && typeof raw[0] === "object") return raw as ExperimentRow[];
+  const raw = coerceTableRows(d.experiments);
+  if (raw && raw.length > 0 && typeof raw[0] === "object") return raw as ExperimentRow[];
   return [];
 }
 

@@ -14,7 +14,7 @@
 import React, { useMemo } from "react";
 import { CheckSquare } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { FormDocument, val } from "../FormKit";
+import { FormDocument, val, coerceTableRows } from "../FormKit";
 
 export interface F29Props {
   data?: Record<string, unknown>;
@@ -37,14 +37,8 @@ interface RowData {
 }
 
 function parseRows(d: Record<string, unknown>): RowData[] {
-  const raw = d.items || d.rows || [];
-  if (typeof raw === "string") {
-    try {
-      const parsed = JSON.parse(raw);
-      if (Array.isArray(parsed) && parsed.length > 0) return parsed as RowData[];
-    } catch { /* ignore */ }
-  }
-  if (Array.isArray(raw) && raw.length > 0 && typeof raw[0] === "object") return raw as RowData[];
+  const raw = coerceTableRows(d.items || d.rows);
+  if (raw && raw.length > 0 && typeof raw[0] === "object") return raw as RowData[];
   return [];
 }
 

@@ -7,7 +7,7 @@
 
 import React, { useState, useCallback } from "react";
 import { cn } from "@/lib/utils";
-import { FormDocument, val } from "../FormKit";
+import { FormDocument, val, coerceTableRows } from "../FormKit";
 import { Plus, Trash2, Check } from "lucide-react";
 
 export interface F40Props {
@@ -43,9 +43,9 @@ function emptyRow(i: number): RowData {
 }
 
 function parseRows(d: Record<string, unknown>, count: number = 8): RowData[] {
-  const raw = d.items || d.rows || [];
-  if (Array.isArray(raw) && raw.length > 0 && typeof raw[0] === "object") {
-    return raw.map((r: Record<string, unknown>, i: number) => ({
+  const raw = coerceTableRows(d.items || d.rows);
+  if (raw && raw.length > 0 && typeof raw[0] === "object") {
+    return (raw as Record<string, unknown>[]).map((r, i) => ({
       srNo: String(r.srNo || i + 1),
       designation: String(r.designation || ""),
       qualReq: String(r.qualReq || ""),
@@ -63,16 +63,16 @@ function parseRows(d: Record<string, unknown>, count: number = 8): RowData[] {
 // Training topics
 interface TopicEntry { srNo: string; topicNo: string; }
 function parseTopics(d: Record<string, unknown>): TopicEntry[] {
-  const raw = d.training_given || [];
-  if (Array.isArray(raw) && raw.length > 0) return raw as TopicEntry[];
+  const raw = coerceTableRows(d.training_given);
+  if (raw && raw.length > 0) return raw as TopicEntry[];
   return Array.from({ length: 9 }, (_, i) => ({ srNo: "", topicNo: "" }));
 }
 
 // Topic definitions
 interface TopicDef { code: string; name: string; }
 function parseTopicDefs(d: Record<string, unknown>): TopicDef[] {
-  const raw = d.training_topics || [];
-  if (Array.isArray(raw) && raw.length > 0) return raw as TopicDef[];
+  const raw = coerceTableRows(d.training_topics);
+  if (raw && raw.length > 0) return raw as TopicDef[];
   return [];
 }
 

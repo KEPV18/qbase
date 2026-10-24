@@ -6,7 +6,7 @@
 import React, { useState, useCallback } from "react";
 import { cn } from "@/lib/utils";
 import { Plus, Trash2 } from "lucide-react";
-import { FormDocument, val } from "../FormKit";
+import { FormDocument, val, coerceTableRows } from "../FormKit";
 
 export interface F25Props {
   data?: Record<string, unknown>;
@@ -24,8 +24,8 @@ interface AuditRow {
 }
 
 function parseMatrix(d: Record<string, unknown>): AuditRow[] {
-  const raw = d.audit_matrix || d.items || d.rows || [];
-  if (Array.isArray(raw) && raw.length > 0 && typeof raw[0] === "object") return raw as AuditRow[];
+  const raw = coerceTableRows(d.audit_matrix || d.items || d.rows);
+  if (raw && raw.length > 0 && typeof raw[0] === "object") return raw as AuditRow[];
   return [
     { department: "Top Management / Management Representative", activity_scope: "Management review & coordination", date_time: "Week 4 – Jan 2026", auditor: "Ahmed Khaled" },
     { department: "Marketing", activity_scope: "Not in scope – January", date_time: "N/A", auditor: "N/A" },

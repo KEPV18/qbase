@@ -6,7 +6,7 @@
 
 import React from "react";
 import { cn } from "@/lib/utils";
-import { FormDocument } from "../FormKit";
+import { FormDocument, coerceTableRows } from "../FormKit";
 
 export interface F13Props {
   data?: Record<string, unknown>;
@@ -34,9 +34,9 @@ interface Item {
 
 function parseItems(d: Record<string, unknown>): Item[] {
   // Database uses 'items_table' not 'items'
-  const raw = d.items_table;
-  if (Array.isArray(raw) && raw.length > 0) {
-    return raw.map((r: Record<string, unknown>) => ({
+  const raw = coerceTableRows(d.items_table);
+  if (raw && raw.length > 0) {
+    return (raw as Record<string, unknown>[]).map((r) => ({
       description: String(r.description ?? ""),
       qty: String(r.qty ?? ""),
       rate: String(r.rate ?? ""),

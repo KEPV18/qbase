@@ -9,7 +9,7 @@
 import React, { useState, useCallback } from "react";
 import { cn } from "@/lib/utils";
 import { Plus, Trash2 } from "lucide-react";
-import { FormDocument } from "../FormKit";
+import { FormDocument, coerceTableRows } from "../FormKit";
 
 export interface F12Props {
   data?: Record<string, unknown>;
@@ -55,8 +55,8 @@ const EMPTY_ROW: RowData = {
 };
 
 function parseRows(d: Record<string, unknown>): RowData[] {
-  const raw = d.items || [];
-  if (Array.isArray(raw) && raw.length > 0 && typeof raw[0] === "object") {
+  const raw = coerceTableRows(d.items);
+  if (raw && raw.length > 0 && typeof raw[0] === "object") {
     return raw as RowData[];
   }
   return [{ ...EMPTY_ROW }];

@@ -7,7 +7,7 @@
 import React, { useMemo } from "react";
 import { Check } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { FormDocument, val } from "../FormKit";
+import { FormDocument, val, coerceTableRows } from "../FormKit";
 
 export interface F30Props {
   data?: Record<string, unknown>;
@@ -47,8 +47,8 @@ const EVAL_SECTIONS: EvalSection[] = [
 const FC = "F/30";
 
 function parseMatrix(d: Record<string, unknown>): EvalItem[] {
-  const raw = d.evaluation_matrix || d.evaluationMatrix || [];
-  if (Array.isArray(raw) && raw.length > 0) return raw as EvalItem[];
+  const raw = coerceTableRows(d.evaluation_matrix || d.evaluationMatrix);
+  if (raw && raw.length > 0) return raw as EvalItem[];
   return [];
 }
 

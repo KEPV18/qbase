@@ -5,7 +5,7 @@
 
 import React from "react";
 import { cn } from "@/lib/utils";
-import { FormDocument, val } from "../FormKit";
+import { FormDocument, val, coerceTableRows } from "../FormKit";
 
 export interface F35Props {
   data?: Record<string, unknown>;
@@ -30,8 +30,8 @@ interface MonitorItem {
 }
 
 function parseItems(d: Record<string, unknown>): MonitorItem[] {
-  const raw = d.items;
-  if (Array.isArray(raw) && raw.length > 0 && typeof raw[0] === "object") return raw as MonitorItem[];
+  const raw = coerceTableRows(d.items);
+  if (raw && raw.length > 0 && typeof raw[0] === "object") return raw as MonitorItem[];
   return [];
 }
 

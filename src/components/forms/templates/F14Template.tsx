@@ -1,7 +1,7 @@
 import React, { useState, useCallback } from "react";
 import { cn } from "@/lib/utils";
 import { Plus, Trash2 } from "lucide-react";
-import { FormDocument, val } from "../FormKit";
+import { FormDocument, val, coerceTableRows } from "../FormKit";
 
 export interface F14Props {
   data?: Record<string, unknown>;
@@ -23,8 +23,8 @@ interface RowData {
 const EMPTY_ROW: RowData = { date: "", item_description: "", qty: "", supplier: "", inspection_status: "", inspected_by: "" };
 
 function parseRows(d: Record<string, unknown>): RowData[] {
-  const raw = d.items;
-  if (Array.isArray(raw) && raw.length > 0 && typeof raw[0] === "object") return raw as RowData[];
+  const raw = coerceTableRows(d.items);
+  if (raw && raw.length > 0 && typeof raw[0] === "object") return raw as RowData[];
   return Array.from({ length: 9 }, () => ({ ...EMPTY_ROW }));
 }
 

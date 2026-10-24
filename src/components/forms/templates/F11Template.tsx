@@ -8,7 +8,7 @@
 
 import React, { useState, useCallback } from "react";
 import { Plus, Trash2 } from "lucide-react";
-import { FormDocument, val } from "../FormKit";
+import { FormDocument, val, coerceTableRows } from "../FormKit";
 
 export interface F11Props {
   data?: Record<string, unknown>;
@@ -123,8 +123,10 @@ function inferStatus(yieldPct: string, kind: "plan" | "actual"): string {
 }
 
 function parseRows(d: Record<string, unknown>, count: number = 25): RowData[] {
-  const raw = d.items;
-  if (Array.isArray(raw) && raw.length > 0 && typeof raw[0] === "object") {
+  // A table stored as a JSON string is still the table — `coerceTableRows`
+  // reads it, instead of the form showing 25 blank rows over the data.
+  const raw = coerceTableRows(d.items);
+  if (raw && raw.length > 0 && typeof raw[0] === "object") {
     return (raw as Record<string, unknown>[]).map(normalizeRow);
   }
   return Array.from({ length: count }, () => ({ ...EMPTY_ROW }));

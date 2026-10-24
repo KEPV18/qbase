@@ -4,7 +4,7 @@
 // ============================================================================
 
 import React, { useState, useCallback } from "react";
-import { FormDocument, val } from "../FormKit";
+import { FormDocument, val, coerceTableRows } from "../FormKit";
 import { Plus, Trash2 } from "lucide-react";
 
 
@@ -35,9 +35,9 @@ function emptyRow(): RowData {
 }
 
 function parseRows(d: Record<string, unknown>, count: number = 7): RowData[] {
-  const raw = d.items || d.rows || [];
-  if (Array.isArray(raw) && raw.length > 0 && typeof raw[0] === "object") {
-    return raw.map((r: Record<string, unknown>) => ({
+  const raw = coerceTableRows(d.items || d.rows);
+  if (raw && raw.length > 0 && typeof raw[0] === "object") {
+    return (raw as Record<string, unknown>[]).map((r) => ({
       topicNo: String(r.topicNo || ""), title: String(r.title || ""),
       participants: String(r.participants || ""), identifiedBy: String(r.identifiedBy || ""),
       reason: String(r.reason || ""),

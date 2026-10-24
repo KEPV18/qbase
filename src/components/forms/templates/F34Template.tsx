@@ -5,7 +5,7 @@
 
 import React from "react";
 import { cn } from "@/lib/utils";
-import { FormDocument, val } from "../FormKit";
+import { FormDocument, val, coerceTableRows } from "../FormKit";
 
 export interface F34Props {
   data?: Record<string, unknown>;
@@ -21,8 +21,8 @@ interface VerifItem {
 }
 
 function parseItems(d: Record<string, unknown>): VerifItem[] {
-  const raw = d.verification_items;
-  if (Array.isArray(raw) && raw.length > 0 && typeof raw[0] === "object") return raw as VerifItem[];
+  const raw = coerceTableRows(d.verification_items);
+  if (raw && raw.length > 0 && typeof raw[0] === "object") return raw as VerifItem[];
   return [];
 }
 

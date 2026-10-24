@@ -10,7 +10,7 @@
 import React, { useMemo, useCallback, useState, useEffect } from "react";
 import { cn } from "@/lib/utils";
 import { Plus, Trash2 } from "lucide-react";
-import { FormDocument, FormHeader, FormMetaGrid, FormTable, FormTableRow, FormTableCell, val } from "../FormKit";
+import { FormDocument, FormHeader, FormMetaGrid, FormTable, FormTableRow, FormTableCell, val, coerceTableRows } from "../FormKit";
 
 export interface F28Props {
   data?: Record<string, unknown>;
@@ -36,8 +36,10 @@ interface AttendeeRow {
 // `data` object — `d` changes identity on every parent render, which made
 // the memo recompute each time and re-seed the editable rows.
 function parseAttendees(raw: unknown): AttendeeRow[] {
-  if (Array.isArray(raw) && raw.length > 0) {
-    return raw.map((a: Record<string, unknown>, i: number) => ({
+  // A table stored as a JSON string is still the table.
+  const rows = coerceTableRows(raw);
+  if (rows && rows.length > 0) {
+    return (rows as Record<string, unknown>[]).map((a, i) => ({
       sl_no: Number(a.sl_no ?? a.slNo ?? (i + 1)),
       name: String(a.name ?? ""),
       department: String(a.department ?? ""),

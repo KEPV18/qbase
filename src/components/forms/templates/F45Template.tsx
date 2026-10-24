@@ -13,7 +13,7 @@
 import React, { useState, useCallback } from "react";
 import { cn } from "@/lib/utils";
 import { Plus, Trash2 } from "lucide-react";
-import { FormDocument, val } from "../FormKit";
+import { FormDocument, val, coerceTableRows } from "../FormKit";
 
 export interface F45Props {
   data?: Record<string, unknown>;
@@ -64,8 +64,8 @@ const DOC_COL_HEADERS: string[] = [
 const DIST_PERSON_HEADERS = Array.from({ length: 17 }, (_, i) => `Person ${i + 1}`);
 
 function parseDocs(d: Record<string, unknown>): DocRow[] {
-  const raw = d.documents || d.items || d.rows || [];
-  if (Array.isArray(raw) && raw.length > 0 && typeof raw[0] === "object") {
+  const raw = coerceTableRows(d.documents || d.items || d.rows);
+  if (raw && raw.length > 0 && typeof raw[0] === "object") {
     return raw as DocRow[];
   }
   return Array.from({ length: 14 }, () => ({
