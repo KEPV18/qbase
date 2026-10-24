@@ -57,17 +57,6 @@ function loadEnv() {
 
 const { url: BASE, key: KEY } = loadEnv();
 
-async function fetchJson(path, accept = "application/json") {
-  const res = await fetch(`${BASE}${path}`, {
-    headers: { apikey: KEY, Authorization: `Bearer ${KEY}`, Accept: accept },
-  });
-  if (!res.ok) {
-    const body = (await res.text().catch(() => "")).slice(0, 300);
-    fail(`GET ${path} -> HTTP ${res.status}: ${body}`);
-  }
-  return res;
-}
-
 // ── arguments ───────────────────────────────────────────────────────────────
 const root = process.argv[2];
 if (!root || !root.startsWith("/") || !root.startsWith(process.env.HOME + "/")) {
