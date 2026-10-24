@@ -30,6 +30,10 @@ dist-ssr
 .env.*
 !.env.example
 
+# The e2e sign-in account (tests/e2e/credentials.ts reads it).
+# A credential in a file that is tracked is a credential in the repository.
+.env.e2e
+
 # QMS document files (not part of web app)
 *.docx
 *.DOCX
@@ -75,3 +79,11 @@ src/hooks/_useAuth_backup.tsx
 
 # TypeScript incremental build artifacts (tsc -b)
 *.tsbuildinfo
+
+# Python bytecode — the local-stack tools import from tools/local-stack/
+__pycache__/
+*.pyc
+
+# Throwaway investigation scripts (one-off SQL/TS probes).  The tools that
+# are kept live in tools/ and scripts/.
+scratch/

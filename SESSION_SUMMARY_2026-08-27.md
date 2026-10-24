@@ -48,7 +48,7 @@ tests/e2e/
 | Lint (ESLint) | ✅ Pass |
 | TypeCheck (`tsc --noEmit`) | ✅ Pass |
 | Schema Parity (36 forms) | ✅ Pass (0 errors, 1 optional warning) |
-| Unit Tests (Vitest) | ✅ 3 files, 25 tests passing |
+| Unit Tests (Vitest) | ✅ 19 files, 242 tests passing *(re-measured 2026-10-23; 3 files / 25 tests on 2026-08-27)* |
 | Production Build | ✅ Pass |
 
 ---

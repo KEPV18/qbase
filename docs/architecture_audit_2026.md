@@ -358,6 +358,11 @@ This document presents a comprehensive audit of the QBase Quality Management Sys
 - **Fix:** Run `npm audit fix`. Update affected packages. Consider `npm audit fix --force` for critical issues.
 
 #### A3. No Test Infrastructure
+> **RESOLVED as of 2026-10-23.** The suite is now **31 test files / 558 tests**,
+> all passing (`npm run test`), and the gate that runs it
+> (`.github/workflows/ci.yml`) exists. The original text is kept below as the
+> finding it was, dated 11 June 2026.
+>
 - **Finding:** Only 3 test files exist across 243 source files (1.2% coverage)
 - **Files:**
   - `src/hooks/__tests__/useDebounce.test.ts`

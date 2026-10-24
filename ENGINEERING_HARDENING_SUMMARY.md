@@ -14,7 +14,7 @@
 | **Lint** | ✅ Pass | ESLint clean |
 | **TypeCheck** | ✅ Pass | `tsc --noEmit` — zero errors |
 | **Schema Parity** | ✅ Pass | 36 forms verified, 0 errors, 1 warning (template metadata optional) |
-| **Unit Tests** | ✅ Pass | 3 test files, 25 tests passing |
+| **Unit Tests** | ✅ Pass | 19 test files, 242 tests passing *(re-measured 2026-10-23; the figure was 3 files / 25 tests on 2026-08-27)* |
 | **Build** | ✅ Pass | Production build successful, all template chunks created |
 
 ---
