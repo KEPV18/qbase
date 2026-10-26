@@ -8,6 +8,7 @@ import React, { useCallback, useMemo } from "react";
 import { cn } from "@/lib/utils";
 import { Plus, Trash2 } from "lucide-react";
 import { FormDocument } from "../FormKit";
+import { readTableRows, effectiveFieldKey, type TableFieldLike } from "@/schemas/formTables";
 
 export interface F50Props {
   data?: Record<string, unknown>;
@@ -66,25 +67,27 @@ function normalizeEntry(item: Record<string, unknown>): Record<string, string> {
   return out;
 }
 
+const TABLE_FIELD: TableFieldLike = {
+  key: "entries",
+  type: "table",
+  aliasKeys: ["items"],
+};
+
 export function F50Template({ data, isTemplate = true, editMode = false, onChange, className }: F50Props) {
   const d = data ?? {};
   const readonly = isTemplate || !editMode;
 
   const entries: Array<Record<string, string>> = useMemo(() => {
-    const raw = d.entries;
-    let arr: unknown[] = [];
-    if (typeof raw === "string") {
-      try { arr = JSON.parse(raw); } catch { /* empty */ }
-    } else if (Array.isArray(raw)) {
-      arr = raw;
-    }
-    if (arr.length === 0) return [emptyEntry()];
-    return arr.map((item) => normalizeEntry(item as Record<string, unknown>));
-  }, [d.entries]);
+    const rows = readTableRows(TABLE_FIELD, d) as Array<Record<string, unknown>>;
+    if (rows.length === 0) return [emptyEntry()];
+    return rows.map((item) => normalizeEntry(item));
+  }, [d]);
+
+  const tableKey = effectiveFieldKey(TABLE_FIELD, d);
 
   const updateEntries = useCallback((newEntries: Array<Record<string, string>>) => {
-    onChange?.("entries", newEntries);
-  }, [onChange]);
+    onChange?.(tableKey, newEntries);
+  }, [onChange, tableKey]);
 
   const fieldUpdate = useCallback((idx: number, key: string, value: string) => {
     const next = entries.map((e, i) => (i === idx ? { ...e, [key]: value } : e));

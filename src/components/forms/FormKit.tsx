@@ -44,21 +44,12 @@ export function val(data: Record<string, unknown> | undefined, key: string): str
  * to an array; anything else (a number, an object, a string that is not
  * JSON, nothing at all) means "there is genuinely nothing to show" and the
  * caller falls back to its empty rows.
+ *
+ * The implementation lives in `src/lib/tableRows.ts` — the schema layer
+ * needs the same reading — and it is re-exported here so that every
+ * template keeps importing it from the form kit.
  */
-export function coerceTableRows(raw: unknown): unknown[] | null {
-  if (Array.isArray(raw)) return raw;
-  if (typeof raw === "string") {
-    const trimmed = raw.trim();
-    if (!trimmed.startsWith("[")) return null;
-    try {
-      const parsed: unknown = JSON.parse(trimmed);
-      return Array.isArray(parsed) ? parsed : null;
-    } catch {
-      return null;
-    }
-  }
-  return null;
-}
+export { coerceTableRows } from "@/lib/tableRows";
 
 // ════════════════════════════════════════════════════════════════════════
 // THE DOCUMENT PALETTE

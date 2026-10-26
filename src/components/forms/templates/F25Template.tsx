@@ -6,7 +6,8 @@
 import React, { useState, useCallback } from "react";
 import { cn } from "@/lib/utils";
 import { Plus, Trash2 } from "lucide-react";
-import { FormDocument, val, coerceTableRows } from "../FormKit";
+import { FormDocument, val } from "../FormKit";
+import { readTableRows, effectiveFieldKey, type TableFieldLike } from "@/schemas/formTables";
 
 export interface F25Props {
   data?: Record<string, unknown>;
@@ -23,9 +24,15 @@ interface AuditRow {
   auditor: string;
 }
 
+const TABLE_FIELD: TableFieldLike = {
+  key: "audit_matrix",
+  type: "table",
+  aliasKeys: ["agenda"],
+};
+
 function parseMatrix(d: Record<string, unknown>): AuditRow[] {
-  const raw = coerceTableRows(d.audit_matrix || d.items || d.rows);
-  if (raw && raw.length > 0 && typeof raw[0] === "object") return raw as AuditRow[];
+  const rows = readTableRows(TABLE_FIELD, d) as unknown as AuditRow[];
+  if (rows.length > 0) return rows;
   return [
     { department: "Top Management / Management Representative", activity_scope: "Management review & coordination", date_time: "Week 4 – Jan 2026", auditor: "Ahmed Khaled" },
     { department: "Marketing", activity_scope: "Not in scope – January", date_time: "N/A", auditor: "N/A" },
@@ -42,26 +49,32 @@ export function F25Template({ data, isTemplate = true, editMode = false, onChang
   const ph = isTemplate && !editMode;
   const [matrix, setMatrix] = useState<AuditRow[]>(() => parseMatrix(d));
 
+  const tableKey = effectiveFieldKey(TABLE_FIELD, d);
+
   const updateMatrix = useCallback((idx: number, key: keyof AuditRow, value: string) => {
     setMatrix(prev => {
       const next = [...prev];
       next[idx] = { ...next[idx], [key]: value };
-      onChange?.("audit_matrix", next as unknown as Record<string, unknown>);
+      onChange?.(tableKey, next as unknown as Record<string, unknown>);
       return next;
     });
-  }, [onChange]);
+  }, [onChange, tableKey]);
 
   const addRow = useCallback(() => {
-    setMatrix(prev => [...prev, { department: "", activity_scope: "", date_time: "", auditor: "" }]);
-  }, []);
+    setMatrix(prev => {
+      const next = [...prev, { department: "", activity_scope: "", date_time: "", auditor: "" }];
+      onChange?.(tableKey, next as unknown as Record<string, unknown>);
+      return next;
+    });
+  }, [tableKey]);
 
   const removeRow = useCallback((idx: number) => {
     setMatrix(prev => {
       const next = prev.filter((_, i) => i !== idx);
-      onChange?.("audit_matrix", next as unknown as Record<string, unknown>);
+      onChange?.(tableKey, next as unknown as Record<string, unknown>);
       return next;
     });
-  }, [onChange]);
+  }, [onChange, tableKey]);
 
   const inp = (key: string, placeholder: string) =>
     editMode ? (

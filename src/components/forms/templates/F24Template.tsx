@@ -11,7 +11,8 @@
 import React, { useState, useCallback } from "react";
 import { cn } from "@/lib/utils";
 import { Plus, Trash2 } from "lucide-react";
-import { FormDocument, val, coerceTableRows } from "../FormKit";
+import { FormDocument, val } from "../FormKit";
+import { readTableRows, effectiveFieldKey, type TableFieldLike } from "@/schemas/formTables";
 
 export interface F24Props {
   data?: Record<string, unknown>;
@@ -29,18 +30,22 @@ interface RowData {
   results: string;
 }
 
+const TABLE_FIELD: TableFieldLike = {
+  key: "objectives",
+  type: "table",
+  aliasKeys: ["items"],
+};
+
 function parseRows(d: Record<string, unknown>): RowData[] {
-  const raw = coerceTableRows(d.objectives || d.items || d.rows);
-  if (raw && raw.length > 0 && typeof raw[0] === "object") {
-    return raw as RowData[];
-  }
-  return [];
+  return readTableRows(TABLE_FIELD, d) as unknown as RowData[];
 }
 
 export function F24Template({ data, isTemplate = true, editMode = false, onChange, className }: F24Props) {
   const d = data ?? {};
   const ph = isTemplate && !editMode;
   const [rows, setRows] = useState<RowData[]>(() => parseRows(d));
+
+  const tableKey = effectiveFieldKey(TABLE_FIELD, d);
 
   const updateRow = useCallback((idx: number, key: keyof RowData, value: string) => {
     setRows(prev => {
@@ -50,8 +55,8 @@ export function F24Template({ data, isTemplate = true, editMode = false, onChang
     });
     const updated = [...rows];
     updated[idx] = { ...updated[idx], [key]: value };
-    onChange?.("objectives", updated);
-  }, [rows, onChange]);
+    onChange?.(tableKey, updated);
+  }, [rows, onChange, tableKey]);
 
   const addRow = useCallback(() => {
     setRows(prev => [...prev, {

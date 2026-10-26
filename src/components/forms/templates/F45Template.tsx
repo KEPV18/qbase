@@ -13,7 +13,8 @@
 import React, { useState, useCallback } from "react";
 import { cn } from "@/lib/utils";
 import { Plus, Trash2 } from "lucide-react";
-import { FormDocument, val, coerceTableRows } from "../FormKit";
+import { FormDocument, val } from "../FormKit";
+import { readTableRows, effectiveFieldKey, type TableFieldLike } from "@/schemas/formTables";
 
 export interface F45Props {
   data?: Record<string, unknown>;
@@ -63,11 +64,15 @@ const DOC_COL_HEADERS: string[] = [
 
 const DIST_PERSON_HEADERS = Array.from({ length: 17 }, (_, i) => `Person ${i + 1}`);
 
+const TABLE_FIELD: TableFieldLike = {
+  key: "documents",
+  type: "table",
+  aliasKeys: ["items"],
+};
+
 function parseDocs(d: Record<string, unknown>): DocRow[] {
-  const raw = coerceTableRows(d.documents || d.items || d.rows);
-  if (raw && raw.length > 0 && typeof raw[0] === "object") {
-    return raw as DocRow[];
-  }
+  const rows = readTableRows(TABLE_FIELD, d) as unknown as DocRow[];
+  if (rows.length > 0) return rows;
   return Array.from({ length: 14 }, () => ({
     sr: "", title: "", doc_number: "", doc_number2: "", doc_number3: "",
     current_revision: "", revision_date: "",
@@ -128,6 +133,8 @@ export function F45Template({ data, isTemplate = true, editMode = false, onChang
   const ph = isTemplate && !editMode;
   const [docRows, setDocRows] = useState<DocRow[]>(() => parseDocs(d));
 
+  const tableKey = effectiveFieldKey(TABLE_FIELD, d);
+
   const updateRow = useCallback((idx: number, key: keyof DocRow, value: string) => {
     setDocRows(prev => {
       const next = [...prev];
@@ -136,16 +143,24 @@ export function F45Template({ data, isTemplate = true, editMode = false, onChang
     });
     const updated = [...docRows];
     updated[idx] = { ...updated[idx], [key]: value };
-    onChange?.("documents", updated);
-  }, [docRows, onChange]);
+    onChange?.(tableKey, updated);
+  }, [docRows, onChange, tableKey]);
 
   const addRow = useCallback(() => {
-    setDocRows(prev => [...prev, makeEmptyRow()]);
-  }, []);
+    setDocRows(prev => {
+      const next = [...prev, makeEmptyRow()];
+      onChange?.(tableKey, next);
+      return next;
+    });
+  }, [tableKey]);
 
   const removeRow = useCallback((idx: number) => {
-    setDocRows(prev => prev.filter((_, i) => i !== idx));
-  }, []);
+    setDocRows(prev => {
+      const next = prev.filter((_, i) => i !== idx);
+      onChange?.(tableKey, next);
+      return next;
+    });
+  }, [onChange, tableKey]);
 
   const inp = (key: string, label: string, width: string = "w-full") =>
     editMode ? (

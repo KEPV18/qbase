@@ -72,6 +72,17 @@ export interface UnifiedField {
   placeholder?: string;
   options?: string[];           // for select/multiselect/radio
   columns?: UnifiedField[];     // for table type
+  /**
+   * Other keys the same value may be stored under.
+   *
+   * The catalogue and the document do not always agree on the NAME of a
+   * table — the document writes `items_table` where the catalogue said
+   * `items`, for instance.  The catalogue now names the table the DOCUMENT
+   * writes, and the other names a record may still carry are listed here.
+   * Nothing is rewritten: the record keeps the key it has, and the value is
+   * read through whichever key it is under.
+   */
+  aliasKeys?: string[];
   defaultValue?: string | number | boolean;
   validation?: {
     min?: number;
@@ -277,8 +288,11 @@ export const UNIFIED_SCHEMAS: UnifiedFormSchema[] = [
       { key: "date", label: "Date", type: "text", required: true, width: "half" },
       { key: "vendor_name", label: "Vendor Name", type: "text", required: true, width: "full" },
       { key: "vendor_address", label: "Vendor Address", type: "textarea", width: "full" },
-      { key: "items", label: "Items", type: "table", width: "full", columns: [
-        { key: "srNo", label: "Sr. No.", type: "text", width: "full" },
+      // The document writes the table as `items_table`; `items` is the name
+      // the catalogue used to declare, and a record may still carry it.
+      // The columns are the ones the records actually hold.
+      { key: "items_table", label: "Items", type: "table", width: "full", aliasKeys: ["items"], columns: [
+        { key: "sr_no", label: "Sr. No.", type: "text", width: "full" },
         { key: "description", label: "Description", type: "text", width: "full" },
         { key: "qty", label: "Qty", type: "text", width: "full" },
         { key: "rate", label: "Rate", type: "text", width: "full" },
@@ -363,6 +377,17 @@ export const UNIFIED_SCHEMAS: UnifiedFormSchema[] = [
       { key: "recommended_by", label: "Recommended By", type: "signature", width: "half" },
       { key: "approved_by", label: "Approved By", type: "signature", width: "half" },
       { key: "registration_validity", label: "Registration Validity", type: "text", width: "half" },
+      // The document's table — one row per supplier registration.  The
+      // catalogue declared NO table for this form, so the table-driven
+      // features (compare, export, the schema view) had nothing to read.
+      // The columns are the ones the records actually hold.
+      { key: "items", label: "Vendor Registrations", type: "table", width: "full", columns: [
+        { key: "dateApproval", label: "Date of Approval", type: "text", width: "full" },
+        { key: "supplierName", label: "Supplier Name", type: "text", width: "full" },
+        { key: "scopeOfSupply", label: "Scope of Supply", type: "text", width: "full" },
+        { key: "approvalCriteria", label: "Approval Criteria", type: "text", width: "full" },
+        { key: "remarks", label: "Remarks", type: "text", width: "full" },
+      ]},
     ],
   },
   {
@@ -603,6 +628,20 @@ export const UNIFIED_SCHEMAS: UnifiedFormSchema[] = [
       { key: "effectiveness_check", label: "Effectiveness Check", type: "textarea", width: "full" },
       { key: "verified_by", label: "Verified By", type: "signature", width: "half" },
       { key: "status", label: "Status", type: "select", width: "half", options: ["Open", "In Progress", "Closed", "Verified"] },
+      // The document's table — the Master List of Records.  The catalogue
+      // declared NO table for this form, so the table-driven features
+      // (compare, export, the schema view) had nothing to read.
+      { key: "records", label: "Records", type: "table", width: "full", aliasKeys: ["items", "rows"], columns: [
+        { key: "record_no", label: "Record No.", type: "text", width: "full" },
+        { key: "title", label: "Title", type: "text", width: "full" },
+        { key: "format_no", label: "Format No.", type: "text", width: "full" },
+        { key: "frequency", label: "Frequency", type: "text", width: "full" },
+        { key: "method_of_filing", label: "Method of Filing", type: "text", width: "full" },
+        { key: "access", label: "Access", type: "text", width: "full" },
+        { key: "storage_place", label: "Storage Place", type: "text", width: "full" },
+        { key: "retention_period", label: "Retention Period", type: "text", width: "full" },
+        { key: "person_responsible", label: "Person Responsible", type: "text", width: "full" },
+      ]},
     ],
   },
   {
@@ -617,8 +656,11 @@ export const UNIFIED_SCHEMAS: UnifiedFormSchema[] = [
       { key: "serial", label: "Serial Number", type: "text", required: true, width: "half", defaultValue: "auto" },
       { key: "quarter", label: "Quarter", type: "select", width: "half", options: ["Q1", "Q2", "Q3", "Q4"] },  // not required: the F/24 document has no such field
       { key: "year", label: "Year", type: "text", required: true, width: "half" },
-      { key: "items", label: "Audit Items", type: "table", width: "full", columns: [
-        { key: "srNo", label: "Sr. No.", type: "text", width: "full" },
+      // The document writes the table as `objectives`; `items` is the name
+      // the catalogue used to declare, and a record may still carry it.
+      // The columns are the ones the records actually hold.
+      { key: "objectives", label: "Audit Items", type: "table", width: "full", aliasKeys: ["items"], columns: [
+        { key: "sr_no", label: "Sr. No.", type: "text", width: "full" },
         { key: "department", label: "Department", type: "text", width: "full" },
         { key: "process_area", label: "Process Area", type: "text", width: "full" },
         { key: "auditor", label: "Auditor", type: "text", width: "full" },
@@ -644,8 +686,11 @@ export const UNIFIED_SCHEMAS: UnifiedFormSchema[] = [
       { key: "date", label: "Date", type: "text", required: true, width: "half" },
       { key: "period", label: "Review Period", type: "text", width: "full" },  // not required: the F/25 document has no such field
       { key: "attendees", label: "Attendees", type: "textarea", width: "full" },
-      { key: "agenda", label: "Agenda", type: "table", width: "full", columns: [
-        { key: "srNo", label: "Sr. No.", type: "text", width: "full" },
+      // The document writes the table as `audit_matrix`; `agenda` is the name
+      // the catalogue used to declare, and a record may still carry it.
+      // The columns are the ones the records actually hold.
+      { key: "audit_matrix", label: "Agenda", type: "table", width: "full", aliasKeys: ["agenda"], columns: [
+        { key: "sr_no", label: "Sr. No.", type: "text", width: "full" },
         { key: "topic", label: "Topic", type: "text", width: "full" },
         { key: "discussion", label: "Discussion", type: "text", width: "full" },
         { key: "decision", label: "Decision", type: "text", width: "full" },
@@ -1032,6 +1077,40 @@ export const UNIFIED_SCHEMAS: UnifiedFormSchema[] = [
       { key: "date_of_leaving", label: "Date of Leaving", type: "text", width: "half" },
       { key: "reason_for_leaving", label: "Reason for Leaving", type: "textarea", width: "full" },
       { key: "feedback", label: "Feedback", type: "textarea", width: "full" },
+      // The document writes the table as `documents`; the catalogue
+      // declared NO table for this form, so the table-driven features
+      // (compare, export, the schema view) had nothing to read.
+      // The columns are the ones the records actually hold.
+      { key: "documents", label: "Documents", type: "table", width: "full", aliasKeys: ["items"], columns: [
+        { key: "sr", label: "Sr.", type: "text", width: "full" },
+        { key: "title", label: "Title of Document", type: "text", width: "full" },
+        { key: "doc_number", label: "Document Number 1", type: "text", width: "full" },
+        { key: "doc_number2", label: "Document Number 2", type: "text", width: "full" },
+        { key: "doc_number3", label: "Document Number 3", type: "text", width: "full" },
+        { key: "current_revision", label: "Current Revision", type: "text", width: "full" },
+        { key: "revision_date", label: "Revision Date", type: "text", width: "full" },
+        { key: "revision_details", label: "Revision Details 1", type: "text", width: "full" },
+        { key: "revision_details2", label: "Revision Details 2", type: "text", width: "full" },
+        { key: "revision_details3", label: "Revision Details 3", type: "text", width: "full" },
+        { key: "revision_details4", label: "Revision Details 4", type: "text", width: "full" },
+        { key: "dist_1", label: "Person 1", type: "text", width: "full" },
+        { key: "dist_2", label: "Person 2", type: "text", width: "full" },
+        { key: "dist_3", label: "Person 3", type: "text", width: "full" },
+        { key: "dist_4", label: "Person 4", type: "text", width: "full" },
+        { key: "dist_5", label: "Person 5", type: "text", width: "full" },
+        { key: "dist_6", label: "Person 6", type: "text", width: "full" },
+        { key: "dist_7", label: "Person 7", type: "text", width: "full" },
+        { key: "dist_8", label: "Person 8", type: "text", width: "full" },
+        { key: "dist_9", label: "Person 9", type: "text", width: "full" },
+        { key: "dist_10", label: "Person 10", type: "text", width: "full" },
+        { key: "dist_11", label: "Person 11", type: "text", width: "full" },
+        { key: "dist_12", label: "Person 12", type: "text", width: "full" },
+        { key: "dist_13", label: "Person 13", type: "text", width: "full" },
+        { key: "dist_14", label: "Person 14", type: "text", width: "full" },
+        { key: "dist_15", label: "Person 15", type: "text", width: "full" },
+        { key: "dist_16", label: "Person 16", type: "text", width: "full" },
+        { key: "dist_17", label: "Person 17", type: "text", width: "full" },
+      ]},
       { key: "conducted_by", label: "Conducted By", type: "signature", width: "half" },  // not required: the F/45 document records this under `maintained_by`
       { key: "employee_signature", label: "Employee Signature", type: "signature", width: "half" },
     ],
@@ -1281,8 +1360,11 @@ export const UNIFIED_SCHEMAS: UnifiedFormSchema[] = [
     fields: [
       { key: "serial", label: "Serial Number", type: "text", required: true, width: "half", defaultValue: "auto" },
       { key: "date", label: "Date", type: "text", width: "half" },  // not required: the F/50 document records this under `received_date`
-      { key: "items", label: "Records", type: "table", width: "full", columns: [
-        { key: "srNo", label: "Sr. No.", type: "text", width: "full" },
+      // The document writes the table as `entries`; `items` is the name
+      // the catalogue used to declare, and a record may still carry it.
+      // The columns are the ones the records actually hold.
+      { key: "entries", label: "Records", type: "table", width: "full", aliasKeys: ["items"], columns: [
+        { key: "sr_no", label: "Sr. No.", type: "text", width: "full" },
         { key: "record_type", label: "Record Type", type: "text", width: "full" },
         { key: "retention_period", label: "Retention Period", type: "text", width: "full" },
         { key: "disposal_method", label: "Disposal Method", type: "text", width: "full" },
