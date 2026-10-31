@@ -10,7 +10,8 @@
 import React, { useState, useCallback } from "react";
 import { cn } from "@/lib/utils";
 import { Plus, Trash2 } from "lucide-react";
-import { FormDocument, val, coerceTableRows } from "../FormKit";
+import { FormDocument, val } from "../FormKit";
+import { readTableRows, effectiveFieldKey, type TableFieldLike } from "@/schemas/formTables";
 
 export interface F23Props {
   data?: Record<string, unknown>;
@@ -32,11 +33,15 @@ interface RowData {
   person_responsible: string;
 }
 
+const TABLE_FIELD: TableFieldLike = {
+  key: "records",
+  type: "table",
+  aliasKeys: ["items", "rows"],
+};
+
 function parseRows(d: Record<string, unknown>): RowData[] {
-  const raw = coerceTableRows(d.records || d.items || d.rows);
-  if (raw && raw.length > 0 && typeof raw[0] === "object") {
-    return raw as RowData[];
-  }
+  const rows = readTableRows(TABLE_FIELD, d) as unknown as RowData[];
+  if (rows.length > 0) return rows;
   return [];
 }
 
@@ -65,6 +70,8 @@ export function F23Template({ data, isTemplate = true, editMode = false, onChang
   const ph = isTemplate && !editMode;
   const [rows, setRows] = useState<RowData[]>(() => parseRows(d));
 
+  const tableKey = effectiveFieldKey(TABLE_FIELD, d);
+
   const updateRow = useCallback((idx: number, key: keyof RowData, value: string) => {
     setRows(prev => {
       const next = [...prev];
@@ -73,8 +80,8 @@ export function F23Template({ data, isTemplate = true, editMode = false, onChang
     });
     const updated = [...rows];
     updated[idx] = { ...updated[idx], [key]: value };
-    onChange?.("records", updated);
-  }, [rows, onChange]);
+    onChange?.(tableKey, updated);
+  }, [rows, onChange, tableKey]);
 
   const addRow = useCallback(() => {
     setRows(prev => [...prev, {

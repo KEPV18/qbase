@@ -1,7 +1,8 @@
 import React, { useState, useCallback } from "react";
 import { cn } from "@/lib/utils";
 import { Plus, Trash2 } from "lucide-react";
-import { FormDocument, val, coerceTableRows } from "../FormKit";
+import { FormDocument, val } from "../FormKit";
+import { readTableRows, effectiveFieldKey, type TableFieldLike } from "@/schemas/formTables";
 
 export interface F15Props {
   data?: Record<string, unknown>;
@@ -21,9 +22,15 @@ interface RowData {
 
 const EMPTY_ROW: RowData = { date_of_approval: "", supplier_name: "", scope_of_supply: "", approval_criteria: "", remarks: "" };
 
+const TABLE_FIELD: TableFieldLike = {
+  key: "items",
+  type: "table",
+  aliasKeys: [],
+};
+
 function parseRows(d: Record<string, unknown>): RowData[] {
-  const raw = coerceTableRows(d.items);
-  if (raw && raw.length > 0 && typeof raw[0] === "object") return raw as RowData[];
+  const rows = readTableRows(TABLE_FIELD, d) as unknown as RowData[];
+  if (rows.length > 0) return rows;
   return Array.from({ length: 6 }, () => ({ ...EMPTY_ROW }));
 }
 
@@ -32,11 +39,13 @@ export function F15Template({ data, isTemplate = true, editMode = false, onChang
   const ph = isTemplate && !editMode;
   const [rows, setRows] = useState<RowData[]>(() => parseRows(d));
 
+  const tableKey = effectiveFieldKey(TABLE_FIELD, d);
+
   const updateRow = useCallback((idx: number, key: keyof RowData, value: string) => {
     setRows(prev => { const next = [...prev]; next[idx] = { ...next[idx], [key]: value }; return next; });
     const updated = [...rows]; updated[idx] = { ...updated[idx], [key]: value };
-    onChange?.("items", updated);
-  }, [rows, onChange]);
+    onChange?.(tableKey, updated);
+  }, [rows, onChange, tableKey]);
 
   const addRow = useCallback(() => { setRows(prev => [...prev, { ...EMPTY_ROW }]); }, []);
   const removeRow = useCallback((idx: number) => { setRows(prev => prev.filter((_, i) => i !== idx)); }, []);

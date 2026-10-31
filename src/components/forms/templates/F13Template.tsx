@@ -6,7 +6,8 @@
 
 import React from "react";
 import { cn } from "@/lib/utils";
-import { FormDocument, coerceTableRows } from "../FormKit";
+import { FormDocument, val as formVal } from "../FormKit";
+import { readTableRows, effectiveFieldKey, type TableFieldLike } from "@/schemas/formTables";
 
 export interface F13Props {
   data?: Record<string, unknown>;
@@ -18,12 +19,11 @@ export interface F13Props {
 
 // ── Helpers ────────────────────────────────────────────────────────────────
 
-function val(data: Record<string, unknown> | undefined, key: string): string {
-  if (!data) return "";
-  const v = data[key];
-  if (v == null) return "";
-  return typeof v === "string" ? v : String(v);
-}
+const TABLE_FIELD: TableFieldLike = {
+  key: "items_table",
+  type: "table",
+  aliasKeys: ["items"],
+};
 
 interface Item {
   description: string;
@@ -33,16 +33,8 @@ interface Item {
 }
 
 function parseItems(d: Record<string, unknown>): Item[] {
-  // Database uses 'items_table' not 'items'
-  const raw = coerceTableRows(d.items_table);
-  if (raw && raw.length > 0) {
-    return (raw as Record<string, unknown>[]).map((r) => ({
-      description: String(r.description ?? ""),
-      qty: String(r.qty ?? ""),
-      rate: String(r.rate ?? ""),
-      amount: String(r.amount ?? ""),
-    }));
-  }
+  const rows = readTableRows(TABLE_FIELD, d) as unknown as Item[];
+  if (rows.length > 0) return rows;
   return Array.from({ length: 14 }, () => ({
     description: "",
     qty: "",
@@ -81,9 +73,11 @@ export function F13Template({
   const items = parseItems(d);
   const logistics = parseLogisticsGrid(d);
 
+  const tableKey = effectiveFieldKey(TABLE_FIELD, d);
+
   const placeholder = (v: string) => v || (ph ? "—" : "");
 
-  // Inline editable cell
+  // Inline editable cell (for non-table fields)
   const ec = (
     field: string,
     value: string,
@@ -112,7 +106,7 @@ export function F13Template({
         onChange={(e) => {
           const next = [...items];
           next[idx] = { ...next[idx], [key]: e.target.value };
-          onChange?.("items_table", next as unknown as Record<string, unknown>);
+          onChange?.(tableKey, next as unknown as Record<string, unknown>);
         }}
       />
     ) : (
@@ -123,7 +117,7 @@ export function F13Template({
     <FormDocument
       formCode="F/13"
       formName="Purchase Order"
-      serial={val(d, "serial")}
+      serial={formVal(d, "serial")}
       sectionName="Procurement & Vendors"
     >
       {/* ── 10-Column Table ──────────────────────────────────────────── */}
@@ -139,7 +133,7 @@ export function F13Template({
                 className={cn(TBL, "p-2 text-center text-[10px] font-mono whitespace-pre-line")}
               >
                 {"F/13\nRev No."}
-                {val(d, "serial") || (ph ? "{{SERIAL}}" : "")}
+                {formVal(d, "serial") || (ph ? "{{SERIAL}}" : "")}
               </td>
             </tr>
 
@@ -150,17 +144,17 @@ export function F13Template({
               </td>
               <td colSpan={5} className={cn(TBL, "p-2")}>
                 <span className="font-semibold">Purchase Order No. → </span>
-                {ec("serial", val(d, "serial"), { label: "PO No." })}
+                {ec("serial", formVal(d, "serial"), { label: "PO No." })}
               </td>
             </tr>
 
             {/* ── Row 2: To / Date ── */}
             <tr>
               <td colSpan={5} className={cn(TBL, "p-2")}>
-                {ec("vendor_name", val(d, "vendor_name"), { label: "Supplier Name" })}
+                {ec("vendor_name", formVal(d, "vendor_name"), { label: "Supplier Name" })}
                 <br />
                 <span className="text-[10px]">
-                  {ec("vendor_address", val(d, "vendor_address"), {
+                  {ec("vendor_address", formVal(d, "vendor_address"), {
                     label: "Supplier Address",
                     className: "text-[10px]",
                   })}
@@ -168,14 +162,14 @@ export function F13Template({
               </td>
               <td colSpan={5} className={cn(TBL, "p-2")}>
                 <span className="font-semibold">Date → </span>
-                {ec("date", val(d, "date"), { label: "DD/MM/YYYY" })}
+                {ec("date", formVal(d, "date"), { label: "DD/MM/YYYY" })}
               </td>
             </tr>
 
             {/* ── Row 3: Statement ── */}
             <tr>
               <td colSpan={10} className={cn(TBL, "p-2 italic bg-muted/20")}>
-                {val(d, "intro_statement") || "We Are Pleased To Place An Order For The Following:"}
+                {formVal(d, "intro_statement") || "We Are Pleased To Place An Order For The Following:"}
               </td>
             </tr>
 
@@ -220,7 +214,7 @@ export function F13Template({
                 Total
               </td>
               <td colSpan={3} className={cn(TBL, "p-1 text-right")}>
-                {ec("total_amount_rs", val(d, "total_amount_rs"), { label: "Total" })}
+                {ec("total_amount_rs", formVal(d, "total_amount_rs"), { label: "Total" })}
               </td>
             </tr>
 
@@ -230,7 +224,7 @@ export function F13Template({
                 Delivery Schedule
               </td>
               <td colSpan={7} className={cn(TBL, "p-1.5")}>
-                {ec("delivery_period", val(d, "delivery_period") || logistics.delivery_period || "", {
+                {ec("delivery_period", formVal(d, "delivery_period") || logistics.delivery_period || "", {
                   label: "Delivery Period",
                 })}
               </td>
@@ -242,7 +236,7 @@ export function F13Template({
                 Payment Terms
               </td>
               <td colSpan={7} className={cn(TBL, "p-1.5")}>
-                {ec("payment_terms", val(d, "payment_terms") || logistics.payment_terms || "", {
+                {ec("payment_terms", formVal(d, "payment_terms") || logistics.payment_terms || "", {
                   label: "Payment Terms",
                 })}
               </td>
@@ -254,7 +248,7 @@ export function F13Template({
                 Remarks
               </td>
               <td colSpan={7} className={cn(TBL, "p-1.5")}>
-                {ec("remarks", val(d, "remarks") || "", { label: "Remarks" })}
+                {ec("remarks", formVal(d, "remarks") || "", { label: "Remarks" })}
               </td>
             </tr>
 
@@ -264,7 +258,7 @@ export function F13Template({
                 Authorised Signatory
               </td>
               <td colSpan={7} className={cn(TBL, "p-1.5")}>
-                {ec("reviewed_and_approved_by", val(d, "reviewed_and_approved_by"), {
+                {ec("reviewed_and_approved_by", formVal(d, "reviewed_and_approved_by"), {
                   label: "Authorised Signatory",
                 })}
               </td>
@@ -291,10 +285,10 @@ export function F13Template({
             })()}
 
             {/* ── Supplies Notice ── */}
-            {val(d, "supplies_notice") && (
+            {formVal(d, "supplies_notice") && (
               <tr>
                 <td colSpan={10} className={cn(TBL, "p-2 text-[10px] italic")}>
-                  {val(d, "supplies_notice")}
+                  {formVal(d, "supplies_notice")}
                 </td>
               </tr>
             )}
@@ -307,19 +301,19 @@ export function F13Template({
         <p className="font-semibold text-muted-foreground">— Mobile Preview —</p>
         <div>
           <span className="font-semibold">PO No: </span>
-          {val(d, "serial") || "—"}
+          {formVal(d, "serial") || "—"}
         </div>
         <div>
           <span className="font-semibold">Date: </span>
-          {val(d, "date") || "—"}
+          {formVal(d, "date") || "—"}
         </div>
         <div>
           <span className="font-semibold">Supplier: </span>
-          {val(d, "vendor_name") || "—"}
+          {formVal(d, "vendor_name") || "—"}
         </div>
         <div>
           <span className="font-semibold">Address: </span>
-          {val(d, "vendor_address") || "—"}
+          {formVal(d, "vendor_address") || "—"}
         </div>
         <div className="mt-2 space-y-2">
           <p className="font-semibold">Items:</p>
@@ -338,23 +332,23 @@ export function F13Template({
         </div>
         <div>
           <span className="font-semibold">Total: </span>
-          {val(d, "total_amount_rs") || "—"}
+          {formVal(d, "total_amount_rs") || "—"}
         </div>
         <div>
           <span className="font-semibold">Delivery: </span>
-          {val(d, "delivery_period") || logistics.delivery_period || "—"}
+          {formVal(d, "delivery_period") || logistics.delivery_period || "—"}
         </div>
         <div>
           <span className="font-semibold">Payment: </span>
-          {val(d, "payment_terms") || logistics.payment_terms || "—"}
+          {formVal(d, "payment_terms") || logistics.payment_terms || "—"}
         </div>
         <div>
           <span className="font-semibold">Remarks: </span>
-          {val(d, "remarks") || "—"}
+          {formVal(d, "remarks") || "—"}
         </div>
         <div>
           <span className="font-semibold">Signatory: </span>
-          {val(d, "reviewed_and_approved_by") || "—"}
+          {formVal(d, "reviewed_and_approved_by") || "—"}
         </div>
       </div>
     </FormDocument>
