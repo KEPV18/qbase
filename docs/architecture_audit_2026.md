@@ -70,7 +70,7 @@ This document presents a comprehensive audit of the QBase Quality Management Sys
     id: crypto.randomUUID(),
     name: "admin",
     email: "admin@local",
-    password: "SET_ON_FIRST_LOGIN",
+    password: "<redacted>",
     role: "admin",
   };
   ```
