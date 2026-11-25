@@ -1,59 +1,38 @@
-# Vezloo QMS Suite
+# QBase
 
-> ISO 9001:2015 compliant Quality Management System — Document management, risk registers, CAPA tracking, process interaction maps, and automated audit checks.
+A quality management system (QMS) web app built with AI-assisted development. It is a working prototype that I use to explore how ISO 9001 style record keeping can be organised in a browser.
 
-## Tech Stack
+Live demo: https://qbase-sable.vercel.app
 
-- **Frontend:** React 18 + TypeScript + Vite 7 (SWC) + Tailwind CSS 3.4 + shadcn/ui
-- **Data:** @tanstack/react-query 5
-- **Auth:** Supabase (email/password + Google OAuth)
-- **Storage:** Google Sheets API (primary QMS data) + Google Drive API (files)
-- **Deployment:** Vercel
+## What it covers
 
-## Getting Started
+Pages in `src/pages` include:
+
+- Record creation, record lists and record views
+- Forms registry and procedures
+- Risk management and SWOT analysis
+- Approval queue, archive, notifications and activity log
+- KPI dashboard and KPI reports
+- Audit and data integrity pages
+- Projects, traceability and admin pages
+
+## Tech stack
+
+- React 18, TypeScript, Vite, Tailwind CSS, shadcn/ui
+- TanStack Query
+- Supabase for authentication
+- Google Sheets and Google Drive APIs for data and files
+- Deployed on Vercel
+
+## Run locally
 
 ```bash
-# Install dependencies
 npm install
-
-# Start development server (port 8080)
 npm run dev
 ```
 
-### Environment Variables
+Copy `.env.example` to `.env` and fill in your own values. Never commit real keys.
 
-Create a `.env` file in the project root:
+## Status
 
-| Variable | Description |
-|---|---|
-| `VITE_SUPABASE_URL` | Supabase project URL |
-| `VITE_SUPABASE_ANON_KEY` | Supabase anonymous key |
-| `VITE_GOOGLE_API_KEY` | Google API key (Sheets + Drive read) |
-| `VITE_SPREADSHEET_ID` | Main QMS Google Sheet ID |
-| `VITE_PROCEDURES_FOLDER_ID` | Google Drive folder ID for procedures |
-| `VITE_AUTH_LOCAL_DISABLED` | Disable local auth fallback (default: "true") |
-
-### Production Build
-
-```bash
-npm run build
-```
-
-Output goes to `dist/`. Deploy `dist/` to Vercel (or any static host).
-
-## Project Structure
-
-```
-src/
-├── pages/           # Route pages (lazy-loaded)
-├── components/      # UI components (layout, ui, dashboard, records, etc.)
-├── hooks/           # Custom React hooks
-├── lib/             # Services & utilities (Google Sheets, Drive, audit, etc.)
-├── data/            # Static data & mock data
-├── config/          # Module & navigation configuration
-└── assets/          # Images & logos
-```
-
-## License
-
-© 2026 Ahmed Khaled — Vezloo Group. All rights reserved.
+Prototype. The repository also holds working notes and one-off migration scripts from development. Features and data shown in any public demo are for demonstration only.
